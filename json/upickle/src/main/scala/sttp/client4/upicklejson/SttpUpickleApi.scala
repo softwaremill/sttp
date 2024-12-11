@@ -35,9 +35,11 @@ trait SttpUpickleApi {
     */
   def asJsonEither[E: upickleApi.Reader: IsOption, B: upickleApi.Reader: IsOption]
       : ResponseAs[Either[ResponseException[E, Exception], B]] =
-    asJson[B].mapLeft {
-      case HttpError(e, code) => deserializeJson[E].apply(e).fold(DeserializationException(e, _), HttpError(_, code))
-      case de @ DeserializationException(_, _) => de
+    asJson[B].mapLeft { (l: ResponseException[String, Exception]) =>
+      l match {
+        case HttpError(e, code) => deserializeJson[E].apply(e).fold(DeserializationException(e, _), HttpError(_, code))
+        case de @ DeserializationException(_, _) => de
+      }
     }.showAsJsonEither
 
   def deserializeJson[B: upickleApi.Reader: IsOption]: String => Either[Exception, B] = { (s: String) =>

@@ -44,9 +44,11 @@ trait SttpZioJsonApi extends SttpZioJsonApiExtensions {
     */
   def asJsonEither[E: JsonDecoder: IsOption, B: JsonDecoder: IsOption]
       : ResponseAs[Either[ResponseException[E, String], B]] =
-    asJson[B].mapLeft {
-      case HttpError(e, code) => deserializeJson[E].apply(e).fold(DeserializationException(e, _), HttpError(_, code))
-      case de @ DeserializationException(_, _) => de
+    asJson[B].mapLeft { (l: ResponseException[String, String]) =>
+      l match {
+        case HttpError(e, code) => deserializeJson[E].apply(e).fold(DeserializationException(e, _), HttpError(_, code))
+        case de @ DeserializationException(_, _) => de
+      }
     }.showAsJsonEither
 
   def deserializeJson[B: JsonDecoder: IsOption]: String => Either[String, B] =

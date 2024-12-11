@@ -39,10 +39,12 @@ trait SttpPlayJsonApi {
     *   - `Left(DeserializationException)` if there's an error during deserialization
     */
   def asJsonEither[E: Reads: IsOption, B: Reads: IsOption]: ResponseAs[Either[ResponseException[E, JsError], B]] =
-    asJson[B].mapLeft {
-      case HttpError(e, code) =>
-        deserializeJson[E].apply(e).fold(DeserializationException(e, _), HttpError(_, code))
-      case de @ DeserializationException(_, _) => de
+    asJson[B].mapLeft { (l: ResponseException[String, JsError]) =>
+      l match {
+        case HttpError(e, code) =>
+          deserializeJson[E].apply(e).fold(DeserializationException(e, _), HttpError(_, code))
+        case de @ DeserializationException(_, _) => de
+      }
     }.showAsJsonEither
 
   // Note: None of the play-json utilities attempt to catch invalid

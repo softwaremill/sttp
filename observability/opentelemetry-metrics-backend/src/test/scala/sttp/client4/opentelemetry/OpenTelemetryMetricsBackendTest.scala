@@ -192,7 +192,7 @@ class OpenTelemetryMetricsBackendTest extends AnyFlatSpec with Matchers with Opt
     assertThrows[SttpClientException] {
       basicRequest
         .get(uri"http://127.0.0.1/foo")
-        .response(asString.getRight)
+        .response(asString.orFail)
         .send(backend)
     }
 
@@ -231,7 +231,7 @@ class OpenTelemetryMetricsBackendTest extends AnyFlatSpec with Matchers with Opt
     // when
     basicRequest
       .get(uri"http://127.0.0.1/foo")
-      .response(asString.getRight)
+      .response(asString.orFail)
       .send(backend)
 
     // then

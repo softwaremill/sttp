@@ -7,7 +7,7 @@ Each integration is available as an import, which brings `asJson` methods into s
 The following variants of `asJson` methods are available:
 
 * `asJson(b: B)` - serializes the body so that it can be used as a request's body, e.g. using `basicRequest.body(asJson(myValue))`
-* `asJson[B]` - specifies that the body should be deserialized to json, but only if the response is successful (2xx); shoud be used to specify how a response should be handled, e.g. `basicRequest.response(asJson[T])`
+* `asJson[B]` - specifies that the body should be deserialized to json, but only if the response is successful (2xx); should be used to specify how a response should be handled, e.g. `basicRequest.response(asJson[T])`
 * `asJsonAlways[B]` - specifies that the body should be deserialized to json, regardless of the status code
 * `asJsonEither[E, B]` - specifies that the body should be deserialized to json, using different deserializers for error and successful (2xx) responses
 
@@ -22,7 +22,7 @@ def asJsonAlways[B]: ResponseAs[Either[DeserializationException[Exception], B]] 
 def asJsonEither[E, B]: ResponseAs[Either[ResponseException[E, Exception], B]] = ???
 ```
 
-The response specifications can be further refined using `.getRight` and `.getEither`, see [response body specifications](responses/body.md).
+The response specifications can be further refined using `.orFail` and `.orFailDeserialization`, see [response body specifications](responses/body.md).
 
 Following data class will be used through the next few examples:
 
