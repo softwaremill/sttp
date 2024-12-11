@@ -13,15 +13,17 @@ import scala.util.{Failure, Success, Try}
 /** Describes how the response body of a request should be handled. A number of `as<Type>` helper methods are available
   * as part of [[SttpApi]] and when importing `sttp.client4._`. These methods yield specific implementations of this
   * trait, which can then be set on a [[Request]], [[StreamRequest]], [[WebSocketRequest]] or
-  * [[WebSocketStreamRequest]], depending on the response type.
+  * [[WebSocketStreamRequest]].
   *
   * @tparam T
-  *   Target type as which the response will be read.
+  *   Target type as which the response will be deserialized.
   * @tparam R
   *   The backend capabilities required by the response description. This might be `Any` (no requirements),
   *   [[sttp.capabilities.Effect]] (the backend must support the given effect type), [[sttp.capabilities.Streams]] (the
   *   ability to send and receive streaming bodies) or [[sttp.capabilities.WebSockets]] (the ability to handle websocket
   *   requests).
+  * @see
+  *   [[ResponseAs]]
   */
 trait ResponseAsDelegate[+T, -R] {
   def delegate: GenericResponseAs[T, R]
@@ -35,10 +37,10 @@ trait ResponseAsDelegate[+T, -R] {
   * status code. Responses can also be handled depending on the response metadata. Finally, two response body
   * descriptions can be combined (with some restrictions).
   *
-  * A number of `as<Type>` helper methods are available as part of [[SttpApi]] and when importing `sttp.client4._`.
+  * A number of `as<Type>` helper methods are available as part of [[SttpApi]] and when importing `sttp.client4.*`.
   *
   * @tparam T
-  *   Target type as which the response will be read.
+  *   Target type as which the response will be read/deserialized.
   */
 case class ResponseAs[+T](delegate: GenericResponseAs[T, Any]) extends ResponseAsDelegate[T, Any] {
 
@@ -89,7 +91,7 @@ case class ResponseAs[+T](delegate: GenericResponseAs[T, Any]) extends ResponseA
     }
 
   /** If the type to which the response body should be deserialized is an `Either[ResponseException[HE, DE], B]`, either
-    * throws /returns a failed effect with the [[DeserializationException]], returns the deserialized body from the
+    * throws / returns a failed effect with the [[DeserializationException]], returns the deserialized body from the
     * [[HttpError]], or the deserialized successful body `B`.
     */
   def orFailDeserialization[HE, DE, B](implicit
@@ -180,12 +182,14 @@ object ResponseAs {
   * [[ResponseMetadata]], that is the headers and status code.
   *
   * A number of `asStream[Type]` helper methods are available as part of [[SttpApi]] and when importing
-  * `sttp.client4._`.
+  * `sttp.client4.*`.
   *
   * @tparam T
-  *   Target type as which the response will be read.
+  *   Target type as which the response will be read/deserialized.
   * @tparam S
   *   The type of stream, used to receive the response body bodies.
+  * @see
+  *   [[ResponseAs]]
   */
 case class StreamResponseAs[+T, S](delegate: GenericResponseAs[T, S]) extends ResponseAsDelegate[T, S] {
   def map[T2](f: T => T2): StreamResponseAs[T2, S] =
@@ -202,10 +206,12 @@ case class StreamResponseAs[+T, S](delegate: GenericResponseAs[T, S]) extends Re
   * [[ResponseMetadata]], that is the headers and status code. Responses can also be handled depending on the response
   * metadata.
   *
-  * A number of `asWebSocket` helper methods are available as part of [[SttpApi]] and when importing `sttp.client4._`.
+  * A number of `asWebSocket` helper methods are available as part of [[SttpApi]] and when importing `sttp.client4.*`.
   *
   * @tparam T
-  *   Target type as which the response will be read.
+  *   Target type as which the response will be read/deserialized.
+  * @see
+  *   [[ResponseAs]]
   */
 case class WebSocketResponseAs[F[_], +T](delegate: GenericResponseAs[T, Effect[F] with WebSockets])
     extends ResponseAsDelegate[T, Effect[F] with WebSockets] {
@@ -223,10 +229,12 @@ case class WebSocketResponseAs[F[_], +T](delegate: GenericResponseAs[T, Effect[F
   * [[ResponseMetadata]], that is the headers and status code. Responses can also be handled depending on the response
   * metadata.
   *
-  * A number of `asWebSocket` helper methods are available as part of [[SttpApi]] and when importing `sttp.client4._`.
+  * A number of `asWebSocket` helper methods are available as part of [[SttpApi]] and when importing `sttp.client4.*`.
   *
   * @tparam T
-  *   Target type as which the response will be read.
+  *   Target type as which the response will be read/deserialized.
+  * @see
+  *   [[ResponseAs]]
   */
 case class WebSocketStreamResponseAs[+T, S](delegate: GenericResponseAs[T, S with WebSockets])
     extends ResponseAsDelegate[T, S with WebSockets] {

@@ -1,4 +1,4 @@
-# Response body specification
+# Response body descriptions
 
 By default, the received response body will be read as a `Either[String, String]`, using the encoding specified in the `Content-Type` response header (and if none is specified, using `UTF-8`). This is of course configurable: response bodies can be ignored, deserialized into custom types, received as a stream or saved to a file.
 
@@ -7,9 +7,9 @@ The default `response.body` will be a:
 * `Left(errorMessage)` if the request is successful, but response code is not 2xx.
 * `Right(body)` if the request is successful, and the response code is 2xx.
 
-How the response body will be read is part of the request description, as already when sending the request, the backend needs to know what to do with the response. The type to which the response body should be deserialized is the second type parameter of `RequestT`, and stored in the request definition as the `request.response: ResponseAs[T, R]` property.
+How the response body will be read is part of the request description, as already when sending the request, the backend needs to know what to do with the response. The type to which the response body should be deserialized is a type parameter of `Request`. It's used in request definition in the `request.response: ResponseAs[T]` property.
 
-## Basic response specifications
+## Basic response descriptions
 
 To conveniently specify how to deserialize the response body, a number of `as(...Type...)` methods are available. They can be used to provide a value for the request description's `response` property:
 
@@ -21,7 +21,7 @@ basicRequest.response(asByteArray)
 
 When the above request is completely described and sent, it will result in a `Response[Either[String, Array[Byte]]]` (where the left and right correspond to non-2xx and 2xx status codes, as above). 
 
-Other possible response descriptions include (the first type parameter of `ResponseAs` specifies the type returned as the response body, the second - the capabilities that the backend is required to support to send the request; `Any` means no special requirements):
+Other possible response descriptions include:
 
 ```scala mdoc:compile-only
 import sttp.client4._
@@ -45,9 +45,9 @@ def asPath(path: Path): ResponseAs[Either[String, Path]] = ???
 def asPathAlways(path: Path): ResponseAs[Path] = ???
 
 def asEither[A, B](onError: ResponseAs[A], 
-                      onSuccess: ResponseAs[B]): ResponseAs[Either[A, B]] = ???
+                   onSuccess: ResponseAs[B]): ResponseAs[Either[A, B]] = ???
 def fromMetadata[T](default: ResponseAs[T], 
-                       conditions: ConditionalResponseAs[T]*): ResponseAs[T] = ???
+                    conditions: ConditionalResponseAs[T]*): ResponseAs[T] = ???
 
 def asBoth[A, B](l: ResponseAs[A], r: ResponseAs[B]): ResponseAs[(A, B)] = ???
 def asBothOption[A, B](l: ResponseAs[A], r: ResponseAs[B]): ResponseAs[(A, Option[B])] = ???
@@ -79,7 +79,7 @@ basicRequest.response(asFile(someFile))
 
 ## Failing when the response code is not 2xx
 
-Sometimes it's convenient to get a failed effect (or an exception thrown) when the response status code is not successful. In such cases, the response specification can be modified using the `.orFail` combinator:
+Sometimes it's convenient to get a failed effect (or an exception thrown) when the response status code is not successful. In such cases, the response description can be modified using the `.orFail` combinator:
 
 ```scala mdoc:compile-only
 import sttp.client4._
@@ -117,7 +117,7 @@ basicRequest
   .response(asInt)
 ```
 
-To integrate with a third-party JSON library, and always parse the response as a json (regardless of the status code):
+To integrate with a third-party JSON library, and always parse the response as JSON (regardless of the status code):
 
 ```scala mdoc:compile-only
 import sttp.client4._
@@ -170,6 +170,7 @@ import io.circe._
 import io.circe.generic.auto._
 
 case class MyModel(p1: Int)
+
 sealed trait MyErrorModel
 case class Conflict(message: String) extends MyErrorModel
 case class BadRequest(message: String) extends MyErrorModel
@@ -184,13 +185,13 @@ basicRequest
 
 ### Blocking streaming (InputStream)
 
-Some backends on the JVM support receiving the response body as a `java.io.InputStream`. This is possible either using the safe `asInputStream(f)` specification, where the entire stream has to be consumed by the provided `f` function, and is then closed by sttp client. Alternatively, there's `asInputStreamUnsafe`, which returns the stream directly to the user, who is then responsible for closing it.
+Some backends on the JVM support receiving the response body as a `java.io.InputStream`. This is possible either using the safe `asInputStream(f)` description, where the entire stream has to be consumed by the provided `f` function, and is then closed by sttp client. Alternatively, there's `asInputStreamUnsafe`, which returns the stream directly to the user, who is then responsible for closing it.
 
-`InputStream`s have two major limitations. First, they operate on the relatively low `byte`-level. The consumer is responsible for any decoding, chunking etc. Moreover, all `InputStream` operations are blocking, hence using them in a non-virtual-threads environment may severely limit performance. If you're using a functional effect system, see below on how to use non-blocking streams instead.
+`InputStream`s have two limitations. First, they operate on the relatively low `byte`-level. The consumer is responsible for any decoding, chunking etc. Moreover, all `InputStream` operations are blocking, hence using them in a non-virtual-threads environment may severely limit performance. If you're using a functional effect system, see below on how to use non-blocking streams instead.
 
 ### Non-blocking streaming
 
-If the backend used supports non-blocking streaming (see "Supported stream type" in the [backends summary](../backends/summary.md)), it's possible to receive responses as a stream. This can be described using the following methods:
+If the backend used supports non-blocking, asynchronous streaming (see "Supported stream type" in the [backends summary](../backends/summary.md)), it's possible to receive responses as a stream. This can be described using the following methods:
 
 ```scala mdoc:compile-only
 import sttp.capabilities.{Effect, Streams}
@@ -218,7 +219,7 @@ def asStreamUnsafeAlways[S](s: Streams[S]):
   StreamResponseAs[s.BinaryStream, S] = ???
 ```
 
-All of these specifications require the streaming capability to be passed as a parameter, an implementation of `Streams[S]`. This is used to determine the type of binary streams that are supported, and to require that the backend used to send the request supports the given type of streams. These implementations are provided by the backend implementations, e.g. `AkkaStreams` or `Fs2Streams[F]`. 
+All of these descriptions require the streaming capability to be passed as a parameter, an implementation of `Streams[S]`. This is used to determine the type of binary streams that are supported, and to require that the backend used to send the request supports the given type of streams. These implementations are provided by the backend implementations, e.g. `AkkaStreams` or `Fs2Streams[F]`. 
 
 The first two "safe" variants pass the response stream to the user-provided function, which should consume the stream entirely. Once the effect returned by the function is complete, the backend will try to close the stream (if the streaming implementation allows it).
 
@@ -243,5 +244,4 @@ val response: Future[Response[Either[String, Source[ByteString, Any]]]] =
     .send(backend)    
 ```
 
-It's also possible to parse the received stream as server-sent events (SSE), using an implementation-specific mapping
-function. Refer to the documentation for particular backends for more details.
+It's also possible to parse the received stream as server-sent events (SSE), using an implementation-specific mapping function. Refer to the documentation for particular backends for more details.

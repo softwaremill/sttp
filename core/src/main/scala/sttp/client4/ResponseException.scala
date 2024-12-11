@@ -4,18 +4,37 @@ import sttp.model.StatusCode
 
 import scala.annotation.tailrec
 
-/** Used to represent errors, that might occur when handling the response body. Either:
-  *   - a [[HttpError]], when the response code is different than the expected one; desrialization is not attempted
-  *   - a [[DeserializationException]], when there's an error during deserialization
+/** Used to represent errors, that might occur when handling the response body. Typically, this type is used as the
+  * left-side of a top-level either (where the right-side represents a successfull request and deserialization).
+  *
+  * A response exception can itself either be one of two cases:
+  *   - a [[HttpError]], when the response code is other than 2xx (or whatever is considered "success" by the response
+  *     handling description); the body is deserialized to `HE`
+  *   - a [[DeserializationException]], when there's an error during deserialization (this might include both
+  *     deserialization exceptions of the success and error branches)
   *
   * @tparam HE
-  *   The type of the body to which the response is read, when the resposne code is different than the expected one
+  *   The type of the body to which the response is deserialized, when the response code is different than success
+  *   (typically 2xx status code).
   * @tparam DE
-  *   A deserialization-library-specific error type, describing the deserialization error in more detail
+  *   A deserialization-library-specific error type, describing the deserialization error in more detail.
   */
 sealed abstract class ResponseException[+HE, +DE](error: String) extends Exception(error)
+
+/** Represents an http error, where the response was received successfully, but the status code is other than the
+  * expected one (typically other than 2xx).
+  *
+  * @tparam HE
+  *   The type of the body to which the error response is deserialized.
+  */
 case class HttpError[+HE](body: HE, statusCode: StatusCode)
     extends ResponseException[HE, Nothing](s"statusCode: $statusCode, response: $body")
+
+/** Represents an error that occured during deserialization of `body`.
+  *
+  * @tparam DE
+  *   A deserialization-library-specific error type, describing the deserialization error in more detail.
+  */
 case class DeserializationException[+DE: ShowError](body: String, error: DE)
     extends ResponseException[Nothing, DE](implicitly[ShowError[DE]].show(error))
 
