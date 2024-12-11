@@ -192,10 +192,28 @@ object ResponseAs {
   *   [[ResponseAs]]
   */
 case class StreamResponseAs[+T, S](delegate: GenericResponseAs[T, S]) extends ResponseAsDelegate[T, S] {
+
+  /** Applies the given function `f` to the deserialized value `T`. */
   def map[T2](f: T => T2): StreamResponseAs[T2, S] =
     StreamResponseAs(delegate.mapWithMetadata { case (t, _) => f(t) })
+
+  /** Applies the given function `f` to the deserialized value `T`, and the response's metadata. */
   def mapWithMetadata[T2](f: (T, ResponseMetadata) => T2): StreamResponseAs[T2, S] =
     StreamResponseAs(delegate.mapWithMetadata(f))
+
+  /** If the type to which the response body should be deserialized is an `Either[A, B]`:
+    *   - in case of `A`, throws as an exception / returns a failed effect (wrapped with an [[HttpError]] if `A` is not
+    *     yet an exception)
+    *   - in case of `B`, returns the value directly
+    */
+  def orFail[A, B](implicit tIsEither: T <:< Either[A, B]): StreamResponseAs[B, S] =
+    mapWithMetadata { case (t, meta) =>
+      (t: Either[A, B]) match {
+        case Left(a: Exception) => throw a
+        case Left(a)            => throw HttpError(a, meta.code)
+        case Right(b)           => b
+      }
+    }
 
   def showAs(s: String): StreamResponseAs[T, S] = new StreamResponseAs(delegate.showAs(s))
 }
@@ -215,10 +233,28 @@ case class StreamResponseAs[+T, S](delegate: GenericResponseAs[T, S]) extends Re
   */
 case class WebSocketResponseAs[F[_], +T](delegate: GenericResponseAs[T, Effect[F] with WebSockets])
     extends ResponseAsDelegate[T, Effect[F] with WebSockets] {
+
+  /** Applies the given function `f` to the deserialized value `T`. */
   def map[T2](f: T => T2): WebSocketResponseAs[F, T2] =
     WebSocketResponseAs(delegate.mapWithMetadata { case (t, _) => f(t) })
+
+  /** Applies the given function `f` to the deserialized value `T`, and the response's metadata. */
   def mapWithMetadata[T2](f: (T, ResponseMetadata) => T2): WebSocketResponseAs[F, T2] =
     WebSocketResponseAs(delegate.mapWithMetadata(f))
+
+  /** If the type to which the response body should be deserialized is an `Either[A, B]`:
+    *   - in case of `A`, throws as an exception / returns a failed effect (wrapped with an [[HttpError]] if `A` is not
+    *     yet an exception)
+    *   - in case of `B`, returns the value directly
+    */
+  def orFail[A, B](implicit tIsEither: T <:< Either[A, B]): WebSocketResponseAs[F, B] =
+    mapWithMetadata { case (t, meta) =>
+      (t: Either[A, B]) match {
+        case Left(a: Exception) => throw a
+        case Left(a)            => throw HttpError(a, meta.code)
+        case Right(b)           => b
+      }
+    }
 
   def showAs(s: String): WebSocketResponseAs[F, T] = new WebSocketResponseAs(delegate.showAs(s))
 }
@@ -238,10 +274,28 @@ case class WebSocketResponseAs[F[_], +T](delegate: GenericResponseAs[T, Effect[F
   */
 case class WebSocketStreamResponseAs[+T, S](delegate: GenericResponseAs[T, S with WebSockets])
     extends ResponseAsDelegate[T, S with WebSockets] {
+
+  /** Applies the given function `f` to the deserialized value `T`. */
   def map[T2](f: T => T2): WebSocketStreamResponseAs[T2, S] =
     WebSocketStreamResponseAs[T2, S](delegate.mapWithMetadata { case (t, _) => f(t) })
+
+  /** Applies the given function `f` to the deserialized value `T`, and the response's metadata. */
   def mapWithMetadata[T2](f: (T, ResponseMetadata) => T2): WebSocketStreamResponseAs[T2, S] =
     WebSocketStreamResponseAs[T2, S](delegate.mapWithMetadata(f))
+
+  /** If the type to which the response body should be deserialized is an `Either[A, B]`:
+    *   - in case of `A`, throws as an exception / returns a failed effect (wrapped with an [[HttpError]] if `A` is not
+    *     yet an exception)
+    *   - in case of `B`, returns the value directly
+    */
+  def orFail[A, B](implicit tIsEither: T <:< Either[A, B]): WebSocketStreamResponseAs[B, S] =
+    mapWithMetadata { case (t, meta) =>
+      (t: Either[A, B]) match {
+        case Left(a: Exception) => throw a
+        case Left(a)            => throw HttpError(a, meta.code)
+        case Right(b)           => b
+      }
+    }
 
   def showAs(s: String): WebSocketStreamResponseAs[T, S] = new WebSocketStreamResponseAs[T, S](delegate.showAs(s))
 }

@@ -261,6 +261,35 @@ abstract class StreamingTest[F[_], S]
     }
   }
 
+  "when mapping using asStreamOrFail, receive a stream" in {
+    basicRequest
+      .post(uri"$endpoint/streaming/echo")
+      .body(Body)
+      .response(asStreamOrFail(streams)(bodyConsumer(_)))
+      .send(backend)
+      .toFuture()
+      .map { response =>
+        response.body shouldBe Body
+      }
+  }
+
+  "when mapping using asStreamOrFail, receive an error" in {
+    implicit val monadError: MonadError[F] = backend.monad
+    basicRequest
+      .post(uri"$endpoint/echo/custom_status/400")
+      .body(Body)
+      .response(asStreamOrFail(streams)(bodyConsumer(_)))
+      .send(backend)
+      .map(_.body)
+      .handleError { case e: SttpClientException.ReadException =>
+        monadError.unit(e.getCause().toString())
+      }
+      .toFuture()
+      .map(
+        _ shouldBe "sttp.client4.HttpError: statusCode: 400, response: POST /echo/custom_status/400 streaming test"
+      )
+  }
+
   override protected def afterAll(): Unit = {
     backend.close().toFuture()
     super.afterAll()

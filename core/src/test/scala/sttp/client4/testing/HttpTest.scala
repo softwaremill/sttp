@@ -98,7 +98,7 @@ trait HttpTest[F[_]]
         .map(response => response.body should be(Right(expectedPostEchoResponse.length)))
     }
 
-    "as string with mapping using mapWithHeaders" in {
+    "as string with mapping using mapWithMetadata" in {
       postEcho
         .body(testBody)
         .response(asStringAlways.mapWithMetadata((b, h) => b + " " + h.contentType.getOrElse("")))
@@ -158,6 +158,33 @@ trait HttpTest[F[_]]
         .map { response =>
           response.body should be(Left(s"POST /echo/custom_status/${unexpectedStatus.code} $testBody"))
         }
+    }
+
+    "as failure, when the request is successfull" in {
+      basicRequest
+        .post(uri"$endpoint/echo/custom_status/200")
+        .body(testBody)
+        .response(asStringOrFail)
+        .send(backend)
+        .toFuture()
+        .map(_.body shouldBe s"POST /echo/custom_status/200 $testBody")
+    }
+
+    "as failure, when the request is not successfull" in {
+      implicit val monadError: MonadError[F] = backend.monad
+      basicRequest
+        .post(uri"$endpoint/echo/custom_status/400")
+        .body(testBody)
+        .response(asStringOrFail)
+        .send(backend)
+        .map(_.body)
+        .handleError { case e: SttpClientException.ReadException =>
+          monadError.unit(e.getCause().toString())
+        }
+        .toFuture()
+        .map(
+          _ shouldBe "sttp.client4.HttpError: statusCode: 400, response: POST /echo/custom_status/400 this is the body"
+        )
     }
 
     "as string, when the content type encoding is in quotes" in {

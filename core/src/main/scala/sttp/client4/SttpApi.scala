@@ -93,7 +93,16 @@ trait SttpApi extends SttpExtensions with UriInterpolator {
       }
       .showAs("as string")
 
-  /** Reads the response as either a string (for non-2xx responses), or othweise as an array of bytes (without any
+  /** Reads the response as a `String`, if the status code is 2xx. Otherwise, throws an [[HttpError]] / returns a failed
+    * effect. Use the `utf-8` charset by default, unless specified otherwise in the response headers.
+    *
+    * @see
+    *   the [[ResponseAs.orFail]] method can be used to convert any response description which returns an `Either` into
+    *   an exception-throwing variant.
+    */
+  def asStringOrFail: ResponseAs[String] = asString.orFail
+
+  /** Reads the response as either a string (for non-2xx responses), or otherwise as an array of bytes (without any
     * processing). The entire response is loaded into memory.
     */
   def asByteArray: ResponseAs[Either[String, Array[Byte]]] = asEither(asStringAlways, asByteArrayAlways)
@@ -102,6 +111,15 @@ trait SttpApi extends SttpExtensions with UriInterpolator {
     * response is loaded into memory.
     */
   def asByteArrayAlways: ResponseAs[Array[Byte]] = ResponseAs(ResponseAsByteArray)
+
+  /** Reads the response as an array of bytes, without any processing, if the status code is 2xx. Otherwise, throws an
+    * [[HttpError]] / returns a failed effect.
+    *
+    * @see
+    *   the [[ResponseAs.orFail]] method can be used to convert any response description which returns an `Either` into
+    *   an exception-throwing variant.
+    */
+  def asByteArrayOrFail: ResponseAs[Array[Byte]] = asByteArray.orFail
 
   /** Deserializes the response as either a string (for non-2xx responses), or otherwise as form parameters. Uses the
     * `utf-8` charset by default, unless specified otherwise in the response headers.
@@ -126,6 +144,15 @@ trait SttpApi extends SttpExtensions with UriInterpolator {
     val charset2 = sanitizeCharset(charset)
     asStringAlways(charset2).map(GenericResponseAs.parseParams(_, charset2)).showAs("as params")
   }
+
+  /** Deserializes the response as form parameters, if the status code is 2xx. Otherwise, throws an [[HttpError]] /
+    * returns a failed effect. Uses the `utf-8` charset by default, unless specified otherwise in the response headers.
+    *
+    * @see
+    *   the [[ResponseAs.orFail]] method can be used to convert any response description which returns an `Either` into
+    *   an exception-throwing variant.
+    */
+  def asParamsOrFail: ResponseAs[String] = asString.orFail
 
   private[client4] def asSttpFile(file: SttpFile): ResponseAs[SttpFile] = ResponseAs(ResponseAsFile(file))
 
@@ -243,7 +270,8 @@ trait SttpApi extends SttpExtensions with UriInterpolator {
   // stream response specifications
 
   /** Handles the response body by either reading a string (for non-2xx responses), or otherwise providing a stream with
-    * the response's data to `f`. The stream is always closed after `f` completes.
+    * the response's data to `f`. The effect type used by `f` must be compatible with the effect type of the backend.
+    * The stream is always closed after `f` completes.
     *
     * A non-blocking, asynchronous streaming implementation must be provided as the [[Streams]] parameter.
     */
@@ -252,8 +280,23 @@ trait SttpApi extends SttpExtensions with UriInterpolator {
   ): StreamResponseAs[Either[String, T], S with Effect[F]] =
     asEither(asStringAlways, asStreamAlways(s)(f))
 
+  /** Handles the response body by providing a stream with the response's data to `f`, if the status code is 2xx.
+    * Otherwise, returns a failed effect (with [[HttpError]]). The effect type used by `f` must be compatible with the
+    * effect type of the backend. The stream is always closed after `f` completes.
+    *
+    * A non-blocking, asynchronous streaming implementation must be provided as the [[Streams]] parameter.
+    *
+    * @see
+    *   the [[ResponseAs.orFail]] method can be used to convert any response description which returns an `Either` into
+    *   an exception-throwing variant.
+    */
+  def asStreamOrFail[F[_], T, S](s: Streams[S])(
+      f: s.BinaryStream => F[T]
+  ): StreamResponseAs[T, S with Effect[F]] = asStream(s)(f).orFail
+
   /** Handles the response body by either reading a string (for non-2xx responses), or otherwise providing a stream with
-    * the response's data, along with the response metadata, to `f`. The stream is always closed after `f` completes.
+    * the response's data, along with the response metadata, to `f`. The effect type used by `f` must be compatible with
+    * the effect type of the backend. The stream is always closed after `f` completes.
     *
     * A non-blocking, asynchronous streaming implementation must be provided as the [[Streams]] parameter.
     */
@@ -263,7 +306,8 @@ trait SttpApi extends SttpExtensions with UriInterpolator {
     asEither(asStringAlways, asStreamAlwaysWithMetadata(s)(f))
 
   /** Handles the response body by providing a stream with the response's data to `f`, regardless of the status code.
-    * The stream is always closed after `f` completes.
+    * The effect type used by `f` must be compatible with the effect type of the backend. The stream is always closed
+    * after `f` completes.
     *
     * A non-blocking, asynchronous streaming implementation must be provided as the [[Streams]] parameter.
     */
@@ -271,7 +315,8 @@ trait SttpApi extends SttpExtensions with UriInterpolator {
     asStreamAlwaysWithMetadata(s)((s, _) => f(s))
 
   /** Handles the response body by providing a stream with the response's data, along with the response metadata, to
-    * `f`, regardless of the status code. The stream is always closed after `f` completes.
+    * `f`, regardless of the status code. The effect type used by `f` must be compatible with the effect type of the
+    * backend. The stream is always closed after `f` completes.
     *
     * A non-blocking, asynchronous streaming implementation must be provided as the [[Streams]] parameter.
     */
