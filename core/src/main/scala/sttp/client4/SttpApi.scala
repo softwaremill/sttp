@@ -53,8 +53,10 @@ trait SttpApi extends SttpExtensions with UriInterpolator {
   val basicRequest: PartialRequest[Either[String, String]] =
     emptyRequest.acceptEncoding("gzip, deflate")
 
-  /** A starting request which always reads the response body as a string, regardless of the status code. */
-  val quickRequest: PartialRequest[String] = basicRequest.response(asStringAlways)
+  /** A starting request which always reads the response body as a string, if the response code is successfull (2xx),
+    * and fails (throws an exception, or returns a failed effect) otherwise.
+    */
+  val quickRequest: PartialRequest[String] = basicRequest.response(asStringOrFail)
 
   // response descriptions
 
