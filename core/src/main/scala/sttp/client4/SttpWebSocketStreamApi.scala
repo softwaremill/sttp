@@ -28,13 +28,13 @@ trait SttpWebSocketStreamApi {
     * A non-blocking, asynchronous streaming implementation must be provided as the [[Streams]] parameter.
     *
     * @see
-    *   the [[ResponseAs.orFail]] method can be used to convert any response description which returns an `Either` into
+    *   the [[ResponseAs#orFail]] method can be used to convert any response description which returns an `Either` into
     *   an exception-throwing variant.
     */
   def asWebSocketStreamOrFail[S](
       s: Streams[S]
   )(p: s.Pipe[WebSocketFrame.Data[_], WebSocketFrame]): WebSocketStreamResponseAs[Unit, S] =
-    asWebSocketStream(s)(p).orFail
+    asWebSocketStream(s)(p).orFail.showAs("as web socket stream or fail")
 
   /** Handles the response body by using the given `p` stream processing pipe to handle the incoming & produce the
     * outgoing web socket frames, regardless of the status code.

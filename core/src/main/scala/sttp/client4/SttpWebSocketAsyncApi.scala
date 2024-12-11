@@ -21,10 +21,11 @@ trait SttpWebSocketAsyncApi {
     * closed after `f` completes.
     *
     * @see
-    *   the [[ResponseAs.orFail]] method can be used to convert any response description which returns an `Either` into
+    *   the [[ResponseAs#orFail]] method can be used to convert any response description which returns an `Either` into
     *   an exception-throwing variant.
     */
-  def asWebSocketOrFail[F[_], T](f: WebSocket[F] => F[T]): WebSocketResponseAs[F, T] = asWebSocket(f).orFail
+  def asWebSocketOrFail[F[_], T](f: WebSocket[F] => F[T]): WebSocketResponseAs[F, T] =
+    asWebSocket(f).orFail.showAs("as web socket or fail")
 
   /** Handles the response body by either reading a string (for non-2xx responses), or otherwise providing an open
     * [[WebSocket]] instance, along with the response metadata, to the `f` function.

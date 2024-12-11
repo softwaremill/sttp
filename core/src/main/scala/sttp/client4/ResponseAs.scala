@@ -174,6 +174,30 @@ object ResponseAs {
         case Left(e)  => throw DeserializationException(s, e)
         case Right(b) => b
       }
+
+  /** Converts deserialization functions, which both return errors of type `E`, into a function where errors are thrown
+    * as exceptions, and results are parsed using either of the functions, depending if the response was successfull, or
+    * not.
+    */
+  def deserializeEitherWithErrorOrThrow[E: ShowError, T, T2](
+      doDeserializeHttpError: String => Either[E, T],
+      doDeserializeHttpSuccess: String => Either[E, T2]
+  ): (String, ResponseMetadata) => Either[T, T2] =
+    (s, m) =>
+      if (m.isSuccess) Right(deserializeOrThrow(doDeserializeHttpSuccess).apply(s))
+      else Left(deserializeOrThrow(doDeserializeHttpError).apply(s))
+
+  /** Converts deserialization functions, which both throw exceptions upon errors, into a function where errors still
+    * thrown as exceptions, and results are parsed using either of the functions, depending if the response was
+    * successfull, or not.
+    */
+  def deserializeEitherOrThrow[T, T2](
+      doDeserializeHttpError: String => T,
+      doDeserializeHttpSuccess: String => T2
+  ): (String, ResponseMetadata) => Either[T, T2] =
+    (s, m) =>
+      if (m.isSuccess) Right(doDeserializeHttpSuccess(s))
+      else Left(doDeserializeHttpError(s))
 }
 
 /** Describes how the response body of a [[StreamRequest]] should be handled.

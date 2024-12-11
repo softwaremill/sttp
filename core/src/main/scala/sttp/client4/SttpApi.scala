@@ -97,10 +97,10 @@ trait SttpApi extends SttpExtensions with UriInterpolator {
     * effect. Use the `utf-8` charset by default, unless specified otherwise in the response headers.
     *
     * @see
-    *   the [[ResponseAs.orFail]] method can be used to convert any response description which returns an `Either` into
+    *   the [[ResponseAs#orFail]] method can be used to convert any response description which returns an `Either` into
     *   an exception-throwing variant.
     */
-  def asStringOrFail: ResponseAs[String] = asString.orFail
+  def asStringOrFail: ResponseAs[String] = asString.orFail.showAs("as string or fail")
 
   /** Reads the response as either a string (for non-2xx responses), or otherwise as an array of bytes (without any
     * processing). The entire response is loaded into memory.
@@ -116,10 +116,10 @@ trait SttpApi extends SttpExtensions with UriInterpolator {
     * [[HttpError]] / returns a failed effect.
     *
     * @see
-    *   the [[ResponseAs.orFail]] method can be used to convert any response description which returns an `Either` into
+    *   the [[ResponseAs#orFail]] method can be used to convert any response description which returns an `Either` into
     *   an exception-throwing variant.
     */
-  def asByteArrayOrFail: ResponseAs[Array[Byte]] = asByteArray.orFail
+  def asByteArrayOrFail: ResponseAs[Array[Byte]] = asByteArray.orFail.showAs("as byte array or fail")
 
   /** Deserializes the response as either a string (for non-2xx responses), or otherwise as form parameters. Uses the
     * `utf-8` charset by default, unless specified otherwise in the response headers.
@@ -149,10 +149,10 @@ trait SttpApi extends SttpExtensions with UriInterpolator {
     * returns a failed effect. Uses the `utf-8` charset by default, unless specified otherwise in the response headers.
     *
     * @see
-    *   the [[ResponseAs.orFail]] method can be used to convert any response description which returns an `Either` into
+    *   the [[ResponseAs#orFail]] method can be used to convert any response description which returns an `Either` into
     *   an exception-throwing variant.
     */
-  def asParamsOrFail: ResponseAs[String] = asString.orFail
+  def asParamsOrFail: ResponseAs[String] = asString.orFail.showAs("as params or fail")
 
   private[client4] def asSttpFile(file: SttpFile): ResponseAs[SttpFile] = ResponseAs(ResponseAsFile(file))
 
@@ -287,12 +287,12 @@ trait SttpApi extends SttpExtensions with UriInterpolator {
     * A non-blocking, asynchronous streaming implementation must be provided as the [[Streams]] parameter.
     *
     * @see
-    *   the [[ResponseAs.orFail]] method can be used to convert any response description which returns an `Either` into
+    *   the [[ResponseAs#orFail]] method can be used to convert any response description which returns an `Either` into
     *   an exception-throwing variant.
     */
   def asStreamOrFail[F[_], T, S](s: Streams[S])(
       f: s.BinaryStream => F[T]
-  ): StreamResponseAs[T, S with Effect[F]] = asStream(s)(f).orFail
+  ): StreamResponseAs[T, S with Effect[F]] = asStream(s)(f).orFail.showAs("as stream or fail")
 
   /** Handles the response body by either reading a string (for non-2xx responses), or otherwise providing a stream with
     * the response's data, along with the response metadata, to `f`. The effect type used by `f` must be compatible with

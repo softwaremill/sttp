@@ -11,6 +11,7 @@ import tethys.jackson.{jacksonTokenIteratorProducer, jacksonTokenWriterProducer}
 import tethys.readers.tokens.TokenIterator
 import tethys.readers.{FieldName, ReaderError}
 import tethys.{JsonReader, JsonWriter}
+import sttp.client4.json.RunResponseAs
 
 import scala.util.{Failure, Success, Try}
 
@@ -31,33 +32,33 @@ class TethysTests extends AnyFlatSpec with Matchers with EitherValues {
 
     val responseAs = asJson[Outer]
 
-    runJsonResponseAs(responseAs)(body).right.value shouldBe expected
+    RunResponseAs(responseAs)(body).right.value shouldBe expected
   }
 
   it should "decode None from empty body" in {
     val responseAs = asJson[Option[Inner]]
 
-    runJsonResponseAs(responseAs)("").right.value shouldBe None
+    RunResponseAs(responseAs)("").right.value shouldBe None
   }
 
   it should "decode Left(None) from empty body" in {
     import EitherDecoders._
     val responseAs = asJson[Either[Option[Inner], Outer]]
 
-    runJsonResponseAs(responseAs)("").right.value shouldBe Left(None)
+    RunResponseAs(responseAs)("").right.value shouldBe Left(None)
   }
 
   it should "decode Right(None) from empty body" in {
     import EitherDecoders._
     val responseAs = asJson[Either[Outer, Option[Inner]]]
 
-    runJsonResponseAs(responseAs)("").right.value shouldBe Right(None)
+    RunResponseAs(responseAs)("").right.value shouldBe Right(None)
   }
 
   it should "fail to decode from empty input" in {
     val responseAs = asJson[Inner]
 
-    runJsonResponseAs(responseAs)("") should matchPattern { case Left(DeserializationException("", _: ReaderError)) =>
+    RunResponseAs(responseAs)("") should matchPattern { case Left(DeserializationException("", _: ReaderError)) =>
     }
   }
 
@@ -66,7 +67,7 @@ class TethysTests extends AnyFlatSpec with Matchers with EitherValues {
 
     val responseAs = asJson[Outer]
 
-    val Left(DeserializationException(original, _)) = runJsonResponseAs(responseAs)(body)
+    val Left(DeserializationException(original, _)) = RunResponseAs(responseAs)(body)
     original shouldBe body
   }
 
@@ -74,7 +75,7 @@ class TethysTests extends AnyFlatSpec with Matchers with EitherValues {
     val outer = Outer(Inner(42, true, "horses"), "cats")
 
     val encoded = extractBody(basicRequest.body(asJson(outer)), MediaType.ApplicationJson)
-    val decoded = runJsonResponseAs(asJson[Outer])(encoded)
+    val decoded = RunResponseAs(asJson[Outer])(encoded)
 
     decoded.right.value shouldBe outer
   }
@@ -95,6 +96,37 @@ class TethysTests extends AnyFlatSpec with Matchers with EitherValues {
     val ct = req.headers.map(h => (h.name, h.value)).toMap.get("Content-Type")
 
     ct shouldBe Some("horses/cats")
+  }
+
+  it should "decode when using asJsonOrFail" in {
+    val body = """{"foo":{"a":42,"b":true,"c":"horses"},"bar":"cats"}"""
+    val expected = Outer(Inner(42, true, "horses"), "cats")
+
+    RunResponseAs(asJsonOrFail[Outer])(body) shouldBe expected
+  }
+
+  it should "fail when using asJsonOrFail for incorrect JSON" in {
+    val body = """invalid json"""
+
+    assertThrows[DeserializationException[ReaderError]] {
+      RunResponseAs(asJsonOrFail[Outer])(body)
+    }
+  }
+
+  it should "decode success when using asJsonEitherOrFail" in {
+    val body = """{"foo":{"a":42,"b":true,"c":"horses"},"bar":"cats"}"""
+    val expected = Outer(Inner(42, true, "horses"), "cats")
+
+    RunResponseAs(asJsonEitherOrFail[Inner, Outer])(body) shouldBe Right(expected)
+  }
+
+  it should "decode failure when using asJsonEitherOrFail" in {
+    val body = """{"a":21,"b":false,"c":"hippos"}"""
+    val expected = Inner(21, false, "hippos")
+
+    RunResponseAs(asJsonEitherOrFail[Inner, Outer], ResponseMetadata(StatusCode.BadRequest, "", Nil))(
+      body
+    ) shouldBe Left(expected)
   }
 
   case class Inner(a: Int, b: Boolean, c: String)
@@ -139,18 +171,6 @@ class TethysTests extends AnyFlatSpec with Matchers with EitherValues {
         body
       case wrongBody =>
         fail(s"Request body does not serialize to correct StringBody: $wrongBody")
-    }
-
-  def runJsonResponseAs[A](responseAs: ResponseAs[A]): String => A =
-    responseAs.delegate match {
-      case responseAs: MappedResponseAs[_, A, Nothing] =>
-        responseAs.raw match {
-          case ResponseAsByteArray =>
-            s => responseAs.g(s.getBytes(Utf8), ResponseMetadata(StatusCode.Ok, "", Nil))
-          case _ =>
-            fail("MappedResponseAs does not wrap a ResponseAsByteArray")
-        }
-      case _ => fail("ResponseAs is not a MappedResponseAs")
     }
 
 }

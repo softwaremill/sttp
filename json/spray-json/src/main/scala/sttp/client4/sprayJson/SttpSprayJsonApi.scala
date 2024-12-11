@@ -5,6 +5,7 @@ import sttp.client4.internal.Utf8
 import sttp.client4._
 import sttp.client4.json._
 import sttp.model._
+import sttp.client4.ResponseAs.deserializeEitherOrThrow
 
 trait SttpSprayJsonApi {
 
@@ -19,6 +20,12 @@ trait SttpSprayJsonApi {
     */
   def asJson[B: JsonReader: IsOption]: ResponseAs[Either[ResponseException[String, Exception], B]] =
     asString.mapWithMetadata(ResponseAs.deserializeRightCatchingExceptions(deserializeJson[B])).showAsJson
+
+  /** If the response is successful (2xx), tries to deserialize the body from a string into JSON. Otherwise, if the
+    * response code is other than 2xx, or a deserialization error occurs, throws an [[ResponseException]] / returns a
+    * failed effect.
+    */
+  def asJsonOrFail[B: JsonReader: IsOption]: ResponseAs[B] = asJson[B].orFail.showAsJsonOrFail
 
   /** Tries to deserialize the body from a string into JSON, regardless of the response code. Returns:
     *   - `Right(b)` if the parsing was successful
@@ -42,6 +49,14 @@ trait SttpSprayJsonApi {
         case de @ DeserializationException(_, _) => de
       }
     }.showAsJsonEither
+
+  /** Deserializes the body from a string into JSON, using different deserializers depending on the status code. If a
+    * deserialization error occurs, throws a [[DeserializationException]] / returns a failed effect.
+    */
+  def asJsonEitherOrFail[E: JsonReader: IsOption, B: JsonReader: IsOption]: ResponseAs[Either[E, B]] =
+    asStringAlways
+      .mapWithMetadata(deserializeEitherOrThrow(deserializeJson[E], deserializeJson[B]))
+      .showAsJsonEitherOrFail
 
   def deserializeJson[B: JsonReader: IsOption]: String => B =
     JsonInput.sanitize[B].andThen((_: String).parseJson.convertTo[B])

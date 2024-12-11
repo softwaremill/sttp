@@ -7,6 +7,7 @@ import sttp.model._
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import ujson.Obj
+import sttp.client4.json.RunResponseAs
 
 class UpickleTests extends AnyFlatSpec with Matchers with EitherValues {
   "The upickle module" should "encode arbitrary bodies given an encoder" in {
@@ -30,7 +31,7 @@ class UpickleTests extends AnyFlatSpec with Matchers with EitherValues {
 
     val responseAs = asJson[Outer]
 
-    runJsonResponseAs(responseAs)(body).right.value shouldBe expected
+    RunResponseAs(responseAs)(body).right.value shouldBe expected
   }
 
   it should "decode None from empty array body" in {
@@ -39,7 +40,7 @@ class UpickleTests extends AnyFlatSpec with Matchers with EitherValues {
 
     val responseAs = asJson[Option[Inner]]
 
-    runJsonResponseAs(responseAs)("[]").right.value shouldBe None
+    RunResponseAs(responseAs)("[]").right.value shouldBe None
   }
 
   it should "decode Left(None) from upickle notation" in {
@@ -48,7 +49,7 @@ class UpickleTests extends AnyFlatSpec with Matchers with EitherValues {
 
     val responseAs = asJson[Either[Option[Inner], Outer]]
 
-    runJsonResponseAs(responseAs)("[0,[]]").right.value shouldBe Left(None)
+    RunResponseAs(responseAs)("[0,[]]").right.value shouldBe Left(None)
   }
 
   it should "decode Right(None) from upickle notation" in {
@@ -57,7 +58,7 @@ class UpickleTests extends AnyFlatSpec with Matchers with EitherValues {
 
     val responseAs = asJson[Either[Outer, Option[Inner]]]
 
-    runJsonResponseAs(responseAs)("[1,[]]").right.value shouldBe Right(None)
+    RunResponseAs(responseAs)("[1,[]]").right.value shouldBe Right(None)
   }
 
   it should "fail to decode from empty input" in {
@@ -66,7 +67,7 @@ class UpickleTests extends AnyFlatSpec with Matchers with EitherValues {
 
     val responseAs = asJson[Inner]
 
-    runJsonResponseAs(responseAs)("").left.value should matchPattern { case DeserializationException(_, _) => }
+    RunResponseAs(responseAs)("").left.value should matchPattern { case DeserializationException(_, _) => }
   }
 
   it should "fail to decode invalid json" in {
@@ -77,7 +78,7 @@ class UpickleTests extends AnyFlatSpec with Matchers with EitherValues {
 
     val responseAs = asJson[Outer]
 
-    val Left(DeserializationException(original, _)) = runJsonResponseAs(responseAs)(body)
+    val Left(DeserializationException(original, _)) = RunResponseAs(responseAs)(body)
     original shouldBe body
   }
 
@@ -88,7 +89,7 @@ class UpickleTests extends AnyFlatSpec with Matchers with EitherValues {
     val outer = Outer(Inner(42, true, "horses"), "cats")
 
     val encoded = extractBody(basicRequest.body(asJson(outer)))
-    val decoded = runJsonResponseAs(asJson[Outer])(encoded)
+    val decoded = RunResponseAs(asJson[Outer])(encoded)
 
     decoded.right.value shouldBe outer
   }
@@ -152,6 +153,49 @@ class UpickleTests extends AnyFlatSpec with Matchers with EitherValues {
     extractBody(req) shouldBe expected
   }
 
+  it should "decode when using asJsonOrFail" in {
+    import UsingDefaultReaderWriters._
+    import sttp.client4.upicklejson.default._
+
+    val body = """{"foo":{"a":42,"b":true,"c":"horses"},"bar":"cats"}"""
+    val expected = Outer(Inner(42, true, "horses"), "cats")
+
+    RunResponseAs(asJsonOrFail[Outer])(body) shouldBe expected
+  }
+
+  it should "fail when using asJsonOrFail for incorrect JSON" in {
+    import UsingDefaultReaderWriters._
+    import sttp.client4.upicklejson.default._
+
+    val body = """invalid json"""
+
+    assertThrows[DeserializationException[Exception]] {
+      RunResponseAs(asJsonOrFail[Outer])(body)
+    }
+  }
+
+  it should "decode success when using asJsonEitherOrFail" in {
+    import UsingDefaultReaderWriters._
+    import sttp.client4.upicklejson.default._
+
+    val body = """{"foo":{"a":42,"b":true,"c":"horses"},"bar":"cats"}"""
+    val expected = Outer(Inner(42, true, "horses"), "cats")
+
+    RunResponseAs(asJsonEitherOrFail[Inner, Outer])(body) shouldBe Right(expected)
+  }
+
+  it should "decode failure when using asJsonEitherOrFail" in {
+    import UsingDefaultReaderWriters._
+    import sttp.client4.upicklejson.default._
+
+    val body = """{"a":21,"b":false,"c":"hippos"}"""
+    val expected = Inner(21, false, "hippos")
+
+    RunResponseAs(asJsonEitherOrFail[Inner, Outer], ResponseMetadata(StatusCode.BadRequest, "", Nil))(
+      body
+    ) shouldBe Left(expected)
+  }
+
   case class Inner(a: Int, b: Boolean, c: String)
   case class Outer(foo: Inner, bar: String)
 
@@ -173,17 +217,5 @@ class UpickleTests extends AnyFlatSpec with Matchers with EitherValues {
         body
       case wrongBody =>
         fail(s"Request body does not serialize to correct StringBody: $wrongBody")
-    }
-
-  def runJsonResponseAs[A](responseAs: ResponseAs[A]): String => A =
-    responseAs.delegate match {
-      case responseAs: MappedResponseAs[_, A, Nothing] @unchecked =>
-        responseAs.raw match {
-          case ResponseAsByteArray =>
-            s => responseAs.g(s.getBytes(Utf8), ResponseMetadata(StatusCode.Ok, "", Nil))
-          case _ =>
-            fail("MappedResponseAs does not wrap a ResponseAsByteArray")
-        }
-      case _ => fail("ResponseAs is not a MappedResponseAs")
     }
 }

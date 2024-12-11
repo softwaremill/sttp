@@ -21,10 +21,11 @@ trait SttpWebSocketSyncApi {
     * The web socket is always closed after `f` completes.
     *
     * @see
-    *   the [[ResponseAs.orFail]] method can be used to convert any response description which returns an `Either` into
+    *   the [[ResponseAs#orFail]] method can be used to convert any response description which returns an `Either` into
     *   an exception-throwing variant.
     */
-  def asWebSocketOrFail[T](f: SyncWebSocket => T): WebSocketResponseAs[Identity, T] = asWebSocket(f).orFail
+  def asWebSocketOrFail[T](f: SyncWebSocket => T): WebSocketResponseAs[Identity, T] =
+    asWebSocket(f).orFail.showAs("as web socket or fail")
 
   /** Handles the response body by either reading a string (for non-2xx responses), or otherwise providing an open
     * [[WebSocket]] instance, along with the response metadata, to the `f` function.
