@@ -28,6 +28,8 @@ import sttp.attributes.AttributeMap
 trait GenericRequest[+T, -R] extends RequestBuilder[GenericRequest[T, R]] with RequestMetadata {
   def body: GenericRequestBody[R]
   def response: ResponseAsDelegate[T, R]
+
+  /** Applies the given function `f` to the deserialized value `T`. */
   def mapResponse[T2](f: T => T2): GenericRequest[T2, R]
 
   def toCurl: String = ToCurlConverter(this)
@@ -124,6 +126,19 @@ case class Request[T](
 
   def mapResponse[T2](f: T => T2): Request[T2] = response(response.map(f))
 
+  /** If the type to which the response body should be deserialized is an `Either[A, B]`, applies the given function `f`
+    * to `Right` values.
+    *
+    * Because of type inference, the type of `f` must be fully provided, e.g.
+    *
+    * ```
+    * asString.mapRight((s: String) => parse(s))`
+    * ```
+    */
+  def mapResponseRight[A, B, B2](f: B => B2)(implicit tIsEither: T <:< Either[A, B]): Request[Either[A, B2]] = response(
+    response.mapRight(f)
+  )
+
   /** Specifies that this is a WebSocket request. A [[WebSocketBackend]] will be required to send this request. */
   def response[F[_], T2](ra: WebSocketResponseAs[F, T2]): WebSocketRequest[F, T2] =
     WebSocketRequest(method, uri, body, headers, ra, options, attributes)
@@ -166,19 +181,6 @@ case class Request[T](
     * unchanged.
     */
   def send(backend: SyncBackend): Response[T] = backend.send(this)
-}
-
-object Request {
-  implicit class RichRequestTEither[A, B](r: Request[Either[A, B]]) {
-    def mapResponseRight[B2](f: B => B2): Request[Either[A, B2]] = r.copy(response = r.response.mapRight(f))
-    def responseGetRight: Request[B] = r.copy(response = r.response.orFail)
-  }
-
-  implicit class RichRequestTEitherResponseException[HE, DE, B](
-      r: Request[Either[ResponseException[HE, DE], B]]
-  ) {
-    def responseGetEither: Request[Either[HE, B]] = r.copy(response = r.response.orFailDeserialization)
-  }
 }
 
 //
