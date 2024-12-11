@@ -92,7 +92,7 @@ trait HttpTest[F[_]]
     "as string with mapping using mapResponse" in {
       postEcho
         .body(testBody)
-        .mapResponseRight(_.length)
+        .response(asString.mapRight((_: String).length))
         .send(backend)
         .toFuture()
         .map(response => response.body should be(Right(expectedPostEchoResponse.length)))
@@ -572,7 +572,7 @@ trait HttpTest[F[_]]
     }
 
     "redirect when redirects should be followed, and the response is parsed" in {
-      r2.response(asString).mapResponseRight(_.toInt).send(backend).toFuture().map { resp =>
+      r2.response(asString.mapRight((_: String).toInt)).send(backend).toFuture().map { resp =>
         resp.code shouldBe StatusCode.Ok
         resp.body shouldBe Right(r4response.toInt)
       }

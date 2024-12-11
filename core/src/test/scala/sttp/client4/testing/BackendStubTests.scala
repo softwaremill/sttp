@@ -144,8 +144,7 @@ class BackendStubTests extends AnyFlatSpec with Matchers with ScalaFutures {
 
     val result = basicRequest
       .get(uri"http://example.org")
-      .mapResponseRight(_.toInt)
-      .mapResponseRight(_ * 2)
+      .response(asString.mapRight((_: String).toInt).mapRight((_: Int) * 2))
       .send(backend)
 
     result.body should be(Right(20))
