@@ -8,14 +8,12 @@ import sttp.model._
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import sttp.client4.basicRequest
-import sttp.client4.ResponseAs
 import sttp.client4.PartialRequest
 import sttp.client4.StringBody
-import sttp.client4.MappedResponseAs
-import sttp.client4.ResponseAsByteArray
 import sttp.client4.Request
 import sttp.client4.DeserializationException
 import spray.json.JsonParser.ParsingException
+import sttp.client4.json.RunResponseAs
 
 class SprayJsonTests extends AnyFlatSpec with Matchers with EitherValues {
   import SprayJsonTests._
@@ -39,32 +37,31 @@ class SprayJsonTests extends AnyFlatSpec with Matchers with EitherValues {
 
     val responseAs = asJson[Outer]
 
-    runJsonResponseAs(responseAs)(body) shouldBe Right(expected)
+    RunResponseAs(responseAs)(body) shouldBe Right(expected)
   }
 
   it should "decode None from empty body" in {
     val responseAs = asJson[Option[Inner]]
 
-    runJsonResponseAs(responseAs)("") shouldBe Right(None)
+    RunResponseAs(responseAs)("") shouldBe Right(None)
   }
 
   it should "decode Left(None) from empty body" in {
     val responseAs = asJson[Either[Option[Inner], Outer]]
 
-    runJsonResponseAs(responseAs)("") shouldBe Right(Left(None))
+    RunResponseAs(responseAs)("") shouldBe Right(Left(None))
   }
 
   it should "decode Right(None) from empty body" in {
     val responseAs = asJson[Either[Outer, Option[Inner]]]
 
-    runJsonResponseAs(responseAs)("") shouldBe Right(Right(None))
+    RunResponseAs(responseAs)("") shouldBe Right(Right(None))
   }
 
   it should "fail to decode from empty input" in {
     val responseAs = asJson[Inner]
 
-    runJsonResponseAs(responseAs)("") should matchPattern {
-      case Left(DeserializationException(_, _: ParsingException)) =>
+    RunResponseAs(responseAs)("") should matchPattern { case Left(DeserializationException(_, _: ParsingException)) =>
     }
   }
 
@@ -73,8 +70,7 @@ class SprayJsonTests extends AnyFlatSpec with Matchers with EitherValues {
 
     val responseAs = asJson[Outer]
 
-    runJsonResponseAs(responseAs)(body) should matchPattern {
-      case Left(DeserializationException(_, _: ParsingException)) =>
+    RunResponseAs(responseAs)(body) should matchPattern { case Left(DeserializationException(_, _: ParsingException)) =>
     }
   }
 
@@ -104,24 +100,43 @@ class SprayJsonTests extends AnyFlatSpec with Matchers with EitherValues {
     actualContentType should be(expectedContentType)
   }
 
+  it should "decode when using asJsonOrFail" in {
+    val body = """{"foo":{"a":42,"b":true,"c":"horses"},"bar":"cats"}"""
+    val expected = Outer(Inner(42, true, "horses"), "cats")
+
+    RunResponseAs(asJsonOrFail[Outer])(body) shouldBe expected
+  }
+
+  it should "fail when using asJsonOrFail for incorrect JSON" in {
+    val body = """invalid json"""
+
+    assertThrows[DeserializationException[Exception]] {
+      RunResponseAs(asJsonOrFail[Outer])(body)
+    }
+  }
+
+  it should "decode success when using asJsonEitherOrFail" in {
+    val body = """{"foo":{"a":42,"b":true,"c":"horses"},"bar":"cats"}"""
+    val expected = Outer(Inner(42, true, "horses"), "cats")
+
+    RunResponseAs(asJsonEitherOrFail[Inner, Outer])(body) shouldBe Right(expected)
+  }
+
+  it should "decode failure when using asJsonEitherOrFail" in {
+    val body = """{"a":21,"b":false,"c":"hippos"}"""
+    val expected = Inner(21, false, "hippos")
+
+    RunResponseAs(asJsonEitherOrFail[Inner, Outer], ResponseMetadata(StatusCode.BadRequest, "", Nil))(
+      body
+    ) shouldBe Left(expected)
+  }
+
   def extractBody[T](request: PartialRequest[T]): String =
     request.body match {
       case StringBody(body, "utf-8", MediaType.ApplicationJson) =>
         body
       case wrongBody =>
         fail(s"Request body does not serialize to correct StringBody: $wrongBody")
-    }
-
-  def runJsonResponseAs[A](responseAs: ResponseAs[A]): String => A =
-    responseAs.delegate match {
-      case responseAs: MappedResponseAs[_, A, Nothing] @unchecked =>
-        responseAs.raw match {
-          case ResponseAsByteArray =>
-            s => responseAs.g(s.getBytes(Utf8), ResponseMetadata(StatusCode.Ok, "", Nil))
-          case _ =>
-            fail("MappedResponseAs does not wrap a ResponseAsByteArray")
-        }
-      case _ => fail("ResponseAs is not a MappedResponseAs")
     }
 }
 

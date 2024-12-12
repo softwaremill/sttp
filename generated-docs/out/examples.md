@@ -85,7 +85,7 @@ libraryDependencies ++= List(
 Example code:
 
 ```eval_rst
-.. literalinclude:: ../../examples-ce2/src/main/scala/sttp/client4/examples/GetAndParseJsonGetRightMonixCirce.scala
+.. literalinclude:: ../../examples-ce2/src/main/scala/sttp/client4/examples/GetAndParseJsonOrFailMonixCirce.scala
     :language: scala
 ```
 

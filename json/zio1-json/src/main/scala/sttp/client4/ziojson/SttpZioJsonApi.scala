@@ -29,6 +29,12 @@ trait SttpZioJsonApi extends SttpZioJsonApiExtensions {
   def asJson[B: JsonDecoder: IsOption]: ResponseAs[Either[ResponseException[String, String], B]] =
     asString.mapWithMetadata(ResponseAs.deserializeRightWithError(deserializeJson)).showAsJson
 
+  /** If the response is successful (2xx), tries to deserialize the body from a string into JSON. Otherwise, if the
+    * response code is other than 2xx, or a deserialization error occurs, throws an [[ResponseException]] / returns a
+    * failed effect.
+    */
+  def asJsonOrFail[B: JsonDecoder: IsOption]: ResponseAs[B] = asJson[B].orFail.showAsJsonOrFail
+
   /** Tries to deserialize the body from a string into JSON, regardless of the response code. Returns:
     *   - `Right(b)` if the parsing was successful
     *   - `Left(DeserializationException)` if there's an error during deserialization
@@ -44,10 +50,20 @@ trait SttpZioJsonApi extends SttpZioJsonApiExtensions {
     */
   def asJsonEither[E: JsonDecoder: IsOption, B: JsonDecoder: IsOption]
       : ResponseAs[Either[ResponseException[E, String], B]] =
-    asJson[B].mapLeft {
-      case HttpError(e, code) => deserializeJson[E].apply(e).fold(DeserializationException(e, _), HttpError(_, code))
-      case de @ DeserializationException(_, _) => de
+    asJson[B].mapLeft { (l: ResponseException[String, String]) =>
+      l match {
+        case HttpError(e, code) => deserializeJson[E].apply(e).fold(DeserializationException(e, _), HttpError(_, code))
+        case de @ DeserializationException(_, _) => de
+      }
     }.showAsJsonEither
+
+  /** Deserializes the body from a string into JSON, using different deserializers depending on the status code. If a
+    * deserialization error occurs, throws a [[DeserializationException]] / returns a failed effect.
+    */
+  def asJsonEitherOrFail[E: JsonDecoder: IsOption, B: JsonDecoder: IsOption]: ResponseAs[Either[E, B]] =
+    asStringAlways
+      .mapWithMetadata(ResponseAs.deserializeEitherWithErrorOrThrow(deserializeJson[E], deserializeJson[B]))
+      .showAsJsonEitherOrFail
 
   def deserializeJson[B: JsonDecoder: IsOption]: String => Either[String, B] =
     JsonInput.sanitize[B].andThen(_.fromJson[B])

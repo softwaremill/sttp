@@ -6,23 +6,30 @@ Each integration is available as an import, which brings `asJson` methods into s
 
 The following variants of `asJson` methods are available:
 
-* `asJson(b: B)` - serializes the body so that it can be used as a request's body, e.g. using `basicRequest.body(asJson(myValue))`
-* `asJson[B]` - specifies that the body should be deserialized to json, but only if the response is successful (2xx); shoud be used to specify how a response should be handled, e.g. `basicRequest.response(asJson[T])`
+* `asJson(b: B)` - to be used when specifying the body of a request: serializes the body so that it can be used as a request's body, e.g. using `basicRequest.body(asJson(myValue))`
+* `asJson[B]` - to be used when specifying how the response body should be handled: specifies that the body should be deserialized to json, but only if the response is successful (2xx); otherwise, a `Left` is returned, with body as a string
+* `asJsonOrFail[B]` - specifies that the body should be deserialized to json, if the response is successful (2xx); throws an exception/returns a failed effect if the response code is other than 2xx, or if deserialization fails
 * `asJsonAlways[B]` - specifies that the body should be deserialized to json, regardless of the status code
 * `asJsonEither[E, B]` - specifies that the body should be deserialized to json, using different deserializers for error and successful (2xx) responses
+* `asJsonEitherOrFail[E, B]` - specifies that the body should be deserialized to json, using different deserializers for error and successful (2xx) responses; throws an exception/returns a failed effect, if deserialization fails
 
 The type signatures vary depending on the underlying library (required implicits and error representation differs), but they obey the following pattern:
 
 ```scala mdoc:compile-only
 import sttp.client4._
 
+// request bodies
 def asJson[B](b: B): StringBody = ???
+
+// response handling description
 def asJson[B]: ResponseAs[Either[ResponseException[String, Exception], B]] = ???
+def asJsonOrFail[B]: ResponseAs[B] = ???
 def asJsonAlways[B]: ResponseAs[Either[DeserializationException[Exception], B]] = ???
 def asJsonEither[E, B]: ResponseAs[Either[ResponseException[E, Exception], B]] = ???
+def asJsonEitherOrFail[E, B]: ResponseAs[Either[E, B]] = ???
 ```
 
-The response specifications can be further refined using `.getRight` and `.getEither`, see [response body specifications](responses/body.md).
+The response specifications can be further refined using `.orFail` and `.orFailDeserialization`, see [response body specifications](responses/body.md).
 
 Following data class will be used through the next few examples:
 
