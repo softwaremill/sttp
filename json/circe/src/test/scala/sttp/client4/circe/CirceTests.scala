@@ -7,6 +7,7 @@ import sttp.client4._
 import sttp.model._
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
+import sttp.client4.json.RunResponseAs
 
 class CirceTests extends AnyFlatSpec with Matchers with EitherValues {
 
@@ -14,7 +15,7 @@ class CirceTests extends AnyFlatSpec with Matchers with EitherValues {
     val body = Outer(Inner(42, true, "horses"), "cats")
     val expected = """{"foo":{"a":42,"b":true,"c":"horses"},"bar":"cats"}"""
 
-    val req = basicRequest.body(body)
+    val req = basicRequest.body(asJson(body))
 
     extractBody(req) shouldBe expected
   }
@@ -23,7 +24,7 @@ class CirceTests extends AnyFlatSpec with Matchers with EitherValues {
     val body = Outer(Inner(42, true, "horses"), "cats")
     implicit val printer = Printer.spaces4
 
-    val req = basicRequest.body(body)
+    val req = basicRequest.body(asJson(body))
 
     extractBody(req) should include("\n    \"foo")
   }
@@ -34,33 +35,33 @@ class CirceTests extends AnyFlatSpec with Matchers with EitherValues {
 
     val responseAs = asJson[Outer]
 
-    runJsonResponseAs(responseAs)(body).right.value shouldBe expected
+    RunResponseAs(responseAs)(body).right.value shouldBe expected
   }
 
   it should "decode None from empty body" in {
     val responseAs = asJson[Option[Inner]]
 
-    runJsonResponseAs(responseAs)("").right.value shouldBe None
+    RunResponseAs(responseAs)("").right.value shouldBe None
   }
 
   it should "decode Left(None) from empty body" in {
     import EitherDecoders._
     val responseAs = asJson[Either[Option[Inner], Outer]]
 
-    runJsonResponseAs(responseAs)("").right.value shouldBe Left(None)
+    RunResponseAs(responseAs)("").right.value shouldBe Left(None)
   }
 
   it should "decode Right(None) from empty body" in {
     import EitherDecoders._
     val responseAs = asJson[Either[Outer, Option[Inner]]]
 
-    runJsonResponseAs(responseAs)("").right.value shouldBe Right(None)
+    RunResponseAs(responseAs)("").right.value shouldBe Right(None)
   }
 
   it should "fail to decode from empty input" in {
     val responseAs = asJson[Inner]
 
-    runJsonResponseAs(responseAs)("").left.value should matchPattern {
+    RunResponseAs(responseAs)("").left.value should matchPattern {
       case DeserializationException("", _: io.circe.ParsingFailure) =>
     }
   }
@@ -70,22 +71,22 @@ class CirceTests extends AnyFlatSpec with Matchers with EitherValues {
 
     val responseAs = asJson[Outer]
 
-    val Left(DeserializationException(original, _)) = runJsonResponseAs(responseAs)(body)
+    val Left(DeserializationException(original, _)) = RunResponseAs(responseAs)(body)
     original shouldBe body
   }
 
   it should "encode and decode back to the same thing" in {
     val outer = Outer(Inner(42, true, "horses"), "cats")
 
-    val encoded = extractBody(basicRequest.body(outer))
-    val decoded = runJsonResponseAs(asJson[Outer])(encoded)
+    val encoded = extractBody(basicRequest.body(asJson(outer)))
+    val decoded = RunResponseAs(asJson[Outer])(encoded)
 
     decoded.right.value shouldBe outer
   }
 
   it should "set the content type" in {
     val body = Outer(Inner(42, true, "horses"), "cats")
-    val req = basicRequest.body(body)
+    val req = basicRequest.body(asJson(body))
 
     val ct = req.headers.map(h => (h.name, h.value)).toMap.get("Content-Type")
 
@@ -94,20 +95,20 @@ class CirceTests extends AnyFlatSpec with Matchers with EitherValues {
 
   it should "only set the content type if it was not set earlier" in {
     val body = Outer(Inner(42, true, "horses"), "cats")
-    val req = basicRequest.contentType("horses/cats").body(body)
+    val req = basicRequest.contentType("horses/cats").body(asJson(body))
 
     val ct = req.headers.map(h => (h.name, h.value)).toMap.get("Content-Type")
 
     ct shouldBe Some("horses/cats")
   }
 
-  it should "serialize from JsonObject using implicit circeBodySerializer" in {
+  it should "serialize from JsonObject" in {
     import io.circe.syntax.EncoderOps
     import io.circe.JsonObject
     import sttp.model.Uri
 
     val jObject: JsonObject = JsonObject(("location", "hometown".asJson), ("bio", "Scala programmer".asJson))
-    val request: Request[Either[String, String]] = basicRequest.get(Uri("http://example.org")).body(jObject)
+    val request: Request[Either[String, String]] = basicRequest.get(Uri("http://example.org")).body(asJson(jObject))
 
     val actualBody: String = request.body.show
     val actualContentType: Option[String] = request.contentType
@@ -117,6 +118,37 @@ class CirceTests extends AnyFlatSpec with Matchers with EitherValues {
 
     actualBody should be(expectedBody)
     actualContentType should be(expectedContentType)
+  }
+
+  it should "decode when using asJsonOrFail" in {
+    val body = """{"foo":{"a":42,"b":true,"c":"horses"},"bar":"cats"}"""
+    val expected = Outer(Inner(42, true, "horses"), "cats")
+
+    RunResponseAs(asJsonOrFail[Outer])(body) shouldBe expected
+  }
+
+  it should "fail when using asJsonOrFail for incorrect JSON" in {
+    val body = """invalid json"""
+
+    assertThrows[DeserializationException[io.circe.Error]] {
+      RunResponseAs(asJsonOrFail[Outer])(body)
+    }
+  }
+
+  it should "decode success when using asJsonEitherOrFail" in {
+    val body = """{"foo":{"a":42,"b":true,"c":"horses"},"bar":"cats"}"""
+    val expected = Outer(Inner(42, true, "horses"), "cats")
+
+    RunResponseAs(asJsonEitherOrFail[Inner, Outer])(body) shouldBe Right(expected)
+  }
+
+  it should "decode failure when using asJsonEitherOrFail" in {
+    val body = """{"a":21,"b":false,"c":"hippos"}"""
+    val expected = Inner(21, false, "hippos")
+
+    RunResponseAs(asJsonEitherOrFail[Inner, Outer], ResponseMetadata(StatusCode.BadRequest, "", Nil))(
+      body
+    ) shouldBe Left(expected)
   }
 
   case class Inner(a: Int, b: Boolean, c: String)
@@ -148,17 +180,5 @@ class CirceTests extends AnyFlatSpec with Matchers with EitherValues {
         body
       case wrongBody =>
         fail(s"Request body does not serialize to correct StringBody: $wrongBody")
-    }
-
-  def runJsonResponseAs[A](responseAs: ResponseAs[A]): String => A =
-    responseAs.delegate match {
-      case responseAs: MappedResponseAs[_, A, Nothing] =>
-        responseAs.raw match {
-          case ResponseAsByteArray =>
-            s => responseAs.g(s.getBytes(Utf8), ResponseMetadata(StatusCode.Ok, "", Nil))
-          case _ =>
-            fail("MappedResponseAs does not wrap a ResponseAsByteArray")
-        }
-      case _ => fail("ResponseAs is not a MappedResponseAs")
     }
 }

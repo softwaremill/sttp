@@ -13,15 +13,17 @@ import scala.util.{Failure, Success, Try}
 /** Describes how the response body of a request should be handled. A number of `as<Type>` helper methods are available
   * as part of [[SttpApi]] and when importing `sttp.client4._`. These methods yield specific implementations of this
   * trait, which can then be set on a [[Request]], [[StreamRequest]], [[WebSocketRequest]] or
-  * [[WebSocketStreamRequest]], depending on the response type.
+  * [[WebSocketStreamRequest]].
   *
   * @tparam T
-  *   Target type as which the response will be read.
+  *   Target type as which the response will be deserialized.
   * @tparam R
   *   The backend capabilities required by the response description. This might be `Any` (no requirements),
   *   [[sttp.capabilities.Effect]] (the backend must support the given effect type), [[sttp.capabilities.Streams]] (the
   *   ability to send and receive streaming bodies) or [[sttp.capabilities.WebSockets]] (the ability to handle websocket
   *   requests).
+  * @see
+  *   [[ResponseAs]]
   */
 trait ResponseAsDelegate[+T, -R] {
   def delegate: GenericResponseAs[T, R]
@@ -35,53 +37,77 @@ trait ResponseAsDelegate[+T, -R] {
   * status code. Responses can also be handled depending on the response metadata. Finally, two response body
   * descriptions can be combined (with some restrictions).
   *
-  * A number of `as<Type>` helper methods are available as part of [[SttpApi]] and when importing `sttp.client4._`.
+  * A number of `as<Type>` helper methods are available as part of [[SttpApi]] and when importing `sttp.client4.*`.
   *
   * @tparam T
-  *   Target type as which the response will be read.
+  *   Target type as which the response will be read/deserialized.
   */
 case class ResponseAs[+T](delegate: GenericResponseAs[T, Any]) extends ResponseAsDelegate[T, Any] {
+
+  /** Applies the given function `f` to the deserialized value `T`. */
   def map[T2](f: T => T2): ResponseAs[T2] = ResponseAs(delegate.mapWithMetadata { case (t, _) => f(t) })
+
+  /** Applies the given function `f` to the deserialized value `T`, and the response's metadata. */
   def mapWithMetadata[T2](f: (T, ResponseMetadata) => T2): ResponseAs[T2] = ResponseAs(delegate.mapWithMetadata(f))
+
+  /** If the type to which the response body should be deserialized is an `Either[A, B]`, applies the given function `f`
+    * to `Left` values.
+    *
+    * Because of type inference, the type of `f` must be fully provided, e.g.
+    *
+    * ```
+    * asString.mapLeft((s: String) => new CustomHttpError(s))`
+    * ```
+    */
+  def mapLeft[A, B, A2](f: A => A2)(implicit tIsEither: T <:< Either[A, B]): ResponseAs[Either[A2, B]] = map(
+    _.left.map(f)
+  )
+
+  /** If the type to which the response body should be deserialized is an `Either[A, B]`, applies the given function `f`
+    * to `Right` values.
+    *
+    * Because of type inference, the type of `f` must be fully provided, e.g.
+    *
+    * ```
+    * asString.mapRight((s: String) => parse(s))`
+    * ```
+    */
+  def mapRight[A, B, B2](f: B => B2)(implicit tIsEither: T <:< Either[A, B]): ResponseAs[Either[A, B2]] = map(
+    _.right.map(f)
+  )
+
+  /** If the type to which the response body should be deserialized is an `Either[A, B]`:
+    *   - in case of `A`, throws as an exception / returns a failed effect (wrapped with an [[HttpError]] if `A` is not
+    *     yet an exception)
+    *   - in case of `B`, returns the value directly
+    */
+  def orFail[A, B](implicit tIsEither: T <:< Either[A, B]): ResponseAs[B] =
+    mapWithMetadata { case (t, meta) =>
+      (t: Either[A, B]) match {
+        case Left(a: Exception) => throw a
+        case Left(a)            => throw HttpError(a, meta.code)
+        case Right(b)           => b
+      }
+    }
+
+  /** If the type to which the response body should be deserialized is an `Either[ResponseException[HE, DE], B]`, either
+    * throws / returns a failed effect with the [[DeserializationException]], returns the deserialized body from the
+    * [[HttpError]], or the deserialized successful body `B`.
+    */
+  def orFailDeserialization[HE, DE, B](implicit
+      tIsEither: T <:< Either[ResponseException[HE, DE], B]
+  ): ResponseAs[Either[HE, B]] = map { t =>
+    (t: Either[ResponseException[HE, DE], B]) match {
+      case Left(HttpError(he, _))               => Left(he)
+      case Left(d: DeserializationException[_]) => throw d
+      case Right(b)                             => Right(b)
+    }
+  }
 
   def showAs(s: String): ResponseAs[T] = ResponseAs(delegate.showAs(s))
 }
 
 object ResponseAs {
-  implicit class RichResponseAsEither[A, B](ra: ResponseAs[Either[A, B]]) {
-    def mapLeft[L2](f: A => L2): ResponseAs[Either[L2, B]] = ra.map(_.left.map(f))
-    def mapRight[R2](f: B => R2): ResponseAs[Either[A, R2]] = ra.map(_.right.map(f))
-
-    /** If the type to which the response body should be deserialized is an `Either[A, B]`:
-      *   - in case of `A`, throws as an exception / returns a failed effect (wrapped with an [[HttpError]] if `A` is
-      *     not yet an exception)
-      *   - in case of `B`, returns the value directly
-      */
-    def getRight: ResponseAs[B] =
-      ra.mapWithMetadata { case (t, meta) =>
-        t match {
-          case Left(a: Exception) => throw a
-          case Left(a)            => throw HttpError(a, meta.code)
-          case Right(b)           => b
-        }
-      }
-  }
-
-  implicit class RichResponseAsEitherResponseException[HE, DE, B](
-      ra: ResponseAs[Either[ResponseException[HE, DE], B]]
-  ) {
-
-    /** If the type to which the response body should be deserialized is an `Either[ResponseException[HE, DE], B]`,
-      * either throws the [[DeserializationException]], returns the deserialized body from the [[HttpError]], or the
-      * deserialized successful body `B`.
-      */
-    def getEither: ResponseAs[Either[HE, B]] =
-      ra.map {
-        case Left(HttpError(he, _))               => Left(he)
-        case Left(d: DeserializationException[_]) => throw d
-        case Right(b)                             => Right(b)
-      }
-  }
 
   /** Returns a function, which maps `Left` values to [[HttpError]] s, and attempts to deserialize `Right` values using
     * the given function, catching any exceptions and representing them as [[DeserializationException]] s.
@@ -148,6 +174,30 @@ object ResponseAs {
         case Left(e)  => throw DeserializationException(s, e)
         case Right(b) => b
       }
+
+  /** Converts deserialization functions, which both return errors of type `E`, into a function where errors are thrown
+    * as exceptions, and results are parsed using either of the functions, depending if the response was successfull, or
+    * not.
+    */
+  def deserializeEitherWithErrorOrThrow[E: ShowError, T, T2](
+      doDeserializeHttpError: String => Either[E, T],
+      doDeserializeHttpSuccess: String => Either[E, T2]
+  ): (String, ResponseMetadata) => Either[T, T2] =
+    (s, m) =>
+      if (m.isSuccess) Right(deserializeOrThrow(doDeserializeHttpSuccess).apply(s))
+      else Left(deserializeOrThrow(doDeserializeHttpError).apply(s))
+
+  /** Converts deserialization functions, which both throw exceptions upon errors, into a function where errors still
+    * thrown as exceptions, and results are parsed using either of the functions, depending if the response was
+    * successfull, or not.
+    */
+  def deserializeEitherOrThrow[T, T2](
+      doDeserializeHttpError: String => T,
+      doDeserializeHttpSuccess: String => T2
+  ): (String, ResponseMetadata) => Either[T, T2] =
+    (s, m) =>
+      if (m.isSuccess) Right(doDeserializeHttpSuccess(s))
+      else Left(doDeserializeHttpError(s))
 }
 
 /** Describes how the response body of a [[StreamRequest]] should be handled.
@@ -156,18 +206,38 @@ object ResponseAs {
   * [[ResponseMetadata]], that is the headers and status code.
   *
   * A number of `asStream[Type]` helper methods are available as part of [[SttpApi]] and when importing
-  * `sttp.client4._`.
+  * `sttp.client4.*`.
   *
   * @tparam T
-  *   Target type as which the response will be read.
+  *   Target type as which the response will be read/deserialized.
   * @tparam S
   *   The type of stream, used to receive the response body bodies.
+  * @see
+  *   [[ResponseAs]]
   */
 case class StreamResponseAs[+T, S](delegate: GenericResponseAs[T, S]) extends ResponseAsDelegate[T, S] {
+
+  /** Applies the given function `f` to the deserialized value `T`. */
   def map[T2](f: T => T2): StreamResponseAs[T2, S] =
     StreamResponseAs(delegate.mapWithMetadata { case (t, _) => f(t) })
+
+  /** Applies the given function `f` to the deserialized value `T`, and the response's metadata. */
   def mapWithMetadata[T2](f: (T, ResponseMetadata) => T2): StreamResponseAs[T2, S] =
     StreamResponseAs(delegate.mapWithMetadata(f))
+
+  /** If the type to which the response body should be deserialized is an `Either[A, B]`:
+    *   - in case of `A`, throws as an exception / returns a failed effect (wrapped with an [[HttpError]] if `A` is not
+    *     yet an exception)
+    *   - in case of `B`, returns the value directly
+    */
+  def orFail[A, B](implicit tIsEither: T <:< Either[A, B]): StreamResponseAs[B, S] =
+    mapWithMetadata { case (t, meta) =>
+      (t: Either[A, B]) match {
+        case Left(a: Exception) => throw a
+        case Left(a)            => throw HttpError(a, meta.code)
+        case Right(b)           => b
+      }
+    }
 
   def showAs(s: String): StreamResponseAs[T, S] = new StreamResponseAs(delegate.showAs(s))
 }
@@ -178,17 +248,37 @@ case class StreamResponseAs[+T, S](delegate: GenericResponseAs[T, S]) extends Re
   * [[ResponseMetadata]], that is the headers and status code. Responses can also be handled depending on the response
   * metadata.
   *
-  * A number of `asWebSocket` helper methods are available as part of [[SttpApi]] and when importing `sttp.client4._`.
+  * A number of `asWebSocket` helper methods are available as part of [[SttpApi]] and when importing `sttp.client4.*`.
   *
   * @tparam T
-  *   Target type as which the response will be read.
+  *   Target type as which the response will be read/deserialized.
+  * @see
+  *   [[ResponseAs]]
   */
 case class WebSocketResponseAs[F[_], +T](delegate: GenericResponseAs[T, Effect[F] with WebSockets])
     extends ResponseAsDelegate[T, Effect[F] with WebSockets] {
+
+  /** Applies the given function `f` to the deserialized value `T`. */
   def map[T2](f: T => T2): WebSocketResponseAs[F, T2] =
     WebSocketResponseAs(delegate.mapWithMetadata { case (t, _) => f(t) })
+
+  /** Applies the given function `f` to the deserialized value `T`, and the response's metadata. */
   def mapWithMetadata[T2](f: (T, ResponseMetadata) => T2): WebSocketResponseAs[F, T2] =
     WebSocketResponseAs(delegate.mapWithMetadata(f))
+
+  /** If the type to which the response body should be deserialized is an `Either[A, B]`:
+    *   - in case of `A`, throws as an exception / returns a failed effect (wrapped with an [[HttpError]] if `A` is not
+    *     yet an exception)
+    *   - in case of `B`, returns the value directly
+    */
+  def orFail[A, B](implicit tIsEither: T <:< Either[A, B]): WebSocketResponseAs[F, B] =
+    mapWithMetadata { case (t, meta) =>
+      (t: Either[A, B]) match {
+        case Left(a: Exception) => throw a
+        case Left(a)            => throw HttpError(a, meta.code)
+        case Right(b)           => b
+      }
+    }
 
   def showAs(s: String): WebSocketResponseAs[F, T] = new WebSocketResponseAs(delegate.showAs(s))
 }
@@ -199,17 +289,37 @@ case class WebSocketResponseAs[F[_], +T](delegate: GenericResponseAs[T, Effect[F
   * [[ResponseMetadata]], that is the headers and status code. Responses can also be handled depending on the response
   * metadata.
   *
-  * A number of `asWebSocket` helper methods are available as part of [[SttpApi]] and when importing `sttp.client4._`.
+  * A number of `asWebSocket` helper methods are available as part of [[SttpApi]] and when importing `sttp.client4.*`.
   *
   * @tparam T
-  *   Target type as which the response will be read.
+  *   Target type as which the response will be read/deserialized.
+  * @see
+  *   [[ResponseAs]]
   */
 case class WebSocketStreamResponseAs[+T, S](delegate: GenericResponseAs[T, S with WebSockets])
     extends ResponseAsDelegate[T, S with WebSockets] {
+
+  /** Applies the given function `f` to the deserialized value `T`. */
   def map[T2](f: T => T2): WebSocketStreamResponseAs[T2, S] =
     WebSocketStreamResponseAs[T2, S](delegate.mapWithMetadata { case (t, _) => f(t) })
+
+  /** Applies the given function `f` to the deserialized value `T`, and the response's metadata. */
   def mapWithMetadata[T2](f: (T, ResponseMetadata) => T2): WebSocketStreamResponseAs[T2, S] =
     WebSocketStreamResponseAs[T2, S](delegate.mapWithMetadata(f))
+
+  /** If the type to which the response body should be deserialized is an `Either[A, B]`:
+    *   - in case of `A`, throws as an exception / returns a failed effect (wrapped with an [[HttpError]] if `A` is not
+    *     yet an exception)
+    *   - in case of `B`, returns the value directly
+    */
+  def orFail[A, B](implicit tIsEither: T <:< Either[A, B]): WebSocketStreamResponseAs[B, S] =
+    mapWithMetadata { case (t, meta) =>
+      (t: Either[A, B]) match {
+        case Left(a: Exception) => throw a
+        case Left(a)            => throw HttpError(a, meta.code)
+        case Right(b)           => b
+      }
+    }
 
   def showAs(s: String): WebSocketStreamResponseAs[T, S] = new WebSocketStreamResponseAs[T, S](delegate.showAs(s))
 }

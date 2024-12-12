@@ -1,4 +1,4 @@
-package sttp.client4
+package sttp.client4.sprayJson
 
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.flatspec.AnyFlatSpec
@@ -7,7 +7,7 @@ import sttp.client4.testing.SyncBackendStub
 import sttp.model.Uri
 import spray.json.DefaultJsonProtocol.{jsonFormat1, StringJsonFormat}
 import spray.json.RootJsonFormat
-import sprayJson._
+import sttp.client4.basicRequest
 
 case class Person(name: String)
 

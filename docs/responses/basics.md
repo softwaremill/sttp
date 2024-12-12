@@ -1,6 +1,6 @@
 # Responses
 
-Responses are represented as instances of the case class `Response[T]`, where `T` is the type of the response body. When sending a request, an effect containing the response will be returned. For example, for asynchronous backends, we can get a `Future[Response[T]]`, while for the default synchronous backend, the wrapper will be a no-op, `Identity`, which is the same as no wrapper at all.
+Responses are represented as instances of the case class `Response[T]`, where `T` is the type of the response body. When sending a request, the response might be return directly, or wrapped with an effect containing the response. For example, for asynchronous backends, we can get a `Future[Response[T]]`, while for the default synchronous backend, there's no wrapper at all.
 
 If sending the request fails, either due to client or connection errors, an exception will be thrown (synchronous backends), or a failed effect will be returned (e.g. a failed future).
 
@@ -50,5 +50,4 @@ If the cookies from a response should be set without changes on the request, thi
 
 ## Obtaining the response body
 
-The response body can be obtained through the `.body: T` property. `T` is the body deserialized as specified in the request description - see
-the next section on [response body specifications](body.md).
+The response body can be obtained through the `.body: T` property. `T` is the type of the body to which it's deserialized, as specified in the request description - see the next section on [response body specifications](body.md).

@@ -1,14 +1,13 @@
 package sttp.client4.impl.ox.sse
 
-import ox.*
-import ox.channels.Source
+import ox.flow.Flow
 import sttp.model.sse.ServerSentEvent
 
 import java.io.InputStream
 
 object OxServerSentEvents:
-  def parse(is: InputStream)(using Ox, IO): Source[ServerSentEvent] =
-    Source
+  def parse(is: InputStream): Flow[ServerSentEvent] =
+    Flow
       .fromInputStream(is)
       .linesUtf8
       .mapStatefulConcat(() => List.empty[String])(

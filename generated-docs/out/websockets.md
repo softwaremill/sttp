@@ -104,7 +104,7 @@ as Ox `Source` and `Sink`:
 
 ```
 // sbt dependency
-"com.softwaremill.sttp.client4" %% "ox" % "4.0.0-M17",
+"com.softwaremill.sttp.client4" %% "ox" % "4.0.0-M19",
 ```
 
 ```scala 
@@ -129,7 +129,7 @@ basicRequest
   .send(backend)
 ```
 
-See the [full example here](https://github.com/softwaremill/sttp/blob/master/examples/src/main/scala/sttp/client4/examples3/WebSocketOx.scala).
+See the [full example here](https://github.com/softwaremill/sttp/blob/master/examples3/src/main/scala/sttp/client4/examples/WebSocketOx.scala).
 
 Make sure that the `Source` is contiunually read. This will guarantee that server-side Close signal is received and handled. 
 If you don't want to process frames from the server, you can at least handle it with a `fork { source.drain() }`.

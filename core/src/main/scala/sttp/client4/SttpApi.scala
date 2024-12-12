@@ -2,16 +2,16 @@ package sttp.client4
 
 import sttp.client4.internal._
 import sttp.model._
-import sttp.ws.WebSocket
 
 import java.io.InputStream
 import java.nio.ByteBuffer
 import scala.collection.immutable.Seq
 import scala.concurrent.duration._
 import sttp.capabilities.Streams
-import sttp.ws.WebSocketFrame
 import sttp.capabilities.Effect
 import sttp.client4.wrappers.FollowRedirectsBackend
+import sttp.client4.logging.LoggingOptions
+import sttp.attributes.AttributeMap
 
 trait SttpApi extends SttpExtensions with UriInterpolator {
   val DefaultReadTimeout: Duration = 1.minute
@@ -30,34 +30,52 @@ trait SttpApi extends SttpExtensions with UriInterpolator {
         followRedirects = true,
         DefaultReadTimeout,
         FollowRedirectsBackend.MaxRedirects,
-        redirectToGet = false
+        redirectToGet = false,
+        disableAutoDecompression = false,
+        httpVersion = None,
+        loggingOptions = LoggingOptions()
       ),
-      Map()
+      AttributeMap.Empty
     )
 
-  /** A starting request, with the following modification comparing to [[emptyRequest]]: `Accept-Encoding` is set to
-    * `gzip, deflate` (compression/decompression is handled automatically by the library).
+  /** A starting request, with the `Accept-Encoding` header set to `gzip, deflate` (compression/decompression is handled
+    * automatically by the library).
     *
     * Reads the response body as an `Either[String, String]`, where `Left` is used if the status code is non-2xx, and
     * `Right` otherwise.
+    *
+    * @see
+    *   [[emptyRequest]] for a starting request which has no headers set
+    * @see
+    *   [[quickRequest]] for a starting request which always reads the response body as a [[String]], without the
+    *   [[Either]] wrapper
     */
   val basicRequest: PartialRequest[Either[String, String]] =
     emptyRequest.acceptEncoding("gzip, deflate")
 
-  /** A starting request which always reads the response body as a string, regardless of the status code. */
-  val quickRequest: PartialRequest[String] = basicRequest.response(asStringAlways)
+  /** A starting request which always reads the response body as a string, if the response code is successfull (2xx),
+    * and fails (throws an exception, or returns a failed effect) otherwise.
+    */
+  val quickRequest: PartialRequest[String] = basicRequest.response(asStringOrFail)
 
-  // response specifications
+  // response descriptions
 
+  /** Ignores (discards) the response. */
   def ignore: ResponseAs[Unit] = ResponseAs(IgnoreResponse)
 
-  /** Use the `utf-8` charset by default, unless specified otherwise in the response headers. */
+  /** Reads the response as an `Either[String, String]`, where `Left` is used if the status code is non-2xx, and `Right`
+    * otherwise. Uses the `utf-8` charset by default, unless specified otherwise in the response headers.
+    */
   def asString: ResponseAs[Either[String, String]] = asString(Utf8)
 
-  /** Use the `utf-8` charset by default, unless specified otherwise in the response headers. */
+  /** Reads the response as a `String`, regardless of the status code. Use the `utf-8` charset by default, unless
+    * specified otherwise in the response headers.
+    */
   def asStringAlways: ResponseAs[String] = asStringAlways(Utf8)
 
-  /** Use the given charset by default, unless specified otherwise in the response headers. */
+  /** Reads the response as an `Either[String, String]`, where `Left` is used if the status code is non-2xx, and `Right`
+    * otherwise. Uses the given charset by default, unless specified otherwise in the response headers.
+    */
   def asString(charset: String): ResponseAs[Either[String, String]] =
     asStringAlways(charset)
       .mapWithMetadata { (s, m) =>
@@ -65,6 +83,9 @@ trait SttpApi extends SttpExtensions with UriInterpolator {
       }
       .showAs("either(as string, as string)")
 
+  /** Reads the response as a `String`, regardless of the status code. Uses the given charset by default, unless
+    * specified otherwise in the response headers.
+    */
   def asStringAlways(charset: String): ResponseAs[String] =
     asByteArrayAlways
       .mapWithMetadata { (bytes, metadata) =>
@@ -74,39 +95,84 @@ trait SttpApi extends SttpExtensions with UriInterpolator {
       }
       .showAs("as string")
 
+  /** Reads the response as a `String`, if the status code is 2xx. Otherwise, throws an [[HttpError]] / returns a failed
+    * effect. Use the `utf-8` charset by default, unless specified otherwise in the response headers.
+    *
+    * @see
+    *   the [[ResponseAs#orFail]] method can be used to convert any response description which returns an `Either` into
+    *   an exception-throwing variant.
+    */
+  def asStringOrFail: ResponseAs[String] = asString.orFail.showAs("as string or fail")
+
+  /** Reads the response as either a string (for non-2xx responses), or otherwise as an array of bytes (without any
+    * processing). The entire response is loaded into memory.
+    */
   def asByteArray: ResponseAs[Either[String, Array[Byte]]] = asEither(asStringAlways, asByteArrayAlways)
 
+  /** Reads the response as an array of bytes, without any processing, regardless of the status code. The entire
+    * response is loaded into memory.
+    */
   def asByteArrayAlways: ResponseAs[Array[Byte]] = ResponseAs(ResponseAsByteArray)
 
-  /** Use the `utf-8` charset by default, unless specified otherwise in the response headers. */
+  /** Reads the response as an array of bytes, without any processing, if the status code is 2xx. Otherwise, throws an
+    * [[HttpError]] / returns a failed effect.
+    *
+    * @see
+    *   the [[ResponseAs#orFail]] method can be used to convert any response description which returns an `Either` into
+    *   an exception-throwing variant.
+    */
+  def asByteArrayOrFail: ResponseAs[Array[Byte]] = asByteArray.orFail.showAs("as byte array or fail")
+
+  /** Deserializes the response as either a string (for non-2xx responses), or otherwise as form parameters. Uses the
+    * `utf-8` charset by default, unless specified otherwise in the response headers.
+    */
   def asParams: ResponseAs[Either[String, Seq[(String, String)]]] = asParams(Utf8)
 
-  /** Use the `utf-8` charset by default, unless specified otherwise in the response headers. */
+  /** Deserializes the response as form parameters, regardless of the status code. Uses the `utf-8` charset by default,
+    * unless specified otherwise in the response headers.
+    */
   def asParamsAlways: ResponseAs[Seq[(String, String)]] = asParamsAlways(Utf8)
 
-  /** Use the given charset by default, unless specified otherwise in the response headers. */
+  /** Deserializes the response as either a string (for non-2xx responses), or otherwise as form parameters. Uses the
+    * given charset by default, unless specified otherwise in the response headers.
+    */
   def asParams(charset: String): ResponseAs[Either[String, Seq[(String, String)]]] =
     asEither(asStringAlways, asParamsAlways(charset)).showAs("either(as string, as params)")
 
-  /** Use the given charset by default, unless specified otherwise in the response headers. */
+  /** Deserializes the response as form parameters, regardless of the status code. Uses the given charset by default,
+    * unless specified otherwise in the response headers.
+    */
   def asParamsAlways(charset: String): ResponseAs[Seq[(String, String)]] = {
     val charset2 = sanitizeCharset(charset)
     asStringAlways(charset2).map(GenericResponseAs.parseParams(_, charset2)).showAs("as params")
   }
 
+  /** Deserializes the response as form parameters, if the status code is 2xx. Otherwise, throws an [[HttpError]] /
+    * returns a failed effect. Uses the `utf-8` charset by default, unless specified otherwise in the response headers.
+    *
+    * @see
+    *   the [[ResponseAs#orFail]] method can be used to convert any response description which returns an `Either` into
+    *   an exception-throwing variant.
+    */
+  def asParamsOrFail: ResponseAs[String] = asString.orFail.showAs("as params or fail")
+
   private[client4] def asSttpFile(file: SttpFile): ResponseAs[SttpFile] = ResponseAs(ResponseAsFile(file))
 
+  /** Uses the [[ResponseAs]] description that matches the condition (using the response's metadata).
+    *
+    * This allows using different response description basing on the status code, for example. If none of the conditions
+    * match, the default response handling description is used.
+    */
   def fromMetadata[T](default: ResponseAs[T], conditions: ConditionalResponseAs[ResponseAs[T]]*): ResponseAs[T] =
     ResponseAs(ResponseAsFromMetadata(conditions.map(_.map(_.delegate)).toList, default.delegate))
 
-  /** Uses the `onSuccess` response specification for successful responses (2xx), and the `onError` specification
-    * otherwise.
+  /** Uses the `onSuccess` response description for successful responses (2xx), and the `onError` description otherwise.
     */
   def asEither[A, B](onError: ResponseAs[A], onSuccess: ResponseAs[B]): ResponseAs[Either[A, B]] =
     fromMetadata(onError.map(Left(_)), ConditionalResponseAs(_.isSuccess, onSuccess.map(Right(_))))
       .showAs(s"either(${onError.show}, ${onSuccess.show})")
 
-  /** Use both `l` and `r` to read the response body. Neither response specifications may use streaming or web sockets.
+  /** Uses both `l` and `r` to handle the response body. Neither response descriptions may use streaming or web sockets.
     */
   def asBoth[A, B](l: ResponseAs[A], r: ResponseAs[B]): ResponseAs[(A, B)] =
     asBothOption(l, r)
@@ -116,8 +182,8 @@ trait SttpApi extends SttpExtensions with UriInterpolator {
       }
       .showAs(s"(${l.show}, ${r.show})")
 
-  /** Use `l` to read the response body. If the raw body value which is used by `l` is replayable (a file or byte
-    * array), also use `r` to read the response body. Otherwise ignore `r` (if the raw body is a stream).
+  /** Uses `l` to handle the response body. If the raw body value which is used by `l` is replayable (a file or byte
+    * array), also uses `r` to read the response body. Otherwise ignores `r` (if the raw body is a stream).
     */
   def asBothOption[A, B](l: ResponseAs[A], r: ResponseAs[B]): ResponseAs[(A, Option[B])] =
     ResponseAs(ResponseAsBoth(l.delegate, r.delegate))
@@ -200,49 +266,104 @@ trait SttpApi extends SttpExtensions with UriInterpolator {
     )
 
   /** Content type will be set to `application/octet-stream`, can be overridden later using the `contentType` method. */
-  def multipart[B: BodySerializer](name: String, b: B): Part[BasicBodyPart] =
-    Part(name, implicitly[BodySerializer[B]].apply(b), contentType = Some(MediaType.ApplicationXWwwFormUrlencoded))
+  def multipart(name: String, b: BasicBodyPart): Part[BasicBodyPart] =
+    Part(name, b, contentType = Some(MediaType.ApplicationXWwwFormUrlencoded))
 
   // stream response specifications
 
+  /** Handles the response body by either reading a string (for non-2xx responses), or otherwise providing a stream with
+    * the response's data to `f`. The effect type used by `f` must be compatible with the effect type of the backend.
+    * The stream is always closed after `f` completes.
+    *
+    * A non-blocking, asynchronous streaming implementation must be provided as the [[Streams]] parameter.
+    */
   def asStream[F[_], T, S](s: Streams[S])(
       f: s.BinaryStream => F[T]
   ): StreamResponseAs[Either[String, T], S with Effect[F]] =
     asEither(asStringAlways, asStreamAlways(s)(f))
 
+  /** Handles the response body by providing a stream with the response's data to `f`, if the status code is 2xx.
+    * Otherwise, returns a failed effect (with [[HttpError]]). The effect type used by `f` must be compatible with the
+    * effect type of the backend. The stream is always closed after `f` completes.
+    *
+    * A non-blocking, asynchronous streaming implementation must be provided as the [[Streams]] parameter.
+    *
+    * @see
+    *   the [[ResponseAs#orFail]] method can be used to convert any response description which returns an `Either` into
+    *   an exception-throwing variant.
+    */
+  def asStreamOrFail[F[_], T, S](s: Streams[S])(
+      f: s.BinaryStream => F[T]
+  ): StreamResponseAs[T, S with Effect[F]] = asStream(s)(f).orFail.showAs("as stream or fail")
+
+  /** Handles the response body by either reading a string (for non-2xx responses), or otherwise providing a stream with
+    * the response's data, along with the response metadata, to `f`. The effect type used by `f` must be compatible with
+    * the effect type of the backend. The stream is always closed after `f` completes.
+    *
+    * A non-blocking, asynchronous streaming implementation must be provided as the [[Streams]] parameter.
+    */
   def asStreamWithMetadata[F[_], T, S](s: Streams[S])(
       f: (s.BinaryStream, ResponseMetadata) => F[T]
   ): StreamResponseAs[Either[String, T], S with Effect[F]] =
     asEither(asStringAlways, asStreamAlwaysWithMetadata(s)(f))
 
+  /** Handles the response body by providing a stream with the response's data to `f`, regardless of the status code.
+    * The effect type used by `f` must be compatible with the effect type of the backend. The stream is always closed
+    * after `f` completes.
+    *
+    * A non-blocking, asynchronous streaming implementation must be provided as the [[Streams]] parameter.
+    */
   def asStreamAlways[F[_], T, S](s: Streams[S])(f: s.BinaryStream => F[T]): StreamResponseAs[T, S with Effect[F]] =
     asStreamAlwaysWithMetadata(s)((s, _) => f(s))
 
+  /** Handles the response body by providing a stream with the response's data, along with the response metadata, to
+    * `f`, regardless of the status code. The effect type used by `f` must be compatible with the effect type of the
+    * backend. The stream is always closed after `f` completes.
+    *
+    * A non-blocking, asynchronous streaming implementation must be provided as the [[Streams]] parameter.
+    */
   def asStreamAlwaysWithMetadata[F[_], T, S](s: Streams[S])(
       f: (s.BinaryStream, ResponseMetadata) => F[T]
   ): StreamResponseAs[T, S with Effect[F]] = StreamResponseAs(ResponseAsStream(s)(f))
 
+  /** Handles the response body by either reading a string (for non-2xx responses), or otherwise returning a stream with
+    * the response's data. It's the responsibility of the caller to consume & close the stream.
+    *
+    * A non-blocking, asynchronous streaming implementation must be provided as the [[Streams]] parameter.
+    */
   def asStreamUnsafe[S](s: Streams[S]): StreamResponseAs[Either[String, s.BinaryStream], S] =
     asEither(asStringAlways, asStreamAlwaysUnsafe(s))
 
+  /** Handles the response body by returning a stream with the response's data, regardless of the status code. It's the
+    * responsibility of the caller to consume & close the stream.
+    *
+    * A non-blocking, asynchronous streaming implementation must be provided as the [[Streams]] parameter.
+    */
   def asStreamAlwaysUnsafe[S](s: Streams[S]): StreamResponseAs[s.BinaryStream, S] =
     StreamResponseAs(ResponseAsStreamUnsafe(s))
 
+  /** Uses the [[StreamResponseAs]] description that matches the condition (using the response's metadata). The
+    * conditional response descriptions might include handling the response as a non-blocking, asynchronous stream.
+    *
+    * This allows using different response description basing on the status code, for example. If none of the conditions
+    * match, the default response handling description is used.
+    */
   def fromMetadata[T, S](
       default: ResponseAs[T],
       conditions: ConditionalResponseAs[StreamResponseAs[T, S]]*
   ): StreamResponseAs[T, S] =
     StreamResponseAs[T, S](ResponseAsFromMetadata(conditions.map(_.map(_.delegate)).toList, default.delegate))
 
-  /** Uses the `onSuccess` response specification for successful responses (2xx), and the `onError` specification
-    * otherwise.
+  /** Uses the `onSuccess` response description for successful responses (2xx), and the `onError` description otherwise.
+    *
+    * The sucessful response description might include handling the response as a non-blocking, asynchronous stream.
     */
   def asEither[A, B, S](onError: ResponseAs[A], onSuccess: StreamResponseAs[B, S]): StreamResponseAs[Either[A, B], S] =
     fromMetadata[Either[A, B], S](onError.map(Left(_)), ConditionalResponseAs(_.isSuccess, onSuccess.map(Right(_))))
       .showAs(s"either(${onError.show}, ${onSuccess.show})")
 
-  /** Use `l` to read the response body. If the raw body value which is used by `l` is replayable (a file or byte
-    * array), also use `r` to read the response body. Otherwise ignore `r` (if the raw body is a stream).
+  /** Uses `l` to handle the response body. If the raw body value which is used by `l` is replayable (a file or byte
+    * array), also uses `r` to read the response body. Otherwise ignores `r` (if the raw body is a stream).
     */
   def asBothOption[A, B, S](l: StreamResponseAs[A, S], r: ResponseAs[B]): StreamResponseAs[(A, Option[B]), S] =
     StreamResponseAs[(A, Option[B]), S](ResponseAsBoth(l.delegate, r.delegate))

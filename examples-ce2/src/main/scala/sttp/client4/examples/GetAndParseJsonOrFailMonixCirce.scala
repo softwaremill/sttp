@@ -5,14 +5,14 @@ import sttp.client4._
 import sttp.client4.httpclient.monix.HttpClientMonixBackend
 import sttp.client4.circe._
 
-object GetAndParseJsonGetRightMonixCirce extends App {
+object GetAndParseJsonOrFailMonixCirce extends App {
   import monix.execution.Scheduler.Implicits.global
 
   case class HttpBinResponse(origin: String, headers: Map[String, String])
 
   val request: Request[HttpBinResponse] = basicRequest
     .get(uri"https://httpbin.org/get")
-    .response(asJson[HttpBinResponse].getRight)
+    .response(asJson[HttpBinResponse].orFail)
 
   HttpClientMonixBackend
     .resource()
