@@ -584,7 +584,7 @@ lazy val asyncHttpClientBackend = (projectMatrix in file("async-http-client-back
   .settings(
     name := "async-http-client-backend",
     libraryDependencies ++= Seq(
-      "org.asynchttpclient" % "async-http-client" % "2.12.3"
+      "org.asynchttpclient" % "async-http-client" % "2.12.4"
     )
   )
   .dependsOn(core % compileAndTest)
