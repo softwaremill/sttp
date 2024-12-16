@@ -120,7 +120,7 @@ val testServerSettings = Seq(
 
 val circeVersion: String = "0.14.10"
 
-val jsoniterVersion = "2.31.3"
+val jsoniterVersion = "2.32.0"
 
 val play29JsonVersion = "2.10.6"
 
@@ -152,20 +152,20 @@ val zio2InteropRsVersion = "2.0.2"
 
 val oxVersion = "0.5.1"
 val sttpModelVersion = "1.7.11"
-val sttpSharedVersion = "1.4.0"
+val sttpSharedVersion = "1.4.2"
 
 val logback = "ch.qos.logback" % "logback-classic" % "1.5.12"
 
 val jaegerClientVersion = "1.8.1"
 val braveOpentracingVersion = "1.0.1"
-val zipkinSenderOkHttpVersion = "3.4.2"
+val zipkinSenderOkHttpVersion = "3.4.3"
 val resilience4jVersion = "2.2.0"
 val http4s_ce2_version = "0.22.15"
-val http4s_ce3_version = "0.23.29"
+val http4s_ce3_version = "0.23.30"
 
 val tethysVersion = "0.29.3"
 
-val openTelemetryVersion = "1.44.1"
+val openTelemetryVersion = "1.45.0"
 
 val compileAndTest = "compile->compile;test->test"
 
@@ -708,7 +708,7 @@ lazy val http4sBackend = (projectMatrix in file("http4s-backend"))
     name := "http4s-backend",
     libraryDependencies ++= Seq(
       "org.http4s" %% "http4s-client" % http4s_ce3_version,
-      "org.http4s" %% "http4s-ember-client" % "0.23.29" % Optional,
+      "org.http4s" %% "http4s-ember-client" % "0.23.30" % Optional,
       "org.http4s" %% "http4s-blaze-client" % "0.23.17" % Optional
     ),
     evictionErrorLevel := Level.Info
@@ -734,7 +734,7 @@ lazy val armeriaBackend = (projectMatrix in file("armeria-backend"))
   .settings(testServerSettings)
   .settings(
     name := "armeria-backend",
-    libraryDependencies += "com.linecorp.armeria" % "armeria" % "1.31.1"
+    libraryDependencies += "com.linecorp.armeria" % "armeria" % "1.31.3"
   )
   .jvmPlatform(scalaVersions = scala2 ++ scala3)
   .dependsOn(core % compileAndTest)
@@ -800,7 +800,8 @@ lazy val armeriaZioBackend =
 //----- json
 lazy val jsonCommon = (projectMatrix in (file("json/common")))
   .settings(
-    name := "json-common"
+    name := "json-common",
+    scalaTest
   )
   .jvmPlatform(
     scalaVersions = scala2 ++ scala3,
@@ -826,7 +827,7 @@ lazy val circe = (projectMatrix in file("json/circe"))
   )
   .jsPlatform(scalaVersions = scala2 ++ scala3, settings = commonJsSettings)
   .nativePlatform(scalaVersions = scala2 ++ scala3, settings = commonNativeSettings)
-  .dependsOn(core, jsonCommon)
+  .dependsOn(core, jsonCommon % compileAndTest)
 
 lazy val jsoniter = (projectMatrix in file("json/jsoniter"))
   .settings(
@@ -842,7 +843,7 @@ lazy val jsoniter = (projectMatrix in file("json/jsoniter"))
     settings = commonJvmSettings
   )
   .jsPlatform(scalaVersions = scala2 ++ scala3, settings = commonJsSettings)
-  .dependsOn(core, jsonCommon)
+  .dependsOn(core, jsonCommon % compileAndTest)
 
 lazy val zioJson = (projectMatrix in file("json/zio-json"))
   .settings(
@@ -858,7 +859,7 @@ lazy val zioJson = (projectMatrix in file("json/zio-json"))
     settings = commonJvmSettings
   )
   .jsPlatform(scalaVersions = scala2 ++ scala3, settings = commonJsSettings)
-  .dependsOn(core, jsonCommon)
+  .dependsOn(core, jsonCommon % compileAndTest)
 
 lazy val zio1Json = (projectMatrix in file("json/zio1-json"))
   .settings(
@@ -874,7 +875,7 @@ lazy val zio1Json = (projectMatrix in file("json/zio1-json"))
     settings = commonJvmSettings
   )
   .jsPlatform(scalaVersions = scala2 ++ scala3, settings = commonJsSettings)
-  .dependsOn(core, jsonCommon)
+  .dependsOn(core, jsonCommon % compileAndTest)
 
 lazy val tethysJson = (projectMatrix in file("json/tethys-json"))
   .settings(
@@ -890,7 +891,7 @@ lazy val tethysJson = (projectMatrix in file("json/tethys-json"))
     scalaVersions = scala2 ++ scala3,
     settings = commonJvmSettings
   )
-  .dependsOn(core, jsonCommon)
+  .dependsOn(core, jsonCommon % compileAndTest)
 
 lazy val upickle = (projectMatrix in file("json/upickle"))
   .settings(
@@ -908,7 +909,7 @@ lazy val upickle = (projectMatrix in file("json/upickle"))
   )
   .jsPlatform(scalaVersions = scala2 ++ scala3, settings = commonJsSettings)
   .nativePlatform(scalaVersions = scala2 ++ scala3, settings = commonNativeSettings)
-  .dependsOn(core, jsonCommon)
+  .dependsOn(core, jsonCommon % compileAndTest)
 
 lazy val json4sVersion = "4.0.7"
 
@@ -923,7 +924,7 @@ lazy val json4s = (projectMatrix in file("json/json4s"))
     scalaTest
   )
   .jvmPlatform(scalaVersions = scala2 ++ scala3)
-  .dependsOn(core, jsonCommon)
+  .dependsOn(core, jsonCommon % compileAndTest)
 
 lazy val sprayJson = (projectMatrix in file("json/spray-json"))
   .settings(commonJvmSettings)
@@ -935,7 +936,7 @@ lazy val sprayJson = (projectMatrix in file("json/spray-json"))
     scalaTest
   )
   .jvmPlatform(scalaVersions = scala2 ++ scala3)
-  .dependsOn(core, jsonCommon)
+  .dependsOn(core, jsonCommon % compileAndTest)
 
 lazy val play29Json = (projectMatrix in file("json/play29-json"))
   .settings(
@@ -952,7 +953,7 @@ lazy val play29Json = (projectMatrix in file("json/play29-json"))
     settings = commonJvmSettings
   )
   .jsPlatform(scalaVersions = scala2, settings = commonJsSettings)
-  .dependsOn(core, jsonCommon)
+  .dependsOn(core, jsonCommon % compileAndTest)
 
 lazy val playJson = (projectMatrix in file("json/play-json"))
   .settings(
@@ -967,14 +968,14 @@ lazy val playJson = (projectMatrix in file("json/play-json"))
     settings = commonJvmSettings
   )
   .jsPlatform(scalaVersions = scala2 ++ scala3, settings = commonJsSettings)
-  .dependsOn(core, jsonCommon)
+  .dependsOn(core, jsonCommon % compileAndTest)
 
 lazy val prometheusBackend = (projectMatrix in file("observability/prometheus-backend"))
   .settings(commonJvmSettings)
   .settings(
     name := "prometheus-backend",
     libraryDependencies ++= Seq(
-      "io.prometheus" % "prometheus-metrics-core" % "1.3.4"
+      "io.prometheus" % "prometheus-metrics-core" % "1.3.5"
     ),
     scalaTest
   )

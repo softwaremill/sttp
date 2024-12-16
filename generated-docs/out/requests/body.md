@@ -83,15 +83,11 @@ basicRequest.body("k1" -> "v1", "k2" -> "v2")
 basicRequest.body(Seq("k1" -> "v1", "k2" -> "v2"), "utf-8")
 ```        
 
-## Custom body serializers
+## Custom serializers
 
-It is also possible to set custom types as request bodies, as long as there's an implicit `BodySerializer[B]` value in scope, which is simply an alias for a function:
-
-```scala
-type BodySerializer[B] = B => BasicRequestBody
-```
-
-A `BasicRequestBody` is a wrapper for one of the supported request body types: a `String`/byte array or an input stream.
+It is also possible to write custom serializers, which return arbitrary body representations. These should be 
+methods/functions which return instances of `BasicBody`, which is a wrapper for one of the supported request body 
+types: a `String`, byte array, an input stream, etc.
 
 For example, here's how to write a custom serializer for a case class, with serializer-specific default content type:
 
@@ -101,12 +97,12 @@ import sttp.model.MediaType
 case class Person(name: String, surname: String, age: Int)
 
 // for this example, assuming names/surnames can't contain commas
-implicit val personSerializer: BodySerializer[Person] = { p: Person =>
+def serializePerson(p: Person): BasicBody = { 
   val serialized = s"${p.name},${p.surname},${p.age}"
   StringBody(serialized, "UTF-8", MediaType.TextCsv)
 }
 
-basicRequest.body(Person("mary", "smith", 67))
+basicRequest.body(serializePerson(Person("mary", "smith", 67)))
 ```
 
-See the implementations of the `BasicRequestBody` trait for more options.
+See the implementations of the `BasicBody` trait for more options.

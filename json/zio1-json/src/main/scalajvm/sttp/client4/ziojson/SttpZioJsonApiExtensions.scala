@@ -2,14 +2,19 @@ package sttp.client4.ziojson
 
 import sttp.capabilities.Effect
 import sttp.capabilities.zio.ZioStreams
-import sttp.client4.{asStream, DeserializationException, HttpError, IsOption, ResponseException, StreamResponseAs}
+import sttp.client4.DeserializationException
+import sttp.client4.HttpError
+import sttp.client4.ResponseException
+import sttp.client4.StreamResponseAs
+import sttp.client4.asStream
+import zio.RIO
+import zio.ZIO
 import zio.blocking.Blocking
 import zio.json.JsonDecoder
 import zio.stream.ZTransducer
-import zio.{RIO, ZIO}
 
 trait SttpZioJsonApiExtensions { this: SttpZioJsonApi =>
-  def asJsonStream[B: JsonDecoder: IsOption]
+  def asJsonStream[B: JsonDecoder]
       : StreamResponseAs[Either[ResponseException[String, String], B], ZioStreams with Effect[RIO[Blocking, *]]] =
     asStream(ZioStreams)(s =>
       JsonDecoder[B]

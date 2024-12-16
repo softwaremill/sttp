@@ -10,13 +10,13 @@ Possible use-cases for wrapper-backend include:
 
 See also the section on [resilience](../../resilience.md) which covers topics such as retries, circuit breaking and rate limiting.
 
-## Request tagging
+## Request attributes
 
-Each request contains a `tags: Map[String, Any]` map. This map can be used to tag the request with any backend-specific information, and isn't used in any way by sttp itself.
+Each request contains a `attributes: AttributeMap` type-safe map. This map can be used to tag the request with any backend-specific information, and isn't used in any way by sttp itself.
 
-Tags can be added to a request using the `def tag(k: String, v: Any)` method, and read using the `def tag(k: String): Option[Any]` method.
+Attributes can be added to a request using the `def attribute[T](k: AttributeKey[T], v: T)` method, and read using the `def attribute[T](k: Attribute[T]): Option[T]` method.
 
-Backends, or backend wrappers can use tags e.g. for logging, passing a metric name, using different connection pools, or even different delegate backends.
+Backends, or backend wrappers can use attributes e.g. for logging, passing a metric name, using different connection pools, or even different delegate backends.
 
 ## Listener backend
 
@@ -42,6 +42,7 @@ Below is an example on how to implement a backend wrapper, which sends
 metrics for completed requests and wraps any `Future`-based backend:
 
 ```scala
+import sttp.attributes.AttributeKey
 import sttp.capabilities.Effect
 import sttp.client4._
 import sttp.client4.akkahttp._
@@ -49,6 +50,7 @@ import sttp.client4.wrappers.DelegateBackend
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util._
+
 // the metrics infrastructure
 trait MetricsServer {
   def reportDuration(name: String, duration: Long): Unit
@@ -57,6 +59,9 @@ trait MetricsServer {
 class CloudMetricsServer extends MetricsServer {
   override def reportDuration(name: String, duration: Long): Unit = ???
 }
+
+case class MetricPrefix(prefix: String)
+val MetricPrefixAttributeKey = AttributeKey[MetricPrefix]
 
 // the backend wrapper
 abstract class MetricWrapper[P](delegate: GenericBackend[Future, P],
@@ -67,7 +72,7 @@ abstract class MetricWrapper[P](delegate: GenericBackend[Future, P],
     val start = System.currentTimeMillis()
 
     def report(metricSuffix: String): Unit = {
-      val metricPrefix = request.tag("metric").getOrElse("?")
+      val metricPrefix = request.attribute(MetricPrefixAttributeKey).getOrElse(MetricPrefix("?"))
       val end = System.currentTimeMillis()
       metrics.reportDuration(metricPrefix + "-" + metricSuffix, end - start)
     }
@@ -93,7 +98,7 @@ val backend = MetricWrapper(AkkaHttpBackend(), new CloudMetricsServer())
 
 basicRequest
   .get(uri"http://company.com/api/service1")
-  .tag("metric", "service1")
+  .attribute(MetricPrefixAttributeKey, MetricPrefix("service1"))
   .send(backend)
 ```
 
@@ -260,7 +265,7 @@ object RateLimitingSttpBackend {
 Implementing a new backend is made easy as the tests are published in the `core` jar file under the `tests` classifier. Simply add the follow dependencies to your `build.sbt`:
 
 ```
-"com.softwaremill.sttp.client4" %% "core" % "4.0.0-M19" % Test classifier "tests"
+"com.softwaremill.sttp.client4" %% "core" % "4.0.0-M20" % Test classifier "tests"
 ```
 
 Implement your backend and extend the `HttpTest` class:
@@ -288,9 +293,9 @@ import sttp.client4.impl.cats.implicits._
 from the cats integration module. The module should be available on the classpath after adding following dependency:
 
 ```scala
-"com.softwaremill.sttp.client4" %% "cats" % "4.0.0-M19" // for cats-effect 3.x
+"com.softwaremill.sttp.client4" %% "cats" % "4.0.0-M20" // for cats-effect 3.x
 // or
-"com.softwaremill.sttp.client4" %% "catsce2" % "4.0.0-M19" // for cats-effect 2.x
+"com.softwaremill.sttp.client4" %% "catsce2" % "4.0.0-M20" // for cats-effect 2.x
 ```
 
 The object contains implicits to convert a cats `MonadError` into the sttp `MonadError`, 

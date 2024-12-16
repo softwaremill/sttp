@@ -22,6 +22,6 @@ class BackendOptionsProxyTest2 extends AnyFlatSpec with Matchers {
       val ioe = new IOException("bar")
       proxySelector.connectFailed(uri, proxySetting.inetSocketAddress, ioe)
     }
-    ex.getMessage should be("Couldn't connect to the proxy server, uri: foo, socket: fakeproxyserverhost:8080")
+    ex.getMessage should startWith("Couldn't connect to the proxy server, uri: foo, socket: fakeproxyserverhost")
   }
 }

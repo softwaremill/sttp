@@ -28,7 +28,7 @@ import sttp.client4._
 def asJson[T]: ResponseAs[Either[ResponseException[String, Exception], T]] = ???
 ``` 
 
-There are also the `.getRight` and `.getEither` methods on eligible response specifications, which convert http errors or deserialization exceptions as failed effects.
+There are also the `.orFail` and `.orFailDeserialization` methods on eligible response specifications, which convert http errors or deserialization exceptions as failed effects.
 
 ## Possible outcomes
 

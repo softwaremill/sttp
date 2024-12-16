@@ -75,8 +75,8 @@ abstract class AbstractCurlBackend[F[_]](_monad: MonadError[F], verbose: Boolean
         if (verbose) {
           curl.option(Verbose, parameter = true)
         }
-        if (request.tags.nonEmpty) {
-          return monad.error(new UnsupportedOperationException("Tags are not supported"))
+        if (request.attributes.nonEmpty) {
+          return monad.error(new UnsupportedOperationException("Attributes are not supported"))
         }
         val reqHeaders = request.headers
         if (reqHeaders.nonEmpty) {

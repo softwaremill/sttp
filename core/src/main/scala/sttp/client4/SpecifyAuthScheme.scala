@@ -3,11 +3,12 @@ package sttp.client4
 import sttp.client4.internal.DigestAuthenticator
 import sttp.client4.internal.Utf8
 import java.util.Base64
+import sttp.attributes.AttributeKey
 
 class SpecifyAuthScheme[+R <: PartialRequestBuilder[R, _]](
     hn: String,
     req: R,
-    digestTag: String
+    digestAttributeKey: AttributeKey[DigestAuthenticator.DigestAuthData]
 ) {
   def basic(user: String, password: String): R = {
     val c = new String(Base64.getEncoder.encode(s"$user:$password".getBytes(Utf8)), Utf8)
@@ -21,5 +22,5 @@ class SpecifyAuthScheme[+R <: PartialRequestBuilder[R, _]](
     req.header(hn, s"Bearer $token")
 
   def digest(user: String, password: String): R =
-    req.tag(digestTag, DigestAuthenticator.DigestAuthData(user, password))
+    req.attribute(digestAttributeKey, DigestAuthenticator.DigestAuthData(user, password))
 }
