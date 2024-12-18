@@ -34,13 +34,13 @@ class UpickleTests extends AnyFlatSpec with Matchers with EitherValues {
     RunResponseAs(responseAs)(body).right.value shouldBe expected
   }
 
-  it should "decode None from empty array body" in {
+  it should "decode None from empty body" in {
     import UsingDefaultReaderWriters._
     import sttp.client4.upicklejson.default._
 
     val responseAs = asJson[Option[Inner]]
 
-    RunResponseAs(responseAs)("[]").right.value shouldBe None
+    RunResponseAs(responseAs)("").right.value shouldBe None
   }
 
   it should "decode Left(None) from upickle notation" in {
@@ -49,7 +49,7 @@ class UpickleTests extends AnyFlatSpec with Matchers with EitherValues {
 
     val responseAs = asJson[Either[Option[Inner], Outer]]
 
-    RunResponseAs(responseAs)("[0,[]]").right.value shouldBe Left(None)
+    RunResponseAs(responseAs)("[0,null]").right.value shouldBe Left(None)
   }
 
   it should "decode Right(None) from upickle notation" in {
@@ -58,7 +58,7 @@ class UpickleTests extends AnyFlatSpec with Matchers with EitherValues {
 
     val responseAs = asJson[Either[Outer, Option[Inner]]]
 
-    RunResponseAs(responseAs)("[1,[]]").right.value shouldBe Right(None)
+    RunResponseAs(responseAs)("[1,null]").right.value shouldBe Right(None)
   }
 
   it should "fail to decode from empty input" in {
