@@ -350,7 +350,7 @@ class PrometheusBackendTest
     assertThrows[SttpClientException] {
       basicRequest
         .get(uri"http://127.0.0.1/foo")
-        .response(asString.getRight)
+        .response(asString.orFail)
         .send(backend)
     }
 
@@ -401,7 +401,7 @@ class PrometheusBackendTest
     // when
     basicRequest
       .get(uri"http://127.0.0.1/foo")
-      .response(asString.getRight)
+      .response(asString.orFail)
       .send(backend)
 
     // then

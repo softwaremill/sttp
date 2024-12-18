@@ -120,13 +120,13 @@ val testServerSettings = Seq(
 
 val circeVersion: String = "0.14.10"
 
-val jsoniterVersion = "2.30.11"
+val jsoniterVersion = "2.32.0"
 
 val play29JsonVersion = "2.10.6"
 
 val playJsonVersion = "3.0.4"
 
-val catsEffect_3_version = "3.5.4"
+val catsEffect_3_version = "3.5.7"
 val fs2_3_version = "3.11.0"
 
 val catsEffect_2_version = "2.5.5"
@@ -137,8 +137,8 @@ val akkaHttp = "com.typesafe.akka" %% "akka-http" % "10.2.10"
 val akkaStreamVersion = "2.6.20"
 val akkaStreams = "com.typesafe.akka" %% "akka-stream" % akkaStreamVersion
 
-val pekkoHttp = "org.apache.pekko" %% "pekko-http" % "1.0.1"
-val pekkoStreamVersion = "1.1.1"
+val pekkoHttp = "org.apache.pekko" %% "pekko-http" % "1.1.0"
+val pekkoStreamVersion = "1.1.2"
 val pekkoStreams = "org.apache.pekko" %% "pekko-stream" % pekkoStreamVersion
 
 val scalaTest = libraryDependencies ++= Seq("freespec", "funsuite", "flatspec", "wordspec", "shouldmatchers").map(m =>
@@ -146,26 +146,26 @@ val scalaTest = libraryDependencies ++= Seq("freespec", "funsuite", "flatspec", 
 )
 
 val zio1Version = "1.0.18"
-val zio2Version = "2.1.9"
+val zio2Version = "2.1.13"
 val zio1InteropRsVersion = "1.3.12"
 val zio2InteropRsVersion = "2.0.2"
 
-val oxVersion = "0.4.0"
+val oxVersion = "0.5.1"
 val sttpModelVersion = "1.7.11"
-val sttpSharedVersion = "1.3.22"
+val sttpSharedVersion = "1.4.2"
 
-val logback = "ch.qos.logback" % "logback-classic" % "1.5.8"
+val logback = "ch.qos.logback" % "logback-classic" % "1.5.12"
 
 val jaegerClientVersion = "1.8.1"
 val braveOpentracingVersion = "1.0.1"
-val zipkinSenderOkHttpVersion = "3.4.2"
+val zipkinSenderOkHttpVersion = "3.4.3"
 val resilience4jVersion = "2.2.0"
 val http4s_ce2_version = "0.22.15"
-val http4s_ce3_version = "0.23.28"
+val http4s_ce3_version = "0.23.30"
 
-val tethysVersion = "0.29.1"
+val tethysVersion = "0.29.3"
 
-val openTelemetryVersion = "1.42.1"
+val openTelemetryVersion = "1.45.0"
 
 val compileAndTest = "compile->compile;test->test"
 
@@ -214,16 +214,6 @@ lazy val rawAllAggregates =
     zio.projectRefs ++
     akkaHttpBackend.projectRefs ++
     pekkoHttpBackend.projectRefs ++
-    asyncHttpClientBackend.projectRefs ++
-    asyncHttpClientFutureBackend.projectRefs ++
-    asyncHttpClientScalazBackend.projectRefs ++
-    asyncHttpClientZio1Backend.projectRefs ++
-    asyncHttpClientZioBackend.projectRefs ++
-    asyncHttpClientMonixBackend.projectRefs ++
-    asyncHttpClientCatsCe2Backend.projectRefs ++
-    asyncHttpClientCatsBackend.projectRefs ++
-    asyncHttpClientFs2Ce2Backend.projectRefs ++
-    asyncHttpClientFs2Backend.projectRefs ++
     okhttpBackend.projectRefs ++
     okhttpMonixBackend.projectRefs ++
     http4sCe2Backend.projectRefs ++
@@ -577,91 +567,6 @@ lazy val pekkoHttpBackend = (projectMatrix in file("pekko-http-backend"))
     scalaVersions = scala2 ++ scala3
   )
 
-//-- async http client
-lazy val asyncHttpClientBackend = (projectMatrix in file("async-http-client-backend"))
-  .settings(commonJvmSettings)
-  .settings(testServerSettings)
-  .settings(
-    name := "async-http-client-backend",
-    libraryDependencies ++= Seq(
-      "org.asynchttpclient" % "async-http-client" % "2.12.3"
-    )
-  )
-  .dependsOn(core % compileAndTest)
-  .jvmPlatform(
-    scalaVersions = scala2 ++ scala3
-  )
-
-def asyncHttpClientBackendProject(proj: String, includeDotty: Boolean = false) =
-  ProjectMatrix(s"asyncHttpClientBackend${proj.capitalize}", file(s"async-http-client-backend/$proj"))
-    .settings(commonJvmSettings)
-    .settings(testServerSettings)
-    .settings(name := s"async-http-client-backend-$proj")
-    .dependsOn(asyncHttpClientBackend % compileAndTest)
-    .jvmPlatform(
-      scalaVersions = scala2 ++ (if (includeDotty) scala3 else Nil)
-    )
-
-lazy val asyncHttpClientFutureBackend =
-  asyncHttpClientBackendProject("future", includeDotty = true)
-    .dependsOn(core % compileAndTest)
-
-lazy val asyncHttpClientScalazBackend =
-  asyncHttpClientBackendProject("scalaz")
-    .dependsOn(scalaz % compileAndTest)
-
-lazy val asyncHttpClientZio1Backend =
-  asyncHttpClientBackendProject("zio1", includeDotty = true)
-    .settings(
-      libraryDependencies ++= Seq(
-        "dev.zio" %% "zio-interop-reactivestreams" % zio1InteropRsVersion
-      )
-    )
-    .dependsOn(zio1 % compileAndTest)
-
-lazy val asyncHttpClientZioBackend =
-  asyncHttpClientBackendProject("zio", includeDotty = true)
-    .settings(
-      libraryDependencies ++= Seq(
-        "dev.zio" %% "zio-interop-reactivestreams" % zio2InteropRsVersion
-      )
-    )
-    .dependsOn(zio % compileAndTest)
-
-lazy val asyncHttpClientMonixBackend =
-  asyncHttpClientBackendProject("monix", includeDotty = true)
-    .dependsOn(monix % compileAndTest)
-
-lazy val asyncHttpClientCatsCe2Backend =
-  asyncHttpClientBackendProject("cats-ce2", includeDotty = true)
-    .dependsOn(catsCe2 % compileAndTest)
-
-lazy val asyncHttpClientCatsBackend =
-  asyncHttpClientBackendProject("cats", includeDotty = true)
-    .dependsOn(cats % compileAndTest)
-
-lazy val asyncHttpClientFs2Ce2Backend =
-  asyncHttpClientBackendProject("fs2-ce2", includeDotty = true)
-    .settings(
-      libraryDependencies ++= Seq(
-        "co.fs2" %% "fs2-reactive-streams" % fs2_2_version,
-        "co.fs2" %% "fs2-io" % fs2_2_version
-      )
-    )
-    .dependsOn(catsCe2 % compileAndTest)
-    .dependsOn(fs2Ce2 % compileAndTest)
-
-lazy val asyncHttpClientFs2Backend =
-  asyncHttpClientBackendProject("fs2", includeDotty = true)
-    .settings(
-      libraryDependencies ++= Seq(
-        "co.fs2" %% "fs2-reactive-streams" % fs2_3_version,
-        "co.fs2" %% "fs2-io" % fs2_3_version
-      )
-    )
-    .dependsOn(cats % compileAndTest)
-    .dependsOn(fs2 % compileAndTest)
-
 //-- okhttp
 lazy val okhttpBackend = (projectMatrix in file("okhttp-backend"))
   .settings(commonJvmSettings)
@@ -708,8 +613,8 @@ lazy val http4sBackend = (projectMatrix in file("http4s-backend"))
     name := "http4s-backend",
     libraryDependencies ++= Seq(
       "org.http4s" %% "http4s-client" % http4s_ce3_version,
-      "org.http4s" %% "http4s-ember-client" % "0.23.28" % Optional,
-      "org.http4s" %% "http4s-blaze-client" % "0.23.16" % Optional
+      "org.http4s" %% "http4s-ember-client" % "0.23.30" % Optional,
+      "org.http4s" %% "http4s-blaze-client" % "0.23.17" % Optional
     ),
     evictionErrorLevel := Level.Info
   )
@@ -734,7 +639,7 @@ lazy val armeriaBackend = (projectMatrix in file("armeria-backend"))
   .settings(testServerSettings)
   .settings(
     name := "armeria-backend",
-    libraryDependencies += "com.linecorp.armeria" % "armeria" % "1.30.1"
+    libraryDependencies += "com.linecorp.armeria" % "armeria" % "1.31.3"
   )
   .jvmPlatform(scalaVersions = scala2 ++ scala3)
   .dependsOn(core % compileAndTest)
@@ -800,7 +705,8 @@ lazy val armeriaZioBackend =
 //----- json
 lazy val jsonCommon = (projectMatrix in (file("json/common")))
   .settings(
-    name := "json-common"
+    name := "json-common",
+    scalaTest
   )
   .jvmPlatform(
     scalaVersions = scala2 ++ scala3,
@@ -826,7 +732,7 @@ lazy val circe = (projectMatrix in file("json/circe"))
   )
   .jsPlatform(scalaVersions = scala2 ++ scala3, settings = commonJsSettings)
   .nativePlatform(scalaVersions = scala2 ++ scala3, settings = commonNativeSettings)
-  .dependsOn(core, jsonCommon)
+  .dependsOn(core, jsonCommon % compileAndTest)
 
 lazy val jsoniter = (projectMatrix in file("json/jsoniter"))
   .settings(
@@ -842,7 +748,7 @@ lazy val jsoniter = (projectMatrix in file("json/jsoniter"))
     settings = commonJvmSettings
   )
   .jsPlatform(scalaVersions = scala2 ++ scala3, settings = commonJsSettings)
-  .dependsOn(core, jsonCommon)
+  .dependsOn(core, jsonCommon % compileAndTest)
 
 lazy val zioJson = (projectMatrix in file("json/zio-json"))
   .settings(
@@ -858,7 +764,7 @@ lazy val zioJson = (projectMatrix in file("json/zio-json"))
     settings = commonJvmSettings
   )
   .jsPlatform(scalaVersions = scala2 ++ scala3, settings = commonJsSettings)
-  .dependsOn(core, jsonCommon)
+  .dependsOn(core, jsonCommon % compileAndTest)
 
 lazy val zio1Json = (projectMatrix in file("json/zio1-json"))
   .settings(
@@ -874,7 +780,7 @@ lazy val zio1Json = (projectMatrix in file("json/zio1-json"))
     settings = commonJvmSettings
   )
   .jsPlatform(scalaVersions = scala2 ++ scala3, settings = commonJsSettings)
-  .dependsOn(core, jsonCommon)
+  .dependsOn(core, jsonCommon % compileAndTest)
 
 lazy val tethysJson = (projectMatrix in file("json/tethys-json"))
   .settings(
@@ -890,7 +796,7 @@ lazy val tethysJson = (projectMatrix in file("json/tethys-json"))
     scalaVersions = scala2 ++ scala3,
     settings = commonJvmSettings
   )
-  .dependsOn(core, jsonCommon)
+  .dependsOn(core, jsonCommon % compileAndTest)
 
 lazy val upickle = (projectMatrix in file("json/upickle"))
   .settings(
@@ -908,7 +814,7 @@ lazy val upickle = (projectMatrix in file("json/upickle"))
   )
   .jsPlatform(scalaVersions = scala2 ++ scala3, settings = commonJsSettings)
   .nativePlatform(scalaVersions = scala2 ++ scala3, settings = commonNativeSettings)
-  .dependsOn(core, jsonCommon)
+  .dependsOn(core, jsonCommon % compileAndTest)
 
 lazy val json4sVersion = "4.0.7"
 
@@ -923,7 +829,7 @@ lazy val json4s = (projectMatrix in file("json/json4s"))
     scalaTest
   )
   .jvmPlatform(scalaVersions = scala2 ++ scala3)
-  .dependsOn(core, jsonCommon)
+  .dependsOn(core, jsonCommon % compileAndTest)
 
 lazy val sprayJson = (projectMatrix in file("json/spray-json"))
   .settings(commonJvmSettings)
@@ -935,7 +841,7 @@ lazy val sprayJson = (projectMatrix in file("json/spray-json"))
     scalaTest
   )
   .jvmPlatform(scalaVersions = scala2 ++ scala3)
-  .dependsOn(core, jsonCommon)
+  .dependsOn(core, jsonCommon % compileAndTest)
 
 lazy val play29Json = (projectMatrix in file("json/play29-json"))
   .settings(
@@ -952,7 +858,7 @@ lazy val play29Json = (projectMatrix in file("json/play29-json"))
     settings = commonJvmSettings
   )
   .jsPlatform(scalaVersions = scala2, settings = commonJsSettings)
-  .dependsOn(core, jsonCommon)
+  .dependsOn(core, jsonCommon % compileAndTest)
 
 lazy val playJson = (projectMatrix in file("json/play-json"))
   .settings(
@@ -967,14 +873,14 @@ lazy val playJson = (projectMatrix in file("json/play-json"))
     settings = commonJvmSettings
   )
   .jsPlatform(scalaVersions = scala2 ++ scala3, settings = commonJsSettings)
-  .dependsOn(core, jsonCommon)
+  .dependsOn(core, jsonCommon % compileAndTest)
 
 lazy val prometheusBackend = (projectMatrix in file("observability/prometheus-backend"))
   .settings(commonJvmSettings)
   .settings(
     name := "prometheus-backend",
     libraryDependencies ++= Seq(
-      "io.prometheus" % "prometheus-metrics-core" % "1.3.1"
+      "io.prometheus" % "prometheus-metrics-core" % "1.3.5"
     ),
     scalaTest
   )
@@ -999,7 +905,7 @@ lazy val openTelemetryTracingZioBackend = (projectMatrix in file("observability/
   .settings(
     name := "opentelemetry-tracing-zio-backend",
     libraryDependencies ++= Seq(
-      "dev.zio" %% "zio-opentelemetry" % "3.0.0-RC26",
+      "dev.zio" %% "zio-opentelemetry" % "3.1.0",
       "io.opentelemetry.semconv" % "opentelemetry-semconv" % "1.26.0-alpha",
       "io.opentelemetry" % "opentelemetry-api" % openTelemetryVersion,
       "io.opentelemetry" % "opentelemetry-sdk-testing" % openTelemetryVersion % Test
@@ -1014,7 +920,7 @@ lazy val scribeBackend = (projectMatrix in file("logging/scribe"))
   .settings(
     name := "scribe-backend",
     libraryDependencies ++= Seq(
-      "com.outr" %%% "scribe" % "3.15.0"
+      "com.outr" %%% "scribe" % "3.15.2"
     ),
     scalaTest
   )
@@ -1045,10 +951,7 @@ lazy val examplesCe2 = (projectMatrix in file("examples-ce2"))
     )
   )
   .jvmPlatform(scalaVersions = List(scala2_13))
-  .dependsOn(
-    circe,
-    asyncHttpClientMonixBackend
-  )
+  .dependsOn(circe, monix)
 
 lazy val examples = (projectMatrix in file("examples"))
   .settings(commonJvmSettings)
@@ -1066,10 +969,10 @@ lazy val examples = (projectMatrix in file("examples"))
   .jvmPlatform(scalaVersions = scala2)
   .dependsOn(
     core,
-    asyncHttpClientZioBackend,
+    fs2,
+    zio,
     akkaHttpBackend,
     pekkoHttpBackend,
-    asyncHttpClientFs2Backend,
     json4s,
     circe,
     upickle,
@@ -1118,7 +1021,7 @@ lazy val docs: ProjectMatrix = (projectMatrix in file("generated-docs")) // impo
       "org.json4s" %% "json4s-native" % json4sVersion,
       "io.circe" %% "circe-generic" % circeVersion,
       "com.github.plokhotnyuk.jsoniter-scala" %% "jsoniter-scala-macros" % jsoniterVersion,
-      "commons-io" % "commons-io" % "2.17.0",
+      "commons-io" % "commons-io" % "2.18.0",
       "io.github.resilience4j" % "resilience4j-circuitbreaker" % resilience4jVersion,
       "io.github.resilience4j" % "resilience4j-ratelimiter" % resilience4jVersion,
       "io.jaegertracing" % "jaeger-client" % jaegerClientVersion,
@@ -1140,12 +1043,6 @@ lazy val docs: ProjectMatrix = (projectMatrix in file("generated-docs")) // impo
     zioJson,
     jsoniter,
     upickle,
-    asyncHttpClientZioBackend,
-    // asyncHttpClientMonixBackend, // monix backends are commented out because they depend on cats-effect2
-    asyncHttpClientFs2Backend,
-    asyncHttpClientCatsBackend,
-    asyncHttpClientFutureBackend,
-    asyncHttpClientScalazBackend,
     armeriaZioBackend,
     // armeriaMonixBackend,
     armeriaFs2Backend,

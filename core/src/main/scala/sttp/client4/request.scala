@@ -6,6 +6,7 @@ import sttp.client4.internal.{ToCurlConverter, ToRfc2616Converter}
 import sttp.shared.Identity
 
 import scala.collection.immutable.Seq
+import sttp.attributes.AttributeMap
 
 /** A generic description of an HTTP request, along with a description of how the response body should be handled.
   *
@@ -27,6 +28,8 @@ import scala.collection.immutable.Seq
 trait GenericRequest[+T, -R] extends RequestBuilder[GenericRequest[T, R]] with RequestMetadata {
   def body: GenericRequestBody[R]
   def response: ResponseAsDelegate[T, R]
+
+  /** Applies the given function `f` to the deserialized value `T`. */
   def mapResponse[T2](f: T => T2): GenericRequest[T2, R]
 
   def toCurl: String = ToCurlConverter(this)
@@ -67,8 +70,8 @@ trait GenericRequest[+T, -R] extends RequestBuilder[GenericRequest[T, R]] with R
   * @param response
   *   Description of how the response body should be handled. Needs to be specified upfront so that the response is
   *   always consumed and hence there are no requirements on client code to consume it.
-  * @param tags
-  *   Request-specific tags which can be used by backends for logging, metrics, etc. Empty by default.
+  * @param attributes
+  *   Request-specific attributes which can be used by backends for logging, metrics, etc. Empty by default.
   * @tparam T
   *   The target type, to which the response body should be read.
   */
@@ -79,7 +82,7 @@ case class Request[T](
     headers: Seq[Header],
     response: ResponseAs[T],
     options: RequestOptions,
-    tags: Map[String, Any]
+    attributes: AttributeMap
 ) extends GenericRequest[T, Any]
     with RequestBuilder[Request[T]] {
 
@@ -88,11 +91,19 @@ case class Request[T](
   override def method(method: Method, uri: Uri): Request[T] = copy(uri = uri, method = method)
   override def withHeaders(headers: Seq[Header]): Request[T] = copy(headers = headers)
   override def withOptions(options: RequestOptions): Request[T] = copy(options = options)
-  override def withTags(tags: Map[String, Any]): Request[T] = copy(tags = tags)
+  override def withAttributes(attributes: AttributeMap): Request[T] = copy(attributes = attributes)
   override protected def copyWithBody(body: BasicBody): Request[T] = copy(body = body)
 
   def multipartStreamBody[S](ps: Seq[Part[BodyPart[S]]]): StreamRequest[T, S] =
-    StreamRequest(method, uri, MultipartStreamBody(ps), headers, StreamResponseAs(response.delegate), options, tags)
+    StreamRequest(
+      method,
+      uri,
+      MultipartStreamBody(ps),
+      headers,
+      StreamResponseAs(response.delegate),
+      options,
+      attributes
+    )
 
   def multipartStreamBody[S](p1: Part[BodyPart[S]], ps: Part[BodyPart[S]]*): StreamRequest[T, S] =
     StreamRequest(
@@ -102,11 +113,11 @@ case class Request[T](
       headers,
       StreamResponseAs(response.delegate),
       options,
-      tags
+      attributes
     )
 
   def streamBody[S](s: Streams[S])(b: s.BinaryStream): StreamRequest[T, S] =
-    StreamRequest(method, uri, StreamBody(s)(b), headers, StreamResponseAs(response.delegate), options, tags)
+    StreamRequest(method, uri, StreamBody(s)(b), headers, StreamResponseAs(response.delegate), options, attributes)
 
   /** Specifies the target type to which the response body should be read. Note that this replaces any previous
     * specifications, which also includes any previous `mapResponse` invocations.
@@ -115,21 +126,34 @@ case class Request[T](
 
   def mapResponse[T2](f: T => T2): Request[T2] = response(response.map(f))
 
+  /** If the type to which the response body should be deserialized is an `Either[A, B]`, applies the given function `f`
+    * to `Right` values.
+    *
+    * Because of type inference, the type of `f` must be fully provided, e.g.
+    *
+    * ```
+    * asString.mapRight((s: String) => parse(s))`
+    * ```
+    */
+  def mapResponseRight[A, B, B2](f: B => B2)(implicit tIsEither: T <:< Either[A, B]): Request[Either[A, B2]] = response(
+    response.mapRight(f)
+  )
+
   /** Specifies that this is a WebSocket request. A [[WebSocketBackend]] will be required to send this request. */
   def response[F[_], T2](ra: WebSocketResponseAs[F, T2]): WebSocketRequest[F, T2] =
-    WebSocketRequest(method, uri, body, headers, ra, options, tags)
+    WebSocketRequest(method, uri, body, headers, ra, options, attributes)
 
   /** Specifies that the response body should be processed using a non-blocking, asynchronous stream, as witnessed by
     * the `S` capability. A [[StreamBackend]] will be required to send this request.
     */
   def response[T2, S](ra: StreamResponseAs[T2, S]): StreamRequest[T2, S] =
-    StreamRequest(method, uri, body, headers, ra, options, tags)
+    StreamRequest(method, uri, body, headers, ra, options, attributes)
 
   /** Specifies that this is a WebSocket request, and the WebSocket will be processed using a non-blocking, asynchronous
     * stream, as witnessed by the `S` capability. A [[WebSocketStreamBackend]] will be required to send this request.
     */
   def response[T2, S](ra: WebSocketStreamResponseAs[T2, S]): WebSocketStreamRequest[T2, S] =
-    WebSocketStreamRequest(method, uri, body, headers, ra, options, tags)
+    WebSocketStreamRequest(method, uri, body, headers, ra, options, attributes)
 
   /** Sends the request, using the given backend.
     *
@@ -159,19 +183,6 @@ case class Request[T](
   def send(backend: SyncBackend): Response[T] = backend.send(this)
 }
 
-object Request {
-  implicit class RichRequestTEither[A, B](r: Request[Either[A, B]]) {
-    def mapResponseRight[B2](f: B => B2): Request[Either[A, B2]] = r.copy(response = r.response.mapRight(f))
-    def responseGetRight: Request[B] = r.copy(response = r.response.getRight)
-  }
-
-  implicit class RichRequestTEitherResponseException[HE, DE, B](
-      r: Request[Either[ResponseException[HE, DE], B]]
-  ) {
-    def responseGetEither: Request[Either[HE, B]] = r.copy(response = r.response.getEither)
-  }
-}
-
 //
 
 /** Describes an HTTP request, along with a description of how the response body should be handled. Either the request
@@ -182,8 +193,8 @@ object Request {
   * @param response
   *   Description of how the response body should be handled. Needs to be specified upfront so that the response is
   *   always consumed and hence there are no requirements on client code to consume it.
-  * @param tags
-  *   Request-specific tags which can be used by backends for logging, metrics, etc. Empty by default.
+  * @param attributes
+  *   Request-specific attributes which can be used by backends for logging, metrics, etc. Empty by default.
   * @tparam T
   *   The target type, to which the response body should be read. If the response body is streamed, this might be the
   *   value obtained by processing the entire stream.
@@ -197,7 +208,7 @@ final case class StreamRequest[T, R](
     headers: Seq[Header],
     response: StreamResponseAs[T, R],
     options: RequestOptions,
-    tags: Map[String, Any]
+    attributes: AttributeMap
 ) extends GenericRequest[T, R]
     with RequestBuilder[StreamRequest[T, R]] {
 
@@ -206,7 +217,7 @@ final case class StreamRequest[T, R](
   override def method(method: Method, uri: Uri): StreamRequest[T, R] = copy(method = method, uri = uri)
   override def withHeaders(headers: Seq[Header]): StreamRequest[T, R] = copy(headers = headers)
   override def withOptions(options: RequestOptions): StreamRequest[T, R] = copy(options = options)
-  override def withTags(tags: Map[String, Any]): StreamRequest[T, R] = copy(tags = tags)
+  override def withAttributes(attributes: AttributeMap): StreamRequest[T, R] = copy(attributes = attributes)
   override protected def copyWithBody(body: BasicBody): StreamRequest[T, R] = copy(body = body)
 
   /** Specifies the target type to which the response body should be read. Note that this replaces any previous
@@ -229,7 +240,7 @@ final case class StreamRequest[T, R](
       headers,
       WebSocketStreamResponseAs[T2, Effect[F] with R](ra.delegate),
       options,
-      tags
+      attributes
     )
 
   def mapResponse[T2](f: T => T2): StreamRequest[T2, R] = copy(response = response.map(f))
@@ -263,8 +274,8 @@ final case class StreamRequest[T, R](
   * @param response
   *   Description of how the WebSocket should be handled. Needs to be specified upfront so that the response is always
   *   consumed and hence there are no requirements on client code to consume it.
-  * @param tags
-  *   Request-specific tags which can be used by backends for logging, metrics, etc. Empty by default.
+  * @param attributes
+  *   Request-specific attributes which can be used by backends for logging, metrics, etc. Empty by default.
   * @tparam F
   *   The effect type used to process the WebSocket. Might include asynchronous computations (e.g.
   *   [[scala.concurrent.Future]]), pure effect descriptions (`IO`), or synchronous computations ([[Identity]]).
@@ -279,7 +290,7 @@ final case class WebSocketRequest[F[_], T](
     headers: Seq[Header],
     response: WebSocketResponseAs[F, T],
     options: RequestOptions,
-    tags: Map[String, Any]
+    attributes: AttributeMap
 ) extends GenericRequest[T, WebSockets with Effect[F]]
     with RequestBuilder[WebSocketRequest[F, T]] {
 
@@ -288,7 +299,7 @@ final case class WebSocketRequest[F[_], T](
   override def method(method: Method, uri: Uri): WebSocketRequest[F, T] = copy(method = method, uri = uri)
   override def withHeaders(headers: Seq[Header]): WebSocketRequest[F, T] = copy(headers = headers)
   override def withOptions(options: RequestOptions): WebSocketRequest[F, T] = copy(options = options)
-  override def withTags(tags: Map[String, Any]): WebSocketRequest[F, T] = copy(tags = tags)
+  override def withAttributes(attributes: AttributeMap): WebSocketRequest[F, T] = copy(attributes = attributes)
   override protected def copyWithBody(body: BasicBody): WebSocketRequest[F, T] = copy(body = body)
 
   def streamBody[S](s: Streams[S])(b: s.BinaryStream): WebSocketStreamRequest[T, Effect[F] with S] =
@@ -299,7 +310,7 @@ final case class WebSocketRequest[F[_], T](
       headers,
       WebSocketStreamResponseAs[T, Effect[F] with S](response.delegate),
       options,
-      tags
+      attributes
     )
 
   def mapResponse[T2](f: T => T2): WebSocketRequest[F, T2] = copy(response = response.map(f))
@@ -343,8 +354,8 @@ final case class WebSocketRequest[F[_], T](
   * @param response
   *   Description of how the WebSocket should be handled. Needs to be specified upfront so that the response is always
   *   consumed and hence there are no requirements on client code to consume it.
-  * @param tags
-  *   Request-specific tags which can be used by backends for logging, metrics, etc. Empty by default.
+  * @param attributes
+  *   Request-specific attributes which can be used by backends for logging, metrics, etc. Empty by default.
   * @tparam T
   *   The target type, to which the response body should be read. If the WebSocket interactions are described entirely
   *   by the response description, this might be `Unit`. Otherwise, this can be an `S` stream of frames or mapped
@@ -359,7 +370,7 @@ final case class WebSocketStreamRequest[T, S](
     headers: Seq[Header],
     response: WebSocketStreamResponseAs[T, S],
     options: RequestOptions,
-    tags: Map[String, Any]
+    attributes: AttributeMap
 ) extends GenericRequest[T, S with WebSockets]
     with RequestBuilder[WebSocketStreamRequest[T, S]] {
 
@@ -368,7 +379,7 @@ final case class WebSocketStreamRequest[T, S](
   override def method(method: Method, uri: Uri): WebSocketStreamRequest[T, S] = copy(method = method, uri = uri)
   override def withHeaders(headers: Seq[Header]): WebSocketStreamRequest[T, S] = copy(headers = headers)
   override def withOptions(options: RequestOptions): WebSocketStreamRequest[T, S] = copy(options = options)
-  override def withTags(tags: Map[String, Any]): WebSocketStreamRequest[T, S] = copy(tags = tags)
+  override def withAttributes(attributes: AttributeMap): WebSocketStreamRequest[T, S] = copy(attributes = attributes)
   override protected def copyWithBody(body: BasicBody): WebSocketStreamRequest[T, S] = copy(body = body)
 
   def mapResponse[T2](f: T => T2): WebSocketStreamRequest[T2, S] = copy(response = response.map(f))

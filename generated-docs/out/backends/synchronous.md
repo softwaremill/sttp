@@ -7,7 +7,7 @@ There are several synchronous backend implementations. Sending a request using t
 The default **synchronous** backend. To use, you don't need any extra dependencies, `core` is enough:
 
 ```
-"com.softwaremill.sttp.client4" %% "core" % "4.0.0-M18"
+"com.softwaremill.sttp.client4" %% "core" % "4.0.0-M20"
 ```
 
 Create the backend using:
@@ -40,7 +40,7 @@ Host header override is supported in environments running Java 12 onwards, but i
 To use, you don't need any extra dependencies, `core` is enough: 
 
 ```
-"com.softwaremill.sttp.client4" %% "core" % "4.0.0-M18"
+"com.softwaremill.sttp.client4" %% "core" % "4.0.0-M20"
 ```
 
 Create the backend using:
@@ -62,7 +62,7 @@ This backend supports host header override, but it has to be enabled by system p
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client4" %% "okhttp-backend" % "4.0.0-M18"
+"com.softwaremill.sttp.client4" %% "okhttp-backend" % "4.0.0-M20"
 ```
 
 Create the backend using:
@@ -99,7 +99,7 @@ Both HttpClient and OkHttp backends support regular [websockets](../websockets.m
 
 ```
 // sbt dependency
-"com.softwaremill.sttp.client4" %% "ox" % "4.0.0-M18",
+"com.softwaremill.sttp.client4" %% "ox" % "4.0.0-M20",
 ```
 
 ```scala 

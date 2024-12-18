@@ -11,7 +11,7 @@ object PostSerializeJsonMonixHttpClientCirce extends App {
 
   val postTask = HttpClientMonixBackend().flatMap { backend =>
     val r = basicRequest
-      .body(Info(91, "abc"))
+      .body(asJson(Info(91, "abc")))
       .post(uri"https://httpbin.org/post")
 
     r.send(backend)

@@ -19,6 +19,8 @@ import java.io.InputStream
 import java.nio.ByteBuffer
 import scala.concurrent.duration.Duration
 import scala.collection.immutable.Seq
+import sttp.attributes.AttributeKey
+import sttp.attributes.AttributeMap
 
 /** The builder methods of requests or partial requests of type `PR`.
   *
@@ -43,8 +45,8 @@ trait PartialRequestBuilder[+PR <: PartialRequestBuilder[PR, R], +R]
   def response: ResponseAsDelegate[_, _]
   def options: RequestOptions
 
-  /** Request-specific tags which can be used by backends for logging, metrics, etc. Empty by default. */
-  def tags: Map[String, Any]
+  /** Request-specific attributes which can be used by backends for logging, metrics, etc. Empty by default. */
+  def attributes: AttributeMap
 
   /** Set the method & uri to the given ones. */
   def method(method: Method, uri: Uri): R
@@ -55,8 +57,8 @@ trait PartialRequestBuilder[+PR <: PartialRequestBuilder[PR, R], +R]
   /** Replace all options with the given ones. */
   def withOptions(options: RequestOptions): PR
 
-  /** Replace all tags with the given ones. */
-  def withTags(tags: Map[String, Any]): PR
+  /** Replace attributes with the given ones. */
+  def withAttributes(attributes: AttributeMap): PR
 
   protected def copyWithBody(body: BasicBody): PR
 
@@ -121,10 +123,21 @@ trait PartialRequestBuilder[+PR <: PartialRequestBuilder[PR, R], +R]
     */
   def headers(hs: Header*): PR = hs.foldLeft(this)(_.header(_))
 
+  /** Allows specifying basic, token, bearer (in the `Authorization` header) or digest authentication for this request.
+    */
   def auth: SpecifyAuthScheme[PR] =
-    new SpecifyAuthScheme[PR](HeaderNames.Authorization, this, DigestAuthenticationBackend.DigestAuthTag)
+    new SpecifyAuthScheme[PR](HeaderNames.Authorization, this, DigestAuthenticationBackend.DigestAuthAttributeKey)
+
+  /** Allows specifying basic, token, bearer (in the `Proxy-Authorization` header) or digest proxy authentication for
+    * this request.
+    */
   def proxyAuth: SpecifyAuthScheme[PR] =
-    new SpecifyAuthScheme[PR](HeaderNames.ProxyAuthorization, this, DigestAuthenticationBackend.ProxyDigestAuthTag)
+    new SpecifyAuthScheme[PR](
+      HeaderNames.ProxyAuthorization,
+      this,
+      DigestAuthenticationBackend.ProxyDigestAuthAttributeKey
+    )
+
   def acceptEncoding(encoding: String): PR = header(HeaderNames.AcceptEncoding, encoding)
 
   /** Adds the given cookie. Any previously defined cookies are left intact. */
@@ -155,78 +168,86 @@ trait PartialRequestBuilder[+PR <: PartialRequestBuilder[PR, R], +R]
   private[client4] def setContentLengthIfMissing(l: => Long): PR =
     if (hasContentLength) this else contentLength(l)
 
-  /** Uses the `utf-8` encoding.
+  /** Sets the body of this request to the given string, using the UTF-8 encoding.
     *
-    * If content type is not yet specified, will be set to `text/plain` with `utf-8` encoding.
+    * If content type is not yet specified, will be set to `text/plain` with UTF-8 encoding.
     *
-    * If content length is not yet specified, will be set to the number of bytes in the string using the `utf-8`
-    * encoding.
+    * If content length is not yet specified, will be set to the number of bytes in the string using the UTF-8 encoding.
     */
   def body(b: String): PR = body(b, Utf8)
 
-  /** If content type is not yet specified, will be set to `text/plain` with the given encoding.
+  /** Sets the body of this request to the given string, using the given encoding.
+    *
+    * If content type is not yet specified, will be set to `text/plain` with the given encoding.
     *
     * If content length is not yet specified, will be set to the number of bytes in the string using the given encoding.
     */
   def body(b: String, encoding: String): PR =
-    withBody(StringBody(b, encoding)).setContentLengthIfMissing(b.getBytes(encoding).length.toLong)
+    body(StringBody(b, encoding)).setContentLengthIfMissing(b.getBytes(encoding).length.toLong)
 
-  /** If content type is not yet specified, will be set to `application/octet-stream`.
+  /** Sets the body of this request to the given byte array.
+    *
+    * If content type is not yet specified, will be set to `application/octet-stream`.
     *
     * If content length is not yet specified, will be set to the length of the given array.
     */
-  def body(b: Array[Byte]): PR = withBody(ByteArrayBody(b)).setContentLengthIfMissing(b.length.toLong)
+  def body(b: Array[Byte]): PR = body(ByteArrayBody(b)).setContentLengthIfMissing(b.length.toLong)
 
-  /** If content type is not yet specified, will be set to `application/octet-stream`. */
-  def body(b: ByteBuffer): PR = withBody(ByteBufferBody(b))
-
-  /** If content type is not yet specified, will be set to `application/octet-stream`.
+  /** Sets the body of this request to the given byte buffer.
+    *
+    * If content type is not yet specified, will be set to `application/octet-stream`.
     */
-  def body(b: InputStream): PR = withBody(InputStreamBody(b))
+  def body(b: ByteBuffer): PR = body(ByteBufferBody(b))
+
+  /** Sets the body of this request to the given input stream.
+    *
+    * If content type is not yet specified, will be set to `application/octet-stream`.
+    */
+  def body(b: InputStream): PR = body(InputStreamBody(b))
 
   /** If content type is not yet specified, will be set to `application/octet-stream`.
     *
     * If content length is not yet specified, will be set to the length of the given file.
     */
-  private[client4] def body(f: SttpFile): PR = withBody(FileBody(f)).setContentLengthIfMissing(f.size)
+  private[client4] def body(f: SttpFile): PR = body(FileBody(f)).setContentLengthIfMissing(f.size)
 
-  /** Encodes the given parameters as form data using `utf-8`. If content type is not yet specified, will be set to
-    * `application/x-www-form-urlencoded`.
+  /** Sets the body of this request to the given form-data parameters. The parameters are encoded using UTF-8.
+    *
+    * If content type is not yet specified, will be set to `application/x-www-form-urlencoded`.
     *
     * If content length is not yet specified, will be set to the length of the number of bytes in the url-encoded
     * parameter string.
     */
   def body(fs: Map[String, String]): PR = formDataBody(fs.toList, Utf8)
 
-  /** Encodes the given parameters as form data. If content type is not yet specified, will be set to
-    * `application/x-www-form-urlencoded`.
+  /** Sets the body of this request to the given form-data parameters. The parameters are encoded using the given
+    * encoding.
+    *
+    * If content type is not yet specified, will be set to `application/x-www-form-urlencoded`.
     *
     * If content length is not yet specified, will be set to the length of the number of bytes in the url-encoded
     * parameter string.
     */
   def body(fs: Map[String, String], encoding: String): PR = formDataBody(fs.toList, encoding)
 
-  /** Encodes the given parameters as form data using `utf-8`. If content type is not yet specified, will be set to
-    * `application/x-www-form-urlencoded`.
+  /** Sets the body of this request to the given form-data parameters. The parameters are encoded using UTF-8.
+    *
+    * If content type is not yet specified, will be set to `application/x-www-form-urlencoded`.
     *
     * If content length is not yet specified, will be set to the length of the number of bytes in the url-encoded
     * parameter string.
     */
   def body(fs: (String, String)*): PR = formDataBody(fs.toList, Utf8)
 
-  /** Encodes the given parameters as form data. If content type is not yet specified, will be set to
-    * `application/x-www-form-urlencoded`.
+  /** Sets the body of this request to the given form-data parameters. The parameters are encoded using the given
+    * encoding.
+    *
+    * If content type is not yet specified, will be set to `application/x-www-form-urlencoded`.
     *
     * If content length is not yet specified, will be set to the length of the number of bytes in the url-encoded
     * parameter string.
     */
   def body(fs: Seq[(String, String)], encoding: String): PR = formDataBody(fs, encoding)
-
-  def multipartBody(ps: Seq[Part[BasicBodyPart]]): PR = copyWithBody(BasicMultipartBody(ps))
-
-  def multipartBody(p1: Part[BasicBodyPart], ps: Part[BasicBodyPart]*): PR = copyWithBody(
-    BasicMultipartBody(p1 :: ps.toList)
-  )
 
   private def formDataBody(fs: Seq[(String, String)], encoding: String): PR = {
     val b = BasicBody.paramsToStringBody(fs, encoding)
@@ -235,7 +256,20 @@ trait PartialRequestBuilder[+PR <: PartialRequestBuilder[PR, R], +R]
       .setContentLengthIfMissing(b.s.getBytes(encoding).length.toLong)
   }
 
-  def withBody(body: BasicBody): PR = {
+  /** Sets the body of this request to the given multipart form parts. */
+  def multipartBody(ps: Seq[Part[BasicBodyPart]]): PR = copyWithBody(BasicMultipartBody(ps))
+
+  /** Sets the body of this request to the given multipart form parts. */
+  def multipartBody(p1: Part[BasicBodyPart], ps: Part[BasicBodyPart]*): PR = copyWithBody(
+    BasicMultipartBody(p1 :: ps.toList)
+  )
+
+  /** Sets the body of this request to the given [[BasicBody]] implementation.
+    *
+    * If content type is not yet specified, it will be set to the default content type of the body, including the
+    * encoding in case of a string body.
+    */
+  def body(body: BasicBody): PR = {
     val defaultCt = body match {
       case StringBody(_, encoding, ct) =>
         ct.copy(charset = Some(encoding))
@@ -254,8 +288,8 @@ trait PartialRequestBuilder[+PR <: PartialRequestBuilder[PR, R], +R]
   def followRedirects(fr: Boolean): PR = withOptions(options.copy(followRedirects = fr))
 
   def maxRedirects(n: Int): PR =
-  if (n <= 0) withOptions(options.copy(followRedirects = false))
-  else withOptions(options.copy(followRedirects = true, maxRedirects = n))
+    if (n <= 0) withOptions(options.copy(followRedirects = false))
+    else withOptions(options.copy(followRedirects = true, maxRedirects = n))
 
   /** When a POST or PUT request is redirected, should the redirect be a POST/PUT as well (with the original body), or
     * should the request be converted to a GET without a body.
@@ -267,64 +301,60 @@ trait PartialRequestBuilder[+PR <: PartialRequestBuilder[PR, R], +R]
     */
   def redirectToGet(r: Boolean): PR = withOptions(options.copy(redirectToGet = r))
 
-  def tag(k: String, v: Any): PR = withTags(tags + (k -> v))
+  /** Disables auto-decompression of response bodies which are received with supported `Content-Encoding headers. */
+  def disableAutoDecompression: PR = withOptions(options.copy(disableAutoDecompression = true))
 
-  def tag(k: String): Option[Any] = tags.get(k)
-
-  private val disableAutoDecompressionKey = "disableAutoDecompression"
-
-  // Used as a workaround to keep binary compatibility
-  // TODO: replace with additional parameter in RequestOptions when writing sttp4
-  def disableAutoDecompression: PR = tag(disableAutoDecompressionKey, true)
-
-  def autoDecompressionDisabled: Boolean = tags.getOrElse(disableAutoDecompressionKey, false).asInstanceOf[Boolean]
-
-  private val httpVersionKey = "httpVersion"
-
-  // Used as a workaround to keep binary compatibility
-  // TODO: replace with additional parameter in RequestOptions when writing sttp4
-  // TODO: add similar functionality to Response
-
-  /** Allows setting HTTP version per request. Supported only is a few backends
+  /** True iff auto-decompression is disabled.
     *
-    * @param version:
-    *   one of values from [[HttpVersion]] enum.
-    * @return
-    *   request with version tag
+    * @see
+    *   disableAutoDecompression
     */
-  def httpVersion(version: HttpVersion): PR = tag(httpVersionKey, version)
+  def autoDecompressionDisabled: Boolean = options.disableAutoDecompression
 
-  /** Get[[HttpVersion]] from tags in request. Supported only is a few backends
+  /** Set the HTTP version with which this request should be sent. Supported only in a few backends. */
+  def httpVersion(version: HttpVersion): PR = withOptions(options.copy(httpVersion = Some(version)))
+
+  /** Get the [[HttpVersion]], with which this request should be sent, if any. Setting the HTTP version is supported
+    * only in a few backends.
     *
     * @return
-    *   one of values form [[HttpVersion]] enum or [[None]]
+    *   [[None]], if the request will be sent with the backend-default HTTP version.
     */
-  def httpVersion: Option[HttpVersion] = tags.get(httpVersionKey).map(_.asInstanceOf[HttpVersion])
+  def httpVersion: Option[HttpVersion] = options.httpVersion
 
-  private val loggingOptionsTagKey = "loggingOptions"
-
-  /** Will only have effect when using the `LoggingBackend` */
-  def logSettings(
+  /** Sets per-request logging options. Will only have effect when using the [[sttp.client4.logging.LoggingBackend]]
+    * wrapper.
+    */
+  def loggingOptions(
       logRequestBody: Option[Boolean] = None,
       logResponseBody: Option[Boolean] = None,
       logRequestHeaders: Option[Boolean] = None,
       logResponseHeaders: Option[Boolean] = None
-  ): PR = {
-    val loggingOptions = LoggingOptions(
-      logRequestBody = logRequestBody,
-      logResponseBody = logResponseBody,
-      logRequestHeaders = logRequestHeaders,
-      logResponseHeaders = logResponseHeaders
+  ): PR = withOptions(
+    options.copy(loggingOptions =
+      LoggingOptions(
+        logRequestBody = logRequestBody,
+        logResponseBody = logResponseBody,
+        logRequestHeaders = logRequestHeaders,
+        logResponseHeaders = logResponseHeaders
+      )
     )
-    this.tag(loggingOptionsTagKey, loggingOptions)
-  }
+  )
 
-  def logSettings(
-      loggingOptions: Option[LoggingOptions]
-  ): PR =
-    this.tag(loggingOptionsTagKey, loggingOptions)
+  /** Sets per-request logging options. Will only have effect when using the [[sttp.client4.logging.LoggingBackend]]
+    * wrapper.
+    */
+  def loggingOptions(loggingOptions: LoggingOptions): PR = withOptions(options.copy(loggingOptions = loggingOptions))
 
-  def loggingOptions: Option[LoggingOptions] = tag(loggingOptionsTagKey).asInstanceOf[Option[LoggingOptions]]
+  /** The per-request logging options, which have effect when using the [[sttp.client4.logging.LoggingBackend]] wrapper.
+    */
+  def loggingOptions: LoggingOptions = options.loggingOptions
+
+  /** Reads a per-request attribute for the given key, if present. */
+  def attribute[T](k: AttributeKey[T]): Option[T] = attributes.get(k)
+
+  /** Sets a per-request attribute for the given key, with the given value. */
+  def attribute[T](k: AttributeKey[T], v: T): PR = withAttributes(attributes.put(k, v))
 
   def show(
       includeBody: Boolean = true,
@@ -344,8 +374,8 @@ trait PartialRequestBuilder[+PR <: PartialRequestBuilder[PR, R], +R]
   * @param response
   *   Description of how the response body should be handled. Needs to be specified upfront so that the response is
   *   always consumed and hence there are no requirements on client code to consume it.
-  * @param tags
-  *   Request-specific tags which can be used by backends for logging, metrics, etc. Empty by default.
+  * @param attributes
+  *   Request-specific attributes which can be used by backends for logging, metrics, etc. Empty by default.
   * @tparam T
   *   The target type, to which the response body should be read.
   */
@@ -354,16 +384,16 @@ final case class PartialRequest[T](
     headers: Seq[Header],
     response: ResponseAs[T],
     options: RequestOptions,
-    tags: Map[String, Any]
+    attributes: AttributeMap
 ) extends PartialRequestBuilder[PartialRequest[T], Request[T]] {
 
   override def showBasic: String = "(no method & uri set)"
 
   override def method(method: Method, uri: Uri): Request[T] =
-    Request(method, uri, body, headers, response, options, tags)
+    Request(method, uri, body, headers, response, options, attributes)
   override def withHeaders(headers: Seq[Header]): PartialRequest[T] = copy(headers = headers)
   override def withOptions(options: RequestOptions): PartialRequest[T] = copy(options = options)
-  override def withTags(tags: Map[String, Any]): PartialRequest[T] = copy(tags = tags)
+  override def withAttributes(attributes: AttributeMap): PartialRequest[T] = copy(attributes = attributes)
   override protected def copyWithBody(body: BasicBody): PartialRequest[T] = copy(body = body)
   def response[T2](ra: ResponseAs[T2]): PartialRequest[T2] = copy(response = ra)
 }

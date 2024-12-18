@@ -77,7 +77,7 @@ abstract class FollowRedirectsBackend[F[_], P] private (
     if (applicable && (r.options.redirectToGet || alwaysChanged) && !neverChanged) {
       // when transforming POST or PUT into a get, content is dropped, also filter out content-related request headers
       r.method(Method.GET, r.uri)
-        .withBody(NoBody)
+        .body(NoBody)
         .withHeaders(r.headers.filterNot(header => config.contentHeaders.contains(header.name.toLowerCase())))
     } else r
   }

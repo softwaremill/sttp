@@ -8,7 +8,6 @@
     </appender>
 
     <logger name="io.netty" level="INFO"/>
-    <logger name="org.asynchttpclient" level="INFO"/>
 
     <root level="DEBUG">
         <appender-ref ref="STDOUT"/>
