@@ -44,7 +44,6 @@ Host header override is supported in environments running Java 12 onwards, but i
 -Djdk.httpclient.allowRestrictedHeaders=host
 ```
 
-
 ## Using OkHttp
 
 To use, add the following dependency to your project:
