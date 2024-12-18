@@ -214,16 +214,6 @@ lazy val rawAllAggregates =
     zio.projectRefs ++
     akkaHttpBackend.projectRefs ++
     pekkoHttpBackend.projectRefs ++
-    asyncHttpClientBackend.projectRefs ++
-    asyncHttpClientFutureBackend.projectRefs ++
-    asyncHttpClientScalazBackend.projectRefs ++
-    asyncHttpClientZio1Backend.projectRefs ++
-    asyncHttpClientZioBackend.projectRefs ++
-    asyncHttpClientMonixBackend.projectRefs ++
-    asyncHttpClientCatsCe2Backend.projectRefs ++
-    asyncHttpClientCatsBackend.projectRefs ++
-    asyncHttpClientFs2Ce2Backend.projectRefs ++
-    asyncHttpClientFs2Backend.projectRefs ++
     okhttpBackend.projectRefs ++
     okhttpMonixBackend.projectRefs ++
     http4sCe2Backend.projectRefs ++
@@ -576,91 +566,6 @@ lazy val pekkoHttpBackend = (projectMatrix in file("pekko-http-backend"))
   .jvmPlatform(
     scalaVersions = scala2 ++ scala3
   )
-
-//-- async http client
-lazy val asyncHttpClientBackend = (projectMatrix in file("async-http-client-backend"))
-  .settings(commonJvmSettings)
-  .settings(testServerSettings)
-  .settings(
-    name := "async-http-client-backend",
-    libraryDependencies ++= Seq(
-      "org.asynchttpclient" % "async-http-client" % "2.12.4"
-    )
-  )
-  .dependsOn(core % compileAndTest)
-  .jvmPlatform(
-    scalaVersions = scala2 ++ scala3
-  )
-
-def asyncHttpClientBackendProject(proj: String, includeDotty: Boolean = false) =
-  ProjectMatrix(s"asyncHttpClientBackend${proj.capitalize}", file(s"async-http-client-backend/$proj"))
-    .settings(commonJvmSettings)
-    .settings(testServerSettings)
-    .settings(name := s"async-http-client-backend-$proj")
-    .dependsOn(asyncHttpClientBackend % compileAndTest)
-    .jvmPlatform(
-      scalaVersions = scala2 ++ (if (includeDotty) scala3 else Nil)
-    )
-
-lazy val asyncHttpClientFutureBackend =
-  asyncHttpClientBackendProject("future", includeDotty = true)
-    .dependsOn(core % compileAndTest)
-
-lazy val asyncHttpClientScalazBackend =
-  asyncHttpClientBackendProject("scalaz")
-    .dependsOn(scalaz % compileAndTest)
-
-lazy val asyncHttpClientZio1Backend =
-  asyncHttpClientBackendProject("zio1", includeDotty = true)
-    .settings(
-      libraryDependencies ++= Seq(
-        "dev.zio" %% "zio-interop-reactivestreams" % zio1InteropRsVersion
-      )
-    )
-    .dependsOn(zio1 % compileAndTest)
-
-lazy val asyncHttpClientZioBackend =
-  asyncHttpClientBackendProject("zio", includeDotty = true)
-    .settings(
-      libraryDependencies ++= Seq(
-        "dev.zio" %% "zio-interop-reactivestreams" % zio2InteropRsVersion
-      )
-    )
-    .dependsOn(zio % compileAndTest)
-
-lazy val asyncHttpClientMonixBackend =
-  asyncHttpClientBackendProject("monix", includeDotty = true)
-    .dependsOn(monix % compileAndTest)
-
-lazy val asyncHttpClientCatsCe2Backend =
-  asyncHttpClientBackendProject("cats-ce2", includeDotty = true)
-    .dependsOn(catsCe2 % compileAndTest)
-
-lazy val asyncHttpClientCatsBackend =
-  asyncHttpClientBackendProject("cats", includeDotty = true)
-    .dependsOn(cats % compileAndTest)
-
-lazy val asyncHttpClientFs2Ce2Backend =
-  asyncHttpClientBackendProject("fs2-ce2", includeDotty = true)
-    .settings(
-      libraryDependencies ++= Seq(
-        "co.fs2" %% "fs2-reactive-streams" % fs2_2_version,
-        "co.fs2" %% "fs2-io" % fs2_2_version
-      )
-    )
-    .dependsOn(catsCe2 % compileAndTest)
-    .dependsOn(fs2Ce2 % compileAndTest)
-
-lazy val asyncHttpClientFs2Backend =
-  asyncHttpClientBackendProject("fs2", includeDotty = true)
-    .settings(
-      libraryDependencies ++= Seq(
-        "co.fs2" %% "fs2-reactive-streams" % fs2_3_version,
-        "co.fs2" %% "fs2-io" % fs2_3_version
-      )
-    )
-    .dependsOn(cats % compileAndTest)
-    .dependsOn(fs2 % compileAndTest)
 
 //-- okhttp
 lazy val okhttpBackend = (projectMatrix in file("okhttp-backend"))
@@ -1046,10 +951,7 @@ lazy val examplesCe2 = (projectMatrix in file("examples-ce2"))
     )
   )
   .jvmPlatform(scalaVersions = List(scala2_13))
-  .dependsOn(
-    circe,
-    asyncHttpClientMonixBackend
-  )
+  .dependsOn(circe, monix)
 
 lazy val examples = (projectMatrix in file("examples"))
   .settings(commonJvmSettings)
@@ -1067,10 +969,10 @@ lazy val examples = (projectMatrix in file("examples"))
   .jvmPlatform(scalaVersions = scala2)
   .dependsOn(
     core,
-    asyncHttpClientZioBackend,
+    fs2,
+    zio,
     akkaHttpBackend,
     pekkoHttpBackend,
-    asyncHttpClientFs2Backend,
     json4s,
     circe,
     upickle,
@@ -1141,12 +1043,6 @@ lazy val docs: ProjectMatrix = (projectMatrix in file("generated-docs")) // impo
     zioJson,
     jsoniter,
     upickle,
-    asyncHttpClientZioBackend,
-    // asyncHttpClientMonixBackend, // monix backends are commented out because they depend on cats-effect2
-    asyncHttpClientFs2Backend,
-    asyncHttpClientCatsBackend,
-    asyncHttpClientFutureBackend,
-    asyncHttpClientScalazBackend,
     armeriaZioBackend,
     // armeriaMonixBackend,
     armeriaFs2Backend,

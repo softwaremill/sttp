@@ -145,28 +145,3 @@ import sttp.client4.httpclient.fs2.HttpClientFs2Backend
 val httpClient: HttpClient = HttpClient.newBuilder().sslContext(ssl).build()
 val backend: Resource[IO, WebSocketStreamBackend[IO, Fs2Streams[IO]]] = HttpClientFs2Backend.resourceUsingClient[IO](httpClient)
 ```
-
-## Using Async-http-client
-
-Using `kmf: KeyManagerFactory` and `tmf: TrustManagerFactory` from [first section](#ssl-context) create a `AsyncHttpClientConfig`.
-
-Backends using `AsyncHttpClient` provides factory methods accepting custom config.
-
-```scala mdoc:invisible
-def tmf: TrustManagerFactory = ???
-```
-
-```scala mdoc:compile-only
-import io.netty.handler.ssl.SslContextBuilder
-import org.asynchttpclient.{AsyncHttpClientConfig, DefaultAsyncHttpClientConfig}
-import sttp.client4.asynchttpclient.future._
-
-val sslContext = SslContextBuilder.forClient()
-  .keyManager(kmf)
-  .trustManager(tmf)
-  .build()
-
-val config: AsyncHttpClientConfig = new DefaultAsyncHttpClientConfig.Builder().setSslContext(sslContext).build()
-
-val backend = AsyncHttpClientFutureBackend.usingConfig(config)
-```
