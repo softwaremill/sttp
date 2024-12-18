@@ -1,52 +1,23 @@
 package sttp.client4.asynchttpclient.scalaz
 
-import java.nio.ByteBuffer
-import io.netty.buffer.ByteBuf
-import org.asynchttpclient.{
-  AsyncHttpClient,
-  AsyncHttpClientConfig,
-  BoundRequestBuilder,
-  DefaultAsyncHttpClient,
-  DefaultAsyncHttpClientConfig
-}
-import org.reactivestreams.Publisher
+import org.asynchttpclient._
 import scalaz.concurrent.Task
-import sttp.client4.asynchttpclient.{AsyncHttpClientBackend, BodyFromAHC, BodyToAHC}
+import sttp.client4.asynchttpclient.AsyncHttpClientBackend
 import sttp.client4.impl.scalaz.TaskMonadAsyncError
-import sttp.client4.internal.NoStreams
 import sttp.client4.internal.ws.SimpleQueue
 import sttp.client4.testing.BackendStub
-import sttp.client4.wrappers.FollowRedirectsBackend
 import sttp.client4.{wrappers, Backend, BackendOptions}
-import sttp.monad.MonadAsyncError
-import sttp.ws.WebSocket
 
 class AsyncHttpClientScalazBackend private (
     asyncHttpClient: AsyncHttpClient,
     closeClient: Boolean,
     customizeRequest: BoundRequestBuilder => BoundRequestBuilder
-) extends AsyncHttpClientBackend[Task, Nothing, Any](
+) extends AsyncHttpClientBackend[Task, Any](
       asyncHttpClient,
       TaskMonadAsyncError,
       closeClient,
       customizeRequest
     ) {
-
-  override val streams: NoStreams = NoStreams
-
-  override protected val bodyFromAHC: BodyFromAHC[Task, Nothing] = new BodyFromAHC[Task, Nothing] {
-    override val streams: NoStreams = NoStreams
-    override implicit val monad: MonadAsyncError[Task] = TaskMonadAsyncError
-    override def publisherToStream(p: Publisher[ByteBuffer]): Nothing =
-      throw new IllegalStateException("This backend does not support streaming")
-    override def compileWebSocketPipe(ws: WebSocket[Task], pipe: Nothing): Task[Unit] = pipe // nothing is everything
-  }
-
-  override protected def bodyToAHC: BodyToAHC[Task, Nothing] =
-    new BodyToAHC[Task, Nothing] {
-      override val streams: NoStreams = NoStreams
-      override protected def streamToPublisher(s: Nothing): Publisher[ByteBuf] = s // nothing is everything
-    }
 
   override protected def createSimpleQueue[T]: Task[SimpleQueue[Task, T]] =
     throw new IllegalStateException("Web sockets are not supported!")

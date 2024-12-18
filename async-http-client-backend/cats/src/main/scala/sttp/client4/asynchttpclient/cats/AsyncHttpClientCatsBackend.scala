@@ -1,59 +1,23 @@
 package sttp.client4.asynchttpclient.cats
 
-import java.io.{ByteArrayInputStream, File}
-import java.nio.ByteBuffer
 import cats.effect.kernel.{Async, Resource, Sync}
-import io.netty.buffer.ByteBuf
-import org.asynchttpclient.{
-  AsyncHttpClient,
-  AsyncHttpClientConfig,
-  BoundRequestBuilder,
-  DefaultAsyncHttpClient,
-  DefaultAsyncHttpClientConfig
-}
-import org.reactivestreams.Publisher
-import sttp.client4.asynchttpclient.{AsyncHttpClientBackend, BodyFromAHC, BodyToAHC}
+import org.asynchttpclient._
+import sttp.client4.asynchttpclient.AsyncHttpClientBackend
 import sttp.client4.impl.cats.CatsMonadAsyncError
-import sttp.client4.internal.{FileHelpers, NoStreams}
-import sttp.client4.{wrappers, Backend, BackendOptions}
-import cats.implicits._
 import sttp.client4.internal.ws.SimpleQueue
 import sttp.client4.testing.BackendStub
-import sttp.client4.wrappers.FollowRedirectsBackend
-import sttp.monad.MonadAsyncError
-import sttp.ws.WebSocket
+import sttp.client4.{wrappers, Backend, BackendOptions}
 
 class AsyncHttpClientCatsBackend[F[_]: Async] private (
     asyncHttpClient: AsyncHttpClient,
     closeClient: Boolean,
     customizeRequest: BoundRequestBuilder => BoundRequestBuilder
-) extends AsyncHttpClientBackend[F, Nothing, Any](
+) extends AsyncHttpClientBackend[F, Any](
       asyncHttpClient,
       new CatsMonadAsyncError,
       closeClient,
       customizeRequest
     ) {
-
-  override val streams: NoStreams = NoStreams
-
-  override protected val bodyFromAHC: BodyFromAHC[F, Nothing] = new BodyFromAHC[F, Nothing] {
-    override val streams: NoStreams = NoStreams
-    override implicit val monad: MonadAsyncError[F] = new CatsMonadAsyncError
-    override def publisherToStream(p: Publisher[ByteBuffer]): Nothing =
-      throw new IllegalStateException("This backend does not support streaming")
-    override def compileWebSocketPipe(ws: WebSocket[F], pipe: Nothing): F[Unit] = pipe // nothing is everything
-
-    override def publisherToFile(p: Publisher[ByteBuffer], f: File): F[Unit] =
-      publisherToBytes(p)
-        .map(bytes => FileHelpers.saveFile(f, new ByteArrayInputStream(bytes)))
-  }
-
-  override protected def bodyToAHC: BodyToAHC[F, Nothing] =
-    new BodyToAHC[F, Nothing] {
-      override val streams: NoStreams = NoStreams
-      override protected def streamToPublisher(s: Nothing): Publisher[ByteBuf] = s // nothing is everything
-    }
-
   override protected def createSimpleQueue[T]: F[SimpleQueue[F, T]] =
     throw new IllegalStateException("Web sockets are not supported!")
 }

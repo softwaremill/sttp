@@ -102,6 +102,25 @@ trait StreamClientStubbing[R, P] extends AbstractClientStubbing[R, P] {
   }
 }
 
+trait WebSocketClientStubbing[R] extends AbstractClientStubbing[R, WebSockets] {
+  type Backend = WebSocketBackend[RIO[R, *]]
+  type BackendStub = WebSocketBackendStub[RIO[R, *]]
+
+  def backendStub: WebSocketBackendStub[RIO[R, *]] = WebSocketBackendStub(monad)
+
+  def proxy(stub: Ref[WebSocketBackendStub[RIO[R, *]]]): WebSocketBackend[RIO[R, *]] =
+    new WebSocketBackend[RIO[R, *]] {
+      def send[T](
+          request: GenericRequest[T, WebSockets with Effect[RIO[R, *]]]
+      ): RIO[R, Response[T]] =
+        stub.get >>= (_.send(request))
+      def close(): RIO[R, Unit] =
+        stub.get >>= (_.close())
+
+      def monad: MonadError[RIO[R, *]] = monad
+    }
+}
+
 trait WebSocketStreamClientStubbing[R, P] extends AbstractClientStubbing[R, P with WebSockets] {
   type Backend = WebSocketStreamBackend[RIO[R, *], P]
   type BackendStub = WebSocketStreamBackendStub[RIO[R, *], P]

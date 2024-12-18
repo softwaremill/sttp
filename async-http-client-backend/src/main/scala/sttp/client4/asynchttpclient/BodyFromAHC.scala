@@ -1,72 +1,41 @@
 package sttp.client4.asynchttpclient
 
-import java.io.{ByteArrayInputStream, File}
-import java.nio.ByteBuffer
-import org.reactivestreams.Publisher
-import sttp.capabilities.Streams
+import org.asynchttpclient.{Response => AHCResponse}
 import sttp.client4._
 import sttp.client4.internal._
 import sttp.client4.ws.{GotAWebSocketException, NotAWebSocketException}
 import sttp.model.ResponseMetadata
+import sttp.monad.MonadAsyncError
 import sttp.monad.syntax._
-import sttp.monad.{Canceler, MonadAsyncError}
-import sttp.ws.{WebSocket, WebSocketFrame}
+import sttp.ws.WebSocket
 
-private[asynchttpclient] trait BodyFromAHC[F[_], S] {
-  val streams: Streams[S]
-  implicit def monad: MonadAsyncError[F]
-
-  def publisherToStream(p: Publisher[ByteBuffer]): streams.BinaryStream
-
-  def publisherToBytes(p: Publisher[ByteBuffer]): F[Array[Byte]] =
-    monad.async { cb =>
-      def success(r: ByteBuffer): Unit = cb(Right(r.array()))
-      def error(t: Throwable): Unit = cb(Left(t))
-
-      val subscriber = new SimpleSubscriber(success, error)
-      p.subscribe(subscriber)
-
-      Canceler(() => subscriber.cancel())
-    }
-
-  def publisherToFile(p: Publisher[ByteBuffer], f: File): F[Unit] =
-    publisherToBytes(p).map(bytes => FileHelpers.saveFile(f, new ByteArrayInputStream(bytes)))
-
-  def bytesToPublisher(b: Array[Byte]): F[Publisher[ByteBuffer]] =
-    (new SingleElementPublisher(ByteBuffer.wrap(b)): Publisher[ByteBuffer]).unit
-
-  def fileToPublisher(f: File): F[Publisher[ByteBuffer]] =
-    (new SingleElementPublisher[ByteBuffer](ByteBuffer.wrap(FileHelpers.readFile(f))): Publisher[ByteBuffer]).unit
-
-  def compileWebSocketPipe(ws: WebSocket[F], pipe: streams.Pipe[WebSocketFrame.Data[_], WebSocketFrame]): F[Unit]
-
-  //
-
-  private def bodyFromResponseAs(isSubscribed: () => Boolean) =
-    new BodyFromResponseAs[F, Publisher[ByteBuffer], WebSocket[F], streams.BinaryStream] {
+private[asynchttpclient] class BodyFromAHC[F[_]](implicit monad: MonadAsyncError[F]) {
+  private def bodyFromResponseAs =
+    new BodyFromResponseAs[F, AHCResponse, WebSocket[F], Nothing] {
       override protected def withReplayableBody(
-          response: Publisher[ByteBuffer],
+          response: AHCResponse,
           replayableBody: Either[Array[Byte], SttpFile]
-      ): F[Publisher[ByteBuffer]] =
+      ): F[AHCResponse] =
         replayableBody match {
-          case Left(byteArray) => bytesToPublisher(byteArray)
-          case Right(file)     => fileToPublisher(file.toFile)
+          case Left(byteArray) => monad.unit(response) // TODO
+          case Right(file)     => monad.unit(response) // TODO
         }
 
-      override protected def regularIgnore(response: Publisher[ByteBuffer]): F[Unit] =
+      override protected def regularIgnore(response: AHCResponse): F[Unit] =
         // getting the body and discarding it
-        publisherToBytes(response).map(_ => ((), nonReplayableBody))
+        monad.eval {
+          discard(response)
+          ((), nonReplayableBody)
+        }
 
-      override protected def regularAsByteArray(response: Publisher[ByteBuffer]): F[Array[Byte]] =
-        publisherToBytes(response)
+      override protected def regularAsByteArray(response: AHCResponse): F[Array[Byte]] =
+        monad.eval(response.getResponseBodyAsBytes)
 
-      override protected def regularAsFile(response: Publisher[ByteBuffer], file: SttpFile): F[SttpFile] =
-        publisherToFile(response, file.toFile).map(_ => file)
+      override protected def regularAsFile(response: AHCResponse, file: SttpFile): F[SttpFile] =
+        monad.eval(FileHelpers.saveFile(file.toFile, response.getResponseBodyAsStream)).map(_ => file)
 
-      override protected def regularAsStream(
-          response: Publisher[ByteBuffer]
-      ): F[(streams.BinaryStream, () => F[Unit])] =
-        (publisherToStream(response), () => ignoreIfNotSubscribed(response, isSubscribed)).unit
+      override protected def regularAsStream(response: AHCResponse): F[(Nothing, () => F[Unit])] =
+        monad.error(new IllegalStateException("Streaming isn't supported"))
 
       override protected def handleWS[T](
           responseAs: GenericWebSocketResponseAs[T, _],
@@ -74,38 +43,30 @@ private[asynchttpclient] trait BodyFromAHC[F[_], S] {
           ws: WebSocket[F]
       ): F[T] = bodyFromWs(responseAs, ws, meta)
 
-      override protected def cleanupWhenNotAWebSocket(
-          response: Publisher[ByteBuffer],
-          e: NotAWebSocketException
-      ): F[Unit] = ignoreIfNotSubscribed(response, isSubscribed)
+      override protected def cleanupWhenNotAWebSocket(response: AHCResponse, e: NotAWebSocketException): F[Unit] =
+        monad.eval(discard(response))
 
-      override protected def cleanupWhenGotWebSocket(response: WebSocket[F], e: GotAWebSocketException): F[Unit] =
-        response.close()
+      override protected def cleanupWhenGotWebSocket(ws: WebSocket[F], e: GotAWebSocketException): F[Unit] =
+        ws.close()
     }
 
   def apply[TT](
-      response: Either[Publisher[ByteBuffer], WebSocket[F]],
+      response: Either[AHCResponse, WebSocket[F]],
       responseAs: ResponseAsDelegate[TT, _],
-      responseMetadata: ResponseMetadata,
-      isSubscribed: () => Boolean
-  ): F[TT] = bodyFromResponseAs(isSubscribed)(responseAs, responseMetadata, response)
+      responseMetadata: ResponseMetadata
+  ): F[TT] = bodyFromResponseAs(responseAs, responseMetadata, response)
 
   private def bodyFromWs[TT](r: GenericWebSocketResponseAs[TT, _], ws: WebSocket[F], meta: ResponseMetadata): F[TT] =
     r match {
       case ResponseAsWebSocket(f) =>
         f.asInstanceOf[(WebSocket[F], ResponseMetadata) => F[TT]].apply(ws, meta).ensure(ws.close())
-      case ResponseAsWebSocketUnsafe() => ws.unit.asInstanceOf[F[TT]]
-      case ResponseAsWebSocketStream(_, p) =>
-        compileWebSocketPipe(ws, p.asInstanceOf[streams.Pipe[WebSocketFrame.Data[_], WebSocketFrame]])
+      case ResponseAsWebSocketUnsafe()     => ws.unit.asInstanceOf[F[TT]]
+      case ResponseAsWebSocketStream(_, _) => monad.error(new IllegalStateException("Streaming isn't supported"))
     }
 
-  private def ignoreIfNotSubscribed(p: Publisher[ByteBuffer], isSubscribed: () => Boolean): F[Unit] =
-    monad.eval(isSubscribed()).flatMap(is => if (is) monad.unit(()) else ignorePublisher(p))
-
-  private def ignorePublisher(p: Publisher[ByteBuffer]): F[Unit] =
-    monad.async { cb =>
-      val subscriber = new IgnoreSubscriber(() => cb(Right(())), t => cb(Left(t)))
-      p.subscribe(subscriber)
-      Canceler(() => ())
-    }
+  private def discard(response: AHCResponse): Unit = {
+    val is = response.getResponseBodyAsStream
+    val buf = new Array[Byte](4096)
+    while (is.read(buf) != -1) {}
+  }
 }

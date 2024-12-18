@@ -9,8 +9,7 @@ import zio.ZIO
 
 class AsyncHttpClientZioHttpTest extends AsyncHttpClientHttpTest[Task] with ZioTestBase {
 
-  override val backend: Backend[Task] =
-    unsafeRunSyncOrThrow(AsyncHttpClientZioBackend())
+  override val backend: Backend[Task] = AsyncHttpClientZioBackend()
   override implicit val convertToFuture: ConvertToFuture[Task] = convertZioTaskToFuture
 
   "throw an exception instead of ZIO defect if the header value is invalid" in {

@@ -1,40 +1,33 @@
 package sttp.client4.asynchttpclient
 
-import java.nio.ByteBuffer
-
 import io.netty.handler.codec.http.HttpHeaders
-import org.asynchttpclient.AsyncHandler.State
-import org.asynchttpclient.handler.StreamedAsyncHandler
 import org.asynchttpclient.proxy.ProxyServer
 import org.asynchttpclient.ws.{WebSocket => AHCWebSocket, WebSocketListener, WebSocketUpgradeHandler}
 import org.asynchttpclient.{
-  AsyncHandler,
   AsyncHttpClient,
   BoundRequestBuilder,
   DefaultAsyncHttpClient,
   DefaultAsyncHttpClientConfig,
-  HttpResponseBodyPart,
-  HttpResponseStatus,
   Realm,
-  Request => AsyncRequest,
+  Request => AHCRequest,
   RequestBuilder,
-  Response => AsyncResponse
+  Response => AHCResponse
 }
-import org.reactivestreams.{Publisher, Subscriber, Subscription}
-import sttp.capabilities.{Effect, Streams}
+import sttp.capabilities.Effect
 import sttp.client4
 import sttp.client4.BackendOptions.ProxyType.{Http, Socks}
 import sttp.client4.internal.ws.{SimpleQueue, WebSocketEvent}
-import sttp.monad.syntax._
-import sttp.monad.{Canceler, MonadAsyncError, MonadError}
 import sttp.client4.{BackendOptions, GenericBackend, Response, _}
 import sttp.model._
+import sttp.monad.syntax._
+import sttp.monad.{Canceler, MonadAsyncError}
 
 import scala.collection.JavaConverters._
-import scala.collection.immutable.Seq
+import scala.jdk.DurationConverters._
 import scala.util.Try
+import scala.collection.immutable.Seq
 
-abstract class AsyncHttpClientBackend[F[_], S <: Streams[S], P](
+abstract class AsyncHttpClientBackend[F[_], P](
     asyncHttpClient: AsyncHttpClient,
     override implicit val monad: MonadAsyncError[F],
     closeClient: Boolean,
@@ -42,7 +35,6 @@ abstract class AsyncHttpClientBackend[F[_], S <: Streams[S], P](
 ) extends GenericBackend[F, P]
     with Backend[F] {
 
-  val streams: Streams[S]
   type R = P with Effect[F]
 
   override def send[T](r: GenericRequest[T, R]): F[Response[T]] =
@@ -54,10 +46,22 @@ abstract class AsyncHttpClientBackend[F[_], S <: Streams[S], P](
 
   private def sendRegular[T](r: GenericRequest[T, R], ahcRequest: BoundRequestBuilder): F[Response[T]] =
     monad.flatten(monad.async[F[Response[T]]] { cb =>
-      def success(r: F[Response[T]]): Unit = cb(Right(r))
-      def error(t: Throwable): Unit = cb(Left(t))
-
-      val lf = ahcRequest.execute(streamingAsyncHandler(r, success, error))
+      val lf = ahcRequest.execute()
+      lf.addListener(
+        new Runnable {
+          override def run(): Unit =
+            try {
+              val ahcResponse = lf.get()
+              cb(Right {
+                val baseSttpResponse = readResponseNoBody(r, ahcResponse)
+                bodyFromAHC(Left(ahcResponse), r.response, baseSttpResponse).map(t => baseSttpResponse.copy(body = t))
+              })
+            } catch {
+              case t: Throwable => cb(Left(t))
+            }
+        },
+        null
+      )
       Canceler(() => lf.cancel(true))
     })
 
@@ -76,76 +80,10 @@ abstract class AsyncHttpClientBackend[F[_], S <: Streams[S], P](
       })
     }
 
-  protected def bodyFromAHC: BodyFromAHC[F, S]
-  protected def bodyToAHC: BodyToAHC[F, S]
+  private val bodyFromAHC: BodyFromAHC[F] = new BodyFromAHC[F]
+  private val bodyToAHC: BodyToAHC[F] = new BodyToAHC[F]
 
   protected def createSimpleQueue[T]: F[SimpleQueue[F, T]]
-
-  private def streamingAsyncHandler[T, R](
-      request: GenericRequest[T, R],
-      success: F[Response[T]] => Unit,
-      error: Throwable => Unit
-  ): AsyncHandler[Unit] =
-    new StreamedAsyncHandler[Unit] {
-      private val builder = new AsyncResponse.ResponseBuilder()
-      private var publisher: Option[Publisher[ByteBuffer]] = None
-      private var completed = false
-      // when using asStream(...), trying to detect ignored streams, where a subscription never happened
-      @volatile private var subscribed = false
-
-      override def onStream(p: Publisher[HttpResponseBodyPart]): AsyncHandler.State = {
-        // Sadly we don't have .map on Publisher
-        publisher = Some(new Publisher[ByteBuffer] {
-          override def subscribe(s: Subscriber[_ >: ByteBuffer]): Unit = {
-            subscribed = true
-            p.subscribe(new Subscriber[HttpResponseBodyPart] {
-              override def onError(t: Throwable): Unit = s.onError(t)
-              override def onComplete(): Unit = s.onComplete()
-              override def onNext(t: HttpResponseBodyPart): Unit =
-                s.onNext(t.getBodyByteBuffer)
-              override def onSubscribe(v: Subscription): Unit =
-                s.onSubscribe(v)
-            })
-          }
-        })
-        // #2: sometimes onCompleted() isn't called, only onStream(); this
-        // seems to be true esp for https sites. For these cases, completing
-        // the request here.
-        doComplete()
-        State.CONTINUE
-      }
-
-      override def onBodyPartReceived(bodyPart: HttpResponseBodyPart): AsyncHandler.State =
-        throw new IllegalStateException("Requested a streaming backend, unexpected eager body parts.")
-
-      override def onHeadersReceived(headers: HttpHeaders): AsyncHandler.State = {
-        builder.accumulate(headers)
-        State.CONTINUE
-      }
-
-      override def onStatusReceived(responseStatus: HttpResponseStatus): AsyncHandler.State = {
-        builder.accumulate(responseStatus)
-        State.CONTINUE
-      }
-
-      override def onCompleted(): Unit =
-        // if the request had no body, onStream() will never be called
-        doComplete()
-
-      private def doComplete(): Unit =
-        if (!completed) {
-          completed = true
-
-          val baseResponse = readResponseNoBody(request, builder.build())
-          val p = publisher.getOrElse(EmptyPublisher)
-          val b = bodyFromAHC(Left(p), request.response, baseResponse, () => subscribed)
-
-          success(b.map(t => baseResponse.copy(body = t)))
-        }
-
-      override def onThrowable(t: Throwable): Unit =
-        error(t)
-    }
 
   private class WebSocketInitListener[T](
       request: GenericRequest[T, _],
@@ -166,7 +104,7 @@ abstract class AsyncHttpClientBackend[F[_], S <: Streams[S], P](
           Nil,
           request.onlyMetadata
         )
-      val bf = bodyFromAHC(Right(webSocket), request.response, baseResponse, () => false)
+      val bf = bodyFromAHC(Right(webSocket), request.response, baseResponse)
       success(bf.map(b => baseResponse.copy(body = b)))
     }
 
@@ -179,18 +117,20 @@ abstract class AsyncHttpClientBackend[F[_], S <: Streams[S], P](
   private def preparedRequest[R](r: GenericRequest[_, R]): F[BoundRequestBuilder] =
     monad.fromTry(Try(asyncHttpClient.prepareRequest(requestToAsync(r)))).map(customizeRequest)
 
-  private def requestToAsync[R](r: GenericRequest[_, R]): AsyncRequest = {
-    val readTimeout = r.options.readTimeout
+  private def requestToAsync[R](r: GenericRequest[_, R]): AHCRequest = {
+    val readTimeoutScalaDuration = r.options.readTimeout
+    val readTimeout =
+      if (readTimeoutScalaDuration.isFinite) java.time.Duration.ofMillis(readTimeoutScalaDuration.toMillis) else null
     val rb = new RequestBuilder(r.method.method)
       .setUrl(r.uri.toString)
-      .setReadTimeout(if (readTimeout.isFinite) readTimeout.toMillis.toInt else -1)
-      .setRequestTimeout(if (readTimeout.isFinite) readTimeout.toMillis.toInt else -1)
+      .setReadTimeout(readTimeout)
+      .setRequestTimeout(readTimeout)
     r.headers.foreach(header => rb.setHeader(header.name, header.value))
     bodyToAHC(r, r.body, rb)
     rb.build()
   }
 
-  private def readResponseNoBody(request: GenericRequest[_, _], response: AsyncResponse): Response[Unit] =
+  private def readResponseNoBody(request: GenericRequest[_, _], response: AHCResponse): Response[Unit] =
     client4.Response(
       (),
       StatusCode.unsafeApply(response.getStatusCode),
@@ -222,7 +162,7 @@ object AsyncHttpClientBackend {
       options: BackendOptions
   ): DefaultAsyncHttpClientConfig.Builder = {
     val configBuilder = new DefaultAsyncHttpClientConfig.Builder()
-      .setConnectTimeout(options.connectionTimeout.toMillis.toInt)
+      .setConnectTimeout(options.connectionTimeout.toJava)
       .setCookieStore(null)
 
     options.proxy match {

@@ -1,22 +1,15 @@
 package sttp.client4.asynchttpclient
 
-import java.nio.charset.Charset
-
-import io.netty.buffer.ByteBuf
-import org.asynchttpclient.{Param, RequestBuilder}
 import org.asynchttpclient.request.body.multipart.{ByteArrayPart, FilePart, StringPart}
-import org.reactivestreams.Publisher
-import sttp.capabilities.Streams
+import org.asynchttpclient.{Param, RequestBuilder}
 import sttp.client4._
-import sttp.client4.internal.{throwNestedMultipartNotAllowed, toByteArray}
+import sttp.client4.internal.toByteArray
 import sttp.model.{HeaderNames, MediaType, Part}
 
+import java.nio.charset.Charset
 import scala.collection.JavaConverters._
 
-private[asynchttpclient] trait BodyToAHC[F[_], S] {
-  val streams: Streams[S]
-  protected def streamToPublisher(s: streams.BinaryStream): Publisher[ByteBuf]
-
+private[asynchttpclient] class BodyToAHC[F[_]] {
   def apply[R](r: GenericRequest[_, R], body: GenericRequestBody[R], rb: RequestBuilder): Unit =
     body match {
       case NoBody => // skip
@@ -35,12 +28,7 @@ private[asynchttpclient] trait BodyToAHC[F[_], S] {
       case FileBody(b, _) =>
         rb.setBody(b.toFile)
 
-      case StreamBody(s) =>
-        val cl = r.headers
-          .find(_.is(HeaderNames.ContentLength))
-          .map(_.value.toLong)
-          .getOrElse(-1L)
-        rb.setBody(streamToPublisher(s.asInstanceOf[streams.BinaryStream]), cl)
+      case StreamBody(_) => throw new IllegalArgumentException("Streaming is not supported")
 
       case m: MultipartBody[_] =>
         m.parts.foreach(addMultipartBody(rb, _))
