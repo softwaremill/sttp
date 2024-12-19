@@ -67,14 +67,14 @@ ArmeriaZioBackend.scoped().flatMap { backend => ??? }
 ArmeriaZioBackend.usingDefaultClient().flatMap { backend => ??? }
 ```
 
-```eval_rst
+```{eval-rst}
 .. note:: The default client factory is reused to create `ArmeriaZioBackend` if a `SttpBackendOptions` is unspecified. So you only need to manage a resource when `SttpBackendOptions` is used.
 ```
 
 or, if you'd like to instantiate the [WebClient](https://armeria.dev/docs/client-http) yourself:
 
 ```scala
-import com.linecorp.armeria.client.circuitbreaker._
+import com.linecorp.armeria.client.circuitbreaker.*
 import com.linecorp.armeria.client.WebClient
 
 // Fluently build Armeria WebClient with built-in decorators
@@ -87,7 +87,7 @@ val client = WebClient.builder("https://my-service.com")
 ArmeriaZioBackend.usingClient(client).flatMap { backend => ??? }
 ```
 
-```eval_rst
+```{eval-rst}
 .. note:: A WebClient could fail to follow redirects if the WebClient is created with a base URI and a redirect location is a different URI.
 ```
 
@@ -107,9 +107,9 @@ When using constructors to express service dependencies, ZIO layers can be used 
 The layers can be used to provide an implementation of the `SttpBackend` dependency when creating services. For example:
 
 ```scala
-import sttp.client4._
-import sttp.client4.httpclient.zio._
-import zio._
+import sttp.client4.*
+import sttp.client4.httpclient.zio.*
+import zio.*
 
 class MyService(sttpBackend: Backend[Task]) {
   def runLogic(): Task[Response[String]] = {
@@ -143,9 +143,9 @@ The lifecycle of the `SttpClient` service is described by `ZLayer`s, which can b
 The `SttpClient` companion object contains effect descriptions which use the `SttpClient` service from the environment to send requests or open websockets. This is different from sttp usage with other effect libraries (which require invoking `.send(backend)` on the request), but is more in line with one of the styles of using ZIO. For example:
 
  ```scala mdoc:compile-only
- import sttp.client4._
- import sttp.client4.httpclient.zio._
- import zio._
+ import sttp.client4.*
+ import sttp.client4.httpclient.zio.*
+ import zio.*
 
  val request = basicRequest.get(uri"https://httpbin.org/get")
  val sent: ZIO[SttpClient, Throwable, Response[Either[String, String]]] = 
@@ -162,8 +162,8 @@ Requests can be sent with a streaming body:
 
 ```scala
 import sttp.capabilities.zio.ZioStreams
-import sttp.client4._
-import zio.stream._
+import sttp.client4.*
+import zio.stream.*
 import zio.Task
 
 val sttpBackend: StreamBackend[Task, ZioStreams] = ???
@@ -180,10 +180,10 @@ And receive response bodies as a stream:
 
 ```scala
 import sttp.capabilities.zio.ZioStreams
-import sttp.client4._
+import sttp.client4.*
 
-import zio._
-import zio.stream._
+import zio.*
+import zio.stream.*
 
 import scala.concurrent.duration.Duration
 
@@ -214,13 +214,13 @@ A layer with the stub `SttpBackend` can be then created by simply calling `ZLaye
 Received data streams can be parsed to a stream of server-sent events (SSE):
 
 ```scala
-import zio._
-import zio.stream._
+import zio.*
+import zio.stream.*
 
 import sttp.capabilities.zio.ZioStreams
 import sttp.client4.impl.zio.ZioServerSentEvents
 import sttp.model.sse.ServerSentEvent
-import sttp.client4._
+import sttp.client4.*
 
 def processEvents(source: Stream[Throwable, ServerSentEvent]): Task[Unit] = ???
 

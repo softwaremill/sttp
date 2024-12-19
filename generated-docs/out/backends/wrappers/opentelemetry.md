@@ -6,7 +6,7 @@ Currently, the following OpenTelemetry features are supported:
 - tracing using `OpenTelemetryTracingZioBackend`, wrapping any ZIO2 backend
 - tracing using [trace4cats](https://github.com/trace4cats/trace4cats), wrapping a cats-effect backend
 
-### Metrics
+## Metrics
 
 The backend depends only on [opentelemetry-api](https://github.com/open-telemetry/opentelemetry-java). To use add the
 following dependency to your project:
@@ -19,8 +19,8 @@ Then an instance can be obtained as follows:
 
 ```scala
 import scala.concurrent.Future
-import sttp.client4._
-import sttp.client4.opentelemetry._
+import sttp.client4.*
+import sttp.client4.opentelemetry.*
 import io.opentelemetry.api.OpenTelemetry
 
 // any effect and capabilities are supported
@@ -34,8 +34,8 @@ All counters have provided default names, but the names can be customized by set
 
 ```scala
 import scala.concurrent.Future
-import sttp.client4._
-import sttp.client4.opentelemetry._
+import sttp.client4.*
+import sttp.client4.opentelemetry.*
 import io.opentelemetry.api.OpenTelemetry
 
 val sttpBackend: Backend[Future] = ???
@@ -50,7 +50,7 @@ OpenTelemetryMetricsBackend(
 )
 ```
 
-### Tracing (ZIO)
+## Tracing (ZIO)
 
 To use, add the following dependency to your project:
 
@@ -66,10 +66,10 @@ In order to do that, you need to provide the wrapper with a `Tracing` from zio-t
 Here's how you construct `ZioTelemetryOpenTelemetryBackend`. I would recommend wrapping this is in `ZLayer`
 
 ```scala
-import sttp.client4._
-import zio._
-import zio.telemetry.opentelemetry.tracing._
-import sttp.client4.opentelemetry.zio._
+import sttp.client4.*
+import zio.*
+import zio.telemetry.opentelemetry.tracing.*
+import sttp.client4.opentelemetry.zio.*
 
 val zioBackend: Backend[Task] = ???
 val tracing: Tracing = ???
@@ -81,6 +81,6 @@ By default, the span is named after the HTTP method (e.g "HTTP POST") as [recomm
 and the http method, url and response status codes are set as span attributes.
 You can override these defaults by supplying a custom `OpenTelemetryZioTracer`.
 
-### Tracing (cats-effect)
+## Tracing (cats-effect)
 
 The [trace4cats](https://github.com/trace4cats/trace4cats) project includes sttp-client integration.

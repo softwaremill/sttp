@@ -5,7 +5,7 @@ sttp supports basic, bearer-token based authentication and digest authentication
 Basic authentication, using which the username and password are encoded using Base64, can be added as follows:
 
 ```scala
-import sttp.client4._
+import sttp.client4.*
 
 val username = "mary"
 val password = "p@assword"
@@ -19,7 +19,7 @@ val token = "zMDjRfl76ZC9Ub0wnz4XsNiRVBChTYbJcE3F"
 basicRequest.auth.bearer(token)
 ```
 
-### Important Note on the `Authorization` Header and Redirects
+## Important Note on the `Authorization` Header and Redirects
 
 The `Authorization` header is by default removed during redirects. See [redirects](../conf/redirects.md) for more details.
 
@@ -65,10 +65,11 @@ You can use sttp with OAuth2. Looking at the [OAuth2 protocol flow](https://tool
 1. (A)/(B) - Your UI needs to enable the user to authenticate. Your application will then receive a callback from the authentication server, which will include an authentication code.
 
 2. (C)/(D) - You need to send a request to the authentication server, passing in the authentication code from step 1. You'll receive an access token in response (and optionally a refresh token). For example, if you were using GitHub as your authentication server, you'd need to take the values of `clientId` and `clientSecret` from the GitHub settings, then take the `authCode` received in step 1 above, and send a request like this:
+
 ```scala
-import sttp.client4.circe._
-import io.circe._
-import io.circe.generic.semiauto._
+import sttp.client4.circe.*
+import io.circe.*
+import io.circe.generic.semiauto.*
 
 val authCode = "SplxlOBeZQQYbYS6WxSbIA"
 val clientId = "myClient123"

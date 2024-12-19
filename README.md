@@ -16,26 +16,29 @@ requests and how to handle responses. Requests are sent using one of the backend
  
 Backend implementations include the HTTP client that is shipped with Java, as well as ones based on [akka-http](https://doc.akka.io/docs/akka-http/current/scala/http/), [http4s](https://http4s.org), [OkHttp](http://square.github.io/okhttp/). They integrate with [Akka](https://akka.io), [Monix](https://monix.io), [fs2](https://github.com/functional-streams-for-scala/fs2), [cats-effect](https://github.com/typelevel/cats-effect), [scalaz](https://github.com/scalaz/scalaz) and [ZIO](https://github.com/zio/zio). Supported Scala versions include 2.12, 2.13 and 3, Scala.JS and Scala Native; supported Java versions include 11+.
 
-Here's a quick example of sttp client in action:
+Here's a quick example of sttp client in action, runnable using [scala-cli](https://scala-cli.virtuslab.org):
  
 ```scala
-import sttp.client4._
+//> using dep com.softwaremill.sttp.client4::core:4.0.0-M20
 
-val sort: Option[String] = None
-val query = "http language:scala"
+import sttp.client4.*
 
-// the `query` parameter is automatically url-encoded
-// `sort` is removed, as the value is not defined
-val request = basicRequest.get(uri"https://api.github.com/search/repositories?q=$query&sort=$sort")
-  
-val backend = DefaultSyncBackend()
-val response = request.send(backend)
+@main def sttpDemo(): Unit =
+  val sort: Option[String] = None
+  val query = "http language:scala"
 
-// response.header(...): Option[String]
-println(response.header("Content-Length")) 
+  // the `query` parameter is automatically url-encoded
+  // `sort` is removed, as the value is not defined
+  val request = basicRequest.get(uri"https://api.github.com/search/repositories?q=$query&sort=$sort")
 
-// response.body: by default read into an Either[String, String] to indicate failure or success 
-println(response.body)                                 
+  val backend = DefaultSyncBackend()
+  val response = request.send(backend)
+
+  // response.header(...): Option[String]
+  println(response.header("Content-Length")) 
+
+  // response.body: by default read into an Either[String, String] to indicate failure or success 
+  println(response.body)
 ```
 
 ## Documentation
@@ -135,7 +138,7 @@ The documentation is typechecked using [mdoc](https://scalameta.org/mdoc/). The 
 
 When generating documentation, it's best to set the version to the current one, so that the generated doc files don't include modifications with the current snapshot version. 
 
-That is, in sbt run: `set version := "4.0.0-M20"`, before running `mdoc` in `docs`.
+That is, in sbt run: `set ThisBuild/version := "4.0.0-M20"`, before running `mdoc` in `docs`.
 
 ### Testing the Scala.JS backend
 

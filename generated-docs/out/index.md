@@ -12,7 +12,7 @@ Backend implementations include the HTTP client that is shipped with Java, as we
 Here's a quick example of sttp client in action:
 
 ```scala
-import sttp.client4._
+import sttp.client4.*
 
 val query = "http language:scala"
 val sort: Option[String] = None
@@ -66,7 +66,7 @@ We offer commercial support for sttp and related technologies, as well as develo
 
 # Table of contents
 
-```eval_rst
+```{eval-rst}
 .. toctree::
    :maxdepth: 2
    :caption: Getting started
@@ -75,6 +75,11 @@ We offer commercial support for sttp and related technologies, as well as develo
    how
    goals
    community
+
+.. toctree::
+   :maxdepth: 2
+   :caption: How-to's
+   
    examples
 
 .. toctree::

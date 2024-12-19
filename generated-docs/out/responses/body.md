@@ -24,7 +24,7 @@ When the above request is completely described and sent, it will result in a `Re
 Other possible response descriptions include:
 
 ```scala
-import sttp.client4._
+import sttp.client4.*
 import java.io.File
 import java.nio.file.Path
 
@@ -56,7 +56,7 @@ def asBothOption[A, B](l: ResponseAs[A], r: ResponseAs[B]): ResponseAs[(A, Optio
 Hence, to discard the response body, the request description should include the following:
 
 ```scala
-import sttp.client4._
+import sttp.client4.*
 
 basicRequest.response(ignore)
 ```   
@@ -64,14 +64,14 @@ basicRequest.response(ignore)
 And to save the response to a file:
 
 ```scala
-import sttp.client4._
-import java.io._
+import sttp.client4.*
+import java.io.*
 
 val someFile = new File("some/path")
 basicRequest.response(asFile(someFile))
 ```
 
-```eval_rst
+```{eval-rst}
 .. note::
 
  As the handling of response is specified upfront, there's no need to "consume" the response body. It can be safely discarded if not needed.
@@ -82,14 +82,14 @@ basicRequest.response(asFile(someFile))
 Sometimes it's convenient to get a failed effect (or an exception thrown) when the response status code is not successful. In such cases, the response description can be modified using the `.orFail` combinator:
 
 ```scala
-import sttp.client4._
+import sttp.client4.*
 
 basicRequest.response(asString.orFail): PartialRequest[String]
 ```
 
 The combinator works in all cases where the response body is specified to be deserialized as an `Either`. If the left is already an exception, it will be thrown unchanged. Otherwise, the left-value will be wrapped in an `HttpError`.
 
-```eval_rst
+```{eval-rst}
 .. note::
 
  While both ``asStringAlways`` and ``asString.orFail`` have the type ``ResponseAs[String, Any]``, they are different. The first will return the response body as a string always, regardless of the responses' status code. The second will return a failed effect / throw a ``HttpError`` exception for non-2xx status codes, and the string as body only for 2xx status codes.
@@ -101,14 +101,14 @@ There's also a variant of the combinator, `.getEither`, which can be used to ext
 
 It's possible to define custom body deserializers by taking any of the built-in response descriptions and mapping over them. Each `ResponseAs` instance has `map` and `mapWithMetadata` methods, which can be used to transform it to a description for another type (optionally using response metadata, such as headers or the status code). Each such value is immutable and can be used multiple times.
 
-```eval_rst
+```{eval-rst}
 .. note:: Alternatively, response descriptions can be modified directly from the request description, by using the ``request.mapResponse(...)`` and ``request.mapResponseRight(...)`` methods (which is available, if the response body is deserialized to an either). That's equivalent to calling ``request.response(request.response.map(...))``, that is setting a new response description, to a modified old response description; but with shorter syntax.
 ```
 
 As an example, to read the response body as an int, the following response description can be defined (warning: this ignores the possibility of exceptions!):
 
 ```scala
-import sttp.client4._
+import sttp.client4.*
 
 val asInt: ResponseAs[Either[String, Int]] = asString.mapRight((_: String).toInt)
 
@@ -120,7 +120,7 @@ basicRequest
 To integrate with a third-party JSON library, and always parse the response as JSON (regardless of the status code):
 
 ```scala
-import sttp.client4._
+import sttp.client4.*
 
 type JsonError
 type JsonAST
@@ -141,11 +141,11 @@ Using the `fromMetadata` combinator, it's possible to dynamically specify how th
 A more complex case, which uses Circe for deserializing JSON, choosing to which model to deserialize to depending on the status code, can look as following:
 
 ```scala
-import sttp.client4._
-import sttp.model._
-import sttp.client4.circe._
-import io.circe._
-import io.circe.generic.auto._
+import sttp.client4.*
+import sttp.model.*
+import sttp.client4.circe.*
+import io.circe.*
+import io.circe.generic.auto.*
 
 sealed trait MyModel
 case class SuccessModel(name: String, age: Int) extends MyModel
@@ -163,11 +163,11 @@ val myRequest: Request[Either[ResponseException[String, io.circe.Error], MyModel
 The above example assumes that success and error models are part of one hierarchy (`MyModel`). Sometimes http errors are modelled independently of success. In this case, we can use `asJsonEither`, which uses `asEitherDeserialized` under the covers:
 
 ```scala
-import sttp.client4._
-import sttp.model._
-import sttp.client4.circe._
-import io.circe._
-import io.circe.generic.auto._
+import sttp.client4.*
+import sttp.model.*
+import sttp.client4.circe.*
+import io.circe.*
+import io.circe.generic.auto.*
 
 case class MyModel(p1: Int)
 
@@ -195,7 +195,7 @@ If the backend used supports non-blocking, asynchronous streaming (see "Supporte
 
 ```scala
 import sttp.capabilities.{Effect, Streams}
-import sttp.client4._
+import sttp.client4.*
 import sttp.model.ResponseMetadata
 
 def asStream[F[_], T, S](s: Streams[S])(f: s.BinaryStream => F[T]): 
@@ -225,22 +225,22 @@ The first two "safe" variants pass the response stream to the user-provided func
 
 The "unsafe" variants return the stream directly to the user, and then it's up to the user of the code to consume and close the stream, releasing any resources held by the HTTP connection.
 
-For example, when using the [Akka backend](../backends/akka.md):
+For example, when using the [Pekko backend](../backends/pekko.md):
 
 ```scala
-import akka.stream.scaladsl.Source
-import akka.util.ByteString
+import org.apache.pekko.stream.scaladsl.Source
+import org.apache.pekko.util.ByteString
 import scala.concurrent.Future
-import sttp.capabilities.akka.AkkaStreams
-import sttp.client4._
-import sttp.client4.akkahttp.AkkaHttpBackend
+import sttp.capabilities.pekko.PekkoStreams
+import sttp.client4.*
+import sttp.client4.pekkohttp.PekkoHttpBackend
 
-val backend: StreamBackend[Future, AkkaStreams] = AkkaHttpBackend()
+val backend: StreamBackend[Future, PekkoStreams] = PekkoHttpBackend()
 
 val response: Future[Response[Either[String, Source[ByteString, Any]]]] =
   basicRequest
     .post(uri"...")
-    .response(asStreamUnsafe(AkkaStreams))
+    .response(asStreamUnsafe(PekkoStreams))
     .send(backend)
 ```
 

@@ -13,13 +13,13 @@ To use, add the following dependency to your project:
 
 add imports:
 
-```scala
+```scala 
 import sttp.client4.armeria.scalaz.ArmeriaScalazBackend
 ```
 
 create client:
 
-```scala
+```scala 
 val backend = ArmeriaScalazBackend()
 
 // You can use the default client which reuses the connection pool of ClientFactory.ofDefault()
@@ -28,7 +28,7 @@ ArmeriaScalazBackend.usingDefaultClient()
 
 or, if you'd like to instantiate the [WebClient](https://armeria.dev/docs/client-http) yourself:
 
-```scala
+```scala 
 import com.linecorp.armeria.client.circuitbreaker._
 import com.linecorp.armeria.client.WebClient
 
@@ -42,7 +42,7 @@ val client = WebClient.builder("https://my-service.com")
 val backend = ArmeriaScalazBackend.usingClient(client)
 ```
 
-```eval_rst
+```{eval-rst}
 .. note:: A WebClient could fail to follow redirects if the WebClient is created with a base URI and a redirect location is a different URI.
 ```
 

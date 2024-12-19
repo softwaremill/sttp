@@ -21,6 +21,7 @@ val ideScalaVersion = scala3
 
 lazy val testServerPort = settingKey[Int]("Port to run the http test server on")
 lazy val startTestServer = taskKey[Unit]("Start a http server used by tests")
+lazy val verifyExamplesCompileUsingScalaCli = taskKey[Unit]("Verify that each example compiles using Scala CLI")
 
 // slow down for CI
 parallelExecution in Global := false
@@ -41,6 +42,9 @@ val commonSettings = commonSmlBuildSettings ++ ossPublishSettings ++ Seq(
     val files1 = UpdateVersionInDocs(sLog.value, organization.value, version.value, List(file("README.md")))
     Def.task {
       (docs.jvm(scala3) / mdoc).toTask("").value
+      // Generating the list only after mdoc is done (as it overrides what's in generated_doc)
+      // For the root project the sourceDirectory points to src, so ../ will point to the root directory of the project
+      GenerateListOfExamples(sLog.value, sourceDirectory.value.getParentFile)
       files1 ++ Seq(file("generated-docs/out"))
     }
   }.value,
@@ -952,7 +956,8 @@ lazy val examplesCe2 = (projectMatrix in file("examples-ce2"))
     publish / skip := true,
     libraryDependencies ++= Seq(
       "io.circe" %% "circe-generic" % circeVersion
-    )
+    ),
+    verifyExamplesCompileUsingScalaCli := VerifyExamplesCompileUsingScalaCli(sLog.value, sourceDirectory.value)
   )
   .jvmPlatform(scalaVersions = List(scala2_13))
   .dependsOn(circe, monix)
@@ -967,7 +972,8 @@ lazy val examples = (projectMatrix in file("examples"))
       "org.json4s" %% "json4s-native" % json4sVersion,
       pekkoStreams,
       logback
-    )
+    ),
+    verifyExamplesCompileUsingScalaCli := VerifyExamplesCompileUsingScalaCli(sLog.value, sourceDirectory.value)
   )
   .jvmPlatform(scalaVersions = List(examplesScalaVersion))
   .dependsOn(

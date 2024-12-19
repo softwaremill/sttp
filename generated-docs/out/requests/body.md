@@ -11,14 +11,14 @@ In its simplest form, the request's body can be set as a `String`. By default, t
 A `String` body can be set on a request as follows:
 
 ```scala
-import sttp.client4._
+import sttp.client4.*
 basicRequest.body("Hello, world!")
 ```
 
 It is also possible to use a different character encoding:
 
 ```scala
-import sttp.client4._
+import sttp.client4.*
 basicRequest.body("Hello, world!", "utf-8")
 ```
 
@@ -27,7 +27,7 @@ basicRequest.body("Hello, world!", "utf-8")
 To set a binary-data body, the following methods are available:
 
 ```scala
-import sttp.client4._
+import sttp.client4.*
 
 val bytes: Array[Byte] = ???
 basicRequest.body(bytes)
@@ -43,7 +43,7 @@ basicRequest.body(inputStream)
 
 If not specified before, these methods will set the content type to `application/octet-stream`. When using a byte array, additionally the content length will be set to the length of the array (unless specified explicitly).
 
-```eval_rst
+```{eval-rst}
 .. note::
 
   While the object defining a request is immutable, setting a mutable request body will make the whole request definition mutable as well. With ``InputStream``, the request can be moreover sent only once, as input streams can be consumed once.
@@ -54,7 +54,7 @@ If not specified before, these methods will set the content type to `application
 To upload a file, simply set the request body as a `File` or `Path`:
 
 ```scala
-import sttp.client4._
+import sttp.client4.*
 
 import java.io.File
 basicRequest.body(new File("data.txt"))
@@ -76,7 +76,7 @@ If you set the body as a `Map[String, String]` or `Seq[(String, String)]`, it wi
 By default, the `UTF-8` encoding is used, but can be also specified explicitly:
 
 ```scala
-import sttp.client4._
+import sttp.client4.*
 basicRequest.body(Map("k1" -> "v1"))
 basicRequest.body(Map("k1" -> "v1"), "utf-8")
 basicRequest.body("k1" -> "v1", "k2" -> "v2")
@@ -92,7 +92,7 @@ types: a `String`, byte array, an input stream, etc.
 For example, here's how to write a custom serializer for a case class, with serializer-specific default content type:
 
 ```scala
-import sttp.client4._
+import sttp.client4.*
 import sttp.model.MediaType
 case class Person(name: String, surname: String, age: Int)
 

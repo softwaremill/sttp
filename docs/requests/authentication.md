@@ -19,7 +19,7 @@ val token = "zMDjRfl76ZC9Ub0wnz4XsNiRVBChTYbJcE3F"
 basicRequest.auth.bearer(token)
 ```
 
-### Important Note on the `Authorization` Header and Redirects
+## Important Note on the `Authorization` Header and Redirects
 
 The `Authorization` header is by default removed during redirects. See [redirects](../conf/redirects.md) for more details.
 

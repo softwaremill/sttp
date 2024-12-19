@@ -1,3 +1,7 @@
+// {cat=Streaming; effects=cats-effect; backend=HttpClient}: Stream request & response bodies using fs2
+
+//> using dep com.softwaremill.sttp.client4::fs2:4.0.0-M20
+
 package sttp.client4.examples
 
 import cats.effect.ExitCode

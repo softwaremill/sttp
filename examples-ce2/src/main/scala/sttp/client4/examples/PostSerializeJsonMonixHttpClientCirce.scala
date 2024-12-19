@@ -1,3 +1,10 @@
+// {cat=Hello, World!; effects=Monix; backend=HttpClient}: Post JSON data
+
+//> using scala 2.13
+//> using dep com.softwaremill.sttp.client4::monix:4.0.0-M20
+//> using dep com.softwaremill.sttp.client4::circe:4.0.0-M20
+//> using dep io.circe::circe-generic:0.14.10
+
 package sttp.client4.examples
 
 object PostSerializeJsonMonixHttpClientCirce extends App {

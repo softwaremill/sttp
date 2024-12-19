@@ -135,8 +135,8 @@ To use, add the following dependency to your project:
 An example of streaming a response:
 
 ```scala   
-import sttp.client4._
-import sttp.client4.impl.monix._
+import sttp.client4.*
+import sttp.client4.impl.monix.*
 
 import java.nio.ByteBuffer
 import monix.eval.Task
@@ -151,7 +151,7 @@ val response: Task[Response[Observable[ByteBuffer]]] =
     .send(backend)
 ```      
 
-```eval_rst
+```{eval-rst}
 .. note:: Currently no browsers support passing a stream as the request body. As such, using the ``Fetch`` backend with a streaming request will result in it being converted into an in-memory array before being sent. Response bodies are returned as a "proper" stream.
 ```
 
@@ -170,7 +170,7 @@ import monix.eval.Task
 import sttp.capabilities.monix.MonixStreams
 import sttp.client4.impl.monix.MonixServerSentEvents
 import sttp.model.sse.ServerSentEvent
-import sttp.client4._
+import sttp.client4.*
 
 def processEvents(source: Observable[ServerSentEvent]): Task[Unit] = ???
 

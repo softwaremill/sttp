@@ -44,21 +44,19 @@ metrics for completed requests and wraps any `Future`-based backend:
 ```scala
 import sttp.attributes.AttributeKey
 import sttp.capabilities.Effect
-import sttp.client4._
-import sttp.client4.akkahttp._
+import sttp.client4.*
+import sttp.client4.pekkohttp.*
 import sttp.client4.wrappers.DelegateBackend
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.util._
+import scala.util.*
 
 // the metrics infrastructure
-trait MetricsServer {
+trait MetricsServer:
   def reportDuration(name: String, duration: Long): Unit
-}
 
-class CloudMetricsServer extends MetricsServer {
+class CloudMetricsServer extends MetricsServer:
   override def reportDuration(name: String, duration: Long): Unit = ???
-}
 
 case class MetricPrefix(prefix: String)
 val MetricPrefixAttributeKey = AttributeKey[MetricPrefix]
@@ -66,35 +64,30 @@ val MetricPrefixAttributeKey = AttributeKey[MetricPrefix]
 // the backend wrapper
 abstract class MetricWrapper[P](delegate: GenericBackend[Future, P],
                        metrics: MetricsServer)
-    extends DelegateBackend(delegate) {
+    extends DelegateBackend(delegate):
 
-  override def send[T](request: GenericRequest[T, P with Effect[Future]]): Future[Response[T]] = {
+  override def send[T](request: GenericRequest[T, P with Effect[Future]]): Future[Response[T]] =
     val start = System.currentTimeMillis()
 
-    def report(metricSuffix: String): Unit = {
+    def report(metricSuffix: String): Unit =
       val metricPrefix = request.attribute(MetricPrefixAttributeKey).getOrElse(MetricPrefix("?"))
       val end = System.currentTimeMillis()
-      metrics.reportDuration(metricPrefix + "-" + metricSuffix, end - start)
-    }
+      metrics.reportDuration(metricPrefix.prefix + "-" + metricSuffix, end - start)
 
-    delegate.send(request).andThen {
+    delegate.send(request).andThen:
       case Success(response) if response.is200 => report("ok")
       case Success(response)                   => report("notok")
       case Failure(t)                          => report("exception")
-    }
-  }
-}
 
-object MetricWrapper {
+object MetricWrapper:
   def apply[S](
     backend: WebSocketStreamBackend[Future, S],
     metrics: MetricsServer
   ): WebSocketStreamBackend[Future, S] =
     new MetricWrapper(backend, metrics) with WebSocketStreamBackend[Future, S] {}
-}
 
 // example usage
-val backend = MetricWrapper(AkkaHttpBackend(), new CloudMetricsServer())
+val backend = MetricWrapper(PekkoHttpBackend(), new CloudMetricsServer())
 
 basicRequest
   .get(uri"http://company.com/api/service1")
@@ -116,41 +109,33 @@ In some cases it's possible to implement a generic retry mechanism; such a mecha
 
 ```scala
 import sttp.capabilities.Effect
-import sttp.client4._
+import sttp.client4.*
 import sttp.client4.wrappers.DelegateBackend
 
 class RetryingBackend[F[_], P](
     delegate: GenericBackend[F, P],
     shouldRetry: RetryWhen,
     maxRetries: Int)
-    extends DelegateBackend(delegate) {
-
-  override def send[T](request: GenericRequest[T, P with Effect[F]]): F[Response[T]] = {
+    extends DelegateBackend(delegate):
+  override def send[T](request: GenericRequest[T, P with Effect[F]]): F[Response[T]] =
     sendWithRetryCounter(request, 0)
-  }
 
   private def sendWithRetryCounter[T](
-    request: GenericRequest[T, P with Effect[F]], retries: Int): F[Response[T]] = {
+    request: GenericRequest[T, P with Effect[F]], retries: Int): F[Response[T]] =
 
-    val r = monad.handleError(delegate.send(request)) {
+    val r = monad.handleError(delegate.send(request)):
       case t if shouldRetry(request, Left(t)) && retries < maxRetries =>
         sendWithRetryCounter(request, retries + 1)
-    }
 
-    monad.flatMap(r) { resp =>
-      if (shouldRetry(request, Right(resp)) && retries < maxRetries) {
+    monad.flatMap(r): resp =>
+      if shouldRetry(request, Right(resp)) && retries < maxRetries then
         sendWithRetryCounter(request, retries + 1)
-      } else {
+      else
         monad.unit(resp)
-      }
-    }
-  }
-}
 
-object RetryingBackend {
+object RetryingBackend:
   def apply[F[_]](backend: WebSocketBackend[F], shouldRetry: RetryWhen, maxRetries: Int): WebSocketBackend[F] =
     new RetryingBackend(backend, shouldRetry, maxRetries) with WebSocketBackend[F] {}
-}
 ```                    
 
 ## Example backend with circuit breaker
@@ -171,14 +156,12 @@ import java.util.concurrent.TimeUnit
 
 class CircuitSttpBackend[F[_], P](
     circuitBreaker: CircuitBreaker,
-    delegate: GenericBackend[F, P]) extends DelegateBackend(delegate) {
+    delegate: GenericBackend[F, P]) extends DelegateBackend(delegate):
 
-  override def send[T](request: GenericRequest[T, P with Effect[F]]): F[Response[T]] = {
+  override def send[T](request: GenericRequest[T, P with Effect[F]]): F[Response[T]] = 
     CircuitSttpBackend.decorateF(circuitBreaker, delegate.send(request))
-  }
-}
 
-object CircuitSttpBackend {
+object CircuitSttpBackend:
 
   def apply[F[_]](circuitBreaker: CircuitBreaker, backend: Backend[F]): Backend[F] =
     new CircuitSttpBackend(circuitBreaker, backend) with Backend[F] {}
@@ -186,31 +169,26 @@ object CircuitSttpBackend {
   def decorateF[F[_], T](
       circuitBreaker: CircuitBreaker,
       service: => F[T]
-  )(implicit monadError: MonadError[F]): F[T] = {
-    monadError.suspend {
-      if (!circuitBreaker.tryAcquirePermission()) {
+  )(implicit monadError: MonadError[F]): F[T] =
+    monadError.suspend:
+      if !circuitBreaker.tryAcquirePermission() then
         monadError.error(CallNotPermittedException
                               .createCallNotPermittedException(circuitBreaker))
-      } else {
+      else
         val start = System.nanoTime()
-        try {
-          monadError.handleError(monadError.map(service) { r =>
+        try
+          monadError.handleError(monadError.map(service): r =>
             circuitBreaker.onSuccess(System.nanoTime() - start, TimeUnit.NANOSECONDS)
             r
-          }) {
+          ) {
             case t =>
               circuitBreaker.onError(System.nanoTime() - start, TimeUnit.NANOSECONDS, t)
               monadError.error(t)
           }
-        } catch {
+        catch
           case t: Throwable =>
             circuitBreaker.onError(System.nanoTime() - start, TimeUnit.NANOSECONDS, t)
             monadError.error(t)
-        }
-      }
-    }
-  }
-}
 ```      
 
 ## Example backend with rate limiter
@@ -229,14 +207,12 @@ import sttp.client4.wrappers.DelegateBackend
 class RateLimitingSttpBackend[F[_], P](
     rateLimiter: RateLimiter,
     delegate: GenericBackend[F, P]
-    )(implicit monadError: MonadError[F]) extends DelegateBackend(delegate) {
+    )(implicit monadError: MonadError[F]) extends DelegateBackend(delegate):
 
-  override def send[T](request: GenericRequest[T, P with Effect[F]]): F[Response[T]] = {
+  override def send[T](request: GenericRequest[T, P with Effect[F]]): F[Response[T]] =
     RateLimitingSttpBackend.decorateF(rateLimiter, delegate.send(request))
-  }
-}
 
-object RateLimitingSttpBackend {
+object RateLimitingSttpBackend:
   def apply[F[_], S](
     rateLimiter: RateLimiter,
     backend: StreamBackend[F, S]
@@ -246,18 +222,14 @@ object RateLimitingSttpBackend {
   def decorateF[F[_], T](
       rateLimiter: RateLimiter,
       service: => F[T]
-  )(implicit monadError: MonadError[F]): F[T] = {
-    monadError.suspend { 
-      try {
+  )(implicit monadError: MonadError[F]): F[T] = 
+    monadError.suspend:
+      try
         RateLimiter.waitForPermission(rateLimiter)
         service
-      } catch {
+      catch 
         case t: Throwable =>
           monadError.error(t)
-      }
-    }
-  }
-}
 ```         
 
 ## Example new backend
@@ -271,15 +243,14 @@ Implementing a new backend is made easy as the tests are published in the `core`
 Implement your backend and extend the `HttpTest` class:
 
 ```scala
-import sttp.client4._
+import sttp.client4.*
 import sttp.client4.testing.{ConvertToFuture, HttpTest}
 import scala.concurrent.Future
 
-class MyCustomBackendHttpTest extends HttpTest[Future] {
+class MyCustomBackendHttpTest extends HttpTest[Future]:
   override implicit val convertToFuture: ConvertToFuture[Future] = ConvertToFuture.future
-  override lazy val backend: Backend[Future] = ??? //new MyCustomBackend()
+  override val backend: Backend[Future] = ??? //new MyCustomBackend()
   override def timeoutToNone[T](t: Future[T], timeoutMillis: Int): Future[Option[T]] = ???
-}
 ```
 
 ## Custom backend wrapper using cats

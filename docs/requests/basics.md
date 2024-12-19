@@ -42,7 +42,7 @@ val response: Response[Either[String, String]] = request.send(backend)
 
 The default backend uses the `Identity` effect to return responses, which is equivalent to a synchronous call (no effect at all). Other asynchronous backends use other effect types. See the section on [backends](../backends/summary.md) for more details.
 
-```eval_rst
+```{eval-rst}
 .. note::
 
   Only requests with the request method and uri can be sent. If trying to send a request without these components specified, a compile-time error will be reported. On how this is implemented, see the documentation on the :doc:`type of request definitions <type>`.

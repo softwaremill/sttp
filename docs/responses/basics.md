@@ -4,7 +4,7 @@ Responses are represented as instances of the case class `Response[T]`, where `T
 
 If sending the request fails, either due to client or connection errors, an exception will be thrown (synchronous backends), or a failed effect will be returned (e.g. a failed future).
 
-```eval_rst
+```{eval-rst}
 .. note:: If the request completes, but results in a non-2xx return code, the request is still considered successful, that is, a ``Response[T]`` will be returned. See :doc:`response body specifications <body>` for details on how such cases are handled.
 ```
 

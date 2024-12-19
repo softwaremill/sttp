@@ -3,7 +3,7 @@
 Arbitrary headers can be set on the request using the `.header` method:
 
 ```scala
-import sttp.client4._
+import sttp.client4.*
 
 basicRequest.header("User-Agent", "myapp")
 ```
@@ -18,8 +18,8 @@ While most headers should be set only once on a request, HTTP allows setting a h
 There are also variants of this method accepting a number of headers:
 
 ```scala
-import sttp.client4._
-import sttp.model._
+import sttp.client4.*
+import sttp.model.*
 
 basicRequest.header(Header("k1", "v1"), onDuplicate = DuplicateHeaderBehavior.Add)
 basicRequest.header("k2", "v2")
@@ -33,7 +33,7 @@ basicRequest.headers(Header("k9", "v9"), Header("k10", "v10"), Header("k11", "v1
 For some common headers, dedicated methods are provided:
 
 ```scala
-import sttp.client4._
+import sttp.client4.*
 
 basicRequest.contentType("application/json")
 basicRequest.contentType("application/json", "iso-8859-1")

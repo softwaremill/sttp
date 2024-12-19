@@ -151,7 +151,7 @@ val response: Task[Response[Observable[ByteBuffer]]] =
     .send(backend)
 ```      
 
-```eval_rst
+```{eval-rst}
 .. note:: Currently no browsers support passing a stream as the request body. As such, using the ``Fetch`` backend with a streaming request will result in it being converted into an in-memory array before being sent. Response bodies are returned as a "proper" stream.
 ```
 

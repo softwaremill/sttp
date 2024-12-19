@@ -66,7 +66,7 @@ val response: Future[Response[Either[String, Source[ByteString, Any]]]] =
   basicRequest
     .post(uri"...")
     .response(asStreamUnsafe(AkkaStreams))
-    .send(backend)
+    .send(backend)           
 ```
 
 The akka-http backend support both regular and streaming [websockets](../websockets.md).
@@ -101,7 +101,7 @@ Non-standard behavior:
 
 Received data streams can be parsed to a stream of server-sent events (SSE):
 
-```scala
+```scala 
 import scala.concurrent.Future
 
 import akka.stream.scaladsl.Source

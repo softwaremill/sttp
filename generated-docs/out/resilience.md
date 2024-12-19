@@ -16,6 +16,7 @@ Still, the input for a particular resilience model might involve both the result
 
 Here's an incomplete list of libraries which can be used to manage retries in various Scala stacks:
 
+* for synchornous/direct-style: [ox](https://github.com/softwaremill/ox)
 * for `Future`: [retry](https://github.com/softwaremill/retry)
 * for ZIO: [schedules](https://zio.dev/reference/schedule/), [rezilience](https://github.com/svroonland/rezilience)
 * for Monix/cats-effect: [cats-retry](https://github.com/cb372/cats-retry)
@@ -32,7 +33,6 @@ Some backends have built-in retry mechanisms:
 
 * [akka-http](https://doc.akka.io/docs/akka-http/current/scala/http/client-side/host-level.html#retrying-a-request)
 * [OkHttp](http://square.github.io/okhttp) (see the builder's `retryOnConnectionFailure` method)
-* async-http-client (deprecated): by default, the backend will attempt 5 retries in case an `IOException` is thrown during the connection. This can be changed by specifying the `org.asynchttpclient.maxRequestRetry` config option, or by providing custom configuration using when creating the backend (`setMaxRequestRetry`).
 
 ## Circuit breaking 
 
