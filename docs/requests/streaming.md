@@ -13,18 +13,18 @@ An implementation of the `Streams[S]` capability must be passed to the `.streamB
 For example, using the [akka-http backend](../backends/akka.md), a request with a streaming body can be defined as follows:
 
 ```scala mdoc:compile-only
-import sttp.client4._
-import sttp.capabilities.akka.AkkaStreams
+import sttp.client4.*
+import sttp.capabilities.pekko.PekkoStreams
 
-import akka.stream.scaladsl.Source
-import akka.util.ByteString
+import org.apache.pekko.stream.scaladsl.Source
+import org.apache.pekko.util.ByteString
 
 val chunks = "Streaming test".getBytes("utf-8").grouped(10).to(Iterable)
 val source: Source[ByteString, Any] = Source.apply(chunks.toList.map(ByteString(_)))
 
 basicRequest
   .post(uri"...")
-  .streamBody(AkkaStreams)(source)
+  .streamBody(PekkoStreams)(source)
 ```
 
 ```eval_rst

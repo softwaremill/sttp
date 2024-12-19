@@ -8,17 +8,16 @@ import sttp.ws.WebSocket
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-object WebSocketPekko extends App {
-  def useWebSocket(ws: WebSocket[Future]): Future[Unit] = {
+@main def webSocketPekko(): Unit =
+  def useWebSocket(ws: WebSocket[Future]): Future[Unit] =
     def send(i: Int) = ws.sendText(s"Hello $i!")
     def receive() = ws.receiveText().map(t => println(s"RECEIVED: $t"))
-    for {
+    for
       _ <- send(1)
       _ <- send(2)
       _ <- receive()
       _ <- receive()
-    } yield ()
-  }
+    yield ()
 
   val backend = PekkoHttpBackend()
 
@@ -27,4 +26,3 @@ object WebSocketPekko extends App {
     .response(asWebSocket(useWebSocket))
     .send(backend)
     .onComplete(_ => backend.close())
-}

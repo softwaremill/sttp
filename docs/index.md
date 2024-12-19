@@ -12,7 +12,7 @@ Backend implementations include the HTTP client that is shipped with Java, as we
 Here's a quick example of sttp client in action:
 
 ```scala mdoc:compile-only
-import sttp.client4._
+import sttp.client4.*
 
 val query = "http language:scala"
 val sort: Option[String] = None

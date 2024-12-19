@@ -19,9 +19,9 @@ An empty backend stub can be created using the following ways:
 Some code which will be reused among following examples:
 
 ```scala mdoc
-import sttp.client4._
-import sttp.model._
-import sttp.client4.testing._
+import sttp.client4.*
+import sttp.model.*
+import sttp.client4.testing.*
 import java.io.File
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -210,18 +210,17 @@ If you actually want a file to be written you can set up the stub like this:
 
 ```scala mdoc:compile-only
 import org.apache.commons.io.FileUtils
-import cats.effect._
-import sttp.client4.impl.cats.implicits._
+import cats.effect.*
+import sttp.client4.impl.cats.implicits.*
 import sttp.monad.MonadAsyncError
 
 val sourceFile = new File("path/to/file.ext")
 val destinationFile = new File("path/to/file.ext")
 BackendStub(implicitly[MonadAsyncError[IO]])
   .whenRequestMatches(_ => true)
-  .thenRespondF { _ =>
+  .thenRespondF: _ =>
     FileUtils.copyFile(sourceFile, destinationFile)
     IO(ResponseStub(Right(destinationFile), StatusCode.Ok, ""))
-  }
 ```
 
 ## Delegating to another backend
@@ -274,10 +273,9 @@ val webSocketStub = WebSocketStub
   .initialReceive(
     List(WebSocketFrame.text("Hello from the server!"))
   )
-  .thenRespondS(0) {
+  .thenRespondS(0):
     case (counter, tf: WebSocketFrame.Text) => (counter + 1, List(WebSocketFrame.text(s"echo: ${tf.payload}")))
     case (counter, _)                       => (counter, List.empty)
-  }
 
 backend.whenAnyRequest.thenRespond(webSocketStub)
 ```

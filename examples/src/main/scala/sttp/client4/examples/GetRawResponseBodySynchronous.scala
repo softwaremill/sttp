@@ -1,12 +1,12 @@
 package sttp.client4.examples
 
 import io.circe
-import io.circe.generic.auto._
-import sttp.client4._
-import sttp.client4.circe._
+import io.circe.generic.auto.*
+import sttp.client4.*
+import sttp.client4.circe.*
 import sttp.client4.httpclient.HttpClientSyncBackend
 
-object GetRawResponseBodySynchronous extends App {
+@main def getRawResponseBodySynchronous(): Unit =
   case class HttpBinResponse(origin: String, headers: Map[String, String])
 
   val request = basicRequest
@@ -15,7 +15,7 @@ object GetRawResponseBodySynchronous extends App {
 
   val backend: SyncBackend = HttpClientSyncBackend()
 
-  try {
+  try
     val response: Response[(Either[ResponseException[String, circe.Error], HttpBinResponse], String)] =
       request.send(backend)
 
@@ -23,6 +23,4 @@ object GetRawResponseBodySynchronous extends App {
 
     println("Got response - parsed: " + parsed)
     println("Got response - raw: " + raw)
-
-  } finally backend.close()
-}
+  finally backend.close()

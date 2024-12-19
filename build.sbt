@@ -10,8 +10,14 @@ import com.softwaremill.SbtSoftwareMillBrowserTestJS._
 
 val scala2_12 = "2.12.20"
 val scala2_13 = "2.13.15"
+val scala3 = "3.3.4"
+
 val scala2 = List(scala2_12, scala2_13)
-val scala3 = List("3.3.4")
+val scala2And3 = scala2 ++ List(scala3)
+
+val examplesScalaVersion = scala3
+val documentationScalaVersion = scala3
+val ideScalaVersion = scala3
 
 lazy val testServerPort = settingKey[Int]("Port to run the http test server on")
 lazy val startTestServer = taskKey[Unit]("Start a http server used by tests")
@@ -34,18 +40,17 @@ val commonSettings = commonSmlBuildSettings ++ ossPublishSettings ++ Seq(
   updateDocs := Def.taskDyn {
     val files1 = UpdateVersionInDocs(sLog.value, organization.value, version.value, List(file("README.md")))
     Def.task {
-      (docs.jvm(scala2_13) / mdoc).toTask("").value
+      (docs.jvm(scala3) / mdoc).toTask("").value
       files1 ++ Seq(file("generated-docs/out"))
     }
   }.value,
-  ideSkipProject := (scalaVersion.value != scala2_13)
+  ideSkipProject := (scalaVersion.value != ideScalaVersion)
     || thisProjectRef.value.project.contains("JS") || thisProjectRef.value.project.contains("Native"),
   bspEnabled := !ideSkipProject.value,
   mimaPreviousArtifacts := Set.empty // we only use MiMa for `core` for now, using enableMimaSettings
 )
 
 val commonJvmSettings = commonSettings ++ Seq(
-  scalacOptions += "-release:11",
   Test / testOptions += Tests.Argument("-oD") // add test timings; js build specify other options which conflict
 )
 
@@ -150,7 +155,7 @@ val zio2Version = "2.1.13"
 val zio1InteropRsVersion = "1.3.12"
 val zio2InteropRsVersion = "2.0.2"
 
-val oxVersion = "0.5.1"
+val oxVersion = "0.5.7"
 val sttpModelVersion = "1.7.11"
 val sttpSharedVersion = "1.4.2"
 
@@ -169,7 +174,7 @@ val openTelemetryVersion = "1.45.0"
 
 val compileAndTest = "compile->compile;test->test"
 
-lazy val loomProjects: Seq[String] = Seq(ox, examples3).flatMap(_.projectRefs).flatMap(projectId)
+lazy val loomProjects: Seq[String] = Seq(ox, examples).flatMap(_.projectRefs).flatMap(projectId)
 
 def projectId(projectRef: ProjectReference): Option[String] =
   projectRef match {
@@ -244,7 +249,6 @@ lazy val rawAllAggregates =
     slf4jBackend.projectRefs ++
     examplesCe2.projectRefs ++
     examples.projectRefs ++
-    examples3.projectRefs ++
     docs.projectRefs ++
     testServer.projectRefs
 
@@ -314,21 +318,21 @@ lazy val core = (projectMatrix in file("core"))
   )
   .settings(testServerSettings)
   .jvmPlatform(
-    scalaVersions = scala2 ++ scala3,
+    scalaVersions = scala2And3,
     settings = commonJvmSettings ++ versioningSchemeSettings ++ /*enableMimaSettings ++*/ List(
       Test / publishArtifact := true, // allow implementations outside of this repo
       scalacOptions ++= Seq("-J--add-modules", "-Jjava.net.http")
     )
   )
   .jsPlatform(
-    scalaVersions = scala2 ++ scala3,
+    scalaVersions = scala2And3,
     settings =
       commonJsSettings ++ commonJsBackendSettings ++ browserChromeTestSettings ++ versioningSchemeSettings ++ List(
         Test / publishArtifact := true
       )
   )
   .nativePlatform(
-    scalaVersions = scala2 ++ scala3,
+    scalaVersions = scala2And3,
     settings = commonNativeSettings ++ versioningSchemeSettings ++ List(
       Test / publishArtifact := true
     )
@@ -358,11 +362,11 @@ lazy val catsCe2 = (projectMatrix in file("effects/cats-ce2"))
   )
   .dependsOn(core % compileAndTest)
   .jvmPlatform(
-    scalaVersions = scala2 ++ scala3,
+    scalaVersions = scala2And3,
     settings = commonJvmSettings
   )
   .jsPlatform(
-    scalaVersions = scala2 ++ scala3,
+    scalaVersions = scala2And3,
     settings = commonJsSettings ++ commonJsBackendSettings ++ browserChromeTestSettings ++ testServerSettings
   )
 
@@ -379,11 +383,11 @@ lazy val cats = (projectMatrix in file("effects/cats"))
   .settings(testServerSettings)
   .dependsOn(core % compileAndTest)
   .jvmPlatform(
-    scalaVersions = scala2 ++ scala3,
+    scalaVersions = scala2And3,
     settings = commonJvmSettings
   )
   .jsPlatform(
-    scalaVersions = scala2 ++ scala3,
+    scalaVersions = scala2And3,
     settings = commonJsSettings ++ commonJsBackendSettings ++ browserChromeTestSettings ++ testServerSettings
   )
 
@@ -399,7 +403,7 @@ lazy val fs2Ce2 = (projectMatrix in file("effects/fs2-ce2"))
   .settings(testServerSettings)
   .dependsOn(core % compileAndTest, catsCe2 % compileAndTest)
   .jvmPlatform(
-    scalaVersions = scala2 ++ scala3,
+    scalaVersions = scala2And3,
     settings = commonJvmSettings ++ Seq(
       libraryDependencies ++= Seq(
         "co.fs2" %%% "fs2-reactive-streams" % fs2_2_version,
@@ -407,7 +411,7 @@ lazy val fs2Ce2 = (projectMatrix in file("effects/fs2-ce2"))
       )
     )
   )
-  .jsPlatform(scalaVersions = scala2 ++ scala3, settings = commonJsSettings)
+  .jsPlatform(scalaVersions = scala2And3, settings = commonJsSettings)
 
 lazy val fs2 = (projectMatrix in file("effects/fs2"))
   .settings(
@@ -421,7 +425,7 @@ lazy val fs2 = (projectMatrix in file("effects/fs2"))
   .settings(testServerSettings)
   .dependsOn(core % compileAndTest, cats % compileAndTest)
   .jvmPlatform(
-    scalaVersions = scala2 ++ scala3,
+    scalaVersions = scala2And3,
     settings = commonJvmSettings ++ Seq(
       libraryDependencies ++= Seq(
         "co.fs2" %%% "fs2-reactive-streams" % fs2_3_version,
@@ -429,7 +433,7 @@ lazy val fs2 = (projectMatrix in file("effects/fs2"))
       )
     )
   )
-  .jsPlatform(scalaVersions = scala2 ++ scala3, settings = commonJsSettings)
+  .jsPlatform(scalaVersions = scala2And3, settings = commonJsSettings)
 
 lazy val monix = (projectMatrix in file("effects/monix"))
   .settings(
@@ -443,13 +447,13 @@ lazy val monix = (projectMatrix in file("effects/monix"))
   .settings(testServerSettings)
   .dependsOn(core % compileAndTest)
   .jvmPlatform(
-    scalaVersions = scala2 ++ scala3,
+    scalaVersions = scala2And3,
     settings = commonJvmSettings ++ List(
       libraryDependencies ++= Seq("io.monix" %% "monix-nio" % "0.1.0")
     )
   )
   .jsPlatform(
-    scalaVersions = scala2 ++ scala3,
+    scalaVersions = scala2And3,
     settings = commonJsSettings ++ commonJsBackendSettings ++ browserChromeTestSettings ++ testServerSettings
   )
 
@@ -462,7 +466,7 @@ lazy val ox = (projectMatrix in file("effects/ox"))
     )
   )
   .settings(testServerSettings)
-  .jvmPlatform(scalaVersions = scala3)
+  .jvmPlatform(scalaVersions = List(scala3))
   .dependsOn(core % compileAndTest)
 
 lazy val zio1 = (projectMatrix in file("effects/zio1"))
@@ -478,7 +482,7 @@ lazy val zio1 = (projectMatrix in file("effects/zio1"))
   .settings(testServerSettings)
   .dependsOn(core % compileAndTest)
   .jvmPlatform(
-    scalaVersions = scala2 ++ scala3,
+    scalaVersions = scala2And3,
     settings = commonJvmSettings ++ Seq(
       libraryDependencies ++= Seq(
         "dev.zio" %% "zio-interop-reactivestreams" % zio1InteropRsVersion,
@@ -487,7 +491,7 @@ lazy val zio1 = (projectMatrix in file("effects/zio1"))
     )
   )
   .jsPlatform(
-    scalaVersions = scala2 ++ scala3,
+    scalaVersions = scala2And3,
     settings = commonJsSettings ++ commonJsBackendSettings ++ browserChromeTestSettings ++ testServerSettings
   )
 
@@ -504,7 +508,7 @@ lazy val zio = (projectMatrix in file("effects/zio"))
   .settings(testServerSettings)
   .dependsOn(core % compileAndTest)
   .jvmPlatform(
-    scalaVersions = scala2 ++ scala3,
+    scalaVersions = scala2And3,
     settings = commonJvmSettings ++ Seq(
       libraryDependencies ++= Seq(
         "dev.zio" %% "zio-interop-reactivestreams" % zio2InteropRsVersion
@@ -512,7 +516,7 @@ lazy val zio = (projectMatrix in file("effects/zio"))
     )
   )
   .jsPlatform(
-    scalaVersions = scala2 ++ scala3,
+    scalaVersions = scala2And3,
     settings = commonJsSettings ++ commonJsBackendSettings ++ browserChromeTestSettings ++ testServerSettings
   )
 
@@ -564,7 +568,7 @@ lazy val pekkoHttpBackend = (projectMatrix in file("pekko-http-backend"))
   )
   .dependsOn(core % compileAndTest)
   .jvmPlatform(
-    scalaVersions = scala2 ++ scala3
+    scalaVersions = scala2And3
   )
 
 //-- okhttp
@@ -577,19 +581,19 @@ lazy val okhttpBackend = (projectMatrix in file("okhttp-backend"))
       "com.squareup.okhttp3" % "okhttp" % "4.12.0"
     )
   )
-  .jvmPlatform(scalaVersions = scala2 ++ scala3)
+  .jvmPlatform(scalaVersions = scala2And3)
   .dependsOn(core % compileAndTest)
 
-def okhttpBackendProject(proj: String, includeDotty: Boolean) =
+def okhttpBackendProject(proj: String) =
   ProjectMatrix(s"okhttpBackend${proj.capitalize}", file(s"okhttp-backend/$proj"))
     .settings(commonJvmSettings)
     .settings(testServerSettings)
     .settings(name := s"okhttp-backend-$proj")
-    .jvmPlatform(scalaVersions = scala2 ++ (if (includeDotty) scala3 else Nil))
+    .jvmPlatform(scalaVersions = scala2And3)
     .dependsOn(okhttpBackend % compileAndTest)
 
 lazy val okhttpMonixBackend =
-  okhttpBackendProject("monix", includeDotty = true)
+  okhttpBackendProject("monix")
     .dependsOn(monix % compileAndTest)
 
 //-- http4s
@@ -618,7 +622,7 @@ lazy val http4sBackend = (projectMatrix in file("http4s-backend"))
     ),
     evictionErrorLevel := Level.Info
   )
-  .jvmPlatform(scalaVersions = scala2 ++ scala3)
+  .jvmPlatform(scalaVersions = scala2And3)
   .dependsOn(cats % compileAndTest, core % compileAndTest, fs2 % compileAndTest)
 
 //-- finagle backend
@@ -641,25 +645,25 @@ lazy val armeriaBackend = (projectMatrix in file("armeria-backend"))
     name := "armeria-backend",
     libraryDependencies += "com.linecorp.armeria" % "armeria" % "1.31.3"
   )
-  .jvmPlatform(scalaVersions = scala2 ++ scala3)
+  .jvmPlatform(scalaVersions = scala2And3)
   .dependsOn(core % compileAndTest)
 
-def armeriaBackendProject(proj: String, includeDotty: Boolean = false) =
+def armeriaBackendProject(proj: String, includeScala3: Boolean = true) =
   ProjectMatrix(s"armeriaBackend${proj.capitalize}", file(s"armeria-backend/$proj"))
     .settings(commonJvmSettings)
     .settings(testServerSettings)
     .settings(name := s"armeria-backend-$proj")
     .dependsOn(armeriaBackend % compileAndTest)
     .jvmPlatform(
-      scalaVersions = scala2 ++ (if (includeDotty) scala3 else Nil)
+      scalaVersions = scala2 ++ (if (includeScala3) List(scala3) else Nil)
     )
 
 lazy val armeriaMonixBackend =
-  armeriaBackendProject("monix", includeDotty = true)
+  armeriaBackendProject("monix")
     .dependsOn(monix % compileAndTest)
 
 lazy val armeriaFs2Ce2Backend =
-  armeriaBackendProject("fs2-ce2")
+  armeriaBackendProject("fs2-ce2", includeScala3 = false)
     .settings(
       libraryDependencies ++= Seq(
         "co.fs2" %% "fs2-reactive-streams" % fs2_2_version
@@ -677,26 +681,26 @@ lazy val armeriaFs2Backend =
     .dependsOn(fs2 % compileAndTest)
 
 lazy val armeriaCatsCe2Backend =
-  armeriaBackendProject("cats-ce2")
+  armeriaBackendProject("cats-ce2", includeScala3 = false)
     .dependsOn(catsCe2 % compileAndTest)
 
 lazy val armeriaCatsBackend =
-  armeriaBackendProject("cats", includeDotty = true)
+  armeriaBackendProject("cats")
     .dependsOn(cats % compileAndTest)
 
 lazy val armeriaScalazBackend =
-  armeriaBackendProject("scalaz")
+  armeriaBackendProject("scalaz", includeScala3 = false)
     .dependsOn(scalaz % compileAndTest)
 
 lazy val armeriaZio1Backend =
-  armeriaBackendProject("zio1", includeDotty = true)
+  armeriaBackendProject("zio1")
     .settings(
       libraryDependencies ++= Seq("dev.zio" %% "zio-interop-reactivestreams" % zio1InteropRsVersion)
     )
     .dependsOn(zio1 % compileAndTest)
 
 lazy val armeriaZioBackend =
-  armeriaBackendProject("zio", includeDotty = true)
+  armeriaBackendProject("zio")
     .settings(
       libraryDependencies ++= Seq("dev.zio" %% "zio-interop-reactivestreams" % zio2InteropRsVersion)
     )
@@ -709,11 +713,11 @@ lazy val jsonCommon = (projectMatrix in (file("json/common")))
     scalaTest
   )
   .jvmPlatform(
-    scalaVersions = scala2 ++ scala3,
+    scalaVersions = scala2And3,
     settings = commonJvmSettings
   )
-  .jsPlatform(scalaVersions = scala2 ++ scala3, settings = commonJsSettings)
-  .nativePlatform(scalaVersions = scala2 ++ scala3, settings = commonNativeSettings)
+  .jsPlatform(scalaVersions = scala2And3, settings = commonJsSettings)
+  .nativePlatform(scalaVersions = scala2And3, settings = commonNativeSettings)
   .dependsOn(core)
 
 lazy val circe = (projectMatrix in file("json/circe"))
@@ -727,11 +731,11 @@ lazy val circe = (projectMatrix in file("json/circe"))
     scalaTest
   )
   .jvmPlatform(
-    scalaVersions = scala2 ++ scala3,
+    scalaVersions = scala2And3,
     settings = commonJvmSettings
   )
-  .jsPlatform(scalaVersions = scala2 ++ scala3, settings = commonJsSettings)
-  .nativePlatform(scalaVersions = scala2 ++ scala3, settings = commonNativeSettings)
+  .jsPlatform(scalaVersions = scala2And3, settings = commonJsSettings)
+  .nativePlatform(scalaVersions = scala2And3, settings = commonNativeSettings)
   .dependsOn(core, jsonCommon % compileAndTest)
 
 lazy val jsoniter = (projectMatrix in file("json/jsoniter"))
@@ -744,10 +748,10 @@ lazy val jsoniter = (projectMatrix in file("json/jsoniter"))
     scalaTest
   )
   .jvmPlatform(
-    scalaVersions = scala2 ++ scala3,
+    scalaVersions = scala2And3,
     settings = commonJvmSettings
   )
-  .jsPlatform(scalaVersions = scala2 ++ scala3, settings = commonJsSettings)
+  .jsPlatform(scalaVersions = scala2And3, settings = commonJsSettings)
   .dependsOn(core, jsonCommon % compileAndTest)
 
 lazy val zioJson = (projectMatrix in file("json/zio-json"))
@@ -760,10 +764,10 @@ lazy val zioJson = (projectMatrix in file("json/zio-json"))
     scalaTest
   )
   .jvmPlatform(
-    scalaVersions = Seq(scala2_12, scala2_13) ++ scala3,
+    scalaVersions = scala2And3,
     settings = commonJvmSettings
   )
-  .jsPlatform(scalaVersions = scala2 ++ scala3, settings = commonJsSettings)
+  .jsPlatform(scalaVersions = scala2And3, settings = commonJsSettings)
   .dependsOn(core, jsonCommon % compileAndTest)
 
 lazy val zio1Json = (projectMatrix in file("json/zio1-json"))
@@ -776,10 +780,10 @@ lazy val zio1Json = (projectMatrix in file("json/zio1-json"))
     scalaTest
   )
   .jvmPlatform(
-    scalaVersions = Seq(scala2_12, scala2_13) ++ scala3,
+    scalaVersions = scala2And3,
     settings = commonJvmSettings
   )
-  .jsPlatform(scalaVersions = scala2 ++ scala3, settings = commonJsSettings)
+  .jsPlatform(scalaVersions = scala2And3, settings = commonJsSettings)
   .dependsOn(core, jsonCommon % compileAndTest)
 
 lazy val tethysJson = (projectMatrix in file("json/tethys-json"))
@@ -793,7 +797,7 @@ lazy val tethysJson = (projectMatrix in file("json/tethys-json"))
     scalaTest
   )
   .jvmPlatform(
-    scalaVersions = scala2 ++ scala3,
+    scalaVersions = scala2And3,
     settings = commonJvmSettings
   )
   .dependsOn(core, jsonCommon % compileAndTest)
@@ -809,11 +813,11 @@ lazy val upickle = (projectMatrix in file("json/upickle"))
     Test / scalacOptions --= Seq("-Wconf:cat=other-match-analysis:error")
   )
   .jvmPlatform(
-    scalaVersions = scala2 ++ scala3,
+    scalaVersions = scala2And3,
     settings = commonJvmSettings
   )
-  .jsPlatform(scalaVersions = scala2 ++ scala3, settings = commonJsSettings)
-  .nativePlatform(scalaVersions = scala2 ++ scala3, settings = commonNativeSettings)
+  .jsPlatform(scalaVersions = scala2And3, settings = commonJsSettings)
+  .nativePlatform(scalaVersions = scala2And3, settings = commonNativeSettings)
   .dependsOn(core, jsonCommon % compileAndTest)
 
 lazy val json4sVersion = "4.0.7"
@@ -828,7 +832,7 @@ lazy val json4s = (projectMatrix in file("json/json4s"))
     ),
     scalaTest
   )
-  .jvmPlatform(scalaVersions = scala2 ++ scala3)
+  .jvmPlatform(scalaVersions = scala2And3)
   .dependsOn(core, jsonCommon % compileAndTest)
 
 lazy val sprayJson = (projectMatrix in file("json/spray-json"))
@@ -840,7 +844,7 @@ lazy val sprayJson = (projectMatrix in file("json/spray-json"))
     ),
     scalaTest
   )
-  .jvmPlatform(scalaVersions = scala2 ++ scala3)
+  .jvmPlatform(scalaVersions = scala2And3)
   .dependsOn(core, jsonCommon % compileAndTest)
 
 lazy val play29Json = (projectMatrix in file("json/play29-json"))
@@ -869,10 +873,10 @@ lazy val playJson = (projectMatrix in file("json/play-json"))
     scalaTest
   )
   .jvmPlatform(
-    scalaVersions = scala2 ++ scala3,
+    scalaVersions = scala2And3,
     settings = commonJvmSettings
   )
-  .jsPlatform(scalaVersions = scala2 ++ scala3, settings = commonJsSettings)
+  .jsPlatform(scalaVersions = scala2And3, settings = commonJsSettings)
   .dependsOn(core, jsonCommon % compileAndTest)
 
 lazy val prometheusBackend = (projectMatrix in file("observability/prometheus-backend"))
@@ -884,7 +888,7 @@ lazy val prometheusBackend = (projectMatrix in file("observability/prometheus-ba
     ),
     scalaTest
   )
-  .jvmPlatform(scalaVersions = scala2 ++ scala3)
+  .jvmPlatform(scalaVersions = scala2And3)
   .dependsOn(core)
 
 lazy val openTelemetryMetricsBackend = (projectMatrix in file("observability/opentelemetry-metrics-backend"))
@@ -897,7 +901,7 @@ lazy val openTelemetryMetricsBackend = (projectMatrix in file("observability/ope
     ),
     scalaTest
   )
-  .jvmPlatform(scalaVersions = scala2 ++ scala3)
+  .jvmPlatform(scalaVersions = scala2And3)
   .dependsOn(core)
 
 lazy val openTelemetryTracingZioBackend = (projectMatrix in file("observability/opentelemetry-tracing-zio-backend"))
@@ -911,7 +915,7 @@ lazy val openTelemetryTracingZioBackend = (projectMatrix in file("observability/
       "io.opentelemetry" % "opentelemetry-sdk-testing" % openTelemetryVersion % Test
     )
   )
-  .jvmPlatform(scalaVersions = scala2 ++ scala3)
+  .jvmPlatform(scalaVersions = scala2And3)
   .dependsOn(zio % compileAndTest)
   .dependsOn(core)
 
@@ -924,9 +928,9 @@ lazy val scribeBackend = (projectMatrix in file("logging/scribe"))
     ),
     scalaTest
   )
-  .jvmPlatform(scalaVersions = scala2 ++ scala3, settings = commonJvmSettings)
-  .jsPlatform(scalaVersions = scala2 ++ scala3, settings = commonJsSettings)
-  .nativePlatform(scalaVersions = scala2 ++ scala3, settings = commonNativeSettings)
+  .jvmPlatform(scalaVersions = scala2And3, settings = commonJvmSettings)
+  .jsPlatform(scalaVersions = scala2And3, settings = commonJsSettings)
+  .nativePlatform(scalaVersions = scala2And3, settings = commonNativeSettings)
   .dependsOn(core)
 
 lazy val slf4jBackend = (projectMatrix in file("logging/slf4j"))
@@ -938,7 +942,7 @@ lazy val slf4jBackend = (projectMatrix in file("logging/slf4j"))
     ),
     scalaTest
   )
-  .jvmPlatform(scalaVersions = scala2 ++ scala3)
+  .jvmPlatform(scalaVersions = scala2And3)
   .dependsOn(core)
 
 lazy val examplesCe2 = (projectMatrix in file("examples-ce2"))
@@ -961,44 +965,28 @@ lazy val examples = (projectMatrix in file("examples"))
     libraryDependencies ++= Seq(
       "io.circe" %% "circe-generic" % circeVersion,
       "org.json4s" %% "json4s-native" % json4sVersion,
-      akkaStreams.exclude("org.scala-lang.modules", "scala-java8-compat_2.12"),
       pekkoStreams,
       logback
     )
   )
-  .jvmPlatform(scalaVersions = scala2)
+  .jvmPlatform(scalaVersions = List(examplesScalaVersion))
   .dependsOn(
     core,
     fs2,
     zio,
-    akkaHttpBackend,
     pekkoHttpBackend,
     json4s,
     circe,
     upickle,
     scribeBackend,
-    slf4jBackend
-  )
-
-lazy val examples3 = (projectMatrix in file("examples3"))
-  .settings(commonJvmSettings)
-  .settings(
-    name := "examples3",
-    publish / skip := true,
-    libraryDependencies ++= Seq(
-      logback
-    )
-  )
-  .jvmPlatform(scalaVersions = scala3)
-  .dependsOn(
-    core,
+    slf4jBackend,
     ox
   )
 
 //TODO this should be invoked by compilation process, see #https://github.com/scalameta/mdoc/issues/355
 val compileDocs: TaskKey[Unit] = taskKey[Unit]("Compiles docs module throwing away its output")
 compileDocs := {
-  (docs.jvm(scala2_13) / mdoc).toTask(" --out target/sttp-docs").value
+  (docs.jvm(scala3) / mdoc).toTask(" --out target/sttp-docs").value
 }
 
 lazy val docs: ProjectMatrix = (projectMatrix in file("generated-docs")) // important: it must not be docs/
@@ -1028,14 +1016,12 @@ lazy val docs: ProjectMatrix = (projectMatrix in file("generated-docs")) // impo
       "io.opentracing.brave" % "brave-opentracing" % braveOpentracingVersion,
       "io.zipkin.reporter2" % "zipkin-sender-okhttp3" % zipkinSenderOkHttpVersion,
       "io.opentelemetry" % "opentelemetry-semconv" % "1.2.0-alpha",
-      akkaStreams,
       pekkoStreams
     ),
     evictionErrorLevel := Level.Info
   )
   .dependsOn(
     core % "compile->test",
-    akkaHttpBackend,
     pekkoHttpBackend,
     json4s,
     circe,
@@ -1047,7 +1033,6 @@ lazy val docs: ProjectMatrix = (projectMatrix in file("generated-docs")) // impo
     // armeriaMonixBackend,
     armeriaFs2Backend,
     armeriaCatsBackend,
-    armeriaScalazBackend,
     okhttpBackend,
     // okhttpMonixBackend,
     http4sBackend,
@@ -1056,4 +1041,4 @@ lazy val docs: ProjectMatrix = (projectMatrix in file("generated-docs")) // impo
     openTelemetryTracingZioBackend,
     slf4jBackend
   )
-  .jvmPlatform(scalaVersions = List(scala2_13))
+  .jvmPlatform(scalaVersions = List(documentationScalaVersion))

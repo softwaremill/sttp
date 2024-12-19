@@ -1,13 +1,17 @@
 package sttp.client4.examples
 
-import sttp.client4._
+import sttp.client4.*
 import sttp.client4.httpclient.zio.HttpClientZioBackend
-import zio.{durationInt, Schedule, Task, ZIO, ZIOAppDefault}
+import zio.Schedule
+import zio.Task
+import zio.ZIO
+import zio.ZIOAppDefault
+import zio.durationInt
 
-object RetryZio extends ZIOAppDefault {
+object RetryZio extends ZIOAppDefault:
   override def run: ZIO[Any, Throwable, Response[String]] =
     HttpClientZioBackend()
-      .flatMap { backend =>
+      .flatMap: backend =>
         val localhostRequest = basicRequest
           .get(uri"http://localhost/test")
           .response(asStringAlways)
@@ -23,5 +27,3 @@ object RetryZio extends ZIOAppDefault {
           .absolve
 
         sendWithRetries.ensuring(backend.close().ignore)
-      }
-}

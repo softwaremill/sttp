@@ -77,7 +77,7 @@ or, if you'd like to instantiate the OkHttpClient yourself:
 
 ```scala mdoc:compile-only
 import sttp.client4.okhttp.OkHttpSyncBackend
-import okhttp3._
+import okhttp3.*
 
 val okHttpClient: OkHttpClient = ???
 val backend = OkHttpSyncBackend.usingClient(okHttpClient)

@@ -102,7 +102,7 @@ or, if you'd like to instantiate the [WebClient](https://armeria.dev/docs/client
 import cats.effect.IO
 import cats.effect.std.Dispatcher
 import com.linecorp.armeria.client.WebClient
-import com.linecorp.armeria.client.circuitbreaker._
+import com.linecorp.armeria.client.circuitbreaker.*
 import sttp.client4.armeria.fs2.ArmeriaFs2Backend
 
 val dispatcher: Dispatcher[IO] = ???
@@ -135,7 +135,7 @@ Requests can be sent with a streaming body like this:
 import cats.effect.IO
 import fs2.Stream
 import sttp.capabilities.fs2.Fs2Streams
-import sttp.client4._
+import sttp.client4.*
 import sttp.client4.httpclient.fs2.HttpClientFs2Backend
 
 val effect = HttpClientFs2Backend.resource[IO]().use { backend =>
@@ -155,7 +155,7 @@ Responses can also be streamed:
 import cats.effect.IO
 import fs2.Stream
 import sttp.capabilities.fs2.Fs2Streams
-import sttp.client4._
+import sttp.client4.*
 import sttp.client4.httpclient.fs2.HttpClientFs2Backend
 import scala.concurrent.duration.Duration
 
@@ -181,9 +181,9 @@ The fs2 backends support both regular and streaming [websockets](../websockets.m
 Received data streams can be parsed to a stream of server-sent events (SSE):
 
 ```scala mdoc:compile-only
-import cats.effect._
+import cats.effect.*
 import fs2.Stream
-import sttp.client4._
+import sttp.client4.*
 import sttp.capabilities.fs2.Fs2Streams
 import sttp.client4.impl.fs2.Fs2ServerSentEvents
 import sttp.model.sse.ServerSentEvent

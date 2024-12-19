@@ -11,7 +11,7 @@ A `RequestT` value contains both information on what to include in the request, 
 To start describing a request, import the sttp client package and customise `basicRequest`:
 
 ```scala mdoc:compile-only
-import sttp.client4._
+import sttp.client4.*
 val myRequest: Request[_] = ??? // basicRequest.(...)
 ```
 
@@ -30,7 +30,7 @@ Backends manage the connection pool, thread pools for handling responses, depend
 For example, the following sends a synchronous request, using the default JVM backend:
 
 ```scala mdoc:compile-only
-import sttp.client4._
+import sttp.client4.*
 val myRequest: Request[String] = ???
 val backend = DefaultSyncBackend()
 val response = myRequest.send(backend)

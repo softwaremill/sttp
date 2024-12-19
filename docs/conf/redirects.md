@@ -5,7 +5,7 @@ By default, sttp follows redirects.
 If you'd like to disable following redirects, use the `followRedirects` method:
 
 ```scala mdoc:compile-only
-import sttp.client4._
+import sttp.client4.*
 
 basicRequest.followRedirects(false)
 ```
@@ -19,7 +19,7 @@ If a `POST` or `PUT` request is redirected, by default it will be sent unchanged
 To enable this behavior, use the `redirectToGet` method:
 
 ```scala mdoc:compile-only
-import sttp.client4._
+import sttp.client4.*
 
 basicRequest.redirectToGet(true)
 ```
@@ -33,7 +33,7 @@ Most modern http clients will, by default, strip the `Authorization` header when
 You can disable the stripping of all sensitive headers using the following code:
 
 ```scala mdoc:compile-only
-import sttp.client4._
+import sttp.client4.*
 import sttp.client4.wrappers.{FollowRedirectsBackend, FollowRedirectsConfig}
 
 val myBackend: SyncBackend = DefaultSyncBackend()
@@ -48,8 +48,8 @@ val backend: SyncBackend  = FollowRedirectsBackend(
 If you just want to disable stripping of the `Authorization` header, you can do the following:
 
 ```scala mdoc:compile-only
-import sttp.client4._
-import sttp.model._
+import sttp.client4.*
+import sttp.model.*
 import sttp.client4.wrappers.{FollowRedirectsBackend, FollowRedirectsConfig}
 
 val myBackend: SyncBackend = DefaultSyncBackend()
@@ -71,26 +71,23 @@ For example:
 
 ```scala mdoc:compile-only
 import sttp.capabilities.Effect
-import sttp.client4._
+import sttp.client4.*
 import sttp.client4.wrappers.FollowRedirectsBackend
 import sttp.monad.MonadError
 
 abstract class MyWrapper[F[_], P] private (delegate: GenericBackend[F, P])
-  extends GenericBackend[F, P] {
+  extends GenericBackend[F, P]:
 
   def send[T](request: GenericRequest[T, P with Effect[F]]): F[Response[T]] = ???
 
   def close(): F[Unit] = ???
 
   def monad: MonadError[F] = ???
-}
 
-object MyWrapper {
-  def apply[F[_]](delegate: Backend[F]): Backend[F] = {
+object MyWrapper:
+  def apply[F[_]](delegate: Backend[F]): Backend[F] = 
     // disables any other FollowRedirectsBackend-s further down the delegate chain
     FollowRedirectsBackend(new MyWrapper(delegate) with Backend[F] {})
-  }
-}
 ```
 
 ### Custom URI encoding
@@ -100,7 +97,7 @@ Whenever a redirect request is about to be created, the `FollowRedirectsBackend`
 For example:
 
 ```scala mdoc:compile-only
-import sttp.client4._
+import sttp.client4.*
 import sttp.client4.wrappers.{FollowRedirectsBackend, FollowRedirectsConfig}
 import sttp.model.Uri.QuerySegmentEncoding
 

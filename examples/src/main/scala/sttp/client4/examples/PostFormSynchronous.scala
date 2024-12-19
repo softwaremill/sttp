@@ -1,10 +1,9 @@
 package sttp.client4.examples
 
+import sttp.client4.*
 import sttp.client4.httpclient.HttpClientSyncBackend
 
-object PostFormSynchronous extends App {
-  import sttp.client4._
-
+@main def postFormSynchronous(): Unit =
   val signup = Some("yes")
 
   val request = basicRequest
@@ -18,4 +17,3 @@ object PostFormSynchronous extends App {
 
   println(response.body)
   println(response.headers)
-}

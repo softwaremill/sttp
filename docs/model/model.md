@@ -24,14 +24,13 @@ Example with objects:
 import sttp.client4._
 import sttp.model._
 
-object Example {
+object Example:
   val request = basicRequest.header(Header.contentType(MediaType.ApplicationJson))
     .get(uri"https://httpbin.org")
 
   val backend = DefaultSyncBackend()
   val response = request.send(backend)
-  if (response.code == StatusCode.Ok) println("Ok!")
-}
+  if response.code == StatusCode.Ok then println("Ok!")
 ```
 
 Example with traits:
@@ -40,14 +39,13 @@ Example with traits:
 import sttp.client4._
 import sttp.model._
 
-object Example extends HeaderNames with MediaTypes with StatusCodes {
+object Example extends HeaderNames with MediaTypes with StatusCodes:
   val request = basicRequest.header(ContentType, ApplicationJson.toString)
     .get(uri"https://httpbin.org")
 
   val backend = DefaultSyncBackend()
   val response = request.send(backend)
-  if (response.code == Ok) println("Ok!")
-}     
+  if response.code == Ok then println("Ok!")
 ```
 
 For more information see

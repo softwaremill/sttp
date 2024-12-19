@@ -1,12 +1,13 @@
 package sttp.client4.examples
 
-import io.circe.generic.auto._
-import sttp.client4._
-import sttp.client4.circe._
-import sttp.client4.httpclient.zio.{send, HttpClientZioBackend}
-import zio._
+import io.circe.generic.auto.*
+import sttp.client4.*
+import sttp.client4.circe.*
+import sttp.client4.httpclient.zio.HttpClientZioBackend
+import sttp.client4.httpclient.zio.send
+import zio.*
 
-object GetAndParseJsonZioCirce extends ZIOAppDefault {
+object GetAndParseJsonZioCirce extends ZIOAppDefault:
 
   override def run = {
     case class HttpBinResponse(origin: String, headers: Map[String, String])
@@ -15,10 +16,9 @@ object GetAndParseJsonZioCirce extends ZIOAppDefault {
       .get(uri"https://httpbin.org/get")
       .response(asJson[HttpBinResponse])
 
-    for {
+    for
       response <- send(request)
       _ <- Console.printLine(s"Got response code: ${response.code}")
       _ <- Console.printLine(response.body.toString)
-    } yield ()
+    yield ()
   }.provideLayer(HttpClientZioBackend.layer())
-}

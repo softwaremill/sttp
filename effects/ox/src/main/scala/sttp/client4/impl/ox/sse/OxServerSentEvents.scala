@@ -10,7 +10,7 @@ object OxServerSentEvents:
     Flow
       .fromInputStream(is)
       .linesUtf8
-      .mapStatefulConcat(() => List.empty[String])(
+      .mapStatefulConcat(List.empty[String])(
         (lines, str) => if str.isEmpty then (Nil, List(lines)) else (lines :+ str, Nil),
         onComplete = { lines =>
           if lines.nonEmpty then Some(lines)
