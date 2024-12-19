@@ -1,0 +1,42 @@
+/* general style for all example tags */
+.example-tag {
+    border-width: 1px;
+    border-radius: 9999px;
+    border-style: solid;
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+    margin-right: 0.25rem;
+    margin-top: 0.25rem;
+    margin-bottom: 0.25rem;
+}
+
+/* different colors for specific tags */
+.example-effects {
+    color: rgb(193 21 116);
+    background-color: rgb(253 242 250);
+    border-color: rgb(252 206 238);
+}
+
+.example-json {
+    color: rgb(185 56 21);
+    background-color: rgb(254 246 238);
+    border-color: rgb(249 219 175);
+}
+
+.example-server {
+    color: rgb(6 118 71);
+    background-color: rgb(236 253 243);
+    border-color: rgb(169 239 197);
+}
+
+.example-docs {
+    color: rgb(52 64 84);
+    background-color: rgb(249 250 251);
+    border-color: rgb(234 236 240);
+}
+
+.example-client {
+    color: rgb(6 89 134);
+    background-color: rgb(240 249 255);
+    border-color: rgb(185 230 254);
+}

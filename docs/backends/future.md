@@ -4,7 +4,7 @@ There are several backend implementations which are `scala.concurrent.Future`-ba
 
 Apart from the ones described below, also the [Pekko](pekko.md) & [Akka](akka.md) backends are `Future`-based.
 
-```eval_rst
+```{eval-rst}
 ===================================== ================================================= ==========================
 Class                                 Supported stream type                             Websocket support
 ===================================== ================================================= ==========================
@@ -125,7 +125,7 @@ val client = WebClient.builder("https://my-service.com")
 val backend = ArmeriaFutureBackend.usingClient(client)
 ```
 
-```eval_rst
+```{eval-rst}
 .. note:: A WebClient could fail to follow redirects if the WebClient is created with a base URI and a redirect location is a different URI.
 ```
 

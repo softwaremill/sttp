@@ -6,7 +6,7 @@ Currently, the following OpenTelemetry features are supported:
 - tracing using `OpenTelemetryTracingZioBackend`, wrapping any ZIO2 backend
 - tracing using [trace4cats](https://github.com/trace4cats/trace4cats), wrapping a cats-effect backend
 
-### Metrics
+## Metrics
 
 The backend depends only on [opentelemetry-api](https://github.com/open-telemetry/opentelemetry-java). To use add the
 following dependency to your project:
@@ -50,7 +50,7 @@ OpenTelemetryMetricsBackend(
 )
 ```
 
-### Tracing (ZIO)
+## Tracing (ZIO)
 
 To use, add the following dependency to your project:
 
@@ -81,6 +81,6 @@ By default, the span is named after the HTTP method (e.g "HTTP POST") as [recomm
 and the http method, url and response status codes are set as span attributes.
 You can override these defaults by supplying a custom `OpenTelemetryZioTracer`.
 
-### Tracing (cats-effect)
+## Tracing (cats-effect)
 
 The [trace4cats](https://github.com/trace4cats/trace4cats) project includes sttp-client integration.

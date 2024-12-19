@@ -2,7 +2,7 @@
 
 Some backends (see [backends summary](../backends/summary.md)) support streaming bodies, as described by the `Streams[S]` capability. If that's the case, you can set a stream of the supported type as a request body using the `streamBody` method, instead of the usual `body` method.
 
-```eval_rst
+```{eval-rst}
 .. note::
 
  Here, streaming refers to (usually) non-blocking, asynchronous streams of data. To send data which is available as an ``InputStream``, or a file from local storage (which is available as a ``File`` or ``Path``), no special backend support is needed. See the documenttation on :doc:`setting the request body <body>`.
@@ -27,7 +27,7 @@ basicRequest
   .streamBody(PekkoStreams)(source)
 ```
 
-```eval_rst
+```{eval-rst}
 .. note:: A request with the body set as a stream can only be sent using a backend supporting exactly the given type of streams.
 ```
 

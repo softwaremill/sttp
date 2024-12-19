@@ -42,6 +42,9 @@ val commonSettings = commonSmlBuildSettings ++ ossPublishSettings ++ Seq(
     val files1 = UpdateVersionInDocs(sLog.value, organization.value, version.value, List(file("README.md")))
     Def.task {
       (docs.jvm(scala3) / mdoc).toTask("").value
+      // Generating the list only after mdoc is done (as it overrides what's in generated_doc)
+      // For the root project the sourceDirectory points to src, so ../ will point to the root directory of the project
+      GenerateListOfExamples(sLog.value, sourceDirectory.value.getParentFile)
       files1 ++ Seq(file("generated-docs/out"))
     }
   }.value,

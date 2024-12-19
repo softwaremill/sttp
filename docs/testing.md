@@ -68,7 +68,7 @@ val response2 = basicRequest.post(uri"http://example.org/partialAda").send(testi
 // response2.body will be Right("Ada")
 ```
 
-```eval_rst
+```{eval-rst}
 .. note::
 
   This approach to testing has one caveat: the responses are not type-safe. That is, the stub backend cannot match on or verify that the type of the response body matches the response body type, as it was requested. However, when a "raw" response is provided (a ``String``, ``Array[Byte]``, ``InputStream``, or a non-blocking stream wrapped in ``RawStream``), it will be handled as specified by the response specification - see below for details.

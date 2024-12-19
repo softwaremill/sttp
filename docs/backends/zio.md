@@ -67,7 +67,7 @@ ArmeriaZioBackend.scoped().flatMap { backend => ??? }
 ArmeriaZioBackend.usingDefaultClient().flatMap { backend => ??? }
 ```
 
-```eval_rst
+```{eval-rst}
 .. note:: The default client factory is reused to create `ArmeriaZioBackend` if a `SttpBackendOptions` is unspecified. So you only need to manage a resource when `SttpBackendOptions` is used.
 ```
 
@@ -87,7 +87,7 @@ val client = WebClient.builder("https://my-service.com")
 ArmeriaZioBackend.usingClient(client).flatMap { backend => ??? }
 ```
 
-```eval_rst
+```{eval-rst}
 .. note:: A WebClient could fail to follow redirects if the WebClient is created with a base URI and a redirect location is a different URI.
 ```
 

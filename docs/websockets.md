@@ -86,7 +86,7 @@ When working with streams of websocket frames keep in mind that a text payload m
 sttp provides two useful methods (`fromTextPipe`, `fromTextPipeF`) for each backend to aggregate these fragments back into complete messages.
 These methods can be found in corresponding WebSockets classes for given effect type:
 
-```eval_rst
+```{eval-rst}
 ================ ==========================================
 effect type      class name
 ================ ==========================================

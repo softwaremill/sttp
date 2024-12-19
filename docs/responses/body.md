@@ -71,7 +71,7 @@ val someFile = new File("some/path")
 basicRequest.response(asFile(someFile))
 ```
 
-```eval_rst
+```{eval-rst}
 .. note::
 
  As the handling of response is specified upfront, there's no need to "consume" the response body. It can be safely discarded if not needed.
@@ -89,7 +89,7 @@ basicRequest.response(asString.orFail): PartialRequest[String]
 
 The combinator works in all cases where the response body is specified to be deserialized as an `Either`. If the left is already an exception, it will be thrown unchanged. Otherwise, the left-value will be wrapped in an `HttpError`.
 
-```eval_rst
+```{eval-rst}
 .. note::
 
  While both ``asStringAlways`` and ``asString.orFail`` have the type ``ResponseAs[String, Any]``, they are different. The first will return the response body as a string always, regardless of the responses' status code. The second will return a failed effect / throw a ``HttpError`` exception for non-2xx status codes, and the string as body only for 2xx status codes.
@@ -101,7 +101,7 @@ There's also a variant of the combinator, `.getEither`, which can be used to ext
 
 It's possible to define custom body deserializers by taking any of the built-in response descriptions and mapping over them. Each `ResponseAs` instance has `map` and `mapWithMetadata` methods, which can be used to transform it to a description for another type (optionally using response metadata, such as headers or the status code). Each such value is immutable and can be used multiple times.
 
-```eval_rst
+```{eval-rst}
 .. note:: Alternatively, response descriptions can be modified directly from the request description, by using the ``request.mapResponse(...)`` and ``request.mapResponseRight(...)`` methods (which is available, if the response body is deserialized to an either). That's equivalent to calling ``request.response(request.response.map(...))``, that is setting a new response description, to a modified old response description; but with shorter syntax.
 ```
 

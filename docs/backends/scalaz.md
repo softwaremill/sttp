@@ -42,7 +42,7 @@ val client = WebClient.builder("https://my-service.com")
 val backend = ArmeriaScalazBackend.usingClient(client)
 ```
 
-```eval_rst
+```{eval-rst}
 .. note:: A WebClient could fail to follow redirects if the WebClient is created with a base URI and a redirect location is a different URI.
 ```
 

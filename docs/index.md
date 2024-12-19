@@ -66,7 +66,7 @@ We offer commercial support for sttp and related technologies, as well as develo
 
 # Table of contents
 
-```eval_rst
+```{eval-rst}
 .. toctree::
    :maxdepth: 2
    :caption: Getting started
@@ -75,6 +75,11 @@ We offer commercial support for sttp and related technologies, as well as develo
    how
    goals
    community
+
+.. toctree::
+   :maxdepth: 2
+   :caption: How-to's
+   
    examples
 
 .. toctree::
