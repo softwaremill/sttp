@@ -953,7 +953,8 @@ lazy val examplesCe2 = (projectMatrix in file("examples-ce2"))
     publish / skip := true,
     libraryDependencies ++= Seq(
       "io.circe" %% "circe-generic" % circeVersion
-    )
+    ),
+    verifyExamplesCompileUsingScalaCli := VerifyExamplesCompileUsingScalaCli(sLog.value, sourceDirectory.value)
   )
   .jvmPlatform(scalaVersions = List(scala2_13))
   .dependsOn(circe, monix)

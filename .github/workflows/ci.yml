@@ -65,6 +65,9 @@ jobs:
     - name: Verify that examples compile using Scala CLI
       if: matrix.target-platform == 'JVM' && matrix.java == '21' && matrix.scala-version == '3'
       run: sbt $SBT_JAVA_OPTS -v "project examples3" verifyExamplesCompileUsingScalaCli      
+    - name: Verify that examples-ce2 compile using Scala CLI
+      if: matrix.target-platform == 'JVM' && matrix.java == '11' && matrix.scala-version == '2.13'
+      run: sbt $SBT_JAVA_OPTS -v "project examplesCe2" verifyExamplesCompileUsingScalaCli        
     - name: Test
       run: sbt -v "testScoped ${{ matrix.scala-version }} ${{ matrix.target-platform }}"        
     - name: Prepare release notes
