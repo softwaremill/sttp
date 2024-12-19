@@ -1,3 +1,7 @@
+// {cat=WebSocket; effects=Direct; backend=HttpClient}: Connect to & interact with a WebSocket, using Ox channels for streaming
+
+//> using dep com.softwaremill.sttp.client4::ox:4.0.0-M20
+
 package sttp.client4.examples
 
 import ox.*
@@ -13,7 +17,7 @@ import sttp.ws.WebSocketFrame
     supervised:
       val inputs = Source.fromValues(1, 2, 3).map(i => WebSocketFrame.text(s"Frame no $i"))
       val (wsSource, wsSink) = asSourceAndSink(ws)
-      forkDiscard:
+      fork:
         inputs.pipeTo(wsSink, propagateDone = true)
       wsSource.foreach: frame =>
         println(s"RECEIVED: $frame")

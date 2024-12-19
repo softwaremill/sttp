@@ -19,7 +19,8 @@ import scala.annotation.tailrec
   * @tparam DE
   *   A deserialization-library-specific error type, describing the deserialization error in more detail.
   */
-sealed abstract class ResponseException[+HE, +DE](error: String) extends Exception(error)
+sealed abstract class ResponseException[+HE, +DE](error: String, cause: Option[Throwable])
+    extends Exception(error, cause.orNull)
 
 /** Represents an http error, where the response was received successfully, but the status code is other than the
   * expected one (typically other than 2xx).
@@ -28,7 +29,7 @@ sealed abstract class ResponseException[+HE, +DE](error: String) extends Excepti
   *   The type of the body to which the error response is deserialized.
   */
 case class HttpError[+HE](body: HE, statusCode: StatusCode)
-    extends ResponseException[HE, Nothing](s"statusCode: $statusCode, response: $body")
+    extends ResponseException[HE, Nothing](s"statusCode: $statusCode, response: $body", None)
 
 /** Represents an error that occured during deserialization of `body`.
   *
@@ -36,7 +37,10 @@ case class HttpError[+HE](body: HE, statusCode: StatusCode)
   *   A deserialization-library-specific error type, describing the deserialization error in more detail.
   */
 case class DeserializationException[+DE: ShowError](body: String, error: DE)
-    extends ResponseException[Nothing, DE](implicitly[ShowError[DE]].show(error))
+    extends ResponseException[Nothing, DE](
+      implicitly[ShowError[DE]].show(error),
+      if (error.isInstanceOf[Throwable]) Some(error.asInstanceOf[Throwable]) else None
+    )
 
 object HttpError {
   @tailrec def find(exception: Throwable): Option[HttpError[_]] =

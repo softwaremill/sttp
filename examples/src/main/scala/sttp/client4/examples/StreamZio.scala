@@ -1,3 +1,7 @@
+// {cat=Streaming; effects=ZIO; backend=HttpClient}: Stream request & response bodies using ZIO-Streams
+
+//> using dep com.softwaremill.sttp.client4::zio:4.0.0-M20
+
 package sttp.client4.examples
 
 import sttp.capabilities.zio.ZioStreams
@@ -11,7 +15,7 @@ import zio.stream.*
 
 object StreamZio extends ZIOAppDefault:
   def streamRequestBody: RIO[SttpClient, Unit] =
-    val stream: Stream[Throwable, Byte] = ZStream("Hello, world".getBytes.toIndexedSeq: _*)
+    val stream: Stream[Throwable, Byte] = ZStream("Hello, world".getBytes.toIndexedSeq*)
     send(
       basicRequest
         .post(uri"https://httpbin.org/post")
