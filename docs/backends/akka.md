@@ -16,14 +16,14 @@ Note that you'll also need an explicit dependency on akka-streams, as akka-http 
 
 Next you'll need to add create the backend instance:
 
-```scala mdoc:compile-only
+```scala
 import sttp.client4.akkahttp._
 val backend = AkkaHttpBackend()
 ```
 
 or, if you'd like to use an existing actor system:
 
-```scala mdoc:compile-only
+```scala
 import sttp.client4.akkahttp._
 import akka.actor.ActorSystem
 
@@ -35,7 +35,7 @@ This backend supports sending and receiving [akka-streams](http://doc.akka.io/do
 
 To set the request body as a stream:
 
-```scala mdoc:compile-only
+```scala
 import sttp.capabilities.akka.AkkaStreams
 import sttp.client4._
 
@@ -51,7 +51,7 @@ basicRequest
 
 To receive the response body as a stream:
 
-```scala mdoc:compile-only
+```scala
 import scala.concurrent.Future
 import sttp.capabilities.akka.AkkaStreams
 import sttp.client4._
@@ -79,7 +79,7 @@ That way, you can "mock" a server that the backend will talk to, without startin
 
 If your application provides a client library for its dependants to use, this is a great way to ensure that the client actually matches the routes exposed by your application:
 
-```scala mdoc:compile-only
+```scala
 import sttp.client4.akkahttp._
 import akka.http.scaladsl.server.Route
 import akka.actor.ActorSystem
@@ -101,7 +101,7 @@ Non-standard behavior:
 
 Received data streams can be parsed to a stream of server-sent events (SSE):
 
-```scala mdoc:compile-only
+```scala 
 import scala.concurrent.Future
 
 import akka.stream.scaladsl.Source

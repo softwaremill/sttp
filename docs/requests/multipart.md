@@ -27,8 +27,8 @@ basicRequest.multipartBody(multipart("p1", "v1"), multipart("p2", "v2"))
 For example:
 
 ```scala mdoc:compile-only
-import sttp.client4._
-import java.io._
+import sttp.client4.*
+import java.io.*
 
 val someFile = new File("/sample/path")
 
@@ -44,8 +44,8 @@ basicRequest.multipartBody(
 For each part, an optional filename can be specified, as well as a custom content type and additional headers. For example:
 
 ```scala mdoc:compile-only
-import sttp.client4._
-import java.io._
+import sttp.client4.*
+import java.io.*
 
 val logoFile = new File("/sample/path/logo123.jpg")
 val docFile = new File("/sample/path/doc123.doc")

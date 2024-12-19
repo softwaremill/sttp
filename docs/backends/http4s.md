@@ -11,10 +11,10 @@ This backend is based on [http4s](https://http4s.org) (client) and is **asynchro
 The backend can be created in a couple of ways, e.g.:
 
 ```scala mdoc:compile-only
-import cats.effect._
+import cats.effect.*
 import sttp.capabilities.fs2.Fs2Streams
-import sttp.client4._
-import sttp.client4.http4s._
+import sttp.client4.*
+import sttp.client4.http4s.*
 
 // the "org.http4s" %% "http4s-ember-client" % http4sVersion dependency needs to be explicitly added
 Http4sBackend.usingDefaultEmberClientBuilder[IO](): Resource[IO, StreamBackend[IO, Fs2Streams[IO]]]

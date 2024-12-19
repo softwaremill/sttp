@@ -44,7 +44,7 @@ def asSourceAndSink(ws: SyncWebSocket, concatenateFragmented: Boolean = true)(us
           case _: WebSocketFrame.Close                            => false
           case ping: WebSocketFrame.Ping =>
             requestsChannel.sendOrClosed(WebSocketFrame.Pong(ping.payload)).discard
-            // Keep receiving even if pong couldn't be sent due to closed request channel. We want to process
+            // Keep receiving ev en if pong couldn't be sent due to closed request channel. We want to process
             // whatever responses there are still coming from the server until it signals the end with a Close frome.
             true
           case _: WebSocketFrame.Pong =>
@@ -91,7 +91,7 @@ private def optionallyConcatenateFrames(f: Flow[WebSocketFrame], doConcatenate: 
 ): Flow[WebSocketFrame] =
   if doConcatenate then
     type Accumulator = Option[Either[Array[Byte], String]]
-    f.mapStateful(() => None: Accumulator) {
+    f.mapStateful(None: Accumulator) {
       case (None, f: WebSocketFrame.Ping)                       => (None, Some(f))
       case (None, f: WebSocketFrame.Pong)                       => (None, Some(f))
       case (None, f: WebSocketFrame.Close)                      => (None, Some(f))

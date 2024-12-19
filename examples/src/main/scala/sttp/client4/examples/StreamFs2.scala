@@ -1,14 +1,16 @@
 package sttp.client4.examples
 
-import sttp.client4._
-import sttp.client4.httpclient.fs2.HttpClientFs2Backend
+import cats.effect.ExitCode
 import cats.effect.IO
-import cats.instances.string._
-import fs2.{text, Stream}
+import cats.effect.IOApp
+import cats.instances.string.*
+import fs2.Stream
+import fs2.text
 import sttp.capabilities.fs2.Fs2Streams
+import sttp.client4.*
+import sttp.client4.httpclient.fs2.HttpClientFs2Backend
 
-object StreamFs2 extends App {
-
+object StreamFs2 extends IOApp:
   def streamRequestBody(backend: StreamBackend[IO, Fs2Streams[IO]]): IO[Unit] = {
     val stream: Stream[IO, Byte] = Stream.emits("Hello, world".getBytes)
 
@@ -27,9 +29,9 @@ object StreamFs2 extends App {
       .send(backend)
       .map(response => println(s"RECEIVED:\n${response.body}"))
 
-  val effect = HttpClientFs2Backend.resource[IO]().use { backend =>
-    streamRequestBody(backend).flatMap(_ => streamResponseBody(backend))
-  }
+  val effect = HttpClientFs2Backend
+    .resource[IO]()
+    .use: backend =>
+      streamRequestBody(backend).flatMap(_ => streamResponseBody(backend))
 
-  effect.unsafeRunSync()(cats.effect.unsafe.implicits.global)
-}
+  override def run(args: List[String]): IO[ExitCode] = effect.map(_ => ExitCode.Success)

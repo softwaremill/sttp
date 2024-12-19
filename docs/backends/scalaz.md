@@ -13,13 +13,13 @@ To use, add the following dependency to your project:
 
 add imports:
 
-```scala mdoc:silent
+```scala 
 import sttp.client4.armeria.scalaz.ArmeriaScalazBackend
 ```
 
 create client:
 
-```scala mdoc:compile-only
+```scala 
 val backend = ArmeriaScalazBackend()
 
 // You can use the default client which reuses the connection pool of ClientFactory.ofDefault()
@@ -28,7 +28,7 @@ ArmeriaScalazBackend.usingDefaultClient()
 
 or, if you'd like to instantiate the [WebClient](https://armeria.dev/docs/client-http) yourself:
 
-```scala mdoc:compile-only
+```scala 
 import com.linecorp.armeria.client.circuitbreaker._
 import com.linecorp.armeria.client.WebClient
 

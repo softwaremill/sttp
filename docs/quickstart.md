@@ -49,7 +49,7 @@ This brings into scope the starting point for defining requests and some helper 
 And that's all you need to start using sttp client! To create and send your first request, import the above, type `basicRequest.` and see where your IDE's auto-complete gets you! Here's a simple request, using the synchronous backend:
 
 ```scala
-import sttp.client4._
+import sttp.client4.*
 
 val backend = DefaultSyncBackend()
 val response = basicRequest
@@ -78,9 +78,9 @@ dependency:
 Your code might then look as follows:
 
 ```scala mdoc:compile-only
-import sttp.client4._
-import sttp.client4.upicklejson.default._
-import upickle.default._
+import sttp.client4.*
+import sttp.client4.upicklejson.default.*
+import upickle.default.*
 
 val backend = DefaultSyncBackend()
 
@@ -115,7 +115,7 @@ use slf4j, you'll need the following dependency:
 Then, you'll need to configure your client:
 
 ```scala mdoc:compile-only
-import sttp.client4._
+import sttp.client4.*
 import sttp.client4.logging.slf4j.Slf4jLoggingBackend
 
 val backend = Slf4jLoggingBackend(DefaultSyncBackend())
@@ -130,7 +130,7 @@ This backend instance is global (created on first access), can't be customised a
 The `send()` extension method allows sending requests using that `backend` instance:
 
 ```scala mdoc:compile-only
-import sttp.client4.quick._
+import sttp.client4.quick.*
 quickRequest.get(uri"http://httpbin.org/ip").send()
 ```
 

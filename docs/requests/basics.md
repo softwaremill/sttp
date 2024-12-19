@@ -3,7 +3,7 @@
 As mentioned in the [quickstart](../quickstart.md), the following import will be needed:
 
 ```scala mdoc
-import sttp.client4._
+import sttp.client4.*
 ```
 
 This brings into scope `basicRequest`, the starting request. This request can be customised, each time yielding a new, immutable request definition (unless a mutable body is set on the request, such as a byte array). As the request definition is immutable, it can be freely stored in values, shared across threads, and customized multiple times in various ways.

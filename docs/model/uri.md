@@ -30,7 +30,7 @@ Any values embedded in the URI will be URL-encoded, taking into account the cont
 All components of the URI can be embedded from values: scheme, username/password, host, port, path, query and fragment. The embedded values won't be further parsed, except the `:` in the host part, which is commonly used to pass in both the host and port:
 
 ```scala mdoc
-import sttp.client4._
+import sttp.client4.*
 
 // the embedded / is escaped
 println(uri"http://example.org/${"a/b"}")
@@ -108,7 +108,7 @@ When sending requests using relative URIs, the [`ResolveRelativeUrisBackend`](..
 A fully-featured example:
 
 ```scala mdoc:silent
-import sttp.client4._
+import sttp.client4.*
 val secure = true
 val scheme = if (secure) "https" else "http"
 val subdomains = List("sub1", "sub2")

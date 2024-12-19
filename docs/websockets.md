@@ -4,9 +4,9 @@ One of the optional capabilities (represented as `WebSockets`) that a backend ca
 
 A websocket request will be sent instead of a regular one if the response specification includes handling the response as a websocket. Depending on the backend you are using, there are three variants of websocket response specifications: synchronous, asynchronous and streaming. To use them, add one of the following imports:
 
-* `import sttp.client4.ws.sync._` if you are using a synchronous backend (such as `DefaultSyncBackend`), without any effect wrappers
-* `import sttp.client4.ws.async._` if you are using an asynchronous backend (e.g. based on `Future`s or `IO`s)
-* `import sttp.client4.ws.stream._` if you want to handle web socket messages using a non-blocking stream (e.g. `fs2.Stream` or `akka.stream.scaladsl.Source`)
+* `import sttp.client4.ws.sync.*` if you are using a synchronous backend (such as `DefaultSyncBackend`), without any effect wrappers
+* `import sttp.client4.ws.async.*` if you are using an asynchronous backend (e.g. based on `Future`s or `IO`s)
+* `import sttp.client4.ws.stream.*` if you want to handle web socket messages using a non-blocking stream (e.g. `fs2.Stream` or `akka.stream.scaladsl.Source`)
 
 The above imports will bring into scope a number of `asWebSocket(...)` methods, giving a couple of variants of working with websockets.
 
@@ -22,12 +22,12 @@ The `SyncWebSocket` / `WebSocket` classes also contain other methods for receivi
 The following response specifications which use `SyncWebSocket` are available in the `sttp.client4.ws.sync` object (the second type parameter of `WebSocketResponseAs` specifies the type returned as the response body):
 
 ```scala mdoc:compile-only
-import sttp.client4._
+import sttp.client4.*
 import sttp.client4.ws.SyncWebSocket
 import sttp.model.ResponseMetadata
 import sttp.shared.Identity
 
-// when using import sttp.client4.ws.sync._
+// when using import sttp.client4.ws.sync.*
 
 def asWebSocket[T](f: SyncWebSocket => T): 
   WebSocketResponseAs[Identity, Either[String, T]] = ???
@@ -67,7 +67,7 @@ Another possibility is to work with websockets by providing a streaming stage, w
 The following response specifications are available: 
 
 ```scala mdoc:compile-only
-import sttp.client4._
+import sttp.client4.*
 import sttp.capabilities.{Streams, WebSockets}
 import sttp.ws.WebSocketFrame
 

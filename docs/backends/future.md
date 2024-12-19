@@ -2,17 +2,18 @@
 
 There are several backend implementations which are `scala.concurrent.Future`-based. These backends are **asynchronous**, sending a request is a non-blocking operation and results in a response wrapped in a `Future`. 
 
-Apart from the ones described below, also the [Akka](akka.md) backend is `Future`-based.
+Apart from the ones described below, also the [Pekko](pekko.md) & [Akka](akka.md) backends are `Future`-based.
 
 ```eval_rst
-===================================== ================================================ ==========================
-Class                                 Supported stream type                            Websocket support
-===================================== ================================================ ==========================
-``HttpClientFutureBackend``           n/a                                              yes (regular)
-``AkkaHttpBackend``                   ``akka.stream.scaladsl.Source[ByteString, Any]`` yes (regular & streaming)
-``OkHttpFutureBackend``               n/a                                              yes (regular)
-``ArmeriaFutureBackend``              n/a                                              n/a
-===================================== ================================================ ==========================
+===================================== ================================================= ==========================
+Class                                 Supported stream type                             Websocket support
+===================================== ================================================= ==========================
+``HttpClientFutureBackend``           n/a                                               yes (regular)
+``PekkoHttpBackend``                  ``pekko.stream.scaladsl.Source[ByteString, Any]`` yes (regular & streaming)
+``AkkaHttpBackend``                   ``akka.stream.scaladsl.Source[ByteString, Any]``  yes (regular & streaming)
+``OkHttpFutureBackend``               n/a                                               yes (regular)
+``ArmeriaFutureBackend``              n/a                                               n/a
+===================================== ================================================= ==========================
 ```
 
 ## Using HttpClient
@@ -111,7 +112,7 @@ ArmeriaFutureBackend.usingDefaultClient()
 or, if you'd like to instantiate the [WebClient](https://armeria.dev/docs/client-http) yourself::
 
 ```scala mdoc:compile-only
-import com.linecorp.armeria.client.circuitbreaker._
+import com.linecorp.armeria.client.circuitbreaker.*
 import com.linecorp.armeria.client.WebClient
 
 // Fluently build Armeria WebClient with built-in decorators

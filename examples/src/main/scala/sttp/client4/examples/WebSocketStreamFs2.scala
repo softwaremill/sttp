@@ -1,17 +1,16 @@
 package sttp.client4.examples
 
+import cats.effect.ExitCode
 import cats.effect.IO
-import cats.effect.unsafe.IORuntime
-import fs2._
+import cats.effect.IOApp
+import fs2.*
 import sttp.capabilities.fs2.Fs2Streams
-import sttp.client4._
-import sttp.client4.ws.stream._
+import sttp.client4.*
 import sttp.client4.httpclient.fs2.HttpClientFs2Backend
+import sttp.client4.ws.stream.*
 import sttp.ws.WebSocketFrame
 
-object WebSocketStreamFs2 extends App {
-  implicit val runtime: IORuntime = cats.effect.unsafe.implicits.global
-
+object WebSocketStreamFs2 extends IOApp:
   def webSocketFramePipe: Pipe[IO, WebSocketFrame.Data[_], WebSocketFrame] = { input =>
     Stream.emit(WebSocketFrame.text("1")) ++ input.flatMap {
       case WebSocketFrame.Text("10", _, _) =>
@@ -24,7 +23,7 @@ object WebSocketStreamFs2 extends App {
     }
   }
 
-  HttpClientFs2Backend
+  override def run(args: List[String]): IO[ExitCode] = HttpClientFs2Backend
     .resource[IO]()
     .use { backend =>
       basicRequest
@@ -33,5 +32,4 @@ object WebSocketStreamFs2 extends App {
         .send(backend)
         .void
     }
-    .unsafeRunSync()
-}
+    .map(_ => ExitCode.Success)

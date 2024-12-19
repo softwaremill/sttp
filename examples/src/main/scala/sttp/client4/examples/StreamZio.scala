@@ -1,21 +1,22 @@
 package sttp.client4.examples
 
 import sttp.capabilities.zio.ZioStreams
-import sttp.client4._
-import zio.Console._
-import zio._
-import zio.stream._
-import sttp.client4.httpclient.zio.{send, HttpClientZioBackend, SttpClient}
+import sttp.client4.*
+import sttp.client4.httpclient.zio.HttpClientZioBackend
+import sttp.client4.httpclient.zio.SttpClient
+import sttp.client4.httpclient.zio.send
+import zio.*
+import zio.Console.*
+import zio.stream.*
 
-object StreamZio extends ZIOAppDefault {
-  def streamRequestBody: RIO[SttpClient, Unit] = {
+object StreamZio extends ZIOAppDefault:
+  def streamRequestBody: RIO[SttpClient, Unit] =
     val stream: Stream[Throwable, Byte] = ZStream("Hello, world".getBytes.toIndexedSeq: _*)
     send(
       basicRequest
         .post(uri"https://httpbin.org/post")
         .streamBody(ZioStreams)(stream)
     ).flatMap(response => printLine(s"RECEIVED:\n${response.body}"))
-  }
 
   def streamResponseBody: RIO[SttpClient, Unit] =
     send(
@@ -27,4 +28,3 @@ object StreamZio extends ZIOAppDefault {
 
   override def run =
     (streamRequestBody *> streamResponseBody).provide(HttpClientZioBackend.layer())
-}

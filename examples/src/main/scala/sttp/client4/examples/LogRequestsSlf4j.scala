@@ -1,13 +1,13 @@
 package sttp.client4.examples
 
-import io.circe.generic.auto._
-import sttp.client4._
-import sttp.client4.circe._
+import io.circe.generic.auto.*
+import sttp.client4.*
+import sttp.client4.circe.*
 import sttp.client4.httpclient.HttpClientSyncBackend
-import sttp.client4.logging.slf4j.Slf4jLoggingBackend
 import sttp.client4.logging.LogConfig
+import sttp.client4.logging.slf4j.Slf4jLoggingBackend
 
-object LogRequestsSlf4j extends App {
+@main def logRequestsSlf4j(): Unit =
   case class HttpBinResponse(origin: String, headers: Map[String, String])
 
   val request = basicRequest
@@ -24,8 +24,7 @@ object LogRequestsSlf4j extends App {
       )
     )
 
-  try {
+  try
     val response: Response[HttpBinResponse] = request.send(backend)
     println("Done! " + response.code)
-  } finally backend.close()
-}
+  finally backend.close()

@@ -16,7 +16,7 @@ The following variants of `asJson` methods are available:
 The type signatures vary depending on the underlying library (required implicits and error representation differs), but they obey the following pattern:
 
 ```scala mdoc:compile-only
-import sttp.client4._
+import sttp.client4.*
 
 // request bodies
 def asJson[B](b: B): StringBody = ???
@@ -52,8 +52,8 @@ Automatic and semi-automatic derivation of encoders is possible by using the [ci
 Response can be parsed into json using `asJson[T]`, provided there's an implicit `io.circe.Decoder[T]` in scope. The decoding result will be represented as either a http/deserialization error, or the parsed value. For example:
 
 ```scala mdoc:compile-only
-import sttp.client4._
-import sttp.client4.circe._
+import sttp.client4.*
+import sttp.client4.circe.*
 
 val backend: SyncBackend = DefaultSyncBackend()
 
@@ -86,15 +86,17 @@ Using this module it is possible to set request bodies and read response bodies 
 Usage example:
 
 ```scala mdoc:compile-only
-import sttp.client4._
-import sttp.client4.json4s._
+import org.json4s.Formats
+import org.json4s.Serialization
+import sttp.client4.*
+import sttp.client4.json4s.*
 
 val backend: SyncBackend = DefaultSyncBackend()
 
 val requestPayload = RequestPayload("some data")
 
-implicit val serialization = org.json4s.native.Serialization
-implicit val formats = org.json4s.DefaultFormats
+given Serialization = org.json4s.native.Serialization
+given Formats = org.json4s.DefaultFormats
 
 val response: Response[Either[ResponseException[String, Exception], ResponsePayload]] =
   basicRequest
@@ -117,9 +119,9 @@ Using this module it is possible to set request bodies and read response bodies 
 Usage example:
 
 ```scala mdoc:compile-only
-import sttp.client4._
-import sttp.client4.sprayJson._
-import spray.json._
+import sttp.client4.*
+import sttp.client4.sprayJson.*
+import spray.json.*
 
 val backend: SyncBackend = DefaultSyncBackend()
 
@@ -174,9 +176,9 @@ Usage example:
 
 ```scala mdoc:compile-only
 
-import sttp.client4._
-import sttp.client4.ziojson._
-import zio.json._
+import sttp.client4.*
+import sttp.client4.ziojson.*
+import zio.json.*
 
 val backend: SyncBackend = DefaultSyncBackend()
 
@@ -213,10 +215,10 @@ However, an `implicit def` has been made for `Option` and is shipped in the `Stt
 Usage example:
 
 ```scala mdoc:compile-only
-import sttp.client4._
-import sttp.client4.jsoniter._
-import com.github.plokhotnyuk.jsoniter_scala.core._
-import com.github.plokhotnyuk.jsoniter_scala.macros._
+import sttp.client4.*
+import sttp.client4.jsoniter.*
+import com.github.plokhotnyuk.jsoniter_scala.core.*
+import com.github.plokhotnyuk.jsoniter_scala.macros.*
 
 val backend: SyncBackend = DefaultSyncBackend()
 
@@ -251,9 +253,9 @@ To use, add an import: `import sttp.client4.upicklejson.default._` and define an
 Usage example:
 
 ```scala mdoc:compile-only
-import sttp.client4._
-import sttp.client4.upicklejson.default._
-import upickle.default._
+import sttp.client4.*
+import sttp.client4.upicklejson.default.*
+import upickle.default.*
 
 val backend: SyncBackend = DefaultSyncBackend()
 
@@ -277,12 +279,12 @@ That's needed as the `upickle.Api` contains the `read`/`write` methods to serial
 For example, if you want to use the `legacy` upickle configuration, the integration might look as follows:
 
 ```scala mdoc:compile-only
-import upickle.legacy._ // get access to ReadWriter type, macroRW derivation, etc.
+import upickle.legacy.* // get access to ReadWriter type, macroRW derivation, etc.
 
 object legacyUpickle extends sttp.client4.upicklejson.SttpUpickleApi {
   override val upickleApi: upickle.legacy.type = upickle.legacy
 }
-import legacyUpickle._
+import legacyUpickle.*
 
 // use upickle as in the above examples
 ```

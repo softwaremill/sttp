@@ -16,6 +16,7 @@ Still, the input for a particular resilience model might involve both the result
 
 Here's an incomplete list of libraries which can be used to manage retries in various Scala stacks:
 
+* for synchornous/direct-style: [ox](https://github.com/softwaremill/ox)
 * for `Future`: [retry](https://github.com/softwaremill/retry)
 * for ZIO: [schedules](https://zio.dev/reference/schedule/), [rezilience](https://github.com/svroonland/rezilience)
 * for Monix/cats-effect: [cats-retry](https://github.com/cb372/cats-retry)

@@ -1,9 +1,9 @@
 package sttp.client4.examples
 
-object TestEndpointMultipleQueryParameters extends App {
-  import sttp.client4._
-  import sttp.client4.testing._
+import sttp.client4.*
+import sttp.client4.testing.*
 
+@main def testEndpointMultipleQueryParameters(): Unit =
   val backend = SyncBackendStub
     .whenRequestMatches(_.uri.paramsMap.contains("filter"))
     .thenRespond("Filtered")
@@ -25,4 +25,3 @@ object TestEndpointMultipleQueryParameters extends App {
       .send(backend)
       .body
   )
-}

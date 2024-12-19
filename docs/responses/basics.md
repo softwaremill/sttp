@@ -19,8 +19,8 @@ Response headers are available through the `.headers` property, which gives all 
 Individual headers can be obtained using the methods:
 
 ```scala mdoc:silent
-import sttp.model._
-import sttp.client4._
+import sttp.model.*
+import sttp.client4.*
 
 val backend = DefaultSyncBackend()
 val request = basicRequest

@@ -19,13 +19,12 @@ Sample code might look like this:
 import java.io.FileInputStream
 import java.security.{KeyStore, SecureRandom}
 import java.security.cert.X509Certificate
-import javax.net.ssl._
+import javax.net.ssl.*
 
-val TrustAllCerts: X509TrustManager = new X509TrustManager() {
+val TrustAllCerts: X509TrustManager = new X509TrustManager():
   def getAcceptedIssuers: Array[X509Certificate] = Array[X509Certificate]()
   override def checkServerTrusted(x509Certificates: Array[X509Certificate], s: String): Unit = ()
   override def checkClientTrusted(x509Certificates: Array[X509Certificate], s: String): Unit = ()
-}
 
 val ks: KeyStore = KeyStore.getInstance(KeyStore.getDefaultType)
 ks.load(new FileInputStream("/path/to/your_cert.p12"), "password".toCharArray)
@@ -48,7 +47,7 @@ Next, based on [one way SSL example](#one-way-ssl), add `TrustManagerFactory` to
 
 ```scala mdoc:invisible
 import java.security.{KeyStore, SecureRandom}
-import javax.net.ssl._
+import javax.net.ssl.*
 import java.io.FileInputStream
 def ks: KeyStore = ???
 def ssl: SSLContext = ???
@@ -65,43 +64,62 @@ val ssl: SSLContext = SSLContext.getInstance("TLS")
 ssl.init(kmf.getKeyManagers, tmf.getTrustManagers, new SecureRandom)
 ```
 
+## Using HttpClient
+
+Backends using `HttpClient` provides factory methods accepting `HttpClient`.
+In this example we are using `IO` and `HttpClientFs2Backend`.
+
+Using `SSLContext` from [first section](#ssl-context):
+
+```scala mdoc:compile-only
+import cats.effect.IO
+import cats.effect.kernel.Resource
+import cats.effect.std.Dispatcher
+import java.net.http.HttpClient
+import sttp.capabilities.fs2.Fs2Streams
+import sttp.client4.WebSocketStreamBackend
+import sttp.client4.httpclient.fs2.HttpClientFs2Backend
+
+val httpClient: HttpClient = HttpClient.newBuilder().sslContext(ssl).build()
+val backend: Resource[IO, WebSocketStreamBackend[IO, Fs2Streams[IO]]] = HttpClientFs2Backend.resourceUsingClient[IO](httpClient)
+```
+
 ## Using HttpUrlConnection
 
 Using `SSLContext` from [first section](#ssl-context) define a function to customize connection.
 
 ```scala mdoc:compile-only
-import sttp.client4._
+import sttp.client4.*
 import sttp.client4.httpurlconnection.HttpURLConnectionBackend
 import java.net.HttpURLConnection
 import javax.net.ssl.HttpsURLConnection
 
 def useSSL(conn: HttpURLConnection): Unit =
-  conn match {
+  conn match
     case https: HttpsURLConnection => https.setSSLSocketFactory(ssl.getSocketFactory)
     case _ => ()
-  }
 
 val backend = HttpURLConnectionBackend(customizeConnection = useSSL)
 ```
 
 It is also possible to set default `SSLContext` using `SSLContext.setDefault(ssl)`.
 
-## Using Akka-http
+## Using Pekko-http
 
 Using `SSLContext` from [first section](#ssl-context) create a `HttpsConnectionContext`.
 
 ```scala mdoc:compile-only
-import akka.actor.ActorSystem
-import akka.http.scaladsl.{ConnectionContext, HttpsConnectionContext}
-import sttp.client4.akkahttp._
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.http.scaladsl.{ConnectionContext, HttpsConnectionContext}
+import sttp.client4.pekkohttp.*
 
 val actorSystem: ActorSystem = ActorSystem()
 val https: HttpsConnectionContext = ConnectionContext.httpsClient(ssl)
 
-val backend = AkkaHttpBackend.usingActorSystem(actorSystem, customHttpsContext = Some(https))
+val backend = PekkoHttpBackend.usingActorSystem(actorSystem, customHttpsContext = Some(https))
 ```
 
-For more information refer to [akka docs](https://doc.akka.io/docs/akka-http/current/client-side/client-https-support.html).
+For more information refer to [pekko docs](https://pekko.apache.org/docs/pekko-http/current/client-side/client-https-support.html).
 
 ## Using OkHttp
 
@@ -125,23 +143,3 @@ val backend = OkHttpFutureBackend.usingClient(client)
 ```
 
 For more information refer to [okhttp docs](https://square.github.io/okhttp/https/).
-
-## Using HttpClient
-
-Backends using `HttpClient` provides factory methods accepting `HttpClient`.
-In this example we are using `IO` and `HttpClientFs2Backend`.
-
-Using `SSLContext` from [first section](#ssl-context):
-
-```scala mdoc:compile-only
-import cats.effect.IO
-import cats.effect.kernel.Resource
-import cats.effect.std.Dispatcher
-import java.net.http.HttpClient
-import sttp.capabilities.fs2.Fs2Streams
-import sttp.client4.WebSocketStreamBackend
-import sttp.client4.httpclient.fs2.HttpClientFs2Backend
-
-val httpClient: HttpClient = HttpClient.newBuilder().sslContext(ssl).build()
-val backend: Resource[IO, WebSocketStreamBackend[IO, Fs2Streams[IO]]] = HttpClientFs2Backend.resourceUsingClient[IO](httpClient)
-```

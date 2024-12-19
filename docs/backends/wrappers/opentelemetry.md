@@ -19,8 +19,8 @@ Then an instance can be obtained as follows:
 
 ```scala mdoc:compile-only
 import scala.concurrent.Future
-import sttp.client4._
-import sttp.client4.opentelemetry._
+import sttp.client4.*
+import sttp.client4.opentelemetry.*
 import io.opentelemetry.api.OpenTelemetry
 
 // any effect and capabilities are supported
@@ -34,8 +34,8 @@ All counters have provided default names, but the names can be customized by set
 
 ```scala mdoc:compile-only
 import scala.concurrent.Future
-import sttp.client4._
-import sttp.client4.opentelemetry._
+import sttp.client4.*
+import sttp.client4.opentelemetry.*
 import io.opentelemetry.api.OpenTelemetry
 
 val sttpBackend: Backend[Future] = ???
@@ -66,10 +66,10 @@ In order to do that, you need to provide the wrapper with a `Tracing` from zio-t
 Here's how you construct `ZioTelemetryOpenTelemetryBackend`. I would recommend wrapping this is in `ZLayer`
 
 ```scala mdoc:compile-only
-import sttp.client4._
-import zio._
-import zio.telemetry.opentelemetry.tracing._
-import sttp.client4.opentelemetry.zio._
+import sttp.client4.*
+import zio.*
+import zio.telemetry.opentelemetry.tracing.*
+import sttp.client4.opentelemetry.zio.*
 
 val zioBackend: Backend[Task] = ???
 val tracing: Tracing = ???
