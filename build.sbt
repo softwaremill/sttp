@@ -21,6 +21,7 @@ val ideScalaVersion = scala3
 
 lazy val testServerPort = settingKey[Int]("Port to run the http test server on")
 lazy val startTestServer = taskKey[Unit]("Start a http server used by tests")
+lazy val verifyExamplesCompileUsingScalaCli = taskKey[Unit]("Verify that each example compiles using Scala CLI")
 
 // slow down for CI
 parallelExecution in Global := false
@@ -967,7 +968,8 @@ lazy val examples = (projectMatrix in file("examples"))
       "org.json4s" %% "json4s-native" % json4sVersion,
       pekkoStreams,
       logback
-    )
+    ),
+    verifyExamplesCompileUsingScalaCli := VerifyExamplesCompileUsingScalaCli(sLog.value, sourceDirectory.value)
   )
   .jvmPlatform(scalaVersions = List(examplesScalaVersion))
   .dependsOn(
