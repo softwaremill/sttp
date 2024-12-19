@@ -50,7 +50,7 @@ jobs:
         sudo apt-get install libidn2-dev libcurl3-dev
         echo "STTP_NATIVE=1" >> $GITHUB_ENV
     - name: Install scala-cli
-      if: matrix.target-platform == 'JVM' && matrix.java == '21' && matrix.scala-version == '3'
+      if: matrix.target-platform == 'JVM'
       uses: VirtusLab/scala-cli-setup@main
       with:
         jvm: '' # needed because scala-cli-setup otherwise forces the installation of their default JVM (17)        
