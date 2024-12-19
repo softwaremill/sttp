@@ -27,6 +27,7 @@ core/native/local.sbt
 .bsp/
 .java-version
 metals.sbt
+.scala-build
 
 .vscode
 

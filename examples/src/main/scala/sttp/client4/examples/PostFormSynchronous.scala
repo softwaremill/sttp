@@ -1,7 +1,10 @@
+// {cat=Hello, World!; effects=Direct; backend=HttpClient}: Post form data
+
+//> using dep com.softwaremill.sttp.client4::core:4.0.0-M20
+
 package sttp.client4.examples
 
 import sttp.client4.*
-import sttp.client4.httpclient.HttpClientSyncBackend
 
 @main def postFormSynchronous(): Unit =
   val signup = Some("yes")
@@ -12,7 +15,7 @@ import sttp.client4.httpclient.HttpClientSyncBackend
     // use an optional parameter in the URI
     .post(uri"https://httpbin.org/post?signup=$signup")
 
-  val backend = HttpClientSyncBackend()
+  val backend = DefaultSyncBackend()
   val response = request.send(backend)
 
   println(response.body)

@@ -1,9 +1,15 @@
+// {cat=Logging; effects=Direct; backend=HttpClient}: Add a logging backend wrapper, which uses slf4j
+
+//> using dep com.softwaremill.sttp.client4::circe:4.0.0-M20
+//> using dep com.softwaremill.sttp.client4::slf4j-backend:4.0.0-M20
+//> using dep io.circe::circe-generic:0.14.10
+//> using dep ch.qos.logback:logback-classic:1.5.13
+
 package sttp.client4.examples
 
 import io.circe.generic.auto.*
 import sttp.client4.*
 import sttp.client4.circe.*
-import sttp.client4.httpclient.HttpClientSyncBackend
 import sttp.client4.logging.LogConfig
 import sttp.client4.logging.slf4j.Slf4jLoggingBackend
 
@@ -16,7 +22,7 @@ import sttp.client4.logging.slf4j.Slf4jLoggingBackend
 
   val backend: SyncBackend =
     Slf4jLoggingBackend(
-      HttpClientSyncBackend(),
+      DefaultSyncBackend(),
       LogConfig(
         includeTiming = true,
         logRequestBody = false,
