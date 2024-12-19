@@ -135,7 +135,7 @@ The documentation is typechecked using [mdoc](https://scalameta.org/mdoc/). The 
 
 When generating documentation, it's best to set the version to the current one, so that the generated doc files don't include modifications with the current snapshot version. 
 
-That is, in sbt run: `set version := "4.0.0-M20"`, before running `mdoc` in `docs`.
+That is, in sbt run: `set ThisBuild/version := "4.0.0-M20"`, before running `mdoc` in `docs`.
 
 ### Testing the Scala.JS backend
 
