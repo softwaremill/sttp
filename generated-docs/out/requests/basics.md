@@ -3,7 +3,7 @@
 As mentioned in the [quickstart](../quickstart.md), the following import will be needed:
 
 ```scala
-import sttp.client4._
+import sttp.client4.*
 ```
 
 This brings into scope `basicRequest`, the starting request. This request can be customised, each time yielding a new, immutable request definition (unless a mutable body is set on the request, such as a byte array). As the request definition is immutable, it can be freely stored in values, shared across threads, and customized multiple times in various ways.
@@ -42,7 +42,7 @@ val response: Response[Either[String, String]] = request.send(backend)
 
 The default backend uses the `Identity` effect to return responses, which is equivalent to a synchronous call (no effect at all). Other asynchronous backends use other effect types. See the section on [backends](../backends/summary.md) for more details.
 
-```eval_rst
+```{eval-rst}
 .. note::
 
   Only requests with the request method and uri can be sent. If trying to send a request without these components specified, a compile-time error will be reported. On how this is implemented, see the documentation on the :doc:`type of request definitions <type>`.

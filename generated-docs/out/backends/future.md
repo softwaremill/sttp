@@ -2,17 +2,18 @@
 
 There are several backend implementations which are `scala.concurrent.Future`-based. These backends are **asynchronous**, sending a request is a non-blocking operation and results in a response wrapped in a `Future`. 
 
-Apart from the ones described below, also the [Akka](akka.md) backend is `Future`-based.
+Apart from the ones described below, also the [Pekko](pekko.md) & [Akka](akka.md) backends are `Future`-based.
 
-```eval_rst
-===================================== ================================================ ==========================
-Class                                 Supported stream type                            Websocket support
-===================================== ================================================ ==========================
-``HttpClientFutureBackend``           n/a                                              yes (regular)
-``AkkaHttpBackend``                   ``akka.stream.scaladsl.Source[ByteString, Any]`` yes (regular & streaming)
-``OkHttpFutureBackend``               n/a                                              yes (regular)
-``ArmeriaFutureBackend``              n/a                                              n/a
-===================================== ================================================ ==========================
+```{eval-rst}
+===================================== ================================================= ==========================
+Class                                 Supported stream type                             Websocket support
+===================================== ================================================= ==========================
+``HttpClientFutureBackend``           n/a                                               yes (regular)
+``PekkoHttpBackend``                  ``pekko.stream.scaladsl.Source[ByteString, Any]`` yes (regular & streaming)
+``AkkaHttpBackend``                   ``akka.stream.scaladsl.Source[ByteString, Any]``  yes (regular & streaming)
+``OkHttpFutureBackend``               n/a                                               yes (regular)
+``ArmeriaFutureBackend``              n/a                                               n/a
+===================================== ================================================= ==========================
 ```
 
 ## Using HttpClient
@@ -52,7 +53,6 @@ Host header override is supported in environments running Java 12 onwards, but i
 ```
 -Djdk.httpclient.allowRestrictedHeaders=host
 ```
-
 
 ## Using OkHttp
 
@@ -112,7 +112,7 @@ ArmeriaFutureBackend.usingDefaultClient()
 or, if you'd like to instantiate the [WebClient](https://armeria.dev/docs/client-http) yourself::
 
 ```scala
-import com.linecorp.armeria.client.circuitbreaker._
+import com.linecorp.armeria.client.circuitbreaker.*
 import com.linecorp.armeria.client.WebClient
 
 // Fluently build Armeria WebClient with built-in decorators
@@ -125,7 +125,7 @@ val client = WebClient.builder("https://my-service.com")
 val backend = ArmeriaFutureBackend.usingClient(client)
 ```
 
-```eval_rst
+```{eval-rst}
 .. note:: A WebClient could fail to follow redirects if the WebClient is created with a base URI and a redirect location is a different URI.
 ```
 

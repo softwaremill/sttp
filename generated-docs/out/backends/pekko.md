@@ -17,14 +17,14 @@ Note that you'll also need an explicit dependency on pekko-streams, as pekko-htt
 Next you'll need to add create the backend instance:
 
 ```scala
-import sttp.client4.pekkohttp._
+import sttp.client4.pekkohttp.*
 val backend = PekkoHttpBackend()
 ```
 
 or, if you'd like to use an existing actor system:
 
 ```scala
-import sttp.client4.pekkohttp._
+import sttp.client4.pekkohttp.*
 import org.apache.pekko.actor.ActorSystem
 
 val actorSystem: ActorSystem = ???
@@ -37,7 +37,7 @@ To set the request body as a stream:
 
 ```scala
 import sttp.capabilities.pekko.PekkoStreams
-import sttp.client4._
+import sttp.client4.*
 
 import org.apache.pekko
 import pekko.stream.scaladsl.Source
@@ -55,7 +55,7 @@ To receive the response body as a stream:
 ```scala
 import scala.concurrent.Future
 import sttp.capabilities.pekko.PekkoStreams
-import sttp.client4._
+import sttp.client4.*
 import sttp.client4.pekkohttp.PekkoHttpBackend
 
 import org.apache.pekko
@@ -82,7 +82,7 @@ That way, you can "mock" a server that the backend will talk to, without startin
 If your application provides a client library for its dependants to use, this is a great way to ensure that the client actually matches the routes exposed by your application:
 
 ```scala
-import sttp.client4.pekkohttp._
+import sttp.client4.pekkohttp.*
 import org.apache.pekko
 import pekko.http.scaladsl.server.Route
 import pekko.actor.ActorSystem

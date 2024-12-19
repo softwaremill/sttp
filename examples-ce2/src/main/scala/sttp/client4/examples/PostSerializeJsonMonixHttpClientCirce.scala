@@ -1,4 +1,4 @@
-// {cat=Hello, World!; effects=Monix; backend=HttpClient}: POST JSON data
+// {cat=Hello, World!; effects=Monix; backend=HttpClient}: Post JSON data
 
 //> using scala 2.13
 //> using dep com.softwaremill.sttp.client4::monix:4.0.0-M20

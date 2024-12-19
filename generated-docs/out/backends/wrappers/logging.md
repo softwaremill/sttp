@@ -36,7 +36,7 @@ There are three backend wrappers available, which log request & response informa
 Example usage:
 
 ```scala
-import sttp.client4._
+import sttp.client4.*
 import sttp.client4.logging.slf4j.Slf4jLoggingBackend
 
 val backend = Slf4jLoggingBackend(DefaultSyncBackend())

@@ -13,7 +13,7 @@ Settings are loaded **in given order** and the **first existing value** is being
 Otherwise, proxy values can be specified manually when creating a backend:
 
 ```scala
-import sttp.client4._
+import sttp.client4.*
 
 val backend = DefaultSyncBackend(
   options = BackendOptions.httpProxy("some.host", 8080))
@@ -26,7 +26,7 @@ basicRequest
 Or in case your proxy requires authentication (supported by the JVM backends):
 
 ```scala
-import sttp.client4._
+import sttp.client4.*
 
 BackendOptions.httpProxy("some.host", 8080, "username", "password")
 ```

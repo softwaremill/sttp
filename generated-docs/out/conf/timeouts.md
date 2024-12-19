@@ -8,8 +8,8 @@ sttp supports read and connection timeouts:
 How to use:
 
 ```scala
-import sttp.client4._
-import scala.concurrent.duration._
+import sttp.client4.*
+import scala.concurrent.duration.*
 
 // all backends provide a constructor that allows to specify backend options
 val backend = DefaultSyncBackend(

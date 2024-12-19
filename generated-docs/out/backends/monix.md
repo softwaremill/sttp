@@ -44,7 +44,6 @@ Host header override is supported in environments running Java 12 onwards, but i
 -Djdk.httpclient.allowRestrictedHeaders=host
 ```
 
-
 ## Using OkHttp
 
 To use, add the following dependency to your project:
@@ -98,7 +97,7 @@ ArmeriaMonixBackend.usingDefaultClient()
 or, if you'd like to instantiate the [WebClient](https://armeria.dev/docs/client-http) yourself:
 
 ```scala
-import com.linecorp.armeria.client.circuitbreaker._
+import com.linecorp.armeria.client.circuitbreaker.*
 import com.linecorp.armeria.client.WebClient
 
 // Fluently build Armeria WebClient with built-in decorators
@@ -111,7 +110,7 @@ val client = WebClient.builder("https://my-service.com")
 val backend = ArmeriaMonixBackend.usingClient(client)
 ```
 
-```eval_rst
+```{eval-rst}
 .. note:: A WebClient could fail to follow redirects if the WebClient is created with a base URI and a redirect location is a different URI.
 ```
 
@@ -125,7 +124,7 @@ The Monix backends support streaming. The streams capability is represented as `
 
 ```scala
 import sttp.capabilities.monix.MonixStreams
-import sttp.client4._
+import sttp.client4.*
 import sttp.client4.httpclient.monix.HttpClientMonixBackend
 
 import monix.reactive.Observable
@@ -144,7 +143,7 @@ And receive responses as an observable stream:
 
 ```scala
 import sttp.capabilities.monix.MonixStreams
-import sttp.client4._
+import sttp.client4.*
 import sttp.client4.httpclient.monix.HttpClientMonixBackend
 
 import monix.eval.Task
@@ -177,7 +176,7 @@ import monix.eval.Task
 import sttp.capabilities.monix.MonixStreams
 import sttp.client4.impl.monix.MonixServerSentEvents
 import sttp.model.sse.ServerSentEvent
-import sttp.client4._
+import sttp.client4.*
 
 def processEvents(source: Observable[ServerSentEvent]): Task[Unit] = ???
 

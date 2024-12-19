@@ -9,28 +9,29 @@ requests and how to handle responses. Requests are sent using one of the backend
 
 Backend implementations include the HTTP client that is shipped with Java, as well as ones based on [akka-http](https://doc.akka.io/docs/akka-http/current/scala/http/), [pekko-http](https://pekko.apache.org/docs/pekko-http/current/), [http4s](https://http4s.org), [OkHttp](http://square.github.io/okhttp/). They integrate with [Akka](https://akka.io), [Monix](https://monix.io), [fs2](https://github.com/functional-streams-for-scala/fs2), [cats-effect](https://github.com/typelevel/cats-effect), [scalaz](https://github.com/scalaz/scalaz) and [ZIO](https://github.com/zio/zio). Supported Scala versions include 2.12, 2.13 and 3, Scala.JS and Scala Native; supported Java versions include 11+.
 
-Here's a quick example of sttp client in action:
+Here's a quick example of sttp client in action, runnable using [scala-cli](https://scala-cli.virtuslab.org):
 
 ```scala mdoc:compile-only
+//> using dep com.softwaremill.sttp.client4::core:4.0.0-M20
+
 import sttp.client4.*
 
-val query = "http language:scala"
-val sort: Option[String] = None
+@main def sttpDemo(): Unit =
+  val sort: Option[String] = None
+  val query = "http language:scala"
 
-// the `query` parameter is automatically url-encoded
-// `sort` is removed, as the value is not defined
-val request = basicRequest.get(
-  uri"https://api.github.com/search/repositories?q=$query&sort=$sort")
+  // the `query` parameter is automatically url-encoded
+  // `sort` is removed, as the value is not defined
+  val request = basicRequest.get(uri"https://api.github.com/search/repositories?q=$query&sort=$sort")
 
-val backend = DefaultSyncBackend()
-val response = request.send(backend)
+  val backend = DefaultSyncBackend()
+  val response = request.send(backend)
 
-// response.header(...): Option[String]
-println(response.header("Content-Length"))
+  // response.header(...): Option[String]
+  println(response.header("Content-Length")) 
 
-// response.body: by default read into an Either[String, String] 
-// to indicate failure or success 
-println(response.body)     
+  // response.body: by default read into an Either[String, String] to indicate failure or success 
+  println(response.body)
 ```
 
 For more examples, see the [usage examples](examples.md) section. To start using sttp client in your project, see the [quickstart](quickstart.md). Or, browse the documentation to find the topics that interest you the most! ScalaDoc is available at [https://www.javadoc.io](https://www.javadoc.io/doc/com.softwaremill.sttp.client4/core_2.12/4.0.0-M9).
