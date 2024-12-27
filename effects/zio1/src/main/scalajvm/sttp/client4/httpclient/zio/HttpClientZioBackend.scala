@@ -59,8 +59,8 @@ class HttpClientZioBackend private (
       .toStream()
       .mapConcatChunk(list => ByteArray(list.asScala.toList.flatMap(_.safeRead()).toArray))
 
-  override protected val bodyToHttpClient: BodyToHttpClient[Task, ZioStreams] =
-    new BodyToHttpClient[Task, ZioStreams] {
+  override protected val bodyToHttpClient: BodyToHttpClient[Task, ZioStreams, R] =
+    new BodyToHttpClient[Task, ZioStreams, R] {
       override val streams: ZioStreams = ZioStreams
       override implicit def monad: MonadError[Task] = self.monad
       override def streamToPublisher(stream: ZStream[Any, Throwable, Byte]): Task[BodyPublisher] = {

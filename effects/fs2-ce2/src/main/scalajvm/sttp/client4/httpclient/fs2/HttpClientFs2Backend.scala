@@ -49,8 +49,8 @@ class HttpClientFs2Backend[F[_]: ConcurrentEffect: ContextShift] private (
   override def send[T](request: GenericRequest[T, R]): F[Response[T]] =
     super.send(request).guarantee(ContextShift[F].shift)
 
-  override protected val bodyToHttpClient: BodyToHttpClient[F, Fs2Streams[F]] =
-    new BodyToHttpClient[F, Fs2Streams[F]] {
+  override protected val bodyToHttpClient: BodyToHttpClient[F, Fs2Streams[F], R] =
+    new BodyToHttpClient[F, Fs2Streams[F], R] {
       override val streams: Fs2Streams[F] = Fs2Streams[F]
       override implicit def monad: MonadError[F] = self.monad
       override def streamToPublisher(stream: Stream[F, Byte]): F[HttpRequest.BodyPublisher] =

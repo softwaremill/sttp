@@ -45,8 +45,8 @@ class HttpClientMonixBackend private (
 
   override val streams: MonixStreams = MonixStreams
 
-  override protected val bodyToHttpClient: BodyToHttpClient[Task, MonixStreams] =
-    new BodyToHttpClient[Task, MonixStreams] {
+  override protected val bodyToHttpClient: BodyToHttpClient[Task, MonixStreams, R] =
+    new BodyToHttpClient[Task, MonixStreams, R] {
       override val streams: MonixStreams = MonixStreams
       override implicit def monad: MonadError[Task] = self.monad
       override def streamToPublisher(stream: Observable[Array[Byte]]): Task[HttpRequest.BodyPublisher] =
