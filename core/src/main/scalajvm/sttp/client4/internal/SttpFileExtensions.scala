@@ -4,6 +4,8 @@ import java.nio.file.Files
 import java.nio.file.Path
 
 import scala.io.Source
+import java.io.FileInputStream
+import java.io.InputStream
 
 // wrap a Path
 trait SttpFileExtensions { self: SttpFile =>
@@ -11,13 +13,14 @@ trait SttpFileExtensions { self: SttpFile =>
   def toPath: Path = underlying.asInstanceOf[Path]
   def toFile: java.io.File = toPath.toFile
 
-  def readAsString: String = {
+  def readAsString(): String = {
     val s = Source.fromFile(toFile, "UTF-8");
     try s.getLines().mkString("\n")
     finally s.close()
   }
-
-  def readAsByteArray: Array[Byte] = Files.readAllBytes(toPath)
+  def readAsByteArray(): Array[Byte] = Files.readAllBytes(toPath)
+  def openStream(): InputStream = new FileInputStream(toFile)
+  def length(): Long = toFile.length()
 }
 
 trait SttpFileCompanionExtensions {

@@ -4,7 +4,6 @@ import sttp.client4._
 import sttp.model.Encodings
 
 import Compressor._
-import java.io.FileInputStream
 import java.nio.ByteBuffer
 import java.util.zip.DeflaterInputStream
 import java.util.zip.Deflater
@@ -30,7 +29,7 @@ class GZipDefaultCompressor[R] extends Compressor[R] {
         InputStreamBody(new GZIPCompressingInputStream(b), defaultContentType)
       case StreamBody(b) => streamsNotSupported
       case FileBody(f, defaultContentType) =>
-        InputStreamBody(new GZIPCompressingInputStream(new FileInputStream(f.toFile)), defaultContentType)
+        InputStreamBody(new GZIPCompressingInputStream(f.openStream()), defaultContentType)
       case MultipartStreamBody(parts) => compressingMultipartBodiesNotSupported
       case BasicMultipartBody(parts)  => compressingMultipartBodiesNotSupported
     }
@@ -59,7 +58,7 @@ class DeflateDefaultCompressor[R] extends Compressor[R] {
         InputStreamBody(new DeflaterInputStream(b), defaultContentType)
       case StreamBody(b) => streamsNotSupported
       case FileBody(f, defaultContentType) =>
-        InputStreamBody(new DeflaterInputStream(new FileInputStream(f.toFile)), defaultContentType)
+        InputStreamBody(new DeflaterInputStream(f.openStream()), defaultContentType)
       case MultipartStreamBody(parts) => compressingMultipartBodiesNotSupported
       case BasicMultipartBody(parts)  => compressingMultipartBodiesNotSupported
     }
@@ -114,7 +113,7 @@ private[client4] object Compressor {
     case ByteArrayBody(b, _)        => Some(b.length.toLong)
     case ByteBufferBody(b, _)       => None
     case InputStreamBody(b, _)      => None
-    case FileBody(f, _)             => Some(f.toFile.length())
+    case FileBody(f, _)             => Some(f.length())
     case StreamBody(_)              => None
     case MultipartStreamBody(parts) => None
     case BasicMultipartBody(parts)  => None

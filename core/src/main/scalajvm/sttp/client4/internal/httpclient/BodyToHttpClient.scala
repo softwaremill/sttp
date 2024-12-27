@@ -3,7 +3,7 @@ package sttp.client4.internal.httpclient
 import sttp.capabilities.Streams
 import sttp.client4.internal.SttpToJavaConverters.toJavaSupplier
 import sttp.client4.internal.{throwNestedMultipartNotAllowed, Utf8}
-import sttp.client4.internal.compression.{Compressor, DeflateDefaultCompressor, GZipDefaultCompressor}
+import sttp.client4.compression.{Compressor, DeflateDefaultCompressor, GZipDefaultCompressor}
 import sttp.client4._
 import sttp.model.{Header, HeaderNames, Part}
 import sttp.monad.MonadError
