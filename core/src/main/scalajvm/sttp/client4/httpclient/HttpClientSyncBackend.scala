@@ -82,8 +82,8 @@ class HttpClientSyncBackend private (
     responseCell.take().fold(throw _, f => f())
   }
 
-  override protected val bodyToHttpClient: BodyToHttpClient[Identity, Nothing] =
-    new BodyToHttpClient[Identity, Nothing] {
+  override protected val bodyToHttpClient: BodyToHttpClient[Identity, Nothing, R] =
+    new BodyToHttpClient[Identity, Nothing, R] {
       override val streams: NoStreams = NoStreams
       override implicit val monad: MonadError[Identity] = IdentityMonad
       override def streamToPublisher(stream: Nothing): Identity[BodyPublisher] = stream // nothing is everything

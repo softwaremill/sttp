@@ -10,15 +10,15 @@ import java.util.zip.DeflaterInputStream
 import java.util.zip.Deflater
 import java.io.ByteArrayOutputStream
 
-private[client4] trait Compressor {
+private[client4] trait Compressor[R] {
   def encoding: String
-  def apply[R](body: GenericRequestBody[R], encoding: String): GenericRequestBody[R]
+  def apply(body: GenericRequestBody[R], encoding: String): GenericRequestBody[R]
 }
 
-private[client4] object GZipDefaultCompressor extends Compressor {
+private[client4] class GZipDefaultCompressor[R] extends Compressor[R] {
   val encoding: String = Encodings.Gzip
 
-  def apply[R](body: GenericRequestBody[R], encoding: String): GenericRequestBody[R] =
+  def apply(body: GenericRequestBody[R], encoding: String): GenericRequestBody[R] =
     body match {
       case NoBody => NoBody
       case StringBody(s, encoding, defaultContentType) =>
@@ -27,10 +27,10 @@ private[client4] object GZipDefaultCompressor extends Compressor {
       case ByteBufferBody(b, defaultContentType) =>
         ByteArrayBody(byteArray(byteBufferToArray(b)), defaultContentType)
       case InputStreamBody(b, defaultContentType) =>
-        InputStreamBody(GZIPCompressingInputStream(b), defaultContentType)
+        InputStreamBody(new GZIPCompressingInputStream(b), defaultContentType)
       case StreamBody(b) => streamsNotSupported
       case FileBody(f, defaultContentType) =>
-        InputStreamBody(GZIPCompressingInputStream(new FileInputStream(f.toFile)), defaultContentType)
+        InputStreamBody(new GZIPCompressingInputStream(new FileInputStream(f.toFile)), defaultContentType)
       case MultipartStreamBody(parts) => compressingMultipartBodiesNotSupported
       case BasicMultipartBody(parts)  => compressingMultipartBodiesNotSupported
     }
@@ -44,10 +44,10 @@ private[client4] object GZipDefaultCompressor extends Compressor {
   }
 }
 
-private[client4] object DeflateDefaultCompressor extends Compressor {
+private[client4] class DeflateDefaultCompressor[R] extends Compressor[R] {
   val encoding: String = Encodings.Deflate
 
-  def apply[R](body: GenericRequestBody[R], encoding: String): GenericRequestBody[R] =
+  def apply(body: GenericRequestBody[R], encoding: String): GenericRequestBody[R] =
     body match {
       case NoBody => NoBody
       case StringBody(s, encoding, defaultContentType) =>
@@ -56,10 +56,10 @@ private[client4] object DeflateDefaultCompressor extends Compressor {
       case ByteBufferBody(b, defaultContentType) =>
         ByteArrayBody(byteArray(byteBufferToArray(b)), defaultContentType)
       case InputStreamBody(b, defaultContentType) =>
-        InputStreamBody(DeflaterInputStream(b), defaultContentType)
+        InputStreamBody(new DeflaterInputStream(b), defaultContentType)
       case StreamBody(b) => streamsNotSupported
       case FileBody(f, defaultContentType) =>
-        InputStreamBody(DeflaterInputStream(new FileInputStream(f.toFile)), defaultContentType)
+        InputStreamBody(new DeflaterInputStream(new FileInputStream(f.toFile)), defaultContentType)
       case MultipartStreamBody(parts) => compressingMultipartBodiesNotSupported
       case BasicMultipartBody(parts)  => compressingMultipartBodiesNotSupported
     }
@@ -93,7 +93,7 @@ private[client4] object Compressor {
     */
   def compressIfNeeded[T, R](
       request: GenericRequest[T, R],
-      compressors: List[Compressor]
+      compressors: List[Compressor[R]]
   ): (GenericRequestBody[R], Option[Long]) =
     request.options.compressRequestBody match {
       case Some(encoding) =>

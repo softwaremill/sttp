@@ -40,7 +40,7 @@ class HttpClientCatsBackend[F[_]: Async] private (
 
   override protected def createSequencer: F[Sequencer[F]] = CatsSequencer.create
 
-  override protected val bodyToHttpClient: BodyToHttpClient[F, Nothing] = new BodyToHttpClient[F, Nothing] {
+  override protected val bodyToHttpClient: BodyToHttpClient[F, Nothing, R] = new BodyToHttpClient[F, Nothing, Ra] {
     override val streams: NoStreams = NoStreams
     override implicit val monad: MonadError[F] = self.monad
 

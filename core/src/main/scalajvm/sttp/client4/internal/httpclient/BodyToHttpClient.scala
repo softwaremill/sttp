@@ -17,12 +17,12 @@ import java.util.concurrent.Flow
 import java.util.function.Supplier
 import scala.collection.JavaConverters._
 
-private[client4] trait BodyToHttpClient[F[_], S] {
+private[client4] trait BodyToHttpClient[F[_], S, R] {
   val streams: Streams[S]
   implicit def monad: MonadError[F]
 
   def apply[T](
-      request: GenericRequest[T, _],
+      request: GenericRequest[T, R],
       builder: HttpRequest.Builder,
       contentType: Option[String]
   ): F[BodyPublisher] = {
@@ -52,7 +52,7 @@ private[client4] trait BodyToHttpClient[F[_], S] {
 
   def streamToPublisher(stream: streams.BinaryStream): F[BodyPublisher]
 
-  def compressors: List[Compressor] = List(GZipDefaultCompressor, DeflateDefaultCompressor)
+  def compressors: List[Compressor[R]] = List(new GZipDefaultCompressor(), new DeflateDefaultCompressor())
 
   private def multipartBody[T](parts: Seq[Part[GenericRequestBody[_]]]) = {
     val multipartBuilder = new MultiPartBodyPublisher()

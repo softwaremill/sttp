@@ -28,6 +28,8 @@ import java.net.http.HttpResponse.BodyHandlers
 import java.util.concurrent.Flow.Publisher
 import java.{util => ju}
 import scala.collection.JavaConverters._
+import sttp.client4.internal.compression.Compressor
+import sttp.client4.httpclient.fs2.compression.{DeflateFs2Compressor, GZipFs2Compressor}
 
 class HttpClientFs2Backend[F[_]: Async] private (
     client: HttpClient,
@@ -46,10 +48,12 @@ class HttpClientFs2Backend[F[_]: Async] private (
 
   override val streams: Fs2Streams[F] = Fs2Streams[F]
 
-  override protected val bodyToHttpClient: BodyToHttpClient[F, Fs2Streams[F]] =
-    new BodyToHttpClient[F, Fs2Streams[F]] {
+  override protected val bodyToHttpClient: BodyToHttpClient[F, Fs2Streams[F], R] =
+    new BodyToHttpClient[F, Fs2Streams[F], R] {
       override val streams: Fs2Streams[F] = Fs2Streams[F]
       override implicit def monad: MonadError[F] = self.monad
+      override def compressors: List[Compressor[R]] =
+        List(new GZipFs2Compressor[F, R](), new DeflateFs2Compressor[F, R]())
       override def streamToPublisher(stream: Stream[F, Byte]): F[HttpRequest.BodyPublisher] =
         monad.eval(
           BodyPublishers.fromPublisher(

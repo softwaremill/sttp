@@ -49,7 +49,7 @@ class HttpURLConnectionBackend private (
 ) extends SyncBackend {
   type R = Any with Effect[Identity]
 
-  private val compressors: List[Compressor] = List(GZipDefaultCompressor, DeflateDefaultCompressor)
+  private val compressors: List[Compressor[R]] = List(new GZipDefaultCompressor(), new DeflateDefaultCompressor())
 
   override def send[T](r: GenericRequest[T, R]): Response[T] =
     adjustExceptions(r) {

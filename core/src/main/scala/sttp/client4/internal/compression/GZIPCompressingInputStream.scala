@@ -95,6 +95,8 @@ private[client4] class GZIPCompressingInputStream(
       bytesRead
 
     case DONE => -1
+
+    case _ => throw new IllegalArgumentException(s"Invalid state: $stage")
   }
 
   private def deflatePendingInput(readBuffer: Array[Byte], readOffset: Int, readLength: Int): Int = {

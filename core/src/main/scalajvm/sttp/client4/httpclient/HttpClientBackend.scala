@@ -61,7 +61,7 @@ abstract class HttpClientBackend[F[_], S <: Streams[S], P, B](
       SttpClientException.defaultExceptionToSttpClientException(request, _)
     )
 
-  protected def bodyToHttpClient: BodyToHttpClient[F, S]
+  protected def bodyToHttpClient: BodyToHttpClient[F, S, R]
   protected def bodyFromHttpClient: BodyFromHttpClient[F, S, B]
 
   private[client4] def convertRequest[T](request: GenericRequest[T, R]): F[HttpRequest] =
