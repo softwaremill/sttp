@@ -3,6 +3,7 @@ package sttp.client4.httpurlconnection
 import sttp.capabilities.Effect
 import sttp.client4.httpurlconnection.HttpURLConnectionBackend.EncodingHandler
 import sttp.client4.internal._
+import sttp.client4.internal.compression.{Compressor, DeflateDefaultCompressor, GZipDefaultCompressor}
 import sttp.client4.testing.SyncBackendStub
 import sttp.client4.ws.{GotAWebSocketException, NotAWebSocketException}
 import sttp.client4.{
@@ -37,6 +38,7 @@ import java.util.concurrent.ThreadLocalRandom
 import java.util.zip.{GZIPInputStream, InflaterInputStream}
 import scala.collection.JavaConverters._
 import scala.concurrent.duration.Duration
+import sttp.client4.GenericRequestBody
 
 class HttpURLConnectionBackend private (
     opts: BackendOptions,
@@ -47,11 +49,17 @@ class HttpURLConnectionBackend private (
 ) extends SyncBackend {
   type R = Any with Effect[Identity]
 
+  private val compressors: List[Compressor] = List(GZipDefaultCompressor, DeflateDefaultCompressor)
+
   override def send[T](r: GenericRequest[T, R]): Response[T] =
     adjustExceptions(r) {
+      val (body, contentLength) = Compressor.compressIfNeeded(r, compressors)
+
       val c = openConnection(r.uri)
       c.setRequestMethod(r.method.method)
-      r.headers.foreach(h => c.setRequestProperty(h.name, h.value))
+      // content-length might have changed due to compression
+      r.headers.foreach(h => if (!h.is(HeaderNames.ContentLength)) c.setRequestProperty(h.name, h.value))
+      contentLength.foreach(cl => c.setRequestProperty(HeaderNames.ContentLength, cl.toString))
       c.setDoInput(true)
       c.setReadTimeout(timeout(r.options.readTimeout))
       c.setConnectTimeout(timeout(opts.connectionTimeout))
@@ -66,7 +74,7 @@ class HttpURLConnectionBackend private (
         // we need to take care to:
         // (1) only call getOutputStream after the headers are set
         // (2) call it ony once
-        writeBody(r, c).foreach { os =>
+        writeBody(body, r, c).foreach { os =>
           os.flush()
           os.close()
         }
@@ -104,8 +112,12 @@ class HttpURLConnectionBackend private (
     conn.asInstanceOf[HttpURLConnection]
   }
 
-  private def writeBody(r: GenericRequest[_, R], c: HttpURLConnection): Option[OutputStream] =
-    r.body match {
+  private def writeBody(
+      body: GenericRequestBody[R],
+      r: GenericRequest[_, R],
+      c: HttpURLConnection
+  ): Option[OutputStream] =
+    body match {
       case NoBody =>
         // skip
         None
@@ -141,13 +153,13 @@ class HttpURLConnectionBackend private (
 
       case ByteBufferBody(b, _) =>
         val channel = Channels.newChannel(os)
-        channel.write(b)
+        val _ = channel.write(b)
 
       case InputStreamBody(b, _) =>
         transfer(b, os)
 
       case FileBody(f, _) =>
-        Files.copy(f.toPath, os)
+        val _ = Files.copy(f.toPath, os)
     }
 
   private val BoundaryChars =

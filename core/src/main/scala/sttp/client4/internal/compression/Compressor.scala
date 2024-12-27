@@ -85,6 +85,12 @@ private[client4] object DeflateDefaultCompressor extends Compressor {
 }
 
 private[client4] object Compressor {
+
+  /** Compress the request body if needed, using the given compressors.
+    * @return
+    *   The optionally compressed body (if requested via request options), or the original body; and the content lenght,
+    *   if known, of the uncompressed/compressed body.
+    */
   def compressIfNeeded[T, R](
       request: GenericRequest[T, R],
       compressors: List[Compressor]
