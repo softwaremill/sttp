@@ -10,7 +10,7 @@ import sttp.client4.compression.GZIPCompressingInputStream
 
 class GZIPCompressingInputStreamTest extends AnyFlatSpec with Matchers with ScalaCheckPropertyChecks {
   implicit override val generatorDrivenConfig =
-    PropertyCheckConfiguration(minSuccessful = 1000, minSize = 0, sizeRange = 10_000)
+    PropertyCheckConfiguration(minSuccessful = 1000, minSize = 0, sizeRange = 10000)
 
   it should "compress data correctly" in {
     forAll { (input: Array[Byte]) =>
