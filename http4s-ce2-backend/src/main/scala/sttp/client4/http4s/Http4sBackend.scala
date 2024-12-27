@@ -76,7 +76,7 @@ class Http4sBackend[F[_]: ConcurrentEffect: ContextShift](
                   responseMetadata,
                   Left(
                     onFinalizeSignal(
-                      decompressResponseBodyIfNotHead(r.method, response, r.autoDecompressionDisabled),
+                      decompressResponseBodyIfNotHead(r.method, response, r.autoDecompressionEnabled),
                       signalBodyComplete
                     )
                   )
@@ -176,9 +176,9 @@ class Http4sBackend[F[_]: ConcurrentEffect: ContextShift](
   private def decompressResponseBodyIfNotHead[T](
       m: Method,
       hr: http4s.Response[F],
-      disableAutoDecompression: Boolean
+      autoDecompressionEnabled: Boolean
   ): http4s.Response[F] =
-    if (m == Method.HEAD || disableAutoDecompression) hr else decompressResponseBody(hr)
+    if (m == Method.HEAD || !autoDecompressionEnabled) hr else decompressResponseBody(hr)
 
   private def decompressResponseBody(hr: http4s.Response[F]): http4s.Response[F] = {
     val body = hr.headers
