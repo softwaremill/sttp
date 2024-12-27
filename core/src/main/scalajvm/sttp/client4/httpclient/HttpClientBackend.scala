@@ -1,31 +1,36 @@
 package sttp.client4.httpclient
 
-import sttp.capabilities.{Effect, Streams}
+import sttp.capabilities.Effect
+import sttp.capabilities.Streams
+import sttp.client4.Backend
+import sttp.client4.BackendOptions
 import sttp.client4.BackendOptions.Proxy
+import sttp.client4.GenericBackend
+import sttp.client4.GenericRequest
+import sttp.client4.MultipartBody
+import sttp.client4.Response
+import sttp.client4.SttpClientException
 import sttp.client4.httpclient.HttpClientBackend.EncodingHandler
 import sttp.client4.internal.SttpToJavaConverters.toJavaFunction
-import sttp.client4.internal.httpclient.{BodyFromHttpClient, BodyToHttpClient, Sequencer}
-import sttp.client4.internal.ws.SimpleQueue
-import sttp.client4.{
-  Backend,
-  BackendOptions,
-  GenericBackend,
-  GenericRequest,
-  MultipartBody,
-  Response,
-  SttpClientException
-}
-import sttp.model.HttpVersion.{HTTP_1_1, HTTP_2}
+import sttp.client4.internal.httpclient.BodyFromHttpClient
+import sttp.client4.internal.httpclient.BodyToHttpClient
 import sttp.model._
+import sttp.model.HttpVersion.HTTP_1_1
+import sttp.model.HttpVersion.HTTP_2
 import sttp.monad.MonadError
 import sttp.monad.syntax._
 import sttp.ws.WebSocket
 
+import java.net.Authenticator
 import java.net.Authenticator.RequestorType
-import java.net.http.{HttpClient, HttpRequest, HttpResponse, WebSocket => JWebSocket}
-import java.net.{Authenticator, PasswordAuthentication}
+import java.net.PasswordAuthentication
+import java.net.http.HttpClient
+import java.net.http.HttpRequest
+import java.net.http.HttpResponse
+import java.net.http.{WebSocket => JWebSocket}
 import java.time.{Duration => JDuration}
-import java.util.concurrent.{Executor, ThreadPoolExecutor}
+import java.util.concurrent.Executor
+import java.util.concurrent.ThreadPoolExecutor
 import java.util.function
 import scala.collection.JavaConverters._
 
@@ -117,7 +122,7 @@ abstract class HttpClientBackend[F[_], S <: Streams[S], P, B](
       resBody.left
         .map { is =>
           encoding
-            .filterNot(e => code.equals(StatusCode.NoContent) || request.autoDecompressionDisabled || e.isEmpty)
+            .filterNot(e => code.equals(StatusCode.NoContent) || !request.autoDecompressionEnabled || e.isEmpty)
             .map(e => customEncodingHandler.applyOrElse((is, e), standardEncoding.tupled))
             .getOrElse(is)
         }
@@ -166,8 +171,8 @@ abstract class HttpClientBackend[F[_], S <: Streams[S], P, B](
   }
   override def close(): F[Unit] =
     if (closeClient) {
-      monad.eval(
-        client
+      monad.eval {
+        val _ = client
           .executor()
           .map[Unit](new function.Function[Executor, Unit] {
             override def apply(t: Executor): Unit = t match {
@@ -175,7 +180,7 @@ abstract class HttpClientBackend[F[_], S <: Streams[S], P, B](
               case _                       => ()
             }
           })
-      )
+      }
     } else {
       monad.unit(())
     }

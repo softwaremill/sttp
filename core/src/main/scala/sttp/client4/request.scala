@@ -25,7 +25,7 @@ import sttp.attributes.AttributeMap
   *   ability to send and receive streaming bodies) or [[sttp.capabilities.WebSockets]] (the ability to handle websocket
   *   requests).
   */
-trait GenericRequest[+T, -R] extends RequestBuilder[GenericRequest[T, R]] with RequestMetadata {
+sealed trait GenericRequest[+T, -R] extends RequestBuilder[GenericRequest[T, R]] with RequestMetadata {
   def body: GenericRequestBody[R]
   def response: ResponseAsDelegate[T, R]
 

@@ -63,13 +63,13 @@ class HttpClientSyncBackend private (
     val isOpen: AtomicBoolean = new AtomicBoolean(false)
     val responseCell = new ArrayBlockingQueue[Either[Throwable, () => Response[T]]](1)
 
-    def fillCellError(t: Throwable): Unit = responseCell.add(Left(t)): Unit
-    def fillCell(wr: () => Response[T]): Unit = responseCell.add(Right(wr)): Unit
+    def fillCellError(t: Throwable): Unit = { val _ = responseCell.add(Left(t)) }
+    def fillCell(wr: () => Response[T]): Unit = { val _ = responseCell.add(Right(wr)) }
 
     val listener = new DelegatingWebSocketListener(
       new AddToQueueListener(queue, isOpen),
       ws => {
-        val webSocket = new WebSocketImpl[Identity](ws, queue, isOpen, sequencer, monad, _.get(): Unit)
+        val webSocket = new WebSocketImpl[Identity](ws, queue, isOpen, sequencer, monad, cf => { val _ = cf.get() })
         val baseResponse = Response((), StatusCode.SwitchingProtocols, "", Nil, Nil, request.onlyMetadata)
         val body = () => bodyFromHttpClient(Right(webSocket), request.response, baseResponse)
         fillCell(() => baseResponse.copy(body = body()))

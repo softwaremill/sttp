@@ -14,6 +14,9 @@ import java.io.{ByteArrayInputStream, UnsupportedEncodingException}
 import java.nio.ByteBuffer
 import scala.concurrent.Future
 import scala.concurrent.duration._
+import sttp.model.Encodings
+import java.util.zip.GZIPInputStream
+import java.util.zip.InflaterInputStream
 
 trait HttpTest[F[_]]
     extends AsyncFreeSpec
@@ -462,6 +465,38 @@ trait HttpTest[F[_]]
           e shouldBe a[SttpClientException.ReadException]
           e.getCause shouldBe an[UnsupportedEncodingException]
         }
+      }
+    }
+
+    "should compress request body using gzip" in {
+      val req = basicRequest
+        .compressBody(Encodings.Gzip)
+        .response(asByteArrayAlways)
+        .post(uri"$endpoint/echo/exact")
+        .body("I'm not compressed")
+      req.send(backend).toFuture().map { resp =>
+        resp.code shouldBe StatusCode.Ok
+
+        val gzipInputStream = new GZIPInputStream(new ByteArrayInputStream(resp.body))
+        val decompressedBytes = gzipInputStream.readAllBytes()
+
+        new String(decompressedBytes) shouldBe "I'm not compressed"
+      }
+    }
+
+    "should compress request body using deflate" in {
+      val req = basicRequest
+        .compressBody(Encodings.Deflate)
+        .response(asByteArrayAlways)
+        .post(uri"$endpoint/echo/exact")
+        .body("I'm not compressed")
+      req.send(backend).toFuture().map { resp =>
+        resp.code shouldBe StatusCode.Ok
+
+        val inflaterInputStream = new InflaterInputStream(new ByteArrayInputStream(resp.body))
+        val decompressedBytes = inflaterInputStream.readAllBytes()
+
+        new String(decompressedBytes) shouldBe "I'm not compressed"
       }
     }
   }
