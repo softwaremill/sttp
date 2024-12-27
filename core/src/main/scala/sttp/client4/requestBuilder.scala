@@ -321,7 +321,8 @@ trait PartialRequestBuilder[+PR <: PartialRequestBuilder[PR, R], +R]
     * @see
     *   [[sttp.model.Encodings]]
     */
-  def compressBody(encoding: String): PR = withOptions(options.copy(compressRequestBody = Some(encoding)))
+  def compressBody(encoding: String): PR =
+    withOptions(options.copy(compressRequestBody = Some(encoding))).header(HeaderNames.ContentEncoding, encoding)
 
   /** Set the HTTP version with which this request should be sent. Supported only in a few backends. */
   def httpVersion(version: HttpVersion): PR = withOptions(options.copy(httpVersion = Some(version)))
