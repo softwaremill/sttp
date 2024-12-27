@@ -1,4 +1,4 @@
-package sttp.client4.internal.compression
+package sttp.client4.compression
 
 import java.io.{ByteArrayInputStream, IOException, InputStream}
 import java.util.zip.{CRC32, Deflater}
@@ -6,7 +6,7 @@ import java.util.zip.{CRC32, Deflater}
 // based on:
 // https://github.com/http4k/http4k/blob/master/core/core/src/main/kotlin/org/http4k/filter/Gzip.kt#L124
 // https://stackoverflow.com/questions/11036280/compress-an-inputstream-with-gzip
-private[client4] class GZIPCompressingInputStream(
+class GZIPCompressingInputStream(
     source: InputStream,
     compressionLevel: Int = java.util.zip.Deflater.DEFAULT_COMPRESSION
 ) extends InputStream {

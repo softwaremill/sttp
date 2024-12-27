@@ -1,4 +1,4 @@
-package sttp.client4.internal.compression
+package sttp.client4.compression
 
 import sttp.client4._
 import sttp.model.Encodings
@@ -10,12 +10,12 @@ import java.util.zip.DeflaterInputStream
 import java.util.zip.Deflater
 import java.io.ByteArrayOutputStream
 
-private[client4] trait Compressor[R] {
+trait Compressor[R] {
   def encoding: String
   def apply(body: GenericRequestBody[R], encoding: String): GenericRequestBody[R]
 }
 
-private[client4] class GZipDefaultCompressor[R] extends Compressor[R] {
+class GZipDefaultCompressor[R] extends Compressor[R] {
   val encoding: String = Encodings.Gzip
 
   def apply(body: GenericRequestBody[R], encoding: String): GenericRequestBody[R] =
@@ -44,7 +44,7 @@ private[client4] class GZipDefaultCompressor[R] extends Compressor[R] {
   }
 }
 
-private[client4] class DeflateDefaultCompressor[R] extends Compressor[R] {
+class DeflateDefaultCompressor[R] extends Compressor[R] {
   val encoding: String = Encodings.Deflate
 
   def apply(body: GenericRequestBody[R], encoding: String): GenericRequestBody[R] =

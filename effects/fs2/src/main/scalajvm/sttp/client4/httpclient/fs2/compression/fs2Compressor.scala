@@ -1,7 +1,6 @@
 package sttp.client4.httpclient.fs2.compression
 
 import sttp.client4._
-import sttp.client4.internal.compression._
 import sttp.client4.GenericRequestBody
 import fs2._
 import fs2.compression.Compression
@@ -10,6 +9,7 @@ import fs2.io.file.Files
 import cats.effect.Sync
 import sttp.capabilities.fs2.Fs2Streams
 import fs2.compression.DeflateParams
+import sttp.client4.compression.{Compressor, DeflateDefaultCompressor, GZipDefaultCompressor}
 
 trait Fs2Compressor[F[_], R <: Fs2Streams[F]] extends Compressor[R] {
   protected val fSync: Sync[F]
