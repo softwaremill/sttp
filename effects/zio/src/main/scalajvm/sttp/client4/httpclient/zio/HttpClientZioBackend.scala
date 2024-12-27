@@ -10,7 +10,6 @@ import sttp.client4.internal._
 import sttp.client4.internal.httpclient.{BodyFromHttpClient, BodyToHttpClient, Sequencer}
 import sttp.client4.internal.ws.SimpleQueue
 import sttp.client4.testing.WebSocketStreamBackendStub
-import sttp.client4.wrappers.FollowRedirectsBackend
 import sttp.client4.{wrappers, BackendOptions, GenericRequest, Response, WebSocketStreamBackend}
 import sttp.monad.MonadError
 import zio.Chunk.ByteArray
@@ -25,6 +24,7 @@ import java.nio.ByteBuffer
 import java.util
 import java.util.concurrent.Flow.Publisher
 import java.{util => ju}
+import sttp.client4.compression.Compressor
 
 class HttpClientZioBackend private (
     client: HttpClient,
@@ -58,10 +58,11 @@ class HttpClientZioBackend private (
       ByteArray(a, 0, a.length)
     }
 
-  override protected val bodyToHttpClient: BodyToHttpClient[Task, ZioStreams] =
-    new BodyToHttpClient[Task, ZioStreams] {
+  override protected val bodyToHttpClient: BodyToHttpClient[Task, ZioStreams, R] =
+    new BodyToHttpClient[Task, ZioStreams, R] {
       override val streams: ZioStreams = ZioStreams
       override implicit def monad: MonadError[Task] = self.monad
+      override def compressors: List[Compressor[R]] = List(new GZipZioCompressor[R](), new DeflateZioCompressor[R]())
       override def streamToPublisher(stream: ZStream[Any, Throwable, Byte]): Task[BodyPublisher] = {
         import _root_.zio.interop.reactivestreams.{streamToPublisher => zioStreamToPublisher}
         val publisher = stream.mapChunks(byteChunk => Chunk(ByteBuffer.wrap(byteChunk.toArray))).toPublisher
@@ -88,7 +89,7 @@ class HttpClientZioBackend private (
   override protected def standardEncoding: (ZStream[Any, Throwable, Byte], String) => ZStream[Any, Throwable, Byte] = {
     case (body, "gzip") => body.via(ZPipeline.gunzip())
     case (body, "deflate") =>
-      ZStream.scoped(body.peel(ZSink.take[Byte](1))).flatMap { case (chunk, stream) =>
+      ZStream.scoped[Any](body.peel(ZSink.take[Byte](1))).flatMap { case (chunk, stream) =>
         val wrapped = chunk.headOption.exists(byte => (byte & 0x0f) == 0x08)
         (ZStream.fromChunk(chunk) ++ stream).via(ZPipeline.inflate(noWrap = !wrapped))
       }

@@ -1,4 +1,4 @@
-package sttp.client4.httpclient.fs2.compression
+package sttp.client4.httpclient.fs2
 
 import sttp.client4._
 import sttp.client4.GenericRequestBody
@@ -17,12 +17,11 @@ trait Fs2Compressor[F[_], R <: Fs2Streams[F]] extends Compressor[R] {
 
   override abstract def apply(body: GenericRequestBody[R], encoding: String): GenericRequestBody[R] =
     body match {
-      case InputStreamBody(b, defaultContentType) =>
+      case InputStreamBody(b, _) =>
         StreamBody(Fs2Streams[F])(compressStream(fs2.io.readInputStream(b.pure[F](fSync), 1024)(fSync)))
-      case StreamBody(b) => StreamBody(Fs2Streams[F])(compressStream(b.asInstanceOf[fs2.Stream[F, Byte]]))
-      case FileBody(f, defaultContentType) =>
-        StreamBody(Fs2Streams[F])(compressStream(Files[F](fFiles).readAll(f.toPath, 1024)))
-      case _ => super.apply(body, encoding)
+      case StreamBody(b)  => StreamBody(Fs2Streams[F])(compressStream(b.asInstanceOf[fs2.Stream[F, Byte]]))
+      case FileBody(f, _) => StreamBody(Fs2Streams[F])(compressStream(Files[F](fFiles).readAll(f.toPath, 1024)))
+      case _              => super.apply(body, encoding)
     }
 
   def compressStream(stream: fs2.Stream[F, Byte]): fs2.Stream[F, Byte]
