@@ -10,7 +10,8 @@ case class RequestOptions(
     readTimeout: Duration,
     maxRedirects: Int,
     redirectToGet: Boolean,
-    disableAutoDecompression: Boolean,
+    decompressResponseBody: Boolean,
+    compressRequestBody: Option[String],
     httpVersion: Option[HttpVersion],
     loggingOptions: LoggingOptions
 )

@@ -134,15 +134,15 @@ class PekkoHttpBackend private (
     val body = bodyFromPekko(
       r.response,
       responseMetadata,
-      wsFlow.map(Right(_)).getOrElse(Left(decodePekkoResponse(hr, r.autoDecompressionDisabled)))
+      wsFlow.map(Right(_)).getOrElse(Left(decodePekkoResponse(hr, r.autoDecompressionEnabled)))
     )
 
     body.map(client4.Response(_, code, statusText, headers, Nil, r.onlyMetadata))
   }
 
   // http://doc.akka.io/docs/akka-http/10.0.7/scala/http/common/de-coding.html
-  private def decodePekkoResponse(response: HttpResponse, disableAutoDecompression: Boolean): HttpResponse =
-    if (!response.status.allowsEntity() || disableAutoDecompression) response
+  private def decodePekkoResponse(response: HttpResponse, enableAutoDecompression: Boolean): HttpResponse =
+    if (!response.status.allowsEntity() || !enableAutoDecompression) response
     else customEncodingHandler.orElse(EncodingHandler(standardEncoding)).apply(response -> response.encoding)
 
   private def standardEncoding: (HttpResponse, HttpEncoding) => HttpResponse = {

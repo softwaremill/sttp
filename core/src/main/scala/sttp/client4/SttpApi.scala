@@ -31,7 +31,8 @@ trait SttpApi extends SttpExtensions with UriInterpolator {
         DefaultReadTimeout,
         FollowRedirectsBackend.MaxRedirects,
         redirectToGet = false,
-        disableAutoDecompression = false,
+        decompressResponseBody = true,
+        compressRequestBody = None,
         httpVersion = None,
         loggingOptions = LoggingOptions()
       ),

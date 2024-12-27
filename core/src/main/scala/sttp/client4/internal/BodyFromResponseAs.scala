@@ -26,7 +26,7 @@ abstract class BodyFromResponseAs[F[_], RegularResponse, WSResponse, Stream](imp
           m.eval(g(result, meta)).map((_, replayableBody))
         }
 
-      case (rfm: ResponseAsFromMetadata[T, _], _) => doApply(rfm(meta), meta, response)
+      case (rfm: ResponseAsFromMetadata[T, _] @unchecked, _) => doApply(rfm(meta), meta, response)
 
       case (ResponseAsBoth(l, r), _) =>
         doApply(l, meta, response).flatMap {

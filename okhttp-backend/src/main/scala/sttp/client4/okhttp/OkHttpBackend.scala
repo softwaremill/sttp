@@ -85,7 +85,7 @@ abstract class OkHttpBackend[F[_], S <: Streams[S], P](
       if (
         method != Method.HEAD && !res
           .code()
-          .equals(StatusCode.NoContent.code) && !request.autoDecompressionDisabled
+          .equals(StatusCode.NoContent.code) && request.autoDecompressionEnabled
       ) {
         encoding
           .filterNot(_.isEmpty)

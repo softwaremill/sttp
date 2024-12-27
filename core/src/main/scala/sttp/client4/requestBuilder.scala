@@ -301,15 +301,27 @@ trait PartialRequestBuilder[+PR <: PartialRequestBuilder[PR, R], +R]
     */
   def redirectToGet(r: Boolean): PR = withOptions(options.copy(redirectToGet = r))
 
-  /** Disables auto-decompression of response bodies which are received with supported `Content-Encoding headers. */
-  def disableAutoDecompression: PR = withOptions(options.copy(disableAutoDecompression = true))
+  /** Disables auto-decompression of response bodies which are received with supported `Content-Encoding` headers. */
+  def disableAutoDecompression: PR = withOptions(options.copy(decompressResponseBody = false))
 
-  /** True iff auto-decompression is disabled.
+  /** True iff auto-decompression is enabled (which is the default).
     *
     * @see
     *   disableAutoDecompression
     */
-  def autoDecompressionDisabled: Boolean = options.disableAutoDecompression
+  def autoDecompressionEnabled: Boolean = options.decompressResponseBody
+
+  /** Compress the request body with the given encoding.
+    *
+    * The backend must support the encoding, otherwise an exception is thrown / a failed effect is returned. All
+    * backends support the [[sttp.model.Encodings.Gzip]] and [[sttp.model.Encodings.Deflate]] encodings.
+    *
+    * Note that the server might not support compressed bodies. By default request bodies are not compressed.
+    *
+    * @see
+    *   [[sttp.model.Encodings]]
+    */
+  def compressBody(encoding: String): PR = withOptions(options.copy(compressRequestBody = Some(encoding)))
 
   /** Set the HTTP version with which this request should be sent. Supported only in a few backends. */
   def httpVersion(version: HttpVersion): PR = withOptions(options.copy(httpVersion = Some(version)))

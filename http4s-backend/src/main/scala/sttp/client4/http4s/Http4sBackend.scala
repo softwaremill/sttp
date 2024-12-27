@@ -74,7 +74,7 @@ class Http4sBackend[F[_]: Async](
                   responseMetadata,
                   Left(
                     onFinalizeSignal(
-                      decompressResponseBodyIfNotHead(r.method, response, r.autoDecompressionDisabled),
+                      decompressResponseBodyIfNotHead(r.method, response, r.autoDecompressionEnabled),
                       signalBodyComplete
                     )
                   )
@@ -178,9 +178,9 @@ class Http4sBackend[F[_]: Async](
   private def decompressResponseBodyIfNotHead[T](
       m: Method,
       hr: http4s.Response[F],
-      disableAutoDecompression: Boolean
+      enableAutoDecompression: Boolean
   ): http4s.Response[F] =
-    if (m == Method.HEAD || disableAutoDecompression) hr else decompressResponseBody(hr)
+    if (m == Method.HEAD || !enableAutoDecompression) hr else decompressResponseBody(hr)
 
   private def decompressResponseBody(hr: http4s.Response[F]): http4s.Response[F] = {
     val body = hr.headers
