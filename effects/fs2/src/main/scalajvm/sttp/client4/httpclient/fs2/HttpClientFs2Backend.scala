@@ -29,6 +29,7 @@ import java.util.concurrent.Flow.Publisher
 import java.{util => ju}
 import scala.collection.JavaConverters._
 import sttp.client4.compression.Compressor
+import sttp.client4.impl.fs2.{DeflateFs2Compressor, GZipFs2Compressor}
 
 class HttpClientFs2Backend[F[_]: Async] private (
     client: HttpClient,

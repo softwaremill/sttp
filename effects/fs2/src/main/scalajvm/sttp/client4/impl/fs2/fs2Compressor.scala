@@ -1,4 +1,4 @@
-package sttp.client4.httpclient.fs2
+package sttp.client4.impl.fs2
 
 import sttp.client4._
 import sttp.client4.GenericRequestBody

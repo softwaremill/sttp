@@ -25,6 +25,7 @@ import sttp.client4.testing.StreamBackendStub
 import sttp.client4.ws.{GotAWebSocketException, NotAWebSocketException}
 import sttp.client4._
 import sttp.client4.wrappers.FollowRedirectsBackend
+import sttp.client4.compression.{Compressor, DeflateDefaultCompressor, GZipDefaultCompressor}
 
 import scala.concurrent.ExecutionContext
 
@@ -35,16 +36,32 @@ class Http4sBackend[F[_]: ConcurrentEffect: ContextShift](
     customEncodingHandler: EncodingHandler[F]
 ) extends StreamBackend[F, Fs2Streams[F]] {
   type R = Fs2Streams[F] with sttp.capabilities.Effect[F]
+
+  private val compressors: List[Compressor[R]] = List(new GZipDefaultCompressor[R](), new DeflateDefaultCompressor[R]())
+
   override def send[T](r: GenericRequest[T, R]): F[Response[T]] =
     adjustExceptions(r) {
-      val (entity, extraHeaders) = bodyToHttp4s(r, r.body)
+      val (body, contentLength) = Compressor.compressIfNeeded(r, compressors)
+      val (entity, extraHeaders) = bodyToHttp4s(body, contentLength)
+      val headers =
+        http4s.Headers {
+          val nonClHeaders = r.headers
+            .filterNot(_.is(HeaderNames.ContentLength))
+            .map(h => http4s.Header.Raw(CIString(h.name), h.value))
+            .toList
+
+          val clHeader = contentLength
+            .map(cl => http4s.Header.Raw(CIString(HeaderNames.ContentLength), cl.toString))
+
+          nonClHeaders ++ clHeader
+        } ++ extraHeaders
+
       val request = r.httpVersion match {
         case Some(version) =>
           Http4sRequest(
             method = methodToHttp4s(r.method),
             uri = http4s.Uri.unsafeFromString(r.uri.toString),
-            headers =
-              http4s.Headers(r.headers.map(h => http4s.Header.Raw(CIString(h.name), h.value)).toList) ++ extraHeaders,
+            headers = headers,
             body = entity.body,
             httpVersion = versionToHttp4s(version)
           )
@@ -52,8 +69,7 @@ class Http4sBackend[F[_]: ConcurrentEffect: ContextShift](
           Http4sRequest(
             method = methodToHttp4s(r.method),
             uri = http4s.Uri.unsafeFromString(r.uri.toString),
-            headers =
-              http4s.Headers(r.headers.map(h => http4s.Header.Raw(CIString(h.name), h.value)).toList) ++ extraHeaders,
+            headers = headers,
             body = entity.body
           )
       }
@@ -138,17 +154,17 @@ class Http4sBackend[F[_]: ConcurrentEffect: ContextShift](
         http4s.EntityEncoder.fileEncoder(blocker).toEntity(b.toFile)
     }
 
-  private def bodyToHttp4s(r: GenericRequest[_, R], body: GenericRequestBody[R]): (http4s.Entity[F], http4s.Headers) =
+  private def bodyToHttp4s(
+      body: GenericRequestBody[R],
+      contentLength: Option[Long]
+  ): (http4s.Entity[F], http4s.Headers) =
     body match {
       case NoBody => (http4s.Entity(http4s.EmptyBody: http4s.EntityBody[F]), http4s.Headers.empty)
 
       case b: BasicBodyPart => (basicBodyToHttp4s(b), http4s.Headers.empty)
 
       case StreamBody(s) =>
-        val cl = r.headers
-          .find(_.is(HeaderNames.ContentLength))
-          .map(_.value.toLong)
-        (http4s.Entity(s.asInstanceOf[Stream[F, Byte]], cl), http4s.Headers.empty)
+        (http4s.Entity(s.asInstanceOf[Stream[F, Byte]], contentLength), http4s.Headers.empty)
 
       case m: MultipartBody[_] =>
         val parts = m.parts.toVector.map(multipartToHttp4s)
