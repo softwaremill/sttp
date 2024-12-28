@@ -3,7 +3,7 @@ package sttp.client4.internal.httpclient
 import sttp.capabilities.Streams
 import sttp.client4.internal.SttpToJavaConverters.toJavaSupplier
 import sttp.client4.internal.{throwNestedMultipartNotAllowed, Utf8}
-import sttp.client4.compression.{Compressor, DeflateDefaultCompressor, GZipDefaultCompressor}
+import sttp.client4.compression.Compressor
 import sttp.client4._
 import sttp.model.{Header, HeaderNames, Part}
 import sttp.monad.MonadError
@@ -52,7 +52,7 @@ private[client4] trait BodyToHttpClient[F[_], S, R] {
 
   def streamToPublisher(stream: streams.BinaryStream): F[BodyPublisher]
 
-  def compressors: List[Compressor[R]] = List(new GZipDefaultCompressor(), new DeflateDefaultCompressor())
+  def compressors: List[Compressor[R]] = Compressor.default[R]
 
   private def multipartBody[T](parts: Seq[Part[GenericRequestBody[_]]]) = {
     val multipartBuilder = new MultiPartBodyPublisher()

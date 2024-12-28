@@ -40,8 +40,6 @@ import sttp.model._
 import sttp.monad.syntax._
 import sttp.monad.{Canceler, MonadAsyncError}
 import sttp.client4.compression.Compressor
-import sttp.client4.compression.GZipDefaultCompressor
-import sttp.client4.compression.DeflateDefaultCompressor
 
 abstract class AbstractArmeriaBackend[F[_], S <: Streams[S]](
     client: WebClient = WebClient.of(),
@@ -57,7 +55,7 @@ abstract class AbstractArmeriaBackend[F[_], S <: Streams[S]](
 
   protected def streamToPublisher(stream: streams.BinaryStream): Publisher[HttpData]
 
-  protected def compressors: List[Compressor[R]] = List(new GZipDefaultCompressor(), new DeflateDefaultCompressor())
+  protected def compressors: List[Compressor[R]] = Compressor.default[R]
 
   override def send[T](request: GenericRequest[T, R]): F[Response[T]] =
     monad.suspend(adjustExceptions(request)(execute(request)))

@@ -1,4 +1,4 @@
-package sttp.client4.internal.compression
+package sttp.client4.compression
 
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
@@ -6,7 +6,6 @@ import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 
 import java.io.ByteArrayInputStream
 import java.util.zip.GZIPInputStream
-import sttp.client4.compression.GZIPCompressingInputStream
 
 class GZIPCompressingInputStreamTest extends AnyFlatSpec with Matchers with ScalaCheckPropertyChecks {
   implicit override val generatorDrivenConfig =

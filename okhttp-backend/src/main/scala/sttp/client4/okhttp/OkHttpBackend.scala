@@ -23,8 +23,6 @@ import sttp.model._
 
 import scala.collection.JavaConverters._
 import sttp.client4.compression.Compressor
-import sttp.client4.compression.DeflateDefaultCompressor
-import sttp.client4.compression.GZipDefaultCompressor
 
 abstract class OkHttpBackend[F[_], S <: Streams[S], P](
     client: OkHttpClient,
@@ -36,7 +34,7 @@ abstract class OkHttpBackend[F[_], S <: Streams[S], P](
   val streams: Streams[S]
   type R = P with Effect[F]
 
-  private val compressors: List[Compressor[R]] = List(new GZipDefaultCompressor(), new DeflateDefaultCompressor)
+  private val compressors: List[Compressor[R]] = Compressor.default[R]
 
   override def send[T](request: GenericRequest[T, R]): F[Response[T]] =
     adjustExceptions(request.isWebSocket, request) {

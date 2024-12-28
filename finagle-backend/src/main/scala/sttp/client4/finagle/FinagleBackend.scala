@@ -82,7 +82,7 @@ class FinagleBackend(client: Option[Client] = None) extends Backend[TFuture] {
     val url = r.uri.toString
     val (body, contentLength) = Compressor.compressIfNeeded(r, compressors)
     val headers = {
-      val hh = headersToMap(r.headers).removed(HeaderNames.ContentLength)
+      val hh = headersToMap(r.headers) - HeaderNames.ContentLength
       contentLength.fold(hh)(cl => hh.updated(HeaderNames.ContentLength, cl.toString))
     }
 

@@ -3,7 +3,7 @@ package sttp.client4.httpurlconnection
 import sttp.capabilities.Effect
 import sttp.client4.httpurlconnection.HttpURLConnectionBackend.EncodingHandler
 import sttp.client4.internal._
-import sttp.client4.compression.{Compressor, DeflateDefaultCompressor, GZipDefaultCompressor}
+import sttp.client4.compression.Compressor
 import sttp.client4.testing.SyncBackendStub
 import sttp.client4.ws.{GotAWebSocketException, NotAWebSocketException}
 import sttp.client4.{
@@ -49,7 +49,7 @@ class HttpURLConnectionBackend private (
 ) extends SyncBackend {
   type R = Any with Effect[Identity]
 
-  private val compressors: List[Compressor[R]] = List(new GZipDefaultCompressor(), new DeflateDefaultCompressor())
+  private val compressors: List[Compressor[R]] = Compressor.default[R]
 
   override def send[T](r: GenericRequest[T, R]): Response[T] =
     adjustExceptions(r) {
