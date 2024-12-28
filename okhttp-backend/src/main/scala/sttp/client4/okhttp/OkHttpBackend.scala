@@ -22,6 +22,9 @@ import sttp.client4._
 import sttp.model._
 
 import scala.collection.JavaConverters._
+import sttp.client4.compression.Compressor
+import sttp.client4.compression.DeflateDefaultCompressor
+import sttp.client4.compression.GZipDefaultCompressor
 
 abstract class OkHttpBackend[F[_], S <: Streams[S], P](
     client: OkHttpClient,
@@ -32,6 +35,8 @@ abstract class OkHttpBackend[F[_], S <: Streams[S], P](
 
   val streams: Streams[S]
   type R = P with Effect[F]
+
+  protected val compressors: List[Compressor[R]] = List(new GZipDefaultCompressor(), new DeflateDefaultCompressor)
 
   override def send[T](request: GenericRequest[T, R]): F[Response[T]] =
     adjustExceptions(request.isWebSocket, request) {
@@ -54,7 +59,8 @@ abstract class OkHttpBackend[F[_], S <: Streams[S], P](
     val builder = new OkHttpRequest.Builder()
       .url(request.uri.toString)
 
-    val body = bodyToOkHttp(request.body, request.contentType, request.contentLength)
+    val (maybeCompressedBody, contentLength) = Compressor.compressIfNeeded(request, compressors)
+    val body = bodyToOkHttp(maybeCompressedBody, request.contentType, contentLength)
     builder.method(
       request.method.method,
       body.getOrElse {
@@ -64,7 +70,13 @@ abstract class OkHttpBackend[F[_], S <: Streams[S], P](
       }
     )
 
-    request.headers.foreach(header => builder.addHeader(header.name, header.value))
+    // the content-length header's value might have changed due to compression
+    request.headers.foreach(header =>
+      if (!header.is(HeaderNames.ContentLength)) {
+        val _ = builder.addHeader(header.name, header.value)
+      }
+    )
+    contentLength.foreach(cl => builder.addHeader(HeaderNames.ContentLength, cl.toString))
 
     builder.build()
   }
