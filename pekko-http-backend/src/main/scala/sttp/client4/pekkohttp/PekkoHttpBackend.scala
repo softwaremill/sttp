@@ -1,21 +1,19 @@
 package sttp.client4.pekkohttp
 
 import java.io.UnsupportedEncodingException
-import org.apache.pekko
-import pekko.{Done, NotUsed}
-import pekko.actor.{ActorSystem, CoordinatedShutdown}
-import pekko.event.LoggingAdapter
-import pekko.http.scaladsl.coding.Coders
-import pekko.http.scaladsl.model.headers.{BasicHttpCredentials, HttpEncoding, HttpEncodings}
-import pekko.http.scaladsl.model.ws.{InvalidUpgradeResponse, Message, ValidUpgrade, WebSocketRequest}
-import pekko.http.scaladsl.model.{StatusCode => _, _}
-import pekko.http.scaladsl.settings.ConnectionPoolSettings
-import pekko.http.scaladsl.{ClientTransport, Http, HttpsConnectionContext}
-import pekko.stream.Materializer
-import pekko.stream.scaladsl.{Flow, Sink}
+import org.apache.pekko.{Done, NotUsed}
+import org.apache.pekko.actor.{ActorSystem, CoordinatedShutdown}
+import org.apache.pekko.event.LoggingAdapter
+import org.apache.pekko.http.scaladsl.coding.Coders
+import org.apache.pekko.http.scaladsl.model.headers.{BasicHttpCredentials, HttpEncoding, HttpEncodings}
+import org.apache.pekko.http.scaladsl.model.ws.{InvalidUpgradeResponse, Message, ValidUpgrade, WebSocketRequest}
+import org.apache.pekko.http.scaladsl.model.{StatusCode => _, _}
+import org.apache.pekko.http.scaladsl.settings.ConnectionPoolSettings
+import org.apache.pekko.http.scaladsl.{ClientTransport, Http, HttpsConnectionContext}
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.{Flow, Sink}
 import sttp.capabilities.pekko.PekkoStreams
 import sttp.capabilities.{Effect, WebSockets}
-import sttp.client4
 import sttp.client4.pekkohttp.PekkoHttpBackend.EncodingHandler
 import sttp.client4.testing.WebSocketStreamBackendStub
 import sttp.client4._
@@ -51,9 +49,11 @@ class PekkoHttpBackend private (
       if (r.isWebSocket) sendWebSocket(r) else sendRegular(r)
     }
 
+  private val compressors = List(new GZipPekkoCompressor, new DeflatePekkoCompressor)
+
   private def sendRegular[T](r: GenericRequest[T, R]): Future[Response[T]] =
     Future
-      .fromTry(ToPekko.request(r).flatMap(BodyToPekko(r, r.body, _)))
+      .fromTry(ToPekko.request(r).flatMap(BodyToPekko(r, _, compressors)))
       .map(customizeRequest)
       .flatMap(request =>
         http
@@ -137,7 +137,7 @@ class PekkoHttpBackend private (
       wsFlow.map(Right(_)).getOrElse(Left(decodePekkoResponse(hr, r.autoDecompressionEnabled)))
     )
 
-    body.map(client4.Response(_, code, statusText, headers, Nil, r.onlyMetadata))
+    body.map(sttp.client4.Response(_, code, statusText, headers, Nil, r.onlyMetadata))
   }
 
   // http://doc.akka.io/docs/akka-http/10.0.7/scala/http/common/de-coding.html

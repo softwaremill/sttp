@@ -14,7 +14,6 @@ import akka.stream.Materializer
 import akka.stream.scaladsl.{Flow, Sink}
 import sttp.capabilities.akka.AkkaStreams
 import sttp.capabilities.{Effect, WebSockets}
-import sttp.client4
 import sttp.client4.akkahttp.AkkaHttpBackend.EncodingHandler
 import sttp.client4.testing.WebSocketStreamBackendStub
 import sttp.client4._
@@ -50,9 +49,11 @@ class AkkaHttpBackend private (
       if (r.isWebSocket) sendWebSocket(r) else sendRegular(r)
     }
 
+  private val compressors = List(new GZipAkkaCompressor, new DeflateAkkaCompressor)
+
   private def sendRegular[T](r: GenericRequest[T, R]): Future[Response[T]] =
     Future
-      .fromTry(ToAkka.request(r).flatMap(BodyToAkka(r, r.body, _)))
+      .fromTry(ToAkka.request(r).flatMap(BodyToAkka(r, _, compressors)))
       .map(customizeRequest)
       .flatMap(request =>
         http
@@ -136,7 +137,7 @@ class AkkaHttpBackend private (
       wsFlow.map(Right(_)).getOrElse(Left(decodeAkkaResponse(hr, r.autoDecompressionEnabled)))
     )
 
-    body.map(client4.Response(_, code, statusText, headers, Nil, r.onlyMetadata))
+    body.map(sttp.client4.Response(_, code, statusText, headers, Nil, r.onlyMetadata))
   }
 
   // http://doc.akka.io/docs/akka-http/10.0.7/scala/http/common/de-coding.html
