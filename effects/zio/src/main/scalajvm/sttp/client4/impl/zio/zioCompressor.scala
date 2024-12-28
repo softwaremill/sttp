@@ -1,4 +1,4 @@
-package sttp.client4.httpclient.zio
+package sttp.client4.impl.zio
 
 import sttp.client4._
 import sttp.client4.compression.Compressor

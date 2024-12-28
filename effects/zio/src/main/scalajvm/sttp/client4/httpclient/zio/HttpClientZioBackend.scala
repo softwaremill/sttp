@@ -25,6 +25,7 @@ import java.util
 import java.util.concurrent.Flow.Publisher
 import java.{util => ju}
 import sttp.client4.compression.Compressor
+import sttp.client4.impl.zio.{DeflateZioCompressor, GZipZioCompressor}
 
 class HttpClientZioBackend private (
     client: HttpClient,
