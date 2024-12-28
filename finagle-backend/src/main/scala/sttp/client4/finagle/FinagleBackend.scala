@@ -24,11 +24,17 @@ import sttp.model.HttpVersion.HTTP_1
 import sttp.model._
 import sttp.monad.MonadError
 import sttp.monad.syntax._
+import sttp.client4.compression.Compressor
+import sttp.client4.compression.DeflateDefaultCompressor
+import sttp.client4.compression.GZipDefaultCompressor
 
 import scala.io.Source
 
 class FinagleBackend(client: Option[Client] = None) extends Backend[TFuture] {
   type R = Any with Effect[TFuture]
+
+  private val compressors: List[Compressor[R]] = List(new GZipDefaultCompressor(), new DeflateDefaultCompressor)
+
   override def send[T](request: GenericRequest[T, R]): TFuture[Response[T]] =
     adjustExceptions(request) {
       val service = getClient(client, request)
@@ -71,12 +77,16 @@ class FinagleBackend(client: Option[Client] = None) extends Backend[TFuture] {
       case _              => FMethod(m.method)
     }
 
-  private def requestBodyToFinagle(r: GenericRequest[_, Nothing]): http.Request = {
+  private def requestBodyToFinagle(r: GenericRequest[_, R]): http.Request = {
     val finagleMethod = methodToFinagle(r.method)
     val url = r.uri.toString
-    val headers = headersToMap(r.headers)
+    val (body, contentLength) = Compressor.compressIfNeeded(r, compressors)
+    val headers = {
+      val hh = headersToMap(r.headers).removed(HeaderNames.ContentLength)
+      contentLength.fold(hh)(cl => hh.updated(HeaderNames.ContentLength, cl.toString))
+    }
 
-    r.body match {
+    body match {
       case FileBody(f, _) =>
         val content: String = Source.fromFile(f.toFile).mkString
         buildRequest(url, headers, finagleMethod, Some(ByteArray(content.getBytes: _*)), r.httpVersion)

@@ -36,7 +36,7 @@ abstract class OkHttpBackend[F[_], S <: Streams[S], P](
   val streams: Streams[S]
   type R = P with Effect[F]
 
-  protected val compressors: List[Compressor[R]] = List(new GZipDefaultCompressor(), new DeflateDefaultCompressor)
+  private val compressors: List[Compressor[R]] = List(new GZipDefaultCompressor(), new DeflateDefaultCompressor)
 
   override def send[T](request: GenericRequest[T, R]): F[Response[T]] =
     adjustExceptions(request.isWebSocket, request) {
