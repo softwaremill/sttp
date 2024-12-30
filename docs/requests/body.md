@@ -106,3 +106,13 @@ basicRequest.body(serializePerson(Person("mary", "smith", 67)))
 ```
 
 See the implementations of the `BasicBody` trait for more options.
+
+## Compressing bodies
+
+Request bodies can be compressed, using an algorithm that's supported by the backend. By default, all backends support the `gzip` and `deflate` compression algorithms.
+
+To compress a request body, use the `request.compressBody(encoding)` method. This will set the the `Content-Encoding` header on the request, as well as compress the body when the request is sent. If the given encoding is not supported by the backend, an exception will be thrown / a failed effect will be returned.
+
+Support for custom compression algorithms can be added at backend creation time, by customising the `compressionHandlers` parameter, and adding a `Compressor` implementation. Such an implementation has to specify the encoding, which it handles, as well as appropriate body transformation (which is backend-specific).
+
+Note that clients often don't know upfront which compression algorithms (if at all) the server supports, and that's why requests are often sent uncompressed. Sending an encoded (compressed) body, when the server doesn't support decompression, might lead to 4xx or 5xx errors.
