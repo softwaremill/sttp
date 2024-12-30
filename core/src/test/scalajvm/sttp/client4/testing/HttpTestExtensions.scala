@@ -234,6 +234,25 @@ trait HttpTestExtensions[F[_]] extends AsyncFreeSpecLike { self: HttpTest[F] =>
         new String(decompressedBytes) shouldBe "I'm not compressed"
       }
     }
+
+    "should compress a file-based request body using gzip" in {
+      val testFileContent = "test file content"
+      withTemporaryFile(Some(testFileContent.getBytes())) { file =>
+        val req = basicRequest
+          .compressBody(Encodings.Gzip)
+          .response(asByteArrayAlways)
+          .post(uri"$endpoint/echo/exact")
+          .body(file)
+        req.send(backend).toFuture().map { resp =>
+          resp.code shouldBe StatusCode.Ok
+
+          val gzipInputStream = new GZIPInputStream(new ByteArrayInputStream(resp.body))
+          val decompressedBytes = gzipInputStream.readAllBytes()
+
+          new String(decompressedBytes) shouldBe testFileContent
+        }
+      }
+    }
   }
 
   private def withTemporaryFile[T](content: Option[Array[Byte]])(f: File => Future[T]): Future[T] = {
