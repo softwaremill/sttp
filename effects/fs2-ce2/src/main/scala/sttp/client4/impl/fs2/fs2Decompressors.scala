@@ -17,9 +17,12 @@ class GZipFs2Decompressor[F[_]: Sync] extends Decompressor[Stream[F, Byte]] {
 
 class DeflateFs2Decompressor[F[_]: Sync] extends Decompressor[Stream[F, Byte]] {
   override val encoding: String = Encodings.Deflate
-  override def apply(body: Stream[F, Byte]): Stream[F, Byte] = body.through(inflateCheckHeader[F])
+  override def apply(body: Stream[F, Byte]): Stream[F, Byte] =
+    body.through(DeflateFs2Decompressor.inflateCheckHeader[F])
+}
 
-  private def inflateCheckHeader[F[_]: Sync]: Pipe[F, Byte, Byte] = stream =>
+object DeflateFs2Decompressor {
+  def inflateCheckHeader[F[_]: Sync]: Pipe[F, Byte, Byte] = stream =>
     stream.pull.uncons1
       .flatMap {
         case None                 => Pull.done

@@ -43,8 +43,7 @@ private final class ArmeriaZioBackend(runtime: Runtime[Any], client: WebClient, 
         .getOrThrowFiberFailure()
     }
 
-  override protected def compressors: List[Compressor[R]] =
-    List(new GZipZioCompressor[R](), new DeflateZioCompressor[R]())
+  override protected def compressors: List[Compressor[R]] = List(GZipZioCompressor, DeflateZioCompressor)
 }
 
 object ArmeriaZioBackend {
