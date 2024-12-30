@@ -4,7 +4,6 @@ import cats.effect.kernel.{Async, Resource, Sync}
 import cats.effect.std.{Dispatcher, Queue}
 import cats.implicits.{toFlatMapOps, toFunctorOps}
 import sttp.client4.httpclient.{HttpClientAsyncBackend, HttpClientBackend}
-import sttp.client4.httpclient.HttpClientBackend.EncodingHandler
 import sttp.client4.impl.cats.CatsMonadAsyncError
 import sttp.client4.internal.httpclient._
 import sttp.client4.internal.ws.SimpleQueue
@@ -20,19 +19,23 @@ import java.net.http.HttpRequest.BodyPublisher
 import java.net.http.HttpResponse.BodyHandlers
 import java.net.http.{HttpClient, HttpRequest, HttpResponse}
 import java.util.zip.{GZIPInputStream, InflaterInputStream}
+import sttp.client4.compression.CompressionHandlers
+import sttp.client4.compression.Compressor
+import sttp.client4.compression.GZipInputStreamDecompressor
+import sttp.client4.compression.DeflateInputStreamDecompressor
 
 class HttpClientCatsBackend[F[_]: Async] private (
     client: HttpClient,
     closeClient: Boolean,
     customizeRequest: HttpRequest => HttpRequest,
-    customEncodingHandler: EncodingHandler[InputStream],
+    compressionHandlers: CompressionHandlers[Any, InputStream],
     dispatcher: Dispatcher[F]
 ) extends HttpClientAsyncBackend[F, Nothing, InputStream, InputStream](
       client,
       new CatsMonadAsyncError[F],
       closeClient,
       customizeRequest,
-      customEncodingHandler
+      compressionHandlers
     ) { self =>
 
   override protected def createSimpleQueue[T]: F[SimpleQueue[F, T]] =
@@ -45,6 +48,7 @@ class HttpClientCatsBackend[F[_]: Async] private (
     override implicit val monad: MonadError[F] = self.monad
 
     override def streamToPublisher(stream: Nothing): F[BodyPublisher] = stream // nothing is everything
+    override def compressors: List[Compressor[R]] = compressionHandlers.compressors
   }
 
   override protected def bodyFromHttpClient: BodyFromHttpClient[F, Nothing, InputStream] =
@@ -60,12 +64,6 @@ class HttpClientCatsBackend[F[_]: Async] private (
       ): F[Unit] = pipe
     }
 
-  override protected def standardEncoding: (InputStream, String) => InputStream = {
-    case (body, "gzip")    => new GZIPInputStream(body)
-    case (body, "deflate") => new InflaterInputStream(body)
-    case (_, ce)           => throw new UnsupportedEncodingException(s"Unsupported encoding: $ce")
-  }
-
   override val streams: NoStreams = NoStreams
 
   override protected def createBodyHandler: HttpResponse.BodyHandler[InputStream] = BodyHandlers.ofInputStream()
@@ -76,23 +74,27 @@ class HttpClientCatsBackend[F[_]: Async] private (
 }
 
 object HttpClientCatsBackend {
+  val DefaultCompressionHandlers: CompressionHandlers[Any, InputStream] = CompressionHandlers(
+    Compressor.default[Any],
+    List(GZipInputStreamDecompressor, DeflateInputStreamDecompressor)
+  )
 
   private def apply[F[_]: Async](
       client: HttpClient,
       closeClient: Boolean,
       customizeRequest: HttpRequest => HttpRequest,
-      customEncodingHandler: EncodingHandler[InputStream],
+      compressionHandlers: CompressionHandlers[Any, InputStream],
       dispatcher: Dispatcher[F]
   ): WebSocketBackend[F] =
     wrappers.FollowRedirectsBackend(
-      new HttpClientCatsBackend(client, closeClient, customizeRequest, customEncodingHandler, dispatcher)
+      new HttpClientCatsBackend(client, closeClient, customizeRequest, compressionHandlers, dispatcher)
     )
 
   def apply[F[_]: Async](
       dispatcher: Dispatcher[F],
       options: BackendOptions = BackendOptions.Default,
       customizeRequest: HttpRequest => HttpRequest = identity,
-      customEncodingHandler: EncodingHandler[InputStream] = PartialFunction.empty
+      compressionHandlers: CompressionHandlers[Any, InputStream] = DefaultCompressionHandlers
   ): F[WebSocketBackend[F]] =
     Async[F].executor.flatMap(executor =>
       Sync[F].delay(
@@ -100,7 +102,7 @@ object HttpClientCatsBackend {
           HttpClientBackend.defaultClient(options, Some(executor)),
           closeClient = false, // we don't want to close the underlying executor
           customizeRequest,
-          customEncodingHandler,
+          compressionHandlers,
           dispatcher
         )
       )
@@ -109,25 +111,25 @@ object HttpClientCatsBackend {
   def resource[F[_]: Async](
       options: BackendOptions = BackendOptions.Default,
       customizeRequest: HttpRequest => HttpRequest = identity,
-      customEncodingHandler: EncodingHandler[InputStream] = PartialFunction.empty
+      compressionHandlers: CompressionHandlers[Any, InputStream] = DefaultCompressionHandlers
   ): Resource[F, WebSocketBackend[F]] =
     Dispatcher
       .parallel[F]
       .flatMap(dispatcher =>
-        Resource.make(apply(dispatcher, options, customizeRequest, customEncodingHandler))(_.close())
+        Resource.make(apply(dispatcher, options, customizeRequest, compressionHandlers))(_.close())
       )
 
   def resourceUsingClient[F[_]: Async](
       client: HttpClient,
       customizeRequest: HttpRequest => HttpRequest = identity,
-      customEncodingHandler: EncodingHandler[InputStream] = PartialFunction.empty
+      compressionHandlers: CompressionHandlers[Any, InputStream] = DefaultCompressionHandlers
   ): Resource[F, WebSocketBackend[F]] =
     Dispatcher
       .parallel[F]
       .flatMap(dispatcher =>
         Resource.make(
           Sync[F].delay(
-            HttpClientCatsBackend(client, closeClient = true, customizeRequest, customEncodingHandler, dispatcher)
+            HttpClientCatsBackend(client, closeClient = true, customizeRequest, compressionHandlers, dispatcher)
           )
         )(_.close())
       )
@@ -136,9 +138,9 @@ object HttpClientCatsBackend {
       client: HttpClient,
       dispatcher: Dispatcher[F],
       customizeRequest: HttpRequest => HttpRequest = identity,
-      customEncodingHandler: EncodingHandler[InputStream] = PartialFunction.empty
+      compressionHandlers: CompressionHandlers[Any, InputStream] = DefaultCompressionHandlers
   ): WebSocketBackend[F] =
-    HttpClientCatsBackend(client, closeClient = false, customizeRequest, customEncodingHandler, dispatcher)
+    HttpClientCatsBackend(client, closeClient = false, customizeRequest, compressionHandlers, dispatcher)
 
   /** Create a stub backend for testing, which uses the [[F]] response wrapper.
     *

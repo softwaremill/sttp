@@ -12,12 +12,12 @@ import org.apache.pekko.stream.scaladsl.StreamConverters
 import org.apache.pekko.stream.scaladsl.FileIO
 
 trait PekkoCompressor[R <: PekkoStreams] extends Compressor[R] {
-  override abstract def apply(body: GenericRequestBody[R], encoding: String): GenericRequestBody[R] =
+  override abstract def apply(body: GenericRequestBody[R]): GenericRequestBody[R] =
     body match {
       case InputStreamBody(b, _) => StreamBody(PekkoStreams)(compressStream(StreamConverters.fromInputStream(() => b)))
       case StreamBody(b)         => StreamBody(PekkoStreams)(compressStream(b.asInstanceOf[Source[ByteString, Any]]))
       case FileBody(f, _)        => StreamBody(PekkoStreams)(compressStream(FileIO.fromPath(f.toPath)))
-      case _                     => super.apply(body, encoding)
+      case _                     => super.apply(body)
     }
 
   def compressStream(stream: Source[ByteString, Any]): Source[ByteString, Any]

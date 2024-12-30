@@ -3,9 +3,12 @@ package sttp.client4.compression
 import sttp.client4._
 import java.nio.ByteBuffer
 
-trait Compressor[R] {
+/** Allows compressing bodies, using the supported encoding. The compressed bodies might use `R` capabilities (e.g.
+  * streaming).
+  */
+trait Compressor[-R] {
   def encoding: String
-  def apply(body: GenericRequestBody[R], encoding: String): GenericRequestBody[R]
+  def apply[R2 <: R](body: GenericRequestBody[R2]): GenericRequestBody[R]
 }
 
 object Compressor extends CompressorExtensions {
@@ -22,7 +25,7 @@ object Compressor extends CompressorExtensions {
     request.options.compressRequestBody match {
       case Some(encoding) =>
         val compressedBody = compressors.find(_.encoding.equalsIgnoreCase(encoding)) match {
-          case Some(compressor) => compressor(request.body, encoding)
+          case Some(compressor) => compressor(request.body)
           case None             => throw new IllegalArgumentException(s"Unsupported encoding: $encoding")
         }
 

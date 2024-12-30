@@ -11,12 +11,12 @@ import zio.stream.ZPipeline
 import zio.stream.ZStream
 
 trait ZioCompressor[R <: ZioStreams] extends Compressor[R] {
-  override abstract def apply(body: GenericRequestBody[R], encoding: String): GenericRequestBody[R] =
+  override abstract def apply[R2 <: R](body: GenericRequestBody[R2]): GenericRequestBody[R] =
     body match {
       case InputStreamBody(b, _) => StreamBody(ZioStreams)(compressStream(ZStream.fromInputStream(b)))
       case StreamBody(b)         => StreamBody(ZioStreams)(compressStream(b.asInstanceOf[Stream[Throwable, Byte]]))
       case FileBody(f, _)        => StreamBody(ZioStreams)(compressStream(ZStream.fromFile(f.toFile)))
-      case _                     => super.apply(body, encoding)
+      case _                     => super.apply(body)
     }
 
   def compressStream(stream: Stream[Throwable, Byte]): Stream[Throwable, Byte]

@@ -10,7 +10,6 @@ import sttp.client4.GenericRequest
 import sttp.client4.MultipartBody
 import sttp.client4.Response
 import sttp.client4.SttpClientException
-import sttp.client4.httpclient.HttpClientBackend.EncodingHandler
 import sttp.client4.internal.SttpToJavaConverters.toJavaFunction
 import sttp.client4.internal.httpclient.BodyFromHttpClient
 import sttp.client4.internal.httpclient.BodyToHttpClient
@@ -33,6 +32,8 @@ import java.util.concurrent.Executor
 import java.util.concurrent.ThreadPoolExecutor
 import java.util.function
 import scala.collection.JavaConverters._
+import sttp.client4.compression.CompressionHandlers
+import sttp.client4.compression.Decompressor
 
 /** @param closeClient
   *   If the executor underlying the client is a [[ThreadPoolExecutor]], should it be shutdown on [[close]].
@@ -40,7 +41,7 @@ import scala.collection.JavaConverters._
 abstract class HttpClientBackend[F[_], S <: Streams[S], P, B](
     client: HttpClient,
     closeClient: Boolean,
-    customEncodingHandler: EncodingHandler[B]
+    compressionHandlers: CompressionHandlers[P, B]
 ) extends GenericBackend[F, P]
     with Backend[F] {
   val streams: Streams[S]
@@ -123,7 +124,7 @@ abstract class HttpClientBackend[F[_], S <: Streams[S], P, B](
         .map { is =>
           encoding
             .filterNot(e => code.equals(StatusCode.NoContent) || !request.autoDecompressionEnabled || e.isEmpty)
-            .map(e => customEncodingHandler.applyOrElse((is, e), standardEncoding.tupled))
+            .map(e => Decompressor.decompressIfPossible(is, e, compressionHandlers.decompressors))
             .getOrElse(is)
         }
     } else {
@@ -132,8 +133,6 @@ abstract class HttpClientBackend[F[_], S <: Streams[S], P, B](
     val body = bodyFromHttpClient(decodedResBody, request.response, responseMetadata)
     monad.map(body)(Response(_, code, "", headers, Nil, request.onlyMetadata))
   }
-
-  protected def standardEncoding: (B, String) => B
 
   protected def prepareWebSocketBuilder[T](
       request: GenericRequest[T, R],
@@ -187,9 +186,6 @@ abstract class HttpClientBackend[F[_], S <: Streams[S], P, B](
 }
 
 object HttpClientBackend {
-
-  type EncodingHandler[B] = PartialFunction[(B, String), B]
-
   private class ProxyAuthenticator(auth: BackendOptions.ProxyAuth) extends Authenticator {
     override def getPasswordAuthentication: PasswordAuthentication =
       if (getRequestorType == RequestorType.PROXY) {

@@ -15,13 +15,13 @@ trait Fs2Compressor[F[_], R <: Fs2Streams[F]] extends Compressor[R] {
   protected val fSync: Sync[F]
   protected val fFiles: Files[F]
 
-  override abstract def apply(body: GenericRequestBody[R], encoding: String): GenericRequestBody[R] =
+  override abstract def apply[R2 <: R](body: GenericRequestBody[R2]): GenericRequestBody[R] =
     body match {
       case InputStreamBody(b, _) =>
         StreamBody(Fs2Streams[F])(compressStream(fs2.io.readInputStream(b.pure[F](fSync), 1024)(fSync)))
       case StreamBody(b)  => StreamBody(Fs2Streams[F])(compressStream(b.asInstanceOf[fs2.Stream[F, Byte]]))
       case FileBody(f, _) => StreamBody(Fs2Streams[F])(compressStream(Files[F](fFiles).readAll(f.toPath, 1024)))
-      case _              => super.apply(body, encoding)
+      case _              => super.apply(body)
     }
 
   def compressStream(stream: fs2.Stream[F, Byte]): fs2.Stream[F, Byte]

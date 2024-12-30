@@ -301,13 +301,19 @@ trait PartialRequestBuilder[+PR <: PartialRequestBuilder[PR, R], +R]
     */
   def redirectToGet(r: Boolean): PR = withOptions(options.copy(redirectToGet = r))
 
-  /** Disables auto-decompression of response bodies which are received with supported `Content-Encoding` headers. */
+  /** Disables auto-decompression of response bodies which are received with supported `Content-Encoding` headers.
+    *
+    * @see
+    *   [[RequestOptions.decompressResponseBody]]
+    */
   def disableAutoDecompression: PR = withOptions(options.copy(decompressResponseBody = false))
 
   /** True iff auto-decompression is enabled (which is the default).
     *
     * @see
     *   disableAutoDecompression
+    * @see
+    *   [[RequestOptions.decompressResponseBody]]
     */
   def autoDecompressionEnabled: Boolean = options.decompressResponseBody
 
@@ -320,6 +326,8 @@ trait PartialRequestBuilder[+PR <: PartialRequestBuilder[PR, R], +R]
     *
     * @see
     *   [[sttp.model.Encodings]]
+    * @see
+    *   [[RequestOptions.compressRequestBody]]
     */
   def compressBody(encoding: String): PR =
     withOptions(options.copy(compressRequestBody = Some(encoding))).header(HeaderNames.ContentEncoding, encoding)

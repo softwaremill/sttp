@@ -51,8 +51,7 @@ private[client4] trait BodyToHttpClient[F[_], S, R] {
   }
 
   def streamToPublisher(stream: streams.BinaryStream): F[BodyPublisher]
-
-  def compressors: List[Compressor[R]] = Compressor.default[R]
+  def compressors: List[Compressor[R]]
 
   private def multipartBody[T](parts: Seq[Part[GenericRequestBody[_]]]) = {
     val multipartBuilder = new MultiPartBodyPublisher()

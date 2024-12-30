@@ -11,7 +11,7 @@ import java.io.ByteArrayOutputStream
 class GZipDefaultCompressor[R] extends Compressor[R] {
   val encoding: String = Encodings.Gzip
 
-  def apply(body: GenericRequestBody[R], encoding: String): GenericRequestBody[R] =
+  def apply[R2 <: R](body: GenericRequestBody[R2]): GenericRequestBody[R] =
     body match {
       case NoBody => NoBody
       case StringBody(s, encoding, defaultContentType) =>
@@ -40,7 +40,7 @@ class GZipDefaultCompressor[R] extends Compressor[R] {
 class DeflateDefaultCompressor[R] extends Compressor[R] {
   val encoding: String = Encodings.Deflate
 
-  def apply(body: GenericRequestBody[R], encoding: String): GenericRequestBody[R] =
+  def apply[R2 <: R](body: GenericRequestBody[R2]): GenericRequestBody[R] =
     body match {
       case NoBody => NoBody
       case StringBody(s, encoding, defaultContentType) =>

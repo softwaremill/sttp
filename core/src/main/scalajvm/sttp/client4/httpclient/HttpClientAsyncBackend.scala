@@ -1,11 +1,11 @@
 package sttp.client4.httpclient
 
 import sttp.capabilities.{Streams, WebSockets}
-import sttp.client4.httpclient.HttpClientBackend.EncodingHandler
 import sttp.client4.internal.SttpToJavaConverters.{toJavaBiConsumer, toJavaFunction}
 import sttp.client4.internal.httpclient.{AddToQueueListener, DelegatingWebSocketListener, Sequencer, WebSocketImpl}
 import sttp.client4.internal.ws.{SimpleQueue, WebSocketEvent}
 import sttp.client4.{GenericRequest, Response, WebSocketBackend}
+import sttp.client4.compression.CompressionHandlers
 import sttp.model.StatusCode
 import sttp.monad.syntax._
 import sttp.monad.{Canceler, MonadAsyncError}
@@ -30,8 +30,8 @@ abstract class HttpClientAsyncBackend[F[_], S <: Streams[S], BH, B](
     override implicit val monad: MonadAsyncError[F],
     closeClient: Boolean,
     customizeRequest: HttpRequest => HttpRequest,
-    customEncodingHandler: EncodingHandler[B]
-) extends HttpClientBackend[F, S, S with WebSockets, B](client, closeClient, customEncodingHandler)
+    compressionHandlers: CompressionHandlers[S, B]
+) extends HttpClientBackend[F, S, S with WebSockets, B](client, closeClient, compressionHandlers)
     with WebSocketBackend[F] {
   protected def createSimpleQueue[T]: F[SimpleQueue[F, T]]
   protected def createSequencer: F[Sequencer[F]]
