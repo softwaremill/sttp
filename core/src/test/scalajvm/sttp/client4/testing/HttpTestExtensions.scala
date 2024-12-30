@@ -236,7 +236,7 @@ trait HttpTestExtensions[F[_]] extends AsyncFreeSpecLike { self: HttpTest[F] =>
     }
 
     "should compress a file-based request body using gzip" in {
-      val testFileContent = "test file content"
+      val testFileContent = "test file content" * 100
       withTemporaryFile(Some(testFileContent.getBytes())) { file =>
         val req = basicRequest
           .compressBody(Encodings.Gzip)
