@@ -7,16 +7,17 @@ import okhttp3.{Call, Callback, OkHttpClient, Response => OkHttpResponse, WebSoc
 import sttp.capabilities.Streams
 import sttp.client4.internal.ws.{SimpleQueue, WebSocketEvent}
 import sttp.monad.syntax._
-import sttp.client4.okhttp.OkHttpBackend.EncodingHandler
 import sttp.client4.{ignore, GenericRequest, Response}
 import sttp.monad.{Canceler, MonadAsyncError}
+import sttp.client4.compression.CompressionHandlers
+import java.io.InputStream
 
 abstract class OkHttpAsyncBackend[F[_], S <: Streams[S], P](
     client: OkHttpClient,
     _monad: MonadAsyncError[F],
     closeClient: Boolean,
-    customEncodingHandler: EncodingHandler
-) extends OkHttpBackend[F, S, P](client, closeClient, customEncodingHandler) {
+    compressionHandlers: CompressionHandlers[P, InputStream]
+) extends OkHttpBackend[F, S, P](client, closeClient, compressionHandlers) {
 
   override protected def sendRegular[T](request: GenericRequest[T, R]): F[Response[T]] = {
     val nativeRequest = convertRequest(request)

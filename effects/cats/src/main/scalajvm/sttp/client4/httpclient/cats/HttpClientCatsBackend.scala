@@ -9,20 +9,17 @@ import sttp.client4.internal.httpclient._
 import sttp.client4.internal.ws.SimpleQueue
 import sttp.client4.internal.{emptyInputStream, NoStreams}
 import sttp.client4.testing.WebSocketBackendStub
-import sttp.client4.wrappers.FollowRedirectsBackend
 import sttp.client4.{wrappers, BackendOptions, WebSocketBackend}
 import sttp.monad.MonadError
 import sttp.ws.{WebSocket, WebSocketFrame}
 
-import java.io.{InputStream, UnsupportedEncodingException}
+import java.io.InputStream
 import java.net.http.HttpRequest.BodyPublisher
 import java.net.http.HttpResponse.BodyHandlers
 import java.net.http.{HttpClient, HttpRequest, HttpResponse}
-import java.util.zip.{GZIPInputStream, InflaterInputStream}
 import sttp.client4.compression.CompressionHandlers
 import sttp.client4.compression.Compressor
-import sttp.client4.compression.GZipInputStreamDecompressor
-import sttp.client4.compression.DeflateInputStreamDecompressor
+import sttp.client4.compression.Decompressor
 
 class HttpClientCatsBackend[F[_]: Async] private (
     client: HttpClient,
@@ -74,10 +71,8 @@ class HttpClientCatsBackend[F[_]: Async] private (
 }
 
 object HttpClientCatsBackend {
-  val DefaultCompressionHandlers: CompressionHandlers[Any, InputStream] = CompressionHandlers(
-    Compressor.default[Any],
-    List(GZipInputStreamDecompressor, DeflateInputStreamDecompressor)
-  )
+  val DefaultCompressionHandlers: CompressionHandlers[Any, InputStream] =
+    CompressionHandlers(Compressor.default[Any], Decompressor.defaultInputStream)
 
   private def apply[F[_]: Async](
       client: HttpClient,

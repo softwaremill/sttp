@@ -17,10 +17,9 @@ import java.net.http.HttpResponse.BodyHandlers
 import java.net.http.{HttpClient, HttpRequest, WebSocketHandshakeException}
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.{ArrayBlockingQueue, CompletionException}
-import sttp.client4.compression.DeflateInputStreamDecompressor
 import sttp.client4.compression.Compressor
 import sttp.client4.compression.CompressionHandlers
-import sttp.client4.compression.GZipInputStreamDecompressor
+import sttp.client4.compression.Decompressor
 
 class HttpClientSyncBackend private (
     client: HttpClient,
@@ -104,10 +103,8 @@ class HttpClientSyncBackend private (
 }
 
 object HttpClientSyncBackend {
-  val DefaultCompressionHandlers: CompressionHandlers[Any, InputStream] = CompressionHandlers[Any, InputStream](
-    Compressor.default[Any],
-    List(GZipInputStreamDecompressor, DeflateInputStreamDecompressor)
-  )
+  val DefaultCompressionHandlers: CompressionHandlers[Any, InputStream] =
+    CompressionHandlers(Compressor.default[Any], Decompressor.defaultInputStream)
 
   private def apply(
       client: HttpClient,

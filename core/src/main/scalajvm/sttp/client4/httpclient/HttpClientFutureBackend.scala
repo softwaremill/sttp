@@ -14,10 +14,9 @@ import java.net.http.HttpResponse.BodyHandlers
 import java.net.http.{HttpClient, HttpRequest, HttpResponse}
 import java.util.concurrent.Executor
 import scala.concurrent.{ExecutionContext, Future}
-import sttp.client4.compression.GZipInputStreamDecompressor
-import sttp.client4.compression.DeflateInputStreamDecompressor
 import sttp.client4.compression.Compressor
 import sttp.client4.compression.CompressionHandlers
+import sttp.client4.compression.Decompressor
 
 class HttpClientFutureBackend private (
     client: HttpClient,
@@ -67,10 +66,8 @@ class HttpClientFutureBackend private (
 }
 
 object HttpClientFutureBackend {
-  val DefaultCompressionHandlers: CompressionHandlers[Any, InputStream] = CompressionHandlers(
-    Compressor.default[Any],
-    List(GZipInputStreamDecompressor, DeflateInputStreamDecompressor)
-  )
+  val DefaultCompressionHandlers: CompressionHandlers[Any, InputStream] =
+    CompressionHandlers(Compressor.default[Any], Decompressor.defaultInputStream)
 
   private def apply(
       client: HttpClient,

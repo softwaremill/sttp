@@ -1,8 +1,7 @@
 package sttp.client4.okhttp
 
-import java.io.{InputStream, UnsupportedEncodingException}
+import java.io.InputStream
 import java.util.concurrent.TimeUnit
-import java.util.zip.{GZIPInputStream, InflaterInputStream}
 import okhttp3.internal.http.HttpMethod
 import okhttp3.{
   Authenticator,
@@ -17,24 +16,23 @@ import sttp.capabilities.{Effect, Streams}
 import sttp.client4.BackendOptions.Proxy
 import sttp.client4.SttpClientException.ReadException
 import sttp.client4.internal.ws.SimpleQueue
-import sttp.client4.okhttp.OkHttpBackend.EncodingHandler
 import sttp.client4._
 import sttp.model._
 
 import scala.collection.JavaConverters._
 import sttp.client4.compression.Compressor
+import sttp.client4.compression.CompressionHandlers
+import sttp.client4.compression.Decompressor
 
 abstract class OkHttpBackend[F[_], S <: Streams[S], P](
     client: OkHttpClient,
     closeClient: Boolean,
-    customEncodingHandler: EncodingHandler
+    compressionHandlers: CompressionHandlers[P, InputStream]
 ) extends GenericBackend[F, P]
     with Backend[F] {
 
   val streams: Streams[S]
   type R = P with Effect[F]
-
-  private val compressors: List[Compressor[R]] = Compressor.default[R]
 
   override def send[T](request: GenericRequest[T, R]): F[Response[T]] =
     adjustExceptions(request.isWebSocket, request) {
@@ -57,7 +55,7 @@ abstract class OkHttpBackend[F[_], S <: Streams[S], P](
     val builder = new OkHttpRequest.Builder()
       .url(request.uri.toString)
 
-    val (maybeCompressedBody, contentLength) = Compressor.compressIfNeeded(request, compressors)
+    val (maybeCompressedBody, contentLength) = Compressor.compressIfNeeded(request, compressionHandlers.compressors)
     val body = bodyToOkHttp(maybeCompressedBody, request.contentType, contentLength)
     builder.method(
       request.method.method,
@@ -99,10 +97,7 @@ abstract class OkHttpBackend[F[_], S <: Streams[S], P](
       ) {
         encoding
           .filterNot(_.isEmpty)
-          .map(e =>
-            customEncodingHandler // There is no PartialFunction.fromFunction in scala 2.12
-              .orElse(EncodingHandler(standardEncoding))(res.body().byteStream() -> e)
-          )
+          .map(e => Decompressor.decompressIfPossible(res.body().byteStream(), e, compressionHandlers.decompressors))
           .getOrElse(res.body().byteStream())
       } else {
         res.body().byteStream()
@@ -120,12 +115,6 @@ abstract class OkHttpBackend[F[_], S <: Streams[S], P](
       .flatMap(name => res.headers().values(name).asScala.map(Header(name, _)))
       .toList
 
-  private def standardEncoding: (InputStream, String) => InputStream = {
-    case (body, "gzip")    => new GZIPInputStream(body)
-    case (body, "deflate") => new InflaterInputStream(body)
-    case (_, ce)           => throw new UnsupportedEncodingException(s"Unsupported encoding: $ce")
-  }
-
   override def close(): F[Unit] =
     if (closeClient) {
       monad.eval(client.dispatcher().executorService().shutdown())
@@ -137,11 +126,6 @@ abstract class OkHttpBackend[F[_], S <: Streams[S], P](
 
 object OkHttpBackend {
   val DefaultWebSocketBufferCapacity: Option[Int] = Some(1024)
-  type EncodingHandler = PartialFunction[(InputStream, String), InputStream]
-
-  object EncodingHandler {
-    def apply(f: (InputStream, String) => InputStream): EncodingHandler = { case (i, s) => f(i, s) }
-  }
 
   private class ProxyAuthenticator(auth: BackendOptions.ProxyAuth) extends Authenticator {
     override def authenticate(route: Route, response: OkHttpResponse): OkHttpRequest = {

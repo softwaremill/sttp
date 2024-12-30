@@ -8,7 +8,7 @@ trait Decompressor[B] {
   def apply(body: B): B
 }
 
-object Decompressor {
+object Decompressor extends DecompressorExtensions {
   def decompressIfPossible[B](b: B, encoding: String, decompressors: List[Decompressor[B]]): B =
     decompressors.find(_.encoding.equalsIgnoreCase(encoding)) match {
       case Some(decompressor) => decompressor(b)
