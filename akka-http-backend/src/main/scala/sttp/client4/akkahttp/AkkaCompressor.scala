@@ -11,22 +11,22 @@ import sttp.client4.compression.Compressor
 import akka.stream.scaladsl.StreamConverters
 import akka.stream.scaladsl.FileIO
 
-trait AkkaCompressor[R <: AkkaStreams] extends Compressor[R] {
-  override abstract def apply(body: GenericRequestBody[R], encoding: String): GenericRequestBody[R] =
+trait AkkaCompressor extends Compressor[AkkaStreams] {
+  override abstract def apply[R2 <: AkkaStreams](body: GenericRequestBody[R2]): GenericRequestBody[AkkaStreams] =
     body match {
       case InputStreamBody(b, _) => StreamBody(AkkaStreams)(compressStream(StreamConverters.fromInputStream(() => b)))
       case StreamBody(b)         => StreamBody(AkkaStreams)(compressStream(b.asInstanceOf[Source[ByteString, Any]]))
       case FileBody(f, _)        => StreamBody(AkkaStreams)(compressStream(FileIO.fromPath(f.toPath)))
-      case _                     => super.apply(body, encoding)
+      case _                     => super.apply(body)
     }
 
   def compressStream(stream: Source[ByteString, Any]): Source[ByteString, Any]
 }
 
-class GZipAkkaCompressor[R <: AkkaStreams] extends GZipDefaultCompressor[R] with AkkaCompressor[R] {
+object GZipAkkaCompressor extends GZipDefaultCompressor[AkkaStreams] with AkkaCompressor {
   def compressStream(stream: Source[ByteString, Any]): Source[ByteString, Any] = stream.via(Compression.gzip)
 }
 
-class DeflateAkkaCompressor[R <: AkkaStreams] extends DeflateDefaultCompressor[R] with AkkaCompressor[R] {
+object DeflateAkkaCompressor extends DeflateDefaultCompressor[AkkaStreams] with AkkaCompressor {
   def compressStream(stream: Source[ByteString, Any]): Source[ByteString, Any] = stream.via(Compression.deflate)
 }

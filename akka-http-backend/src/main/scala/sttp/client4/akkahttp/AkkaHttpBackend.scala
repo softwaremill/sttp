@@ -1,10 +1,8 @@
 package sttp.client4.akkahttp
 
-import java.io.UnsupportedEncodingException
 import akka.{Done, NotUsed}
 import akka.actor.{ActorSystem, CoordinatedShutdown}
 import akka.event.LoggingAdapter
-import akka.http.scaladsl.coding.Coders
 import akka.http.scaladsl.model.headers.{BasicHttpCredentials, HttpEncoding, HttpEncodings}
 import akka.http.scaladsl.model.ws.{InvalidUpgradeResponse, Message, ValidUpgrade, WebSocketRequest}
 import akka.http.scaladsl.model.{StatusCode => _, _}
@@ -14,12 +12,13 @@ import akka.stream.Materializer
 import akka.stream.scaladsl.{Flow, Sink}
 import sttp.capabilities.akka.AkkaStreams
 import sttp.capabilities.{Effect, WebSockets}
-import sttp.client4.akkahttp.AkkaHttpBackend.EncodingHandler
 import sttp.client4.testing.WebSocketStreamBackendStub
 import sttp.client4._
 import sttp.client4.wrappers.FollowRedirectsBackend
 import sttp.model.{ResponseMetadata, StatusCode}
 import sttp.monad.{FutureMonad, MonadError}
+import sttp.client4.compression.CompressionHandlers
+import sttp.client4.compression.Decompressor
 
 import scala.concurrent.{ExecutionContext, Future, Promise}
 
@@ -33,7 +32,7 @@ class AkkaHttpBackend private (
     customizeRequest: HttpRequest => HttpRequest,
     customizeWebsocketRequest: WebSocketRequest => WebSocketRequest,
     customizeResponse: (HttpRequest, HttpResponse) => HttpResponse,
-    customEncodingHandler: EncodingHandler
+    compressionHandlers: CompressionHandlers[AkkaStreams, HttpResponse]
 ) extends WebSocketStreamBackend[Future, AkkaStreams] {
   type R = AkkaStreams with WebSockets with Effect[Future]
 
@@ -49,11 +48,9 @@ class AkkaHttpBackend private (
       if (r.isWebSocket) sendWebSocket(r) else sendRegular(r)
     }
 
-  private val compressors = List(new GZipAkkaCompressor, new DeflateAkkaCompressor)
-
   private def sendRegular[T](r: GenericRequest[T, R]): Future[Response[T]] =
     Future
-      .fromTry(ToAkka.request(r).flatMap(BodyToAkka(r, _, compressors)))
+      .fromTry(ToAkka.request(r).flatMap(BodyToAkka(r, _, compressionHandlers.compressors)))
       .map(customizeRequest)
       .flatMap(request =>
         http
@@ -143,14 +140,12 @@ class AkkaHttpBackend private (
   // http://doc.akka.io/docs/akka-http/10.0.7/scala/http/common/de-coding.html
   private def decodeAkkaResponse(response: HttpResponse, autoDecompressionEnabled: Boolean): HttpResponse =
     if (!response.status.allowsEntity() || !autoDecompressionEnabled) response
-    else customEncodingHandler.orElse(EncodingHandler(standardEncoding)).apply(response -> response.encoding)
-
-  private def standardEncoding: (HttpResponse, HttpEncoding) => HttpResponse = {
-    case (body, HttpEncodings.gzip)     => Coders.Gzip.decodeMessage(body)
-    case (body, HttpEncodings.deflate)  => Coders.Deflate.decodeMessage(body)
-    case (body, HttpEncodings.identity) => Coders.NoCoding.decodeMessage(body)
-    case (_, ce)                        => throw new UnsupportedEncodingException(s"Unsupported encoding: $ce")
-  }
+    else
+      response.encoding match {
+        case HttpEncodings.identity => response
+        case encoding: HttpEncoding =>
+          Decompressor.decompressIfPossible(response, encoding.value, compressionHandlers.decompressors)
+      }
 
   private def adjustExceptions[T](request: GenericRequest[_, _])(t: => Future[T]): Future[T] =
     SttpClientException.adjustExceptions(monad)(t)(FromAkka.exception(request, _))
@@ -166,12 +161,11 @@ class AkkaHttpBackend private (
 }
 
 object AkkaHttpBackend {
-  type EncodingHandler = PartialFunction[(HttpResponse, HttpEncoding), HttpResponse]
-  object EncodingHandler {
-    def apply(f: (HttpResponse, HttpEncoding) => HttpResponse): EncodingHandler = { case (body, encoding) =>
-      f(body, encoding)
-    }
-  }
+  val DefaultCompressionHandlers: CompressionHandlers[AkkaStreams, HttpResponse] =
+    CompressionHandlers(
+      List(GZipAkkaCompressor, DeflateAkkaCompressor),
+      List(GZipAkkaDecompressor, DeflateAkkaDecompressor)
+    )
 
   private def make(
       actorSystem: ActorSystem,
@@ -183,7 +177,7 @@ object AkkaHttpBackend {
       customizeRequest: HttpRequest => HttpRequest,
       customizeWebsocketRequest: WebSocketRequest => WebSocketRequest = identity,
       customizeResponse: (HttpRequest, HttpResponse) => HttpResponse = (_, r) => r,
-      customEncodingHandler: EncodingHandler = PartialFunction.empty
+      compressionHandlers: CompressionHandlers[AkkaStreams, HttpResponse]
   ): WebSocketStreamBackend[Future, AkkaStreams] =
     FollowRedirectsBackend(
       new AkkaHttpBackend(
@@ -196,7 +190,7 @@ object AkkaHttpBackend {
         customizeRequest,
         customizeWebsocketRequest,
         customizeResponse,
-        customEncodingHandler
+        compressionHandlers
       )
     )
 
@@ -212,7 +206,7 @@ object AkkaHttpBackend {
       customizeRequest: HttpRequest => HttpRequest = identity,
       customizeWebsocketRequest: WebSocketRequest => WebSocketRequest = identity,
       customizeResponse: (HttpRequest, HttpResponse) => HttpResponse = (_, r) => r,
-      customEncodingHandler: EncodingHandler = PartialFunction.empty
+      compressionHandlers: CompressionHandlers[AkkaStreams, HttpResponse] = DefaultCompressionHandlers
   )(implicit
       ec: Option[ExecutionContext] = None
   ): WebSocketStreamBackend[Future, AkkaStreams] = {
@@ -228,7 +222,7 @@ object AkkaHttpBackend {
       customizeRequest,
       customizeWebsocketRequest,
       customizeResponse,
-      customEncodingHandler
+      compressionHandlers
     )
   }
 
@@ -247,7 +241,7 @@ object AkkaHttpBackend {
       customizeRequest: HttpRequest => HttpRequest = identity,
       customizeWebsocketRequest: WebSocketRequest => WebSocketRequest = identity,
       customizeResponse: (HttpRequest, HttpResponse) => HttpResponse = (_, r) => r,
-      customEncodingHandler: EncodingHandler = PartialFunction.empty
+      compressionHandlers: CompressionHandlers[AkkaStreams, HttpResponse] = DefaultCompressionHandlers
   )(implicit
       ec: Option[ExecutionContext] = None
   ): WebSocketStreamBackend[Future, AkkaStreams] =
@@ -259,7 +253,7 @@ object AkkaHttpBackend {
       customizeRequest,
       customizeWebsocketRequest,
       customizeResponse,
-      customEncodingHandler
+      compressionHandlers
     )
 
   /** @param actorSystem
@@ -276,7 +270,7 @@ object AkkaHttpBackend {
       customizeRequest: HttpRequest => HttpRequest = identity,
       customizeWebsocketRequest: WebSocketRequest => WebSocketRequest = identity,
       customizeResponse: (HttpRequest, HttpResponse) => HttpResponse = (_, r) => r,
-      customEncodingHandler: EncodingHandler = PartialFunction.empty
+      compressionHandlers: CompressionHandlers[AkkaStreams, HttpResponse] = DefaultCompressionHandlers
   )(implicit
       ec: Option[ExecutionContext] = None
   ): WebSocketStreamBackend[Future, AkkaStreams] =
@@ -290,7 +284,7 @@ object AkkaHttpBackend {
       customizeRequest,
       customizeWebsocketRequest,
       customizeResponse,
-      customEncodingHandler
+      compressionHandlers
     )
 
   /** Create a stub backend for testing, which uses the [[Future]] response wrapper, and doesn't support streaming.

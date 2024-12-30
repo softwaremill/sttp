@@ -90,7 +90,7 @@ class HttpClientZioBackend private (
 object HttpClientZioBackend {
   val DefaultCompressionHandlers: CompressionHandlers[ZioStreams, ZioStreams.BinaryStream] =
     CompressionHandlers(
-      List(new GZipZioCompressor(), new DeflateZioCompressor()),
+      List(GZipZioCompressor, DeflateZioCompressor),
       List(GZipZioDecompressor, DeflateZioDecompressor)
     )
 

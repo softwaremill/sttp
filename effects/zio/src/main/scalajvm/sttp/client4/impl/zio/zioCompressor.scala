@@ -10,8 +10,8 @@ import sttp.client4.compression.DeflateDefaultCompressor
 import zio.stream.ZPipeline
 import zio.stream.ZStream
 
-trait ZioCompressor[R <: ZioStreams] extends Compressor[R] {
-  override abstract def apply[R2 <: R](body: GenericRequestBody[R2]): GenericRequestBody[R] =
+trait ZioCompressor extends Compressor[ZioStreams] {
+  override abstract def apply[R2 <: ZioStreams](body: GenericRequestBody[R2]): GenericRequestBody[ZioStreams] =
     body match {
       case InputStreamBody(b, _) => StreamBody(ZioStreams)(compressStream(ZStream.fromInputStream(b)))
       case StreamBody(b)         => StreamBody(ZioStreams)(compressStream(b.asInstanceOf[Stream[Throwable, Byte]]))
@@ -22,10 +22,10 @@ trait ZioCompressor[R <: ZioStreams] extends Compressor[R] {
   def compressStream(stream: Stream[Throwable, Byte]): Stream[Throwable, Byte]
 }
 
-class GZipZioCompressor[R <: ZioStreams] extends GZipDefaultCompressor[R] with ZioCompressor[R] {
+object GZipZioCompressor extends GZipDefaultCompressor[ZioStreams] with ZioCompressor {
   def compressStream(stream: Stream[Throwable, Byte]): Stream[Throwable, Byte] = stream.via(ZPipeline.gzip())
 }
 
-class DeflateZioCompressor[R <: ZioStreams] extends DeflateDefaultCompressor[R] with ZioCompressor[R] {
+object DeflateZioCompressor extends DeflateDefaultCompressor[ZioStreams] with ZioCompressor {
   def compressStream(stream: Stream[Throwable, Byte]): Stream[Throwable, Byte] = stream.via(ZPipeline.deflate())
 }

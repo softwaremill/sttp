@@ -14,7 +14,6 @@ import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.scaladsl.{Flow, Sink}
 import sttp.capabilities.pekko.PekkoStreams
 import sttp.capabilities.{Effect, WebSockets}
-import sttp.client4.pekkohttp.PekkoHttpBackend.EncodingHandler
 import sttp.client4.testing.WebSocketStreamBackendStub
 import sttp.client4._
 import sttp.client4.wrappers.FollowRedirectsBackend
@@ -22,6 +21,8 @@ import sttp.model.{ResponseMetadata, StatusCode}
 import sttp.monad.{FutureMonad, MonadError}
 
 import scala.concurrent.{ExecutionContext, Future, Promise}
+import sttp.client4.compression.CompressionHandlers
+import sttp.client4.compression.Decompressor
 
 class PekkoHttpBackend private (
     actorSystem: ActorSystem,
@@ -33,7 +34,7 @@ class PekkoHttpBackend private (
     customizeRequest: HttpRequest => HttpRequest,
     customizeWebsocketRequest: WebSocketRequest => WebSocketRequest,
     customizeResponse: (HttpRequest, HttpResponse) => HttpResponse,
-    customEncodingHandler: EncodingHandler
+    compressionHandlers: CompressionHandlers[PekkoStreams, HttpResponse]
 ) extends WebSocketStreamBackend[Future, PekkoStreams] {
   type R = PekkoStreams with WebSockets with Effect[Future]
 
@@ -49,11 +50,9 @@ class PekkoHttpBackend private (
       if (r.isWebSocket) sendWebSocket(r) else sendRegular(r)
     }
 
-  private val compressors = List(new GZipPekkoCompressor, new DeflatePekkoCompressor)
-
   private def sendRegular[T](r: GenericRequest[T, R]): Future[Response[T]] =
     Future
-      .fromTry(ToPekko.request(r).flatMap(BodyToPekko(r, _, compressors)))
+      .fromTry(ToPekko.request(r).flatMap(BodyToPekko(r, _, compressionHandlers.compressors)))
       .map(customizeRequest)
       .flatMap(request =>
         http
@@ -143,14 +142,12 @@ class PekkoHttpBackend private (
   // http://doc.akka.io/docs/akka-http/10.0.7/scala/http/common/de-coding.html
   private def decodePekkoResponse(response: HttpResponse, enableAutoDecompression: Boolean): HttpResponse =
     if (!response.status.allowsEntity() || !enableAutoDecompression) response
-    else customEncodingHandler.orElse(EncodingHandler(standardEncoding)).apply(response -> response.encoding)
-
-  private def standardEncoding: (HttpResponse, HttpEncoding) => HttpResponse = {
-    case (body, HttpEncodings.gzip)     => Coders.Gzip.decodeMessage(body)
-    case (body, HttpEncodings.deflate)  => Coders.Deflate.decodeMessage(body)
-    case (body, HttpEncodings.identity) => Coders.NoCoding.decodeMessage(body)
-    case (_, ce)                        => throw new UnsupportedEncodingException(s"Unsupported encoding: $ce")
-  }
+    else
+      response.encoding match {
+        case HttpEncodings.identity => response
+        case encoding: HttpEncoding =>
+          Decompressor.decompressIfPossible(response, encoding.value, compressionHandlers.decompressors)
+      }
 
   private def adjustExceptions[T](request: GenericRequest[_, _])(t: => Future[T]): Future[T] =
     SttpClientException.adjustExceptions(monad)(t)(FromPekko.exception(request, _))
@@ -166,12 +163,11 @@ class PekkoHttpBackend private (
 }
 
 object PekkoHttpBackend {
-  type EncodingHandler = PartialFunction[(HttpResponse, HttpEncoding), HttpResponse]
-  object EncodingHandler {
-    def apply(f: (HttpResponse, HttpEncoding) => HttpResponse): EncodingHandler = { case (body, encoding) =>
-      f(body, encoding)
-    }
-  }
+  val DefaultCompressionHandlers: CompressionHandlers[PekkoStreams, HttpResponse] =
+    CompressionHandlers(
+      List(GZipPekkoCompressor, DeflatePekkoCompressor),
+      List(GZipPekkoDecompressor, DeflatePekkoDecompressor)
+    )
 
   private def make(
       actorSystem: ActorSystem,
@@ -183,7 +179,7 @@ object PekkoHttpBackend {
       customizeRequest: HttpRequest => HttpRequest,
       customizeWebsocketRequest: WebSocketRequest => WebSocketRequest = identity,
       customizeResponse: (HttpRequest, HttpResponse) => HttpResponse = (_, r) => r,
-      customEncodingHandler: EncodingHandler = PartialFunction.empty
+      compressionHandlers: CompressionHandlers[PekkoStreams, HttpResponse]
   ): WebSocketStreamBackend[Future, PekkoStreams] =
     FollowRedirectsBackend(
       new PekkoHttpBackend(
@@ -196,7 +192,7 @@ object PekkoHttpBackend {
         customizeRequest,
         customizeWebsocketRequest,
         customizeResponse,
-        customEncodingHandler
+        compressionHandlers
       )
     )
 
@@ -212,7 +208,7 @@ object PekkoHttpBackend {
       customizeRequest: HttpRequest => HttpRequest = identity,
       customizeWebsocketRequest: WebSocketRequest => WebSocketRequest = identity,
       customizeResponse: (HttpRequest, HttpResponse) => HttpResponse = (_, r) => r,
-      customEncodingHandler: EncodingHandler = PartialFunction.empty
+      compressionHandlers: CompressionHandlers[PekkoStreams, HttpResponse] = DefaultCompressionHandlers
   )(implicit
       ec: Option[ExecutionContext] = None
   ): WebSocketStreamBackend[Future, PekkoStreams] = {
@@ -228,7 +224,7 @@ object PekkoHttpBackend {
       customizeRequest,
       customizeWebsocketRequest,
       customizeResponse,
-      customEncodingHandler
+      compressionHandlers
     )
   }
 
@@ -247,7 +243,7 @@ object PekkoHttpBackend {
       customizeRequest: HttpRequest => HttpRequest = identity,
       customizeWebsocketRequest: WebSocketRequest => WebSocketRequest = identity,
       customizeResponse: (HttpRequest, HttpResponse) => HttpResponse = (_, r) => r,
-      customEncodingHandler: EncodingHandler = PartialFunction.empty
+      compressionHandlers: CompressionHandlers[PekkoStreams, HttpResponse] = DefaultCompressionHandlers
   )(implicit
       ec: Option[ExecutionContext] = None
   ): WebSocketStreamBackend[Future, PekkoStreams] =
@@ -259,7 +255,7 @@ object PekkoHttpBackend {
       customizeRequest,
       customizeWebsocketRequest,
       customizeResponse,
-      customEncodingHandler
+      compressionHandlers
     )
 
   /** @param actorSystem
@@ -276,7 +272,7 @@ object PekkoHttpBackend {
       customizeRequest: HttpRequest => HttpRequest = identity,
       customizeWebsocketRequest: WebSocketRequest => WebSocketRequest = identity,
       customizeResponse: (HttpRequest, HttpResponse) => HttpResponse = (_, r) => r,
-      customEncodingHandler: EncodingHandler = PartialFunction.empty
+      compressionHandlers: CompressionHandlers[PekkoStreams, HttpResponse] = DefaultCompressionHandlers
   )(implicit
       ec: Option[ExecutionContext] = None
   ): WebSocketStreamBackend[Future, PekkoStreams] =
@@ -290,7 +286,7 @@ object PekkoHttpBackend {
       customizeRequest,
       customizeWebsocketRequest,
       customizeResponse,
-      customEncodingHandler
+      compressionHandlers
     )
 
   /** Create a stub backend for testing, which uses the [[Future]] response wrapper, and doesn't support streaming.
