@@ -3,6 +3,7 @@ package sttp.client4
 import sttp.model.{Header, HeaderNames, StatusCode}
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
+import sttp.model.Encodings
 
 class RequestTests extends AnyFlatSpec with Matchers {
 
@@ -106,6 +107,12 @@ class RequestTests extends AnyFlatSpec with Matchers {
     emptyRequest.body("1234").headers(Map("Content-Type" -> "application/json")).headers.toSet shouldBe Set(
       Header("Content-Type", "application/json"),
       Header("Content-Length", "4")
+    )
+  }
+
+  "compressBody" should "add the content encoding header" in {
+    emptyRequest.compressBody(Encodings.Gzip).headers.toSet shouldBe Set(
+      Header(HeaderNames.ContentEncoding, Encodings.Gzip)
     )
   }
 }

@@ -5,7 +5,6 @@ import okhttp3.{MediaType, OkHttpClient, RequestBody => OkHttpRequestBody}
 import sttp.capabilities.{Streams, WebSockets}
 import sttp.client4.internal.NoStreams
 import sttp.client4.internal.ws.{FutureSimpleQueue, SimpleQueue}
-import sttp.client4.okhttp.OkHttpBackend.EncodingHandler
 import sttp.client4.testing.WebSocketBackendStub
 import sttp.client4.wrappers.FollowRedirectsBackend
 import sttp.client4.{wrappers, BackendOptions, DefaultReadTimeout, WebSocketBackend}
@@ -13,15 +12,18 @@ import sttp.monad.{FutureMonad, MonadError}
 import sttp.ws.WebSocket
 
 import scala.concurrent.{ExecutionContext, Future}
+import sttp.client4.compression.CompressionHandlers
+import sttp.client4.compression.Compressor
+import sttp.client4.compression.Decompressor
 
 class OkHttpFutureBackend private (
     client: OkHttpClient,
     closeClient: Boolean,
-    customEncodingHandler: EncodingHandler,
+    compressionHandlers: CompressionHandlers[Any, InputStream],
     webSocketBufferCapacity: Option[Int]
 )(implicit
     ec: ExecutionContext
-) extends OkHttpAsyncBackend[Future, Nothing, WebSockets](client, new FutureMonad, closeClient, customEncodingHandler)
+) extends OkHttpAsyncBackend[Future, Nothing, WebSockets](client, new FutureMonad, closeClient, compressionHandlers)
     with WebSocketBackend[Future] {
   override val streams: Streams[Nothing] = NoStreams
 
@@ -43,36 +45,39 @@ class OkHttpFutureBackend private (
 }
 
 object OkHttpFutureBackend {
+  val DefaultCompressionHandlers: CompressionHandlers[Any, InputStream] =
+    CompressionHandlers(Compressor.default[Any], Decompressor.defaultInputStream)
+
   private def apply(
       client: OkHttpClient,
       closeClient: Boolean,
-      customEncodingHandler: EncodingHandler,
+      compressionHandlers: CompressionHandlers[Any, InputStream],
       webSocketBufferCapacity: Option[Int]
   )(implicit
       ec: ExecutionContext
   ): WebSocketBackend[Future] =
     wrappers.FollowRedirectsBackend(
-      new OkHttpFutureBackend(client, closeClient, customEncodingHandler, webSocketBufferCapacity)
+      new OkHttpFutureBackend(client, closeClient, compressionHandlers, webSocketBufferCapacity)
     )
 
   def apply(
       options: BackendOptions = BackendOptions.Default,
-      customEncodingHandler: EncodingHandler = PartialFunction.empty,
+      compressionHandlers: CompressionHandlers[Any, InputStream] = DefaultCompressionHandlers,
       webSocketBufferCapacity: Option[Int] = OkHttpBackend.DefaultWebSocketBufferCapacity
   )(implicit ec: ExecutionContext = ExecutionContext.global): WebSocketBackend[Future] =
     OkHttpFutureBackend(
       OkHttpBackend.defaultClient(DefaultReadTimeout.toMillis, options),
       closeClient = true,
-      customEncodingHandler,
+      compressionHandlers,
       webSocketBufferCapacity
     )
 
   def usingClient(
       client: OkHttpClient,
-      customEncodingHandler: EncodingHandler = PartialFunction.empty,
+      compressionHandlers: CompressionHandlers[Any, InputStream] = DefaultCompressionHandlers,
       webSocketBufferCapacity: Option[Int] = OkHttpBackend.DefaultWebSocketBufferCapacity
   )(implicit ec: ExecutionContext = ExecutionContext.global): WebSocketBackend[Future] =
-    OkHttpFutureBackend(client, closeClient = false, customEncodingHandler, webSocketBufferCapacity)
+    OkHttpFutureBackend(client, closeClient = false, compressionHandlers, webSocketBufferCapacity)
 
   /** Create a stub backend for testing, which uses the [[Future]] response wrapper, and doesn't support streaming.
     *

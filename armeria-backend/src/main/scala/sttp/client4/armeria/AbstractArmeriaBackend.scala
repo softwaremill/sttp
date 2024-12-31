@@ -39,6 +39,7 @@ import sttp.client4.internal.toByteArray
 import sttp.model._
 import sttp.monad.syntax._
 import sttp.monad.{Canceler, MonadAsyncError}
+import sttp.client4.compression.Compressor
 
 abstract class AbstractArmeriaBackend[F[_], S <: Streams[S]](
     client: WebClient = WebClient.of(),
@@ -53,6 +54,8 @@ abstract class AbstractArmeriaBackend[F[_], S <: Streams[S]](
   protected def bodyFromStreamMessage: BodyFromStreamMessage[F, S]
 
   protected def streamToPublisher(stream: streams.BinaryStream): Publisher[HttpData]
+
+  protected def compressors: List[Compressor[R]] = Compressor.default[R]
 
   override def send[T](request: GenericRequest[T, R]): F[Response[T]] =
     monad.suspend(adjustExceptions(request)(execute(request)))
@@ -87,7 +90,7 @@ abstract class AbstractArmeriaBackend[F[_], S <: Streams[S]](
     } finally captor.close()
   }
 
-  private def requestToArmeria(request: GenericRequest[_, Nothing]): WebClientRequestPreparation = {
+  private def requestToArmeria(request: GenericRequest[_, R]): WebClientRequestPreparation = {
     val requestPreparation = client
       .prepare()
       .disablePathParams()
@@ -102,19 +105,24 @@ abstract class AbstractArmeriaBackend[F[_], S <: Streams[S]](
       requestPreparation.responseTimeoutMillis(Long.MaxValue)
     }
 
+    val (body, contentLength) = Compressor.compressIfNeeded(request, compressors)
+
     var customContentType: Option[ArmeriaMediaType] = None
     request.headers.foreach { header =>
-      if (header.name.equalsIgnoreCase(HeaderNames.ContentType)) {
+      if (header.is(HeaderNames.ContentType)) {
         // A Content-Type will be set with the body content
         customContentType = Some(ArmeriaMediaType.parse(header.value))
-      } else {
-        requestPreparation.header(header.name, header.value)
+      } else if (!header.is(HeaderNames.ContentLength)) {
+        val _ = requestPreparation.header(header.name, header.value)
       }
+    }
+    contentLength.foreach { cl =>
+      requestPreparation.header(HeaderNames.ContentLength, cl.toString)
     }
 
     val contentType = customContentType.getOrElse(ArmeriaMediaType.parse(request.body.defaultContentType.toString()))
 
-    request.body match {
+    body match {
       case NoBody => requestPreparation
       case StringBody(s, encoding, _) =>
         val charset =

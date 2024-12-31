@@ -13,10 +13,12 @@ import sttp.capabilities.zio.ZioStreams
 import sttp.client4.armeria.ArmeriaWebClient.newClient
 import sttp.client4.armeria.{AbstractArmeriaBackend, BodyFromStreamMessage}
 import sttp.client4.impl.zio.RIOMonadAsyncError
-import sttp.client4.wrappers.FollowRedirectsBackend
 import sttp.client4.{wrappers, BackendOptions, StreamBackend}
 import sttp.monad.MonadAsyncError
 import zio.stream.Stream
+import sttp.client4.compression.Compressor
+import sttp.client4.impl.zio.GZipZioCompressor
+import sttp.client4.impl.zio.DeflateZioCompressor
 
 private final class ArmeriaZioBackend(runtime: Runtime[Any], client: WebClient, closeFactory: Boolean)
     extends AbstractArmeriaBackend[Task, ZioStreams](client, closeFactory, new RIOMonadAsyncError[Any]) {
@@ -40,6 +42,8 @@ private final class ArmeriaZioBackend(runtime: Runtime[Any], client: WebClient, 
         .run(stream.mapChunks(c => Chunk.single(HttpData.wrap(c.toArray))).toPublisher)
         .getOrThrowFiberFailure()
     }
+
+  override protected def compressors: List[Compressor[R]] = List(GZipZioCompressor, DeflateZioCompressor)
 }
 
 object ArmeriaZioBackend {

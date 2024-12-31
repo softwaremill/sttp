@@ -13,7 +13,7 @@ object DefaultFutureBackend {
   def apply(
       options: BackendOptions = BackendOptions.Default
   )(implicit ec: ExecutionContext = ExecutionContext.global): WebSocketBackend[Future] =
-    HttpClientFutureBackend(options, identity, PartialFunction.empty)
+    HttpClientFutureBackend(options)
 
   /** Create a stub backend for testing, which uses [[Future]] to represent side effects, and doesn't support streaming.
     *

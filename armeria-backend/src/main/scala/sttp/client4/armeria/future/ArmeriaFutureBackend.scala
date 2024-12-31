@@ -8,7 +8,7 @@ import sttp.client4.armeria.ArmeriaWebClient.newClient
 import sttp.client4.armeria.{AbstractArmeriaBackend, BodyFromStreamMessage}
 import sttp.client4.internal.NoStreams
 import sttp.client4.wrappers.FollowRedirectsBackend
-import sttp.client4.{wrappers, Backend, BackendOptions}
+import sttp.client4.{Backend, BackendOptions}
 import sttp.monad.{FutureMonad, MonadAsyncError}
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -50,5 +50,5 @@ object ArmeriaFutureBackend {
     apply(newClient(), closeFactory = false)
 
   private def apply(client: WebClient, closeFactory: Boolean): Backend[Future] =
-    wrappers.FollowRedirectsBackend(new ArmeriaFutureBackend(client, closeFactory))
+    FollowRedirectsBackend(new ArmeriaFutureBackend(client, closeFactory))
 }

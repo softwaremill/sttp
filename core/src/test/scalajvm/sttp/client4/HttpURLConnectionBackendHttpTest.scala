@@ -5,10 +5,18 @@ import sttp.client4.testing.{ConvertToFuture, HttpTest}
 import sttp.shared.Identity
 
 import java.io.ByteArrayInputStream
+import sttp.client4.compression.Decompressor
+import java.io.InputStream
 
 class HttpURLConnectionBackendHttpTest extends HttpTest[Identity] {
   override val backend: SyncBackend = HttpURLConnectionBackend(
-    customEncodingHandler = { case (_, "custom") => new ByteArrayInputStream(customEncodedData.getBytes()) }
+    compressionHandlers =
+      HttpURLConnectionBackend.DefaultCompressionHandlers.addDecompressor(new Decompressor[InputStream] {
+        override val encoding: String = "custom"
+        override def apply(inputStream: InputStream): InputStream =
+          new ByteArrayInputStream(customEncodedData.getBytes())
+
+      })
   )
   override implicit val convertToFuture: ConvertToFuture[Identity] = ConvertToFuture.id
 

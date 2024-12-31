@@ -1,6 +1,5 @@
 package sttp.client4.httpclient.fs2
 
-import java.io.UnsupportedEncodingException
 import java.net.http.HttpRequest.BodyPublishers
 import java.net.http.{HttpClient, HttpRequest, HttpResponse}
 import java.nio.ByteBuffer
@@ -12,8 +11,6 @@ import fs2.interop.reactivestreams.{PublisherOps, StreamUnicastPublisher}
 import fs2.{Chunk, Stream}
 import org.reactivestreams.FlowAdapters
 import sttp.capabilities.fs2.Fs2Streams
-import sttp.client4.httpclient.HttpClientBackend.EncodingHandler
-import sttp.client4.httpclient.fs2.HttpClientFs2Backend.Fs2EncodingHandler
 import sttp.client4.internal.httpclient.{BodyFromHttpClient, BodyToHttpClient, Sequencer}
 import sttp.client4.impl.cats.implicits._
 import sttp.client4.impl.fs2.Fs2SimpleQueue
@@ -28,28 +25,33 @@ import java.net.http.HttpResponse.BodyHandlers
 import java.util.concurrent.Flow.Publisher
 import java.{util => ju}
 import scala.collection.JavaConverters._
+import sttp.client4.compression.Compressor
+import sttp.client4.impl.fs2.{DeflateFs2Compressor, DeflateFs2Decompressor, GZipFs2Compressor, GZipFs2Decompressor}
+import sttp.client4.compression.CompressionHandlers
+import fs2.compression.Compression
 
 class HttpClientFs2Backend[F[_]: Async] private (
     client: HttpClient,
     closeClient: Boolean,
     customizeRequest: HttpRequest => HttpRequest,
-    customEncodingHandler: Fs2EncodingHandler[F],
+    compressionHandlers: CompressionHandlers[Fs2Streams[F], Stream[F, Byte]],
     dispatcher: Dispatcher[F]
 ) extends HttpClientAsyncBackend[F, Fs2Streams[F], Publisher[ju.List[ByteBuffer]], Stream[F, Byte]](
       client,
       implicitly,
       closeClient,
       customizeRequest,
-      customEncodingHandler
+      compressionHandlers
     )
     with WebSocketStreamBackend[F, Fs2Streams[F]] { self =>
 
   override val streams: Fs2Streams[F] = Fs2Streams[F]
 
-  override protected val bodyToHttpClient: BodyToHttpClient[F, Fs2Streams[F]] =
-    new BodyToHttpClient[F, Fs2Streams[F]] {
+  override protected val bodyToHttpClient: BodyToHttpClient[F, Fs2Streams[F], R] =
+    new BodyToHttpClient[F, Fs2Streams[F], R] {
       override val streams: Fs2Streams[F] = Fs2Streams[F]
       override implicit def monad: MonadError[F] = self.monad
+      override def compressors: List[Compressor[R]] = compressionHandlers.compressors
       override def streamToPublisher(stream: Stream[F, Byte]): F[HttpRequest.BodyPublisher] =
         monad.eval(
           BodyPublishers.fromPublisher(
@@ -80,33 +82,32 @@ class HttpClientFs2Backend[F[_]: Async] private (
       .flatMap(data => Stream.emits(data.asScala.map(Chunk.byteBuffer)).flatMap(Stream.chunk))
 
   override protected def emptyBody(): Stream[F, Byte] = Stream.empty
-
-  override protected def standardEncoding: (Stream[F, Byte], String) => Stream[F, Byte] = {
-    case (body, "gzip")    => body.through(fs2.compression.Compression[F].gunzip()).flatMap(_.content)
-    case (body, "deflate") => body.through(Fs2Compression.inflateCheckHeader[F])
-    case (_, ce)           => Stream.raiseError[F](new UnsupportedEncodingException(s"Unsupported encoding: $ce"))
-  }
 }
 
 object HttpClientFs2Backend {
-  type Fs2EncodingHandler[F[_]] = EncodingHandler[Stream[F, Byte]]
+  def defaultCompressionHandlers[F[_]: Async]: CompressionHandlers[Fs2Streams[F], Stream[F, Byte]] =
+    CompressionHandlers(
+      List(new GZipFs2Compressor[F, Fs2Streams[F]](), new DeflateFs2Compressor[F, Fs2Streams[F]]()),
+      List(new GZipFs2Decompressor, new DeflateFs2Decompressor)
+    )
 
   private def apply[F[_]: Async](
       client: HttpClient,
       closeClient: Boolean,
       customizeRequest: HttpRequest => HttpRequest,
-      customEncodingHandler: Fs2EncodingHandler[F],
+      compressionHandlers: CompressionHandlers[Fs2Streams[F], Stream[F, Byte]],
       dispatcher: Dispatcher[F]
   ): WebSocketStreamBackend[F, Fs2Streams[F]] =
     FollowRedirectsBackend(
-      new HttpClientFs2Backend(client, closeClient, customizeRequest, customEncodingHandler, dispatcher)
+      new HttpClientFs2Backend(client, closeClient, customizeRequest, compressionHandlers, dispatcher)
     )
 
   def apply[F[_]: Async](
       dispatcher: Dispatcher[F],
       options: BackendOptions = BackendOptions.Default,
       customizeRequest: HttpRequest => HttpRequest = identity,
-      customEncodingHandler: Fs2EncodingHandler[F] = PartialFunction.empty
+      compressionHandlers: Async[F] => CompressionHandlers[Fs2Streams[F], Stream[F, Byte]] =
+        defaultCompressionHandlers[F](_: Async[F])
   ): F[WebSocketStreamBackend[F, Fs2Streams[F]]] =
     Async[F].executor.flatMap(executor =>
       Sync[F].delay(
@@ -114,7 +115,7 @@ object HttpClientFs2Backend {
           HttpClientBackend.defaultClient(options, Some(executor)),
           closeClient = false, // we don't want to close the underlying executor
           customizeRequest,
-          customEncodingHandler,
+          compressionHandlers(implicitly),
           dispatcher
         )
       )
@@ -123,24 +124,27 @@ object HttpClientFs2Backend {
   def resource[F[_]: Async](
       options: BackendOptions = BackendOptions.Default,
       customizeRequest: HttpRequest => HttpRequest = identity,
-      customEncodingHandler: Fs2EncodingHandler[F] = PartialFunction.empty
+      compressionHandlers: Async[F] => CompressionHandlers[Fs2Streams[F], Stream[F, Byte]] =
+        defaultCompressionHandlers[F](_: Async[F])
   ): Resource[F, WebSocketStreamBackend[F, Fs2Streams[F]]] =
     Dispatcher
       .parallel[F]
       .flatMap(dispatcher =>
-        Resource.make(apply(dispatcher, options, customizeRequest, customEncodingHandler))(_.close())
+        Resource.make(apply(dispatcher, options, customizeRequest, compressionHandlers))(_.close())
       )
 
   def resourceUsingClient[F[_]: Async](
       client: HttpClient,
       customizeRequest: HttpRequest => HttpRequest = identity,
-      customEncodingHandler: Fs2EncodingHandler[F] = PartialFunction.empty
+      compressionHandlers: Async[F] => CompressionHandlers[Fs2Streams[F], Stream[F, Byte]] =
+        defaultCompressionHandlers[F](_: Async[F])
   ): Resource[F, WebSocketStreamBackend[F, Fs2Streams[F]]] =
     Dispatcher
       .parallel[F]
       .flatMap(dispatcher =>
         Resource.make(
-          Sync[F].delay(apply(client, closeClient = true, customizeRequest, customEncodingHandler, dispatcher))
+          Sync[F]
+            .delay(apply(client, closeClient = true, customizeRequest, compressionHandlers(implicitly), dispatcher))
         )(_.close())
       )
 
@@ -148,9 +152,10 @@ object HttpClientFs2Backend {
       client: HttpClient,
       dispatcher: Dispatcher[F],
       customizeRequest: HttpRequest => HttpRequest = identity,
-      customEncodingHandler: Fs2EncodingHandler[F] = PartialFunction.empty
+      compressionHandlers: Async[F] => CompressionHandlers[Fs2Streams[F], Stream[F, Byte]] =
+        defaultCompressionHandlers[F](_: Async[F])
   ): WebSocketStreamBackend[F, Fs2Streams[F]] =
-    HttpClientFs2Backend(client, closeClient = false, customizeRequest, customEncodingHandler, dispatcher)
+    HttpClientFs2Backend(client, closeClient = false, customizeRequest, compressionHandlers(implicitly), dispatcher)
 
   /** Create a stub backend for testing, which uses the [[F]] response wrapper, and supports `Stream[F, Byte]`
     * streaming.

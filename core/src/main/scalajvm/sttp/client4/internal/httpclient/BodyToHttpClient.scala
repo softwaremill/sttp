@@ -3,6 +3,7 @@ package sttp.client4.internal.httpclient
 import sttp.capabilities.Streams
 import sttp.client4.internal.SttpToJavaConverters.toJavaSupplier
 import sttp.client4.internal.{throwNestedMultipartNotAllowed, Utf8}
+import sttp.client4.compression.Compressor
 import sttp.client4._
 import sttp.model.{Header, HeaderNames, Part}
 import sttp.monad.MonadError
@@ -16,16 +17,17 @@ import java.util.concurrent.Flow
 import java.util.function.Supplier
 import scala.collection.JavaConverters._
 
-private[client4] trait BodyToHttpClient[F[_], S] {
+private[client4] trait BodyToHttpClient[F[_], S, R] {
   val streams: Streams[S]
   implicit def monad: MonadError[F]
 
   def apply[T](
-      request: GenericRequest[T, _],
+      request: GenericRequest[T, R],
       builder: HttpRequest.Builder,
       contentType: Option[String]
   ): F[BodyPublisher] = {
-    val body = request.body match {
+    val (maybeCompressedBody, contentLength) = Compressor.compressIfNeeded(request, compressors)
+    val body = maybeCompressedBody match {
       case NoBody              => BodyPublishers.noBody().unit
       case StringBody(b, _, _) => BodyPublishers.ofString(b).unit
       case ByteArrayBody(b, _) => BodyPublishers.ofByteArray(b).unit
@@ -42,13 +44,14 @@ private[client4] trait BodyToHttpClient[F[_], S] {
         multipartBodyPublisher.build().unit
     }
 
-    (request.contentLength: Option[Long]) match {
+    contentLength match {
       case None     => body
       case Some(cl) => body.map(b => withKnownContentLength(b, cl))
     }
   }
 
   def streamToPublisher(stream: streams.BinaryStream): F[BodyPublisher]
+  def compressors: List[Compressor[R]]
 
   private def multipartBody[T](parts: Seq[Part[GenericRequestBody[_]]]) = {
     val multipartBuilder = new MultiPartBodyPublisher()

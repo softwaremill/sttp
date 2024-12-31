@@ -15,7 +15,6 @@ import sttp.capabilities.monix.MonixStreams
 import sttp.client4.impl.monix.{MonixSimpleQueue, MonixWebSockets, TaskMonadAsyncError}
 import sttp.client4.internal.ws.SimpleQueue
 import sttp.monad.MonadError
-import sttp.client4.okhttp.OkHttpBackend.EncodingHandler
 import sttp.client4.okhttp.{BodyFromOkHttp, BodyToOkHttp, OkHttpAsyncBackend, OkHttpBackend}
 import sttp.client4.testing.WebSocketStreamBackendStub
 import sttp.client4._
@@ -23,11 +22,14 @@ import sttp.client4.wrappers.FollowRedirectsBackend
 import sttp.ws.{WebSocket, WebSocketFrame}
 
 import scala.concurrent.Future
+import sttp.client4.compression.CompressionHandlers
+import sttp.client4.compression.Compressor
+import sttp.client4.compression.Decompressor
 
 class OkHttpMonixBackend private (
     client: OkHttpClient,
     closeClient: Boolean,
-    customEncodingHandler: EncodingHandler,
+    compressionHandlers: CompressionHandlers[MonixStreams, InputStream],
     webSocketBufferCapacity: Option[Int]
 )(implicit
     s: Scheduler
@@ -35,7 +37,7 @@ class OkHttpMonixBackend private (
       client,
       TaskMonadAsyncError,
       closeClient,
-      customEncodingHandler
+      compressionHandlers
     )
     with WebSocketStreamBackend[Task, MonixStreams] {
   override val streams: MonixStreams = MonixStreams
@@ -113,21 +115,24 @@ class OkHttpMonixBackend private (
 }
 
 object OkHttpMonixBackend {
+  val DefaultCompressionHandlers: CompressionHandlers[Any, InputStream] =
+    CompressionHandlers(Compressor.default[Any], Decompressor.defaultInputStream)
+
   private def apply(
       client: OkHttpClient,
       closeClient: Boolean,
-      customEncodingHandler: EncodingHandler,
+      compressionHandlers: CompressionHandlers[Any, InputStream],
       webSocketBufferCapacity: Option[Int]
   )(implicit
       s: Scheduler
   ): WebSocketStreamBackend[Task, MonixStreams] =
     FollowRedirectsBackend(
-      new OkHttpMonixBackend(client, closeClient, customEncodingHandler, webSocketBufferCapacity)(s)
+      new OkHttpMonixBackend(client, closeClient, compressionHandlers, webSocketBufferCapacity)(s)
     )
 
   def apply(
       options: BackendOptions = BackendOptions.Default,
-      customEncodingHandler: EncodingHandler = PartialFunction.empty,
+      compressionHandlers: CompressionHandlers[Any, InputStream] = DefaultCompressionHandlers,
       webSocketBufferCapacity: Option[Int] = OkHttpBackend.DefaultWebSocketBufferCapacity
   )(implicit
       s: Scheduler = Scheduler.global
@@ -136,26 +141,26 @@ object OkHttpMonixBackend {
       OkHttpMonixBackend(
         OkHttpBackend.defaultClient(DefaultReadTimeout.toMillis, options),
         closeClient = true,
-        customEncodingHandler,
+        compressionHandlers,
         webSocketBufferCapacity
       )(s)
     )
 
   def resource(
       options: BackendOptions = BackendOptions.Default,
-      customEncodingHandler: EncodingHandler = PartialFunction.empty,
+      compressionHandlers: CompressionHandlers[Any, InputStream] = DefaultCompressionHandlers,
       webSocketBufferCapacity: Option[Int] = OkHttpBackend.DefaultWebSocketBufferCapacity
   )(implicit
       s: Scheduler = Scheduler.global
   ): Resource[Task, WebSocketStreamBackend[Task, MonixStreams]] =
-    Resource.make(apply(options, customEncodingHandler, webSocketBufferCapacity))(_.close())
+    Resource.make(apply(options, compressionHandlers, webSocketBufferCapacity))(_.close())
 
   def usingClient(
       client: OkHttpClient,
-      customEncodingHandler: EncodingHandler = PartialFunction.empty,
+      compressionHandlers: CompressionHandlers[Any, InputStream] = DefaultCompressionHandlers,
       webSocketBufferCapacity: Option[Int] = OkHttpBackend.DefaultWebSocketBufferCapacity
   )(implicit s: Scheduler = Scheduler.global): WebSocketStreamBackend[Task, MonixStreams] =
-    OkHttpMonixBackend(client, closeClient = false, customEncodingHandler, webSocketBufferCapacity)(s)
+    OkHttpMonixBackend(client, closeClient = false, compressionHandlers, webSocketBufferCapacity)(s)
 
   /** Create a stub backend for testing, which uses the [[Task]] response wrapper, and supports `Observable[ByteBuffer]`
     * streaming.

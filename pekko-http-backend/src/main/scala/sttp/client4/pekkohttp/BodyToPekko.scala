@@ -13,18 +13,18 @@ import pekko.http.scaladsl.model.{
 import pekko.stream.scaladsl.{Source, StreamConverters}
 import pekko.util.ByteString
 import sttp.capabilities.pekko.PekkoStreams
-import sttp.client4.internal.throwNestedMultipartNotAllowed
 import sttp.client4._
-import sttp.model.{HeaderNames, Part}
+import sttp.model.Part
 
 import scala.collection.immutable.Seq
 import scala.util.{Failure, Success, Try}
+import sttp.client4.compression.Compressor
 
 private[pekkohttp] object BodyToPekko {
   def apply[R](
       r: GenericRequest[_, R],
-      body: GenericRequestBody[R],
-      ar: HttpRequest
+      ar: HttpRequest,
+      compressors: List[Compressor[R]]
   ): Try[HttpRequest] = {
     def ctWithCharset(ct: ContentType, charset: String) =
       HttpCharsets
@@ -32,7 +32,7 @@ private[pekkohttp] object BodyToPekko {
         .map(hc => ContentType.apply(ct.mediaType, () => hc))
         .getOrElse(ct)
 
-    def contentLength = r.headers.find(_.is(HeaderNames.ContentLength)).flatMap(h => Try(h.value.toLong).toOption)
+    val (body, contentLength) = Compressor.compressIfNeeded(r, compressors)
 
     def toBodyPart(mp: Part[BodyPart[_]]): Try[PekkoMultipart.FormData.BodyPart] = {
       def streamPartEntity(contentType: ContentType, s: PekkoStreams.BinaryStream) =

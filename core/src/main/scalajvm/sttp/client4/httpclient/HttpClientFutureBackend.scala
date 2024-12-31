@@ -1,7 +1,5 @@
 package sttp.client4.httpclient
 
-import sttp.client4.httpclient.HttpClientBackend.EncodingHandler
-import sttp.client4.httpclient.HttpClientFutureBackend.InputStreamEncodingHandler
 import sttp.client4.internal.httpclient._
 import sttp.client4.internal.ws.{FutureSimpleQueue, SimpleQueue}
 import sttp.client4.internal.{emptyInputStream, NoStreams}
@@ -10,34 +8,37 @@ import sttp.client4.{wrappers, BackendOptions, WebSocketBackend}
 import sttp.monad.{FutureMonad, MonadError}
 import sttp.ws.{WebSocket, WebSocketFrame}
 
-import java.io.{InputStream, UnsupportedEncodingException}
+import java.io.InputStream
 import java.net.http.HttpRequest.BodyPublisher
 import java.net.http.HttpResponse.BodyHandlers
 import java.net.http.{HttpClient, HttpRequest, HttpResponse}
 import java.util.concurrent.Executor
-import java.util.zip.{GZIPInputStream, InflaterInputStream}
 import scala.concurrent.{ExecutionContext, Future}
+import sttp.client4.compression.Compressor
+import sttp.client4.compression.CompressionHandlers
+import sttp.client4.compression.Decompressor
 
 class HttpClientFutureBackend private (
     client: HttpClient,
     closeClient: Boolean,
     customizeRequest: HttpRequest => HttpRequest,
-    customEncodingHandler: InputStreamEncodingHandler
+    compressionHandlers: CompressionHandlers[Any, InputStream]
 )(implicit ec: ExecutionContext)
     extends HttpClientAsyncBackend[Future, Nothing, InputStream, InputStream](
       client,
       new FutureMonad,
       closeClient,
       customizeRequest,
-      customEncodingHandler
+      compressionHandlers
     ) {
 
   override val streams: NoStreams = NoStreams
 
-  override protected val bodyToHttpClient: BodyToHttpClient[Future, Nothing] = new BodyToHttpClient[Future, Nothing] {
+  override protected val bodyToHttpClient = new BodyToHttpClient[Future, Nothing, R] {
     override val streams: NoStreams = NoStreams
     override implicit val monad: MonadError[Future] = new FutureMonad
     override def streamToPublisher(stream: Nothing): Future[BodyPublisher] = stream // nothing is everything
+    override def compressors: List[Compressor[Nothing]] = compressionHandlers.compressors
   }
 
   override protected val bodyFromHttpClient: BodyFromHttpClient[Future, Nothing, InputStream] =
@@ -57,12 +58,6 @@ class HttpClientFutureBackend private (
 
   override protected def createSequencer: Future[Sequencer[Future]] = Future.successful(new FutureSequencer)
 
-  override protected def standardEncoding: (InputStream, String) => InputStream = {
-    case (body, "gzip")    => new GZIPInputStream(body)
-    case (body, "deflate") => new InflaterInputStream(body)
-    case (_, ce)           => throw new UnsupportedEncodingException(s"Unsupported encoding: $ce")
-  }
-
   override protected def createBodyHandler: HttpResponse.BodyHandler[InputStream] = BodyHandlers.ofInputStream()
 
   override protected def bodyHandlerBodyToBody(p: InputStream): InputStream = p
@@ -71,42 +66,43 @@ class HttpClientFutureBackend private (
 }
 
 object HttpClientFutureBackend {
-  type InputStreamEncodingHandler = EncodingHandler[InputStream]
+  val DefaultCompressionHandlers: CompressionHandlers[Any, InputStream] =
+    CompressionHandlers(Compressor.default[Any], Decompressor.defaultInputStream)
 
   private def apply(
       client: HttpClient,
       closeClient: Boolean,
       customizeRequest: HttpRequest => HttpRequest,
-      customEncodingHandler: InputStreamEncodingHandler
+      compressionHandlers: CompressionHandlers[Any, InputStream]
   )(implicit ec: ExecutionContext): WebSocketBackend[Future] =
     wrappers.FollowRedirectsBackend(
-      new HttpClientFutureBackend(client, closeClient, customizeRequest, customEncodingHandler)
+      new HttpClientFutureBackend(client, closeClient, customizeRequest, compressionHandlers)
     )
 
   def apply(
       options: BackendOptions = BackendOptions.Default,
       customizeRequest: HttpRequest => HttpRequest = identity,
-      customEncodingHandler: InputStreamEncodingHandler = PartialFunction.empty
+      compressionHandlers: CompressionHandlers[Any, InputStream] = DefaultCompressionHandlers
   )(implicit ec: ExecutionContext = ExecutionContext.global): WebSocketBackend[Future] = {
     val executor = Some(ec).collect { case executor: Executor => executor }
     HttpClientFutureBackend(
       HttpClientBackend.defaultClient(options, executor),
       closeClient = executor.isEmpty,
       customizeRequest,
-      customEncodingHandler
+      compressionHandlers
     )
   }
 
   def usingClient(
       client: HttpClient,
       customizeRequest: HttpRequest => HttpRequest = identity,
-      customEncodingHandler: InputStreamEncodingHandler = PartialFunction.empty
+      compressionHandlers: CompressionHandlers[Any, InputStream] = DefaultCompressionHandlers
   )(implicit ec: ExecutionContext = ExecutionContext.global): WebSocketBackend[Future] =
     HttpClientFutureBackend(
       client,
       closeClient = false,
       customizeRequest,
-      customEncodingHandler
+      compressionHandlers
     )
 
   /** Create a stub backend for testing, which uses [[Future]] to represent side effects, and doesn't support streaming.

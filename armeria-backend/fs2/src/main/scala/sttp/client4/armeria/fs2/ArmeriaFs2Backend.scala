@@ -12,9 +12,11 @@ import sttp.capabilities.fs2.Fs2Streams
 import sttp.client4.armeria.ArmeriaWebClient.newClient
 import sttp.client4.armeria.{AbstractArmeriaBackend, BodyFromStreamMessage}
 import sttp.client4.impl.cats.CatsMonadAsyncError
-import sttp.client4.wrappers.FollowRedirectsBackend
 import sttp.client4.{wrappers, BackendOptions, StreamBackend}
 import sttp.monad.MonadAsyncError
+import sttp.client4.compression.Compressor
+import sttp.client4.impl.fs2.DeflateFs2Compressor
+import sttp.client4.impl.fs2.GZipFs2Compressor
 
 private final class ArmeriaFs2Backend[F[_]: Async](client: WebClient, closeFactory: Boolean, dispatcher: Dispatcher[F])
     extends AbstractArmeriaBackend[F, Fs2Streams[F]](client, closeFactory, new CatsMonadAsyncError) {
@@ -41,6 +43,9 @@ private final class ArmeriaFs2Backend[F[_]: Async](client: WebClient, closeFacto
         },
       dispatcher
     )
+
+  override protected def compressors: List[Compressor[R]] =
+    List(new GZipFs2Compressor[F, R](), new DeflateFs2Compressor[F, R]())
 }
 
 object ArmeriaFs2Backend {

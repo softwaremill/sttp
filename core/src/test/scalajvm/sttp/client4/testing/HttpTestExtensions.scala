@@ -12,6 +12,10 @@ import HttpTest.endpoint
 import org.scalatest.freespec.AsyncFreeSpecLike
 import sttp.client4.wrappers.{DigestAuthenticationBackend, FollowRedirectsBackend, TooManyRedirectsException}
 import sttp.model.headers.CookieWithMeta
+import sttp.model.Encodings
+import java.util.zip.GZIPInputStream
+import java.io.ByteArrayInputStream
+import java.util.zip.InflaterInputStream
 
 trait HttpTestExtensions[F[_]] extends AsyncFreeSpecLike { self: HttpTest[F] =>
   protected def supportsResponseAsInputStream = true
@@ -195,6 +199,59 @@ trait HttpTestExtensions[F[_]] extends AsyncFreeSpecLike { self: HttpTest[F] =>
       val req = basicRequest.get(uri"$endpoint/respond_with_iso_8859_2")
 
       req.send(backend).toFuture().map(response => response.body should be(Right("Żółć!")))
+    }
+  }
+
+  "compression" - {
+    "should compress request body using gzip" in {
+      val req = basicRequest
+        .compressBody(Encodings.Gzip)
+        .response(asByteArrayAlways)
+        .post(uri"$endpoint/echo/exact")
+        .body("I'm not compressed")
+      req.send(backend).toFuture().map { resp =>
+        resp.code shouldBe StatusCode.Ok
+
+        val gzipInputStream = new GZIPInputStream(new ByteArrayInputStream(resp.body))
+        val decompressedBytes = gzipInputStream.readAllBytes()
+
+        new String(decompressedBytes) shouldBe "I'm not compressed"
+      }
+    }
+
+    "should compress request body using deflate" in {
+      val req = basicRequest
+        .compressBody(Encodings.Deflate)
+        .response(asByteArrayAlways)
+        .post(uri"$endpoint/echo/exact")
+        .body("I'm not compressed")
+      req.send(backend).toFuture().map { resp =>
+        resp.code shouldBe StatusCode.Ok
+
+        val inflaterInputStream = new InflaterInputStream(new ByteArrayInputStream(resp.body))
+        val decompressedBytes = inflaterInputStream.readAllBytes()
+
+        new String(decompressedBytes) shouldBe "I'm not compressed"
+      }
+    }
+
+    "should compress a file-based request body using deflate" in {
+      val testFileContent = "test file content"
+      withTemporaryFile(Some(testFileContent.getBytes())) { file =>
+        val req = basicRequest
+          .compressBody(Encodings.Deflate)
+          .response(asByteArrayAlways)
+          .post(uri"$endpoint/echo/exact")
+          .body(file)
+        req.send(backend).toFuture().map { resp =>
+          resp.code shouldBe StatusCode.Ok
+
+          val inflaterInputStream = new InflaterInputStream(new ByteArrayInputStream(resp.body))
+          val decompressedBytes = inflaterInputStream.readAllBytes()
+
+          new String(decompressedBytes) shouldBe testFileContent
+        }
+      }
     }
   }
 

@@ -1,8 +1,8 @@
 package sttp.client4.httpurlconnection
 
 import sttp.capabilities.Effect
-import sttp.client4.httpurlconnection.HttpURLConnectionBackend.EncodingHandler
 import sttp.client4.internal._
+import sttp.client4.compression.Compressor
 import sttp.client4.testing.SyncBackendStub
 import sttp.client4.ws.{GotAWebSocketException, NotAWebSocketException}
 import sttp.client4.{
@@ -37,21 +37,28 @@ import java.util.concurrent.ThreadLocalRandom
 import java.util.zip.{GZIPInputStream, InflaterInputStream}
 import scala.collection.JavaConverters._
 import scala.concurrent.duration.Duration
+import sttp.client4.GenericRequestBody
+import sttp.client4.compression.CompressionHandlers
+import sttp.client4.compression.Decompressor
 
 class HttpURLConnectionBackend private (
     opts: BackendOptions,
     customizeConnection: HttpURLConnection => Unit,
     createURL: String => URL,
     openConnection: (URL, Option[java.net.Proxy]) => URLConnection,
-    customEncodingHandler: EncodingHandler
+    compressionHandlers: CompressionHandlers[Any, InputStream]
 ) extends SyncBackend {
   type R = Any with Effect[Identity]
 
   override def send[T](r: GenericRequest[T, R]): Response[T] =
     adjustExceptions(r) {
+      val (body, contentLength) = Compressor.compressIfNeeded(r, compressionHandlers.compressors)
+
       val c = openConnection(r.uri)
       c.setRequestMethod(r.method.method)
-      r.headers.foreach(h => c.setRequestProperty(h.name, h.value))
+      // content-length might have changed due to compression
+      r.headers.foreach(h => if (!h.is(HeaderNames.ContentLength)) c.setRequestProperty(h.name, h.value))
+      contentLength.foreach(cl => c.setRequestProperty(HeaderNames.ContentLength, cl.toString))
       c.setDoInput(true)
       c.setReadTimeout(timeout(r.options.readTimeout))
       c.setConnectTimeout(timeout(opts.connectionTimeout))
@@ -66,7 +73,7 @@ class HttpURLConnectionBackend private (
         // we need to take care to:
         // (1) only call getOutputStream after the headers are set
         // (2) call it ony once
-        writeBody(r, c).foreach { os =>
+        writeBody(body, r, c).foreach { os =>
           os.flush()
           os.close()
         }
@@ -104,8 +111,12 @@ class HttpURLConnectionBackend private (
     conn.asInstanceOf[HttpURLConnection]
   }
 
-  private def writeBody(r: GenericRequest[_, R], c: HttpURLConnection): Option[OutputStream] =
-    r.body match {
+  private def writeBody(
+      body: GenericRequestBody[R],
+      r: GenericRequest[_, R],
+      c: HttpURLConnection
+  ): Option[OutputStream] =
+    body match {
       case NoBody =>
         // skip
         None
@@ -141,13 +152,13 @@ class HttpURLConnectionBackend private (
 
       case ByteBufferBody(b, _) =>
         val channel = Channels.newChannel(os)
-        channel.write(b)
+        val _ = channel.write(b)
 
       case InputStreamBody(b, _) =>
         transfer(b, os)
 
       case FileBody(f, _) =>
-        Files.copy(f.toPath, os)
+        val _ = Files.copy(f.toPath, os)
     }
 
   private val BoundaryChars =
@@ -250,7 +261,7 @@ class HttpURLConnectionBackend private (
 
     val code = StatusCode(c.getResponseCode)
     val wrappedIs =
-      if (c.getRequestMethod != "HEAD" && !code.equals(StatusCode.NoContent) && !request.autoDecompressionDisabled) {
+      if (c.getRequestMethod != "HEAD" && !code.equals(StatusCode.NoContent) && request.autoDecompressionEnabled) {
         wrapInput(contentEncoding, handleNullInput(is))
       } else handleNullInput(is)
     val responseMetadata = ResponseMetadata(code, c.getResponseMessage, headers)
@@ -295,12 +306,8 @@ class HttpURLConnectionBackend private (
 
   private def wrapInput(contentEncoding: Option[String], is: InputStream): InputStream =
     contentEncoding.map(_.toLowerCase) match {
-      case None                                                    => is
-      case Some("gzip")                                            => new GZIPInputStream(is)
-      case Some("deflate")                                         => new InflaterInputStream(is)
-      case Some(ce) if customEncodingHandler.isDefinedAt((is, ce)) => customEncodingHandler(is -> ce)
-      case Some(ce) =>
-        throw new UnsupportedEncodingException(s"Unsupported encoding: $ce")
+      case None           => is
+      case Some(encoding) => Decompressor.decompressIfPossible(is, encoding, compressionHandlers.decompressors)
     }
 
   private def adjustExceptions[T](request: GenericRequest[_, R])(t: => T): T =
@@ -312,8 +319,8 @@ class HttpURLConnectionBackend private (
 }
 
 object HttpURLConnectionBackend {
-
-  type EncodingHandler = PartialFunction[(InputStream, String), InputStream]
+  val DefaultCompressionHandlers: CompressionHandlers[Any, InputStream] =
+    CompressionHandlers(Compressor.default[Any], Decompressor.defaultInputStream)
 
   private[client4] val defaultOpenConnection: (URL, Option[java.net.Proxy]) => URLConnection = {
     case (url, None)        => url.openConnection()
@@ -328,10 +335,10 @@ object HttpURLConnectionBackend {
         case (url, None)        => url.openConnection()
         case (url, Some(proxy)) => url.openConnection(proxy)
       },
-      customEncodingHandler: EncodingHandler = PartialFunction.empty
+      compressionHandlers: CompressionHandlers[Any, InputStream] = DefaultCompressionHandlers
   ): SyncBackend =
     wrappers.FollowRedirectsBackend(
-      new HttpURLConnectionBackend(options, customizeConnection, createURL, openConnection, customEncodingHandler)
+      new HttpURLConnectionBackend(options, customizeConnection, createURL, openConnection, compressionHandlers)
     )
 
   /** Create a stub backend for testing. See [[SyncBackendStub]] for details on how to configure stub responses.

@@ -4,20 +4,17 @@ import _root_.zio.interop.reactivestreams._
 import org.reactivestreams.FlowAdapters
 import sttp.capabilities.zio.ZioStreams
 import sttp.client4.httpclient.{HttpClientAsyncBackend, HttpClientBackend}
-import sttp.client4.httpclient.HttpClientBackend.EncodingHandler
 import sttp.client4.impl.zio.{RIOMonadAsyncError, ZioSimpleQueue}
 import sttp.client4.internal._
 import sttp.client4.internal.httpclient.{BodyFromHttpClient, BodyToHttpClient, Sequencer}
 import sttp.client4.internal.ws.SimpleQueue
 import sttp.client4.testing.WebSocketStreamBackendStub
-import sttp.client4.wrappers.FollowRedirectsBackend
 import sttp.client4.{wrappers, BackendOptions, GenericRequest, Response, WebSocketStreamBackend}
 import sttp.monad.MonadError
 import zio.Chunk.ByteArray
 import zio._
-import zio.stream.{ZPipeline, ZSink, ZStream}
+import zio.stream.ZStream
 
-import java.io.UnsupportedEncodingException
 import java.net.http.HttpRequest.{BodyPublisher, BodyPublishers}
 import java.net.http.HttpResponse.BodyHandlers
 import java.net.http.{HttpClient, HttpRequest, HttpResponse}
@@ -25,12 +22,15 @@ import java.nio.ByteBuffer
 import java.util
 import java.util.concurrent.Flow.Publisher
 import java.{util => ju}
+import sttp.client4.compression.Compressor
+import sttp.client4.impl.zio.{DeflateZioCompressor, DeflateZioDecompressor, GZipZioCompressor, GZipZioDecompressor}
+import sttp.client4.compression.CompressionHandlers
 
 class HttpClientZioBackend private (
     client: HttpClient,
     closeClient: Boolean,
     customizeRequest: HttpRequest => HttpRequest,
-    customEncodingHandler: EncodingHandler[ZioStreams.BinaryStream]
+    compressionHandlers: CompressionHandlers[ZioStreams, ZioStreams.BinaryStream]
 ) extends HttpClientAsyncBackend[
       Task,
       ZioStreams,
@@ -41,7 +41,7 @@ class HttpClientZioBackend private (
       new RIOMonadAsyncError[Any],
       closeClient,
       customizeRequest,
-      customEncodingHandler
+      compressionHandlers
     )
     with WebSocketStreamBackend[Task, ZioStreams] { self =>
 
@@ -58,8 +58,8 @@ class HttpClientZioBackend private (
       ByteArray(a, 0, a.length)
     }
 
-  override protected val bodyToHttpClient: BodyToHttpClient[Task, ZioStreams] =
-    new BodyToHttpClient[Task, ZioStreams] {
+  override protected val bodyToHttpClient: BodyToHttpClient[Task, ZioStreams, R] =
+    new BodyToHttpClient[Task, ZioStreams, R] {
       override val streams: ZioStreams = ZioStreams
       override implicit def monad: MonadError[Task] = self.monad
       override def streamToPublisher(stream: ZStream[Any, Throwable, Byte]): Task[BodyPublisher] = {
@@ -69,6 +69,7 @@ class HttpClientZioBackend private (
           BodyPublishers.fromPublisher(FlowAdapters.toFlowPublisher(pub))
         }
       }
+      override def compressors: List[Compressor[R]] = compressionHandlers.compressors
     }
 
   override def send[T](request: GenericRequest[T, R]): Task[Response[T]] =
@@ -84,36 +85,29 @@ class HttpClientZioBackend private (
     } yield new ZioSimpleQueue(queue, runtime)
 
   override protected def createSequencer: Task[Sequencer[Task]] = ZioSequencer.create
-
-  override protected def standardEncoding: (ZStream[Any, Throwable, Byte], String) => ZStream[Any, Throwable, Byte] = {
-    case (body, "gzip") => body.via(ZPipeline.gunzip())
-    case (body, "deflate") =>
-      ZStream.scoped(body.peel(ZSink.take[Byte](1))).flatMap { case (chunk, stream) =>
-        val wrapped = chunk.headOption.exists(byte => (byte & 0x0f) == 0x08)
-        (ZStream.fromChunk(chunk) ++ stream).via(ZPipeline.inflate(noWrap = !wrapped))
-      }
-    case (_, ce) => ZStream.fail(new UnsupportedEncodingException(s"Unsupported encoding: $ce"))
-  }
 }
 
 object HttpClientZioBackend {
-
-  type ZioEncodingHandler = EncodingHandler[ZioStreams.BinaryStream]
+  val DefaultCompressionHandlers: CompressionHandlers[ZioStreams, ZioStreams.BinaryStream] =
+    CompressionHandlers(
+      List(GZipZioCompressor, DeflateZioCompressor),
+      List(GZipZioDecompressor, DeflateZioDecompressor)
+    )
 
   private def apply(
       client: HttpClient,
       closeClient: Boolean,
       customizeRequest: HttpRequest => HttpRequest,
-      customEncodingHandler: ZioEncodingHandler
+      compressionHandlers: CompressionHandlers[ZioStreams, ZioStreams.BinaryStream]
   ): WebSocketStreamBackend[Task, ZioStreams] =
     wrappers.FollowRedirectsBackend(
-      new HttpClientZioBackend(client, closeClient, customizeRequest, customEncodingHandler)
+      new HttpClientZioBackend(client, closeClient, customizeRequest, compressionHandlers)
     )
 
   def apply(
       options: BackendOptions = BackendOptions.Default,
       customizeRequest: HttpRequest => HttpRequest = identity,
-      customEncodingHandler: ZioEncodingHandler = PartialFunction.empty
+      compressionHandlers: CompressionHandlers[ZioStreams, ZioStreams.BinaryStream] = DefaultCompressionHandlers
   ): Task[WebSocketStreamBackend[Task, ZioStreams]] =
     ZIO.executor.flatMap(executor =>
       ZIO.attempt(
@@ -121,7 +115,7 @@ object HttpClientZioBackend {
           HttpClientBackend.defaultClient(options, Some(executor.asJava)),
           closeClient = false, // we don't want to close ZIO's executor
           customizeRequest,
-          customEncodingHandler
+          compressionHandlers
         )
       )
     )
@@ -129,32 +123,32 @@ object HttpClientZioBackend {
   def scoped(
       options: BackendOptions = BackendOptions.Default,
       customizeRequest: HttpRequest => HttpRequest = identity,
-      customEncodingHandler: ZioEncodingHandler = PartialFunction.empty
+      compressionHandlers: CompressionHandlers[ZioStreams, ZioStreams.BinaryStream] = DefaultCompressionHandlers
   ): ZIO[Scope, Throwable, WebSocketStreamBackend[Task, ZioStreams]] =
-    ZIO.acquireRelease(apply(options, customizeRequest, customEncodingHandler))(
+    ZIO.acquireRelease(apply(options, customizeRequest, compressionHandlers))(
       _.close().ignore
     )
 
   def scopedUsingClient(
       client: HttpClient,
       customizeRequest: HttpRequest => HttpRequest = identity,
-      customEncodingHandler: ZioEncodingHandler = PartialFunction.empty
+      compressionHandlers: CompressionHandlers[ZioStreams, ZioStreams.BinaryStream] = DefaultCompressionHandlers
   ): ZIO[Scope, Throwable, WebSocketStreamBackend[Task, ZioStreams]] =
     ZIO.acquireRelease(
-      ZIO.attempt(HttpClientZioBackend(client, closeClient = true, customizeRequest, customEncodingHandler))
+      ZIO.attempt(HttpClientZioBackend(client, closeClient = true, customizeRequest, compressionHandlers))
     )(_.close().ignore)
 
   def layer(
       options: BackendOptions = BackendOptions.Default,
       customizeRequest: HttpRequest => HttpRequest = identity,
-      customEncodingHandler: ZioEncodingHandler = PartialFunction.empty
+      compressionHandlers: CompressionHandlers[ZioStreams, ZioStreams.BinaryStream] = DefaultCompressionHandlers
   ): ZLayer[Any, Throwable, SttpClient] =
     ZLayer.scoped(
       (for {
         backend <- HttpClientZioBackend(
           options,
           customizeRequest,
-          customEncodingHandler
+          compressionHandlers
         )
       } yield backend).tap(client => ZIO.addFinalizer(client.close().ignore))
     )
@@ -162,19 +156,19 @@ object HttpClientZioBackend {
   def usingClient(
       client: HttpClient,
       customizeRequest: HttpRequest => HttpRequest = identity,
-      customEncodingHandler: ZioEncodingHandler = PartialFunction.empty
+      compressionHandlers: CompressionHandlers[ZioStreams, ZioStreams.BinaryStream] = DefaultCompressionHandlers
   ): WebSocketStreamBackend[Task, ZioStreams] =
     HttpClientZioBackend(
       client,
       closeClient = false,
       customizeRequest,
-      customEncodingHandler
+      compressionHandlers
     )
 
   def layerUsingClient(
       client: HttpClient,
       customizeRequest: HttpRequest => HttpRequest = identity,
-      customEncodingHandler: ZioEncodingHandler = PartialFunction.empty
+      compressionHandlers: CompressionHandlers[ZioStreams, ZioStreams.BinaryStream] = DefaultCompressionHandlers
   ): ZLayer[Any, Throwable, SttpClient] =
     ZLayer.scoped(
       ZIO
@@ -183,7 +177,7 @@ object HttpClientZioBackend {
             usingClient(
               client,
               customizeRequest,
-              customEncodingHandler
+              compressionHandlers
             )
           )
         )(_.close().ignore)
