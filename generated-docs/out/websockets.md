@@ -104,7 +104,7 @@ as Ox `Source` and `Sink`:
 
 ```
 // sbt dependency
-"com.softwaremill.sttp.client4" %% "ox" % "4.0.0-M20",
+"com.softwaremill.sttp.client4" %% "ox" % "4.0.0-M21",
 ```
 
 ```scala 

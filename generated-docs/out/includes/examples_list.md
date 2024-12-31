@@ -1,6 +1,6 @@
 ## Hello, World!
 
-* [POST JSON data](https://github.com/softwaremill/sttp/tree/master/examples-ce2/src/main/scala/sttp/client4/examples/PostSerializeJsonMonixHttpClientCirce.scala) <span class="example-tag example-backend">HttpClient</span> <span class="example-tag example-effects">Monix</span>
+* [Post JSON data](https://github.com/softwaremill/sttp/tree/master/examples-ce2/src/main/scala/sttp/client4/examples/PostSerializeJsonMonixHttpClientCirce.scala) <span class="example-tag example-backend">HttpClient</span> <span class="example-tag example-effects">Monix</span>
 * [Post form data](https://github.com/softwaremill/sttp/tree/master/examples/src/main/scala/sttp/client4/examples/PostFormSynchronous.scala) <span class="example-tag example-backend">HttpClient</span> <span class="example-tag example-effects">Direct</span>
 
 ## JSON
@@ -28,12 +28,12 @@
 
 ## Testing
 
-* [Create a backend stub which simulates interactions using multiple query parameters](https://github.com/softwaremill/sttp/tree/master/examples/src/main/scala/sttp/client4/examples/testEndpointMultipleQueryParameters.scala) 
+* [Create a backend stub which simulates interactions using multiple query parameters](https://github.com/softwaremill/sttp/tree/master/examples/src/main/scala/sttp/client4/examples/TestEndpointMultipleQueryParameters.scala) 
 * [Create a backend stub which simulates interactions with a WebSocket](https://github.com/softwaremill/sttp/tree/master/examples/src/main/scala/sttp/client4/examples/WebSocketTesting.scala) <span class="example-tag example-backend">HttpClient</span> <span class="example-tag example-effects">cats-effect</span>
 
 ## WebSocket
 
-* [Connect to & interact with a WebSocket](https://github.com/softwaremill/sttp/tree/master/examples/src/main/scala/sttp/client4/examples/webSocketPekko.scala) <span class="example-tag example-backend">Pekko</span> <span class="example-tag example-effects">Future</span>
+* [Connect to & interact with a WebSocket](https://github.com/softwaremill/sttp/tree/master/examples/src/main/scala/sttp/client4/examples/WebSocketPekko.scala) <span class="example-tag example-backend">Pekko</span> <span class="example-tag example-effects">Future</span>
 * [Connect to & interact with a WebSocket](https://github.com/softwaremill/sttp/tree/master/examples/src/main/scala/sttp/client4/examples/WebSocketZio.scala) <span class="example-tag example-backend">HttpClient</span> <span class="example-tag example-effects">ZIO</span>
 * [Connect to & interact with a WebSocket](https://github.com/softwaremill/sttp/tree/master/examples/src/main/scala/sttp/client4/examples/WebSocketSynchronous.scala) <span class="example-tag example-backend">HttpClient</span> <span class="example-tag example-effects">Direct</span>
 * [Connect to & interact with a WebSocket](https://github.com/softwaremill/sttp/tree/master/examples-ce2/src/main/scala/sttp/client4/examples/WebSocketMonix.scala) <span class="example-tag example-backend">HttpClient</span> <span class="example-tag example-effects">Monix</span>
