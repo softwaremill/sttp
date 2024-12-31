@@ -11,7 +11,7 @@ Backend implementations include the HTTP client that is shipped with Java, as we
 
 Here's a quick example of sttp client in action, runnable using [scala-cli](https://scala-cli.virtuslab.org):
 
-```scala mdoc:compile-only
+```scala
 //> using dep com.softwaremill.sttp.client4::core:4.0.0-M20
 
 import sttp.client4.*
