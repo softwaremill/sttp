@@ -19,7 +19,7 @@ Backend implementations include the HTTP client that is shipped with Java, as we
 Here's a quick example of sttp client in action, runnable using [scala-cli](https://scala-cli.virtuslab.org):
  
 ```scala
-//> using dep com.softwaremill.sttp.client4::core:4.0.0-M21
+//> using dep com.softwaremill.sttp.client4::core:4.0.0-M22
 
 import sttp.client4.*
 
@@ -51,7 +51,7 @@ sttp (v2) documentation is available at [sttp.softwaremill.com/en/v2](https://st
 
 sttp (v1) documentation is available at [sttp.softwaremill.com/en/v1](https://sttp.softwaremill.com/en/v1).
 
-scaladoc is available at [https://www.javadoc.io](https://www.javadoc.io/doc/com.softwaremill.sttp.client4/core_2.12/4.0.0-M21)
+scaladoc is available at [https://www.javadoc.io](https://www.javadoc.io/doc/com.softwaremill.sttp.client4/core_2.12/4.0.0-M22)
 
 ## Quickstart with scala-cli
 
@@ -59,7 +59,7 @@ Add the following directive to the top of your scala file to add the core sttp d
 If you are using [scala-cli](https://scala-cli.virtuslab.org), you can quickly start experimenting with sttp by copy-pasting the following:
 
 ```
-//> using dep "com.softwaremill.sttp.client4::core:4.0.0-M21"
+//> using dep "com.softwaremill.sttp.client4::core:4.0.0-M22"
 import sttp.client4.quick._
 quickRequest.get(uri"http://httpbin.org/ip").send()
 ```
@@ -71,7 +71,7 @@ The `quick` package import brings in the sttp API and a pre-configured, global s
 Similarly, using [Ammonite](http://ammonite.io):
 
 ```scala
-import $ivy.`com.softwaremill.sttp.client4::core:4.0.0-M21`
+import $ivy.`com.softwaremill.sttp.client4::core:4.0.0-M22`
 import sttp.client4.quick._
 quickRequest.get(uri"http://httpbin.org/ip").send()
 ```
@@ -81,7 +81,7 @@ quickRequest.get(uri"http://httpbin.org/ip").send()
 Add the following dependency:
 
 ```scala
-"com.softwaremill.sttp.client4" %% "core" % "4.0.0-M21"
+"com.softwaremill.sttp.client4" %% "core" % "4.0.0-M22"
 ```
 
 Then, import:
@@ -138,7 +138,7 @@ The documentation is typechecked using [mdoc](https://scalameta.org/mdoc/). The 
 
 When generating documentation, it's best to set the version to the current one, so that the generated doc files don't include modifications with the current snapshot version. 
 
-That is, in sbt run: `set ThisBuild/version := "4.0.0-M21"`, before running `mdoc` in `docs`.
+That is, in sbt run: `set ThisBuild/version := "4.0.0-M22"`, before running `mdoc` in `docs`.
 
 ### Testing the Scala.JS backend
 
