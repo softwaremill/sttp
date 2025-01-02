@@ -19,7 +19,18 @@ Additionally, sttp client seamlessly integrates with popular libraries for JSON 
 Here's a quick example of sttp client in action, runnable using [scala-cli](https://scala-cli.virtuslab.org):
 
 ```scala
-//> using dep com.softwaremill.sttp.client4::core:4.0.0-M20
+//> using dep com.softwaremill.sttp.client4::core:@VERSION@
+
+import sttp.client4.quick.*
+
+@main def run(): Unit =
+  println(quickRequest.get(uri"http://httpbin.org/ip").send())
+```
+
+And a slightly more complex one, with URI interpolation, a self-managed backend, and type-safe HTTP error/success representation:
+
+```scala
+//> using dep com.softwaremill.sttp.client4::core:@VERSION@
 
 import sttp.client4.*
 
@@ -42,7 +53,11 @@ import sttp.client4.*
   println(response.body)
 ```
 
-For more examples, see the [usage examples](examples.md) section. To start using sttp client in your project, see the [quickstart](quickstart.md). Or, browse the documentation to find the topics that interest you the most! ScalaDoc is available at [https://www.javadoc.io](https://www.javadoc.io/doc/com.softwaremill.sttp.client4/core_2.12/4.0.0-M9).
+But that's just a small glimpse of sttp client's features! For more examples, see the [usage examples](examples.md) section. 
+
+To start using sttp client in your project, see the [quickstart](quickstart.md). Or, browse the documentation to find the topics that interest you the most! ScalaDoc is available at [https://www.javadoc.io](https://www.javadoc.io/doc/com.softwaremill.sttp.client4/core_2.12/@VERSION@).
+
+sttp client is licensed under Apache2, the source code is [available on GitHub](https://github.com/softwaremill/sttp).
 
 ## Other sttp projects
 
@@ -53,25 +68,15 @@ sttp is a family of Scala HTTP-related projects, and currently includes:
 * [sttp model](https://github.com/softwaremill/sttp-model): simple HTTP model classes (used by client & tapir)
 * [sttp shared](https://github.com/softwaremill/sttp-shared): shared web socket, FP abstractions, capabilities and streaming code.
 * [sttp apispec](https://github.com/softwaremill/sttp-apispec): OpenAPI, AsyncAPI and JSON Schema models.
+* [sttp openai](https://github.com/softwaremill/sttp-openai): Scala client wrapper for OpenAI and OpenAI-compatible APIs. Use the power of ChatGPT inside your code!
 
 Third party projects:
 
 * [sttp-oauth2](https://github.com/ocadotechnology/sttp-oauth2): OAuth2 client library for Scala
-* [sttp openai](https://github.com/softwaremill/sttp-openai): Scala client wrapper for OpenAI (and OpenAI-compatible) API. Use the power of ChatGPT inside your code!
 
 ## Try sttp client in your browser!
 
 [Check out & play with a simple example on Scastie!](https://scastie.scala-lang.org/adamw/aOf32MZsTPesobwfWG5nDQ)
-
-## Sponsors
-
-Development and maintenance of sttp client is sponsored by [SoftwareMill](https://softwaremill.com), a software development and consulting company. We help clients scale their business through software. Our areas of expertise include backends, distributed systems, machine learning, platform engineering and data analytics.
-
-[![](https://files.softwaremill.com/logo/logo.png "SoftwareMill")](https://softwaremill.com)
-
-## Commercial Support
-
-We offer commercial support for sttp and related technologies, as well as development services. [Contact us](https://softwaremill.com/contact/) to learn more about our offer!
 
 # Table of contents
 
@@ -81,6 +86,7 @@ We offer commercial support for sttp and related technologies, as well as develo
    :caption: Getting started
 
    quickstart
+   support
    how
    goals
    community
