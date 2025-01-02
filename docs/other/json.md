@@ -1,6 +1,6 @@
 # JSON
 
-Adding support for JSON (or other format) bodies in requests/responses is a matter of providing a [body serializer](requests/body.md) and/or a [response body specification](responses/body.md). Both are quite straightforward to implement, so integrating with your favorite JSON library shouldn't be a problem. However, there are some integrations available out-of-the-box.
+Adding support for JSON (or other format) bodies in requests/responses is a matter of providing a [body serializer](../requests/body.md) and/or a [response body specification](../responses/body.md). Both are quite straightforward to implement, so integrating with your favorite JSON library shouldn't be a problem. However, there are some integrations available out-of-the-box.
 
 Each integration is available as an import, which brings `asJson` methods into scope. Alternatively, these values are grouped intro traits (e.g. `sttp.client4.circe.SttpCirceApi`), which can be extended to group multiple integrations in one object, and thus reduce the number of necessary imports.
 
@@ -29,7 +29,7 @@ def asJsonEither[E, B]: ResponseAs[Either[ResponseException[E, Exception], B]] =
 def asJsonEitherOrFail[E, B]: ResponseAs[Either[E, B]] = ???
 ```
 
-The response specifications can be further refined using `.orFail` and `.orFailDeserialization`, see [response body specifications](responses/body.md).
+The response specifications can be further refined using `.orFail` and `.orFailDeserialization`, see [response body specifications](../responses/body.md).
 
 Following data class will be used through the next few examples:
 

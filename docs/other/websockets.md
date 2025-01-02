@@ -1,6 +1,6 @@
 # WebSockets
 
-One of the optional capabilities (represented as `WebSockets`) that a backend can support are websockets (see [backends summary](backends/summary.md)). Websocket requests are described exactly the same as regular requests, starting with `basicRequest`, adding headers, specifying the request method and uri.
+One of the optional capabilities (represented as `WebSockets`) that a backend can support are websockets (see [backends summary](../backends/summary.md)). Websocket requests are described exactly the same as regular requests, starting with `basicRequest`, adding headers, specifying the request method and uri.
 
 A websocket request will be sent instead of a regular one if the response specification includes handling the response as a websocket. Depending on the backend you are using, there are three variants of websocket response specifications: synchronous, asynchronous and streaming. To use them, add one of the following imports:
 
@@ -58,11 +58,11 @@ The remaining two variants return the open `SyncWebSocket` directly, as the resp
 
 Similar response specifications, but using an effect wrapper and `WebSocket[F]`, are available in the `sttp.client4.ws.async` objet. 
 
-See also the [examples](examples.md), which include examples involving websockets.
+See also the [examples](../examples.md), which include examples involving websockets.
 
 ## Using streams
 
-Another possibility is to work with websockets by providing a streaming stage, which transforms incoming data frames into outgoing frames. This can be e.g. an [Akka](backends/akka.md) `Flow` or a [fs2](backends/fs2.md) `Pipe`.
+Another possibility is to work with websockets by providing a streaming stage, which transforms incoming data frames into outgoing frames. This can be e.g. an [Akka](../backends/akka.md) `Flow` or a [fs2](../backends/fs2.md) `Pipe`.
 
 The following response specifications are available: 
 
@@ -80,7 +80,7 @@ def asWebSocketStreamAlways[S](s: Streams[S])(p: s.Pipe[WebSocketFrame.Data[_], 
   WebSocketStreamResponseAs[Unit, S] = ???
 ```
 
-Using streaming websockets requires the backend to support the given streaming capability (see also [streaming](requests/streaming.md)). Streaming capabilities are described as implementations of `Streams[S]`, and are provided by backend implementations, e.g. `AkkaStreams` or `Fs2Streams[F]`.
+Using streaming websockets requires the backend to support the given streaming capability (see also [streaming](../requests/streaming.md)). Streaming capabilities are described as implementations of `Streams[S]`, and are provided by backend implementations, e.g. `AkkaStreams` or `Fs2Streams[F]`.
 
 When working with streams of websocket frames keep in mind that a text payload may be fragmented into multiple frames.
 sttp provides two useful methods (`fromTextPipe`, `fromTextPipeF`) for each backend to aggregate these fragments back into complete messages.

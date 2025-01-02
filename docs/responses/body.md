@@ -132,7 +132,7 @@ basicRequest
   .response(asJson)
 ```
 
-A number of JSON libraries are supported out-of-the-box, see [json support](../json.md).
+A number of JSON libraries are supported out-of-the-box, see [json support](../other/json.md).
 
 ## Response-metadata dependent deserializers
 

@@ -163,7 +163,7 @@ HttpClientMonixBackend().flatMap { backend =>
 
 ## Websockets
 
-The Monix backend supports both regular and streaming [websockets](../websockets.md).
+The Monix backend supports both regular and streaming [websockets](../other/websockets.md).
 
 ## Server-sent events
 

@@ -69,7 +69,7 @@ val response: Future[Response[Either[String, Source[ByteString, Any]]]] =
     .send(backend)           
 ```
 
-The akka-http backend support both regular and streaming [websockets](../websockets.md).
+The akka-http backend support both regular and streaming [websockets](../other/websockets.md).
 
 ## Testing
 

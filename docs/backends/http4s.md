@@ -37,4 +37,4 @@ Instead, all custom timeout configuration should be done by creating a `org.http
 
 The backend supports streaming using fs2. For usage details, see the documentation on [streaming using fs2](fs2.md).
 
-The backend doesn't support [websockets](../websockets.md).
+The backend doesn't support [websockets](../other/websockets.md).

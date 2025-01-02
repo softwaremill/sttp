@@ -174,7 +174,7 @@ val effect = HttpClientFs2Backend.resource[IO]().use { backend =>
 
 ## Websockets
 
-The fs2 backends support both regular and streaming [websockets](../websockets.md).
+The fs2 backends support both regular and streaming [websockets](../other/websockets.md).
 
 ## Server-sent events
 

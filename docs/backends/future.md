@@ -141,4 +141,4 @@ Other backends don't support non-blocking [streaming](../requests/streaming.md).
 
 ## Websockets
 
-Some of the backends (see above) support regular and streaming [websockets](../websockets.md).
+Some of the backends (see above) support regular and streaming [websockets](../other/websockets.md).

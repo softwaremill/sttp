@@ -200,7 +200,7 @@ val response: ZIO[Any, Throwable, Response[Either[String, Stream[Throwable, Byte
 
 ## Websockets
 
-The `HttpClient` ZIO backend supports both regular and streaming [websockets](../websockets.md).
+The `HttpClient` ZIO backend supports both regular and streaming [websockets](../other/websockets.md).
 
 ## Testing
 

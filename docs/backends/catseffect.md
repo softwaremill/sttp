@@ -140,4 +140,4 @@ This backend doesn't support non-blocking [streaming](../requests/streaming.md).
 
 ## Websockets
 
-The backend doesn't support [websockets](../websockets.md).
+The backend doesn't support [websockets](../other/websockets.md).

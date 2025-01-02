@@ -61,7 +61,7 @@ your project:
 If you are on Cats Effect 2 (CE2) you will need to add the CE2 specific dependency instead:
 
 ```
-"com.softwaremill.sttp.client4" %%% "catsce2 % "@VERSION@"
+"com.softwaremill.sttp.client4" %%% "catsce2" % "@VERSION@"
 ```
 
 And create the backend instance:
@@ -157,7 +157,7 @@ val response: Task[Response[Observable[ByteBuffer]]] =
 
 ## Websockets
 
-The backend supports both regular and streaming [websockets](../../websockets.md).
+The backend supports both regular and streaming [websockets](../../other/websockets.md).
 
 ## Server-sent events
 

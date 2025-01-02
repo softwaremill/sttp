@@ -8,7 +8,7 @@ Possible use-cases for wrapper-backend include:
 * capturing metrics
 * request signing (transforming the request before sending it to the delegate)
 
-See also the section on [resilience](../../resilience.md) which covers topics such as retries, circuit breaking and rate limiting.
+See also the section on [resilience](../../other/resilience.md) which covers topics such as retries, circuit breaking and rate limiting.
 
 ## Request attributes
 

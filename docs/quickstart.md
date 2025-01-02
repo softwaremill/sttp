@@ -63,7 +63,7 @@ should be closed using `.close()`. Typically, you should have one backend instan
 ## Serialising and parsing JSON
 
 To serialize a custom type to a JSON body, or to deserialize the response body that is in the JSON format, you'll need
-to add an integration with a JSON library. See [json](json.md) for a list of available libraries.
+to add an integration with a JSON library. See [json](other/json.md) for a list of available libraries.
 
 As an example, to integrate with the [uPickle](https://github.com/com-lihaoyi/upickle) library, add the following
 dependency:
