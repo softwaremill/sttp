@@ -19,7 +19,7 @@ sttp client addresses common HTTP client use cases, such as interacting with JSO
 
 The driving principle of sttp client's design is to provide a clean, programmer-friendly API to describe HTTP requests, along with response handling. This ensures that resources, such as HTTP connections, are used safely, also in the presence of errors.
 
-sttp client integrates with a number of lower-level Scala and Java HTTP client implementations through backends (using Java's `HttpClient`, akka-http, pekko-http, http4s, OkHttp, Armeria), offering a wide range of choices when it comes to protocol support, connectivity settings and programming stack compatibility. 
+sttp client integrates with a number of lower-level Scala and Java HTTP client implementations through backends (using Java's `HttpClient`, Akka HTTP, Pekko HTTP, http4s, OkHttp, Armeria), offering a wide range of choices when it comes to protocol support, connectivity settings and programming stack compatibility. 
 
 Additionally, sttp client seamlessly integrates with popular libraries for JSON handling (e.g., circe, uPickle, jsoniter, json4s, play-json, ZIO Json), logging, metrics, and tracing (e.g., slf4j, scribe, OpenTelemetry, Prometheus). It also supports streaming libraries (e.g., fs2, ZIO Streams, Akka Streams, Pekko Streams) and provides tools for testing HTTP interactions.
 
@@ -45,7 +45,7 @@ import sttp.client4.*
   // response.header(...): Option[String]
   println(response.header("Content-Length")) 
 
-  // response.body: by default read into an Either[String, String] to indicate failure or success 
+  // response.body: read into an Either[String, String] to indicate failure or success 
   println(response.body)
 ```
 

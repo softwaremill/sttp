@@ -1,7 +1,7 @@
 # Quickstart
 
 The core sttp client API comes in a single jar, with a transitive dependency on [sttp model](https://github.com/softwaremill/sttp-model). 
-This also includes [synchronous](backends/synchronous.md) and [`Future`-based] backends, based on Java's `HttpClient`.
+This also includes [synchronous](backends/synchronous.md) and [`Future`-based](backends/future.md) backends, based on Java's `HttpClient`.
 
 To integrate with other parts of your application and various effect systems, you'll often need to use an alternate backend, or backend wrappers (but what's important is that the API remains the same!). See the section on [backends](backends/summary.md) for a short guide on which backend to choose, and a list of all implementations.
 
