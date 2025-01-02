@@ -129,11 +129,11 @@ Third party projects:
    :maxdepth: 2
    :caption: Other topics
 
-   websockets
-   json
-   xml
-   resilience
-   openapi
+   other/websockets
+   other/json
+   other/xml
+   other/resilience
+   other/openapi
 
 .. toctree::
    :maxdepth: 2
