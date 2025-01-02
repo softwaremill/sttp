@@ -8,14 +8,6 @@ sttp client is an open-source HTTP client for Scala, supporting various approach
 
 The library is available for Scala 2.12, 2.13 and 3. Supported platforms are the JVM (Java 11+), Scala.JS and Scala Native.
 
-sttp client addresses common HTTP client use cases, such as interacting with JSON APIs (with automatic serialization of request bodies and deserialization of response bodies), uploading and downloading files, submitting form data, handling multi-part requests, and working with WebSockets.
-
-The driving principle of sttp client's design is to provide a clean, programmer-friendly API to describe HTTP requests, along with response handling. This ensures that resources, such as HTTP connections, are used safely, also in the presence of errors.
-
-sttp client integrates with a number of lower-level Scala and Java HTTP client implementations through backends (using Java's `HttpClient`, Akka HTTP, Pekko HTTP, http4s, OkHttp, Armeria), offering a wide range of choices when it comes to protocol support, connectivity settings and programming stack compatibility. 
-
-Additionally, sttp client seamlessly integrates with popular libraries for JSON handling (e.g., circe, uPickle, jsoniter, json4s, play-json, ZIO Json), logging, metrics, and tracing (e.g., slf4j, scribe, OpenTelemetry, Prometheus). It also supports streaming libraries (e.g., fs2, ZIO Streams, Akka Streams, Pekko Streams) and provides tools for testing HTTP interactions.
-
 Here's a quick example of sttp client in action, runnable using [scala-cli](https://scala-cli.virtuslab.org):
 
 ```scala
@@ -27,7 +19,15 @@ import sttp.client4.quick.*
   println(quickRequest.get(uri"http://httpbin.org/ip").send())
 ```
 
-And a slightly more complex one, with URI interpolation, a self-managed backend, and type-safe HTTP error/success representation:
+sttp client addresses common HTTP client use cases, such as interacting with JSON APIs (with automatic serialization of request bodies and deserialization of response bodies), uploading and downloading files, submitting form data, handling multi-part requests, and working with WebSockets.
+
+The driving principle of sttp client's design is to provide a clean, programmer-friendly API to describe HTTP requests, along with response handling. This ensures that resources, such as HTTP connections, are used safely, also in the presence of errors.
+
+sttp client integrates with a number of lower-level Scala and Java HTTP client implementations through backends (using Java's `HttpClient`, Akka HTTP, Pekko HTTP, http4s, OkHttp, Armeria), offering a wide range of choices when it comes to protocol support, connectivity settings and programming stack compatibility. 
+
+Additionally, sttp client seamlessly integrates with popular libraries for JSON handling (e.g., circe, uPickle, jsoniter, json4s, play-json, ZIO Json), logging, metrics, and tracing (e.g., slf4j, scribe, OpenTelemetry, Prometheus). It also supports streaming libraries (e.g., fs2, ZIO Streams, Akka Streams, Pekko Streams) and provides tools for testing HTTP interactions.
+
+Some more features: URI interpolation, a self-managed backend, and type-safe HTTP error/success representation, are demonstrated by the below example:
 
 ```scala
 //> using dep com.softwaremill.sttp.client4::core:@VERSION@
