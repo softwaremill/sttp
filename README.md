@@ -11,10 +11,17 @@
 
 ## Welcome!
 
-[sttp client](https://github.com/softwaremill/sttp) is an open-source library which provides a clean, programmer-friendly API to describe HTTP
-requests and how to handle responses. Requests are sent using one of the backends, which wrap lower-level Scala or Java HTTP client implementations. The backends can integrate with a variety of Scala stacks, providing both synchronous and asynchronous, procedural and functional interfaces.
- 
-Backend implementations include the HTTP client that is shipped with Java, as well as ones based on [akka-http](https://doc.akka.io/docs/akka-http/current/scala/http/), [http4s](https://http4s.org), [OkHttp](http://square.github.io/okhttp/). They integrate with [Akka](https://akka.io), [Monix](https://monix.io), [fs2](https://github.com/functional-streams-for-scala/fs2), [cats-effect](https://github.com/typelevel/cats-effect), [scalaz](https://github.com/scalaz/scalaz) and [ZIO](https://github.com/zio/zio). Supported Scala versions include 2.12, 2.13 and 3, Scala.JS and Scala Native; supported Java versions include 11+.
+sttp client is an open-source HTTP client for Scala, supporting various approaches to writing Scala code: synchronous (direct-style), `Future`-based, and using functional effect systems (cats-effect, ZIO, Monix, Kyo, scalaz).
+
+The library is available for Scala 2.12, 2.13 and 3. Supported platforms are the JVM (Java 11+), Scala.JS and Scala Native.
+
+sttp client addresses common HTTP client use cases, such as interacting with JSON APIs (with automatic serialization of request bodies and deserialization of response bodies), uploading and downloading files, submitting form data, handling multi-part requests, and working with WebSockets.
+
+The driving principle of sttp client's design is to provide a clean, programmer-friendly API to describe HTTP requests, along with response handling. This ensures that resources, such as HTTP connections, are used safely, also in the presence of errors.
+
+sttp client integrates with a number of lower-level Scala and Java HTTP client implementations through backends (using Java's `HttpClient`, akka-http, pekko-http, http4s, OkHttp, Armeria), offering a wide range of choices when it comes to protocol support, connectivity settings and programming stack compatibility. 
+
+Additionally, sttp client seamlessly integrates with popular libraries for JSON handling (e.g., circe, uPickle, jsoniter, json4s, play-json, ZIO Json), logging, metrics, and tracing (e.g., slf4j, scribe, OpenTelemetry, Prometheus). It also supports streaming libraries (e.g., fs2, ZIO Streams, Akka Streams, Pekko Streams) and provides tools for testing HTTP interactions.
 
 Here's a quick example of sttp client in action, runnable using [scala-cli](https://scala-cli.virtuslab.org):
  
@@ -29,7 +36,8 @@ import sttp.client4.*
 
   // the `query` parameter is automatically url-encoded
   // `sort` is removed, as the value is not defined
-  val request = basicRequest.get(uri"https://api.github.com/search/repositories?q=$query&sort=$sort")
+  val request = basicRequest.get(
+    uri"https://api.github.com/search/repositories?q=$query&sort=$sort")
 
   val backend = DefaultSyncBackend()
   val response = request.send(backend)
@@ -60,7 +68,7 @@ If you are using [scala-cli](https://scala-cli.virtuslab.org), you can quickly s
 
 ```
 //> using dep "com.softwaremill.sttp.client4::core:4.0.0-M22"
-import sttp.client4.quick._
+import sttp.client4.quick.*
 quickRequest.get(uri"http://httpbin.org/ip").send()
 ```
 
@@ -72,7 +80,7 @@ Similarly, using [Ammonite](http://ammonite.io):
 
 ```scala
 import $ivy.`com.softwaremill.sttp.client4::core:4.0.0-M22`
-import sttp.client4.quick._
+import sttp.client4.quick.*
 quickRequest.get(uri"http://httpbin.org/ip").send()
 ```
 
@@ -87,7 +95,7 @@ Add the following dependency:
 Then, import:
 
 ```scala
-import sttp.client4._
+import sttp.client4.*
 ```
 
 Type `basicRequest.` and see where your IDE’s auto-complete gets you!
