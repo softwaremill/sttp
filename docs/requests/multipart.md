@@ -18,7 +18,7 @@ The content type of each part is by default the same as when setting simple bodi
 The parts can be specified using either a `Seq[Multipart]` or by using multiple arguments:
 
 ```scala mdoc:compile-only
-import sttp.client4._
+import sttp.client4.*
 
 basicRequest.multipartBody(Seq(multipart("p1", "v1"), multipart("p2", "v2")))
 basicRequest.multipartBody(multipart("p1", "v1"), multipart("p2", "v2"))

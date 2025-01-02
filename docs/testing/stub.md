@@ -1,8 +1,8 @@
-# Testing
+# The stub backend
 
 If you need a stub backend for use in tests instead of a "real" backend (you probably don't want to make HTTP calls during unit tests), you can use the `SttpBackendStub` class. It allows specifying how the backend should respond to requests matching given predicates.
 
-You can also create a stub backend using [akka-http routes](backends/akka.md).
+You can also create a stub backend using [akka-http routes](../backends/akka.md).
 
 ## Creating a stub backend
 
@@ -287,7 +287,7 @@ the `WebSocket` trait is recommended.
 
 Using `RecordingSttpBackend` it's possible to capture all interactions in which a backend has been involved.
 
-The recording backend is a [backend wrapper](backends/wrappers/custom.md), and it can wrap any backend, but it's most
+The recording backend is a [backend wrapper](../backends/wrappers/custom.md), and it can wrap any backend, but it's most
 useful when combined with the backend stub.
 
 Example usage:

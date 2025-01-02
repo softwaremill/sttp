@@ -168,7 +168,8 @@ Third party projects:
    :maxdepth: 2
    :caption: Testing
 
-   testing
+   testing/stub
+   testing/curl
 
 .. toctree::
    :maxdepth: 2

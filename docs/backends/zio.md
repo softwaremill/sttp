@@ -205,7 +205,7 @@ The `HttpClient` ZIO backend supports both regular and streaming [websockets](..
 ## Testing
 
 A stub backend can be created through the `.stub` method on the companion object, and configured as described in the
-[testing](../testing.md) section. 
+[testing](../testing/stub.md) section. 
 
 A layer with the stub `SttpBackend` can be then created by simply calling `ZLayer.succeed(sttpBackendStub)`. 
 

@@ -31,40 +31,29 @@ The URI can be created programmatically (by calling methods on the `Uri` class),
 
 ## Sending a request
 
-A request definition can be created without knowing how it will be sent. But to send a request, a backend is needed. A default, synchronous backend based on Java's `HttpURLConnection` is provided in the `core` jar.
+A request definition can be created without knowing how it will be sent. But to send a request, a backend is needed. A default, synchronous backend based on Java's `HttpClient` is provided in the `core` jar.
 
-To invoke the `send(backend)` method on a request description, you'll need an instance of `SttpBackend`:
+To invoke the `send(backend)` method on a request description, you'll need an instance of `Backend`:
 
 ```scala mdoc:compile-only
 val backend = DefaultSyncBackend()
 val response: Response[Either[String, String]] = request.send(backend)
 ```        
 
-The default backend uses the `Identity` effect to return responses, which is equivalent to a synchronous call (no effect at all). Other asynchronous backends use other effect types. See the section on [backends](../backends/summary.md) for more details.
+The default backend invokes any effects synchronously. Other, asynchronous backends, use "wrapper" effect types, such as `Future` or `IO`. See the section on [backends](../backends/summary.md) for more details.
 
 ```{eval-rst}
 .. note::
 
-  Only requests with the request method and uri can be sent. If trying to send a request without these components specified, a compile-time error will be reported. On how this is implemented, see the documentation on the :doc:`type of request definitions <type>`.
+  Only requests with the request method and uri can be sent. When trying to send a request without these components specified, a compile-time error will be reported. On how this is implemented, see the documentation on the :doc:`type of request definitions <type>`.
 ```
 
 ## Initial requests
 
-sttp provides two initial requests:
+sttp provides three initial requests:
 
-* `basicRequest`, which is an empty request with the `Accept-Encoding: gzip, deflate` header added. That's the one that is most commonly used.
+* `basicRequest`, which is an empty request with the `Accept-Encoding: gzip, deflate` header added. That's the one that is most commonly used. By default reads the response as a `Either[String, String]` (indicating HTTP 4xx/5xx failure or 2xx success).
 * `emptyRequest`, a completely empty request, with no headers at all.
+* `quickRequest`, which by default reads the response as a `String` in case of a success, and throws an exception / returns a failed effect in case of a 4xx/5xx HTTP error response.
 
-Both of these requests will by default read the response body into a UTF-8 `String`. How the response body is handled is also part of the request definition. See the section on [response body specifications](../responses/body.md) for more details on how to customize that.
-
-## Debugging requests
-
-sttp comes with builtin request to curl converter. To convert request to curl invocation use `.toCurl` method.
-
-For example:
-
-```scala mdoc
-basicRequest.get(uri"http://httpbin.org/ip").toCurl
-```
-
-Note that the `Accept-Encoding` header, which is added by default to all requests (`Accept-Encoding: gzip, deflate`), can make curl warn that _binary output can mess up your terminal_, when running generated command from the command line. It can be omitted by setting `omitAcceptEncoding = true` when calling `.toCurl` method.
+How the response body is handled can be (and very often is) customized. See the section on [response body specifications](../responses/body.md) for more details.
