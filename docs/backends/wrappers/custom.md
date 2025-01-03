@@ -43,38 +43,7 @@ To adjust the logs to your needs, or to integrate with your logging framework, s
 Below is an example on how to implement a backend wrapper, which integrates with rate-limiter module from resilience4j library and wraps any backend:
 
 ```scala mdoc:compile-only
-import io.github.resilience4j.ratelimiter.RateLimiter
-import sttp.capabilities.Effect
-import sttp.monad.MonadError
-import sttp.client4.{GenericBackend, GenericRequest, Response, StreamBackend}
-import sttp.client4.wrappers.DelegateBackend
 
-class RateLimitingSttpBackend[F[_], P](
-    rateLimiter: RateLimiter,
-    delegate: GenericBackend[F, P]
-    )(implicit monadError: MonadError[F]) extends DelegateBackend(delegate):
-
-  override def send[T](request: GenericRequest[T, P with Effect[F]]): F[Response[T]] =
-    RateLimitingSttpBackend.decorateF(rateLimiter, delegate.send(request))
-
-object RateLimitingSttpBackend:
-  def apply[F[_], S](
-    rateLimiter: RateLimiter,
-    backend: StreamBackend[F, S]
-  )(implicit monadError: MonadError[F]): StreamBackend[F, S] =
-    new RateLimitingSttpBackend(rateLimiter, backend) with StreamBackend[F, S] {}
-
-  def decorateF[F[_], T](
-      rateLimiter: RateLimiter,
-      service: => F[T]
-  )(implicit monadError: MonadError[F]): F[T] = 
-    monadError.suspend:
-      try
-        RateLimiter.waitForPermission(rateLimiter)
-        service
-      catch 
-        case t: Throwable =>
-          monadError.error(t)
 ```         
 
 ## Example new backend

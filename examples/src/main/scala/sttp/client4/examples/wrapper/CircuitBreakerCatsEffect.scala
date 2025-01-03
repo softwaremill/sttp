@@ -6,17 +6,19 @@
 
 package sttp.client4.examples.wrapper
 
-import io.github.resilience4j.circuitbreaker.{CallNotPermittedException, CircuitBreaker}
+import cats.effect.ExitCode
+import cats.effect.IO
+import cats.effect.IOApp
+import io.github.resilience4j.circuitbreaker.CallNotPermittedException
+import io.github.resilience4j.circuitbreaker.CircuitBreaker
+import io.github.resilience4j.circuitbreaker.CircuitBreakerConfig
 import sttp.capabilities.Effect
 import sttp.client4.*
+import sttp.client4.httpclient.cats.HttpClientCatsBackend
 import sttp.client4.wrappers.DelegateBackend
 import sttp.monad.MonadError
+
 import java.util.concurrent.TimeUnit
-import cats.effect.IOApp
-import cats.effect.IO
-import cats.effect.ExitCode
-import sttp.client4.httpclient.cats.HttpClientCatsBackend
-import io.github.resilience4j.circuitbreaker.CircuitBreakerConfig
 
 class CircuitBreakerBackendWrapper[F[_], P](circuitBreaker: CircuitBreaker, delegate: GenericBackend[F, P])
     extends DelegateBackend(delegate):
@@ -32,7 +34,7 @@ object CircuitBreakerBackendWrapper:
   private def decorateF[F[_], T](
       circuitBreaker: CircuitBreaker,
       service: => F[T]
-  )(implicit monadError: MonadError[F]): F[T] =
+  )(using monadError: MonadError[F]): F[T] =
     monadError.suspend:
       if !circuitBreaker.tryAcquirePermission() then
         monadError.error(CallNotPermittedException.createCallNotPermittedException(circuitBreaker))

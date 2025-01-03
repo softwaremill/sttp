@@ -10,11 +10,12 @@ import sttp.capabilities.Effect
 import sttp.client4.*
 import sttp.client4.pekkohttp.*
 import sttp.client4.wrappers.DelegateBackend
-import scala.concurrent.Future
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.util.*
+
 import scala.concurrent.Await
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 import scala.concurrent.duration.Duration
+import scala.util.*
 
 // the metrics infrastructure
 trait MetricsServer:

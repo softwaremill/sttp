@@ -4,13 +4,14 @@
 
 package sttp.client4.examples.resilience
 
-import sttp.client4.*
-import ox.OxApp
 import ox.Ox
-import ox.resilience.retry
-import ox.resilience.RetryConfig
-import scala.concurrent.duration.*
+import ox.OxApp
 import ox.resilience.ResultPolicy
+import ox.resilience.RetryConfig
+import ox.resilience.retry
+import sttp.client4.*
+
+import scala.concurrent.duration.*
 
 object RetryOx extends OxApp.Simple:
   override def run(using Ox): Unit =

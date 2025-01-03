@@ -5,6 +5,7 @@
 package sttp.client4.examples
 
 import sttp.client4.*
+
 import scala.util.Random
 
 @main def dynamicUriSynchronous(): Unit =
