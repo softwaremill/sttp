@@ -18,5 +18,5 @@ import sttp.client4.*
   val backend = DefaultSyncBackend()
   val response = request.send(backend)
 
-  // the resposne body should contain a "form" field with the uploaded form data
+  // the response body should contain a "form" field with the uploaded form data
   println(response.body)
