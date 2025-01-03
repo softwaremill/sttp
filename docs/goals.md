@@ -24,6 +24,7 @@ See also the blog posts:
 ## How is sttp different from other libraries?
 
 * immutable request builder which doesn't impose any order in which request parameters need to be specified. Such an approach allows defining partial requests with common cookies/headers/options, which can later be specialized using a specific URI and HTTP method.
+* integration with various Scala programming stacks and libraries
 * support for multiple backends, both synchronous and asynchronous, with backend-specific streaming support
 * URI interpolator with context-aware escaping, optional parameters support and parameter collections
 * description of how to handle the response is combined with the description of the request to send

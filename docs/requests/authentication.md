@@ -1,5 +1,7 @@
 # Authentication
 
+## Supported schemes
+
 sttp supports basic, bearer-token based authentication and digest authentication. Two first cases are handled by adding an `Authorization` header with the appropriate credentials.
 
 Basic authentication, using which the username and password are encoded using Base64, can be added as follows:

@@ -1,18 +1,9 @@
 # The type of request definitions
 
-All request definitions have type `RequestT[U, T, R]` (RequestT as in Request Template). If this looks a bit complex, don't worry, what the three type parameters stand for is the only thing you'll hopefully have to remember when using the API!
+Most request definitions have the type `Request[T]`. The `T` specifies the type to which the response will be read. By default, this is `Either[String, String]`. But it can also be e.g. `Array[Byte]` or `Unit`, if the response should be ignored. Response body handling can be changed by calling the `.response` method. With backends which support streaming, this can also be a supported stream type. See [response body specifications](../responses/body.md) for more details.
 
-Going one-by-one:
+If you're using streaming [request](streaming.md)/[response](../responses/body.md) bodies, you'll get a `StreamRequest[T, R]`. The `R` type parameter specifies the requirements of this request. In case of streaming, this will be an implementation of `Streams[S]`, such as `Fs2Streams[F]` or `PekkoStreams`. You can only send such requests using backends, which also support this type of streaming (this is verified at compile-time)!
 
-* `U[_]` specifies if the request method and URL are specified. Using the API, this can be either `type Empty[X] = None`, meaning that the request has neither a method nor an URI. Or, it can be `type Id[X] = X` (type-level identity), meaning that the request has both a method and an URI specified. Only requests with a specified URI & method can be sent.
-* `T` specifies the type to which the response will be read. By default, this is `Either[String, String]`. But it can also be e.g. `Array[Byte]` or `Unit`, if the response should be ignored. Response body handling can be changed by calling the `.response` method. With backends which support streaming, this can also be a supported stream type. See [response body specifications](../responses/body.md) for more details.
-* `R` specifies the requirements of this request. Most of the time this will be `Any`, meaning that this request does not have any special requirements, and can be sent using any backend. So most of the time you can just ignore that parameter. However, if you are using streaming [request](streaming.md)/[response](../responses/body.md) bodies or [websockets](../websockets.md), the type parameter will reflect the required capabilities. They can include `Effect[F]`, `Streams[S]` and `WebSockets`.
+If you're describing a web socket request, you'll get a `WebSocketRequest[F[_], T]`. The `F[_]` type parameter describes the effect, using which the web socket is processed (by default, the request then also contains the entire logic to interact with the web socket, although this is not strictly required). For synchronous web sockets, `F[_]` will be `Identity` ("no wrapper", direct-style). For asynchronous web sockets, `F[_]` might be `Future` or `IO` (or any other effect type). As with streams, such requests can only be sent using backends which support web sockets, and the effect type used to process the web socket.
 
-There are two type aliases for the request template that are used:
-
-* `type Request[T, R] = RequestT[Identity, T, R]`. A sendable request.
-* `type PartialRequest[T, R] = RequestT[Empty, T, R]`
-
-As `basicRequest`, the starting request, by default reads the body into a `Either[String, String]`, its type is:
-
-`basicRequest: PartialRequest[Either[String, String], Any]`
+Finally, if you're processing the websocket using streaming, you'll work with a `WebSocketStreamRequest[T, S]`. As before, `S` will contain the required streaming capability. However, it will also contain the effect type, which is used to interact with the web socket. An example value for `S` might be `PekkoStreams & Effect[Future]`.

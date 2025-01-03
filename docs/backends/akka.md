@@ -69,11 +69,11 @@ val response: Future[Response[Either[String, Source[ByteString, Any]]]] =
     .send(backend)           
 ```
 
-The akka-http backend support both regular and streaming [websockets](../websockets.md).
+The akka-http backend support both regular and streaming [websockets](../other/websockets.md).
 
 ## Testing
 
-Apart from testing using [the stub](../testing.md), you can create a backend using any `HttpRequest => Future[HttpResponse]` function, or an akka-http `Route`.
+Apart from testing using [the stub](../testing/stub.md), you can create a backend using any `HttpRequest => Future[HttpResponse]` function, or an akka-http `Route`.
 
 That way, you can "mock" a server that the backend will talk to, without starting any actual server or making any HTTP calls.
 

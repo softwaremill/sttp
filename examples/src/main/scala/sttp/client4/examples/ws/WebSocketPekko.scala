@@ -3,7 +3,7 @@
 //> using dep com.softwaremill.sttp.client4::pekko-http-backend:4.0.0-M20
 //> using dep org.apache.pekko::pekko-stream:1.1.2
 
-package sttp.client4.examples
+package sttp.client4.examples.ws
 
 import sttp.client4._
 import sttp.client4.ws.async._

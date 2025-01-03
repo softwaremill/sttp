@@ -63,7 +63,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'sttp'
-copyright = u'2024, SoftwareMill'
+copyright = u'2025, SoftwareMill'
 author = u'SoftwareMill'
 
 # The version info for the project you're documenting, acts as replacement for
