@@ -7,7 +7,7 @@ HTTP requests might fail in a variety of ways! There are two basic types of fail
 
 The first type of failures is represented by exceptions, which are thrown when sending the request (using `request.send(backend)`). The second type of failure is represented as a `Response[T]`, with the appropriate response code. The response body might depend on the status code; by default the response is read as a `Either[String, String]`, where the left side represents protocol-level failure, and the right side: success.
 
-Exceptions might be thrown directly (`Identity` synchronous backends), or returned as failed effects (other backends, e.g. failed `scala.concurrent.Future`). Backends will try to categorise these exceptions into a `SttpClientException`, which has three subclasses:
+Exceptions might be thrown directly (synchronous, direct-style backends), or returned as failed effects (other backends, e.g. failed `scala.concurrent.Future`). Backends will try to categorise these exceptions into a `SttpClientException`, which has three subclasses:
 
 * `ConnectException`: when a connection (tcp socket) can't be established to the target host
 * `ReadException`: when a connection has been established, but there's any kind of problem receiving the response (e.g. a broken socket)
@@ -24,7 +24,7 @@ Exceptions might also be thrown when deserializing the response body - depending
 This means that a typical `asJson` response specification will result in the body being read as:
 
 ```scala mdoc:silent
-import sttp.client4._
+import sttp.client4.*
 def asJson[T]: ResponseAs[Either[ResponseException[String, Exception], T]] = ???
 ``` 
 

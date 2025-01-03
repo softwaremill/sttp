@@ -1,7 +1,7 @@
 # cats-effect backend
 
 The [Cats Effect](https://github.com/typelevel/cats-effect) backend is **asynchronous**. 
-It can be created for any type implementing the `cats.effect.Concurrent` typeclass, such as `cats.effect.IO`. 
+It can be created for any type implementing the `cats.effect.kernel.Async` typeclass, such as `cats.effect.IO`. 
 Sending a request is a non-blocking, lazily-evaluated operation and results in a wrapped response. 
 There's a transitive dependency on `cats-effect`. 
 
@@ -82,9 +82,10 @@ Creation of the backend can be done in two basic ways:
 Firstly, add the following dependency to your project:
 
 ```scala
-"com.softwaremill.sttp.client4" %% "armeria-backend-cats" % "@VERSION@" // for cats-effect 3.x
-// or
-"com.softwaremill.sttp.client4" %% "armeria-backend-cats-ce2" % "@VERSION@" // for cats-effect 2.x
+// for cats-effect 3.x
+"com.softwaremill.sttp.client4" %% "armeria-backend-cats" % "@VERSION@" 
+// or for cats-effect 2.x
+"com.softwaremill.sttp.client4" %% "armeria-backend-cats-ce2" % "@VERSION@" 
 ```
 
 create client:
@@ -126,8 +127,8 @@ val client = WebClient.builder("https://my-service.com")
 val backend = ArmeriaCatsBackend.usingClient[IO](client)
 ```
 
-```{eval-rst}
-.. note:: A WebClient could fail to follow redirects if the WebClient is created with a base URI and a redirect location is a different URI.
+```{note}
+A WebClient could fail to follow redirects if the WebClient is created with a base URI and a redirect location is a different URI.
 ```
 
 This backend is build on top of [Armeria](https://armeria.dev/docs/client-http).

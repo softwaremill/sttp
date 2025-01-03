@@ -972,6 +972,7 @@ lazy val examples = (projectMatrix in file("examples"))
     libraryDependencies ++= Seq(
       "io.circe" %% "circe-generic" % circeVersion,
       "org.json4s" %% "json4s-native" % json4sVersion,
+      "com.github.plokhotnyuk.jsoniter-scala" %%% "jsoniter-scala-macros" % jsoniterVersion,
       pekkoStreams,
       logback
     ),
@@ -986,6 +987,7 @@ lazy val examples = (projectMatrix in file("examples"))
     json4s,
     circe,
     upickle,
+    jsoniter,
     scribeBackend,
     slf4jBackend,
     ox

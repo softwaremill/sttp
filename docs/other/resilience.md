@@ -16,16 +16,16 @@ Still, the input for a particular resilience model might involve both the result
 
 Here's an incomplete list of libraries which can be used to manage retries in various Scala stacks:
 
-* for synchornous/direct-style: [ox](https://github.com/softwaremill/ox)
+* for synchornous/direct-style: [Ox](https://github.com/softwaremill/ox)
 * for `Future`: [retry](https://github.com/softwaremill/retry)
 * for ZIO: [schedules](https://zio.dev/reference/schedule/), [rezilience](https://github.com/svroonland/rezilience)
 * for Monix/cats-effect: [cats-retry](https://github.com/cb372/cats-retry)
 * for Monix: `.restart` methods
 
 sttp client contains a default implementation of a predicate, which allows deciding if a request is retriable: if the body can be sent multiple times, and if the HTTP method is idempotent.
-This predicate is available as `RetryWhen.Default` and has type `(Request[_, _], Either[Throwable, Response[_]]) => Boolean`.
+This predicate is available as `RetryWhen.Default` and has type `(GenericRequest[_, _], Either[Throwable, Response[_]]) => Boolean`.
 
-See also the "retrying using ZIO" [example](../examples.md), as well as an example of a very simple [retrying backend wrapper](../backends/wrappers/custom.md). 
+See also the "resiliency" [examples](../examples.md), as well as an example of a very simple [retrying backend wrapper](../backends/wrappers/custom.md). 
 
 ### Backend-specific retries
 
@@ -42,7 +42,8 @@ Some backends have built-in retry mechanisms:
 
 ## Rate limiting
 
-* for akka-streams: [throttle in akka streams](https://doc.akka.io/docs/akka/current/stream/operators/Source-or-Flow/throttle.html)
+* for synchornous/direct-style: [Ox](https://github.com/softwaremill/ox)
+* for Akka Streams: [throttle in akka streams](https://doc.akka.io/docs/akka/current/stream/operators/Source-or-Flow/throttle.html)
 * for ZIO: [rezilience](https://github.com/svroonland/rezilience)
 
 ## Java libraries

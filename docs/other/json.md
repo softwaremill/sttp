@@ -72,7 +72,7 @@ Arbitrary JSON structures can be traversed by parsing the result as `io.circe.Js
 
 ## Json4s
 
-To encode and decode json using json4s, add the following dependency to your project:
+To encode and decode json using json4s, add the following dependencies to your project:
 
 ```
 "com.softwaremill.sttp.client4" %% "json4s" % "@VERSION@"

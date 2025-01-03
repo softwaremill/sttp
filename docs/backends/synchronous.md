@@ -102,23 +102,17 @@ Both HttpClient and OkHttp backends support regular [websockets](../other/websoc
 "com.softwaremill.sttp.client4" %% "ox" % "@VERSION@",
 ```
 
-```scala 
-import ox.*
-import ox.channels.Source
+```scala mdoc:compile-only
 import sttp.client4.*
 import sttp.client4.impl.ox.sse.OxServerSentEvents
-import sttp.model.sse.ServerSentEvent
 import java.io.InputStream
 
-def handleSse(is: InputStream)(using IO): Unit =
-  supervised {
-    OxServerSentEvents.parse(is).foreach(event => println(s"Received event: $event"))
-  }
+def handleSse(is: InputStream): Unit =
+  OxServerSentEvents.parse(is).foreach(event => println(s"Received event: $event"))
 
 val backend = DefaultSyncBackend()
-IO.unsafe:
   basicRequest
     .get(uri"https://postman-echo.com/server-events/3")
-      .response(asInputStreamAlways(handleSse))
-      .send(backend)
+    .response(asInputStreamAlways(handleSse))
+    .send(backend)
 ```

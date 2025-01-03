@@ -42,10 +42,8 @@ val response: Response[Either[String, String]] = request.send(backend)
 
 The default backend invokes any effects synchronously. Other, asynchronous backends, use "wrapper" effect types, such as `Future` or `IO`. See the section on [backends](../backends/summary.md) for more details.
 
-```{eval-rst}
-.. note::
-
-  Only requests with the request method and uri can be sent. When trying to send a request without these components specified, a compile-time error will be reported. On how this is implemented, see the documentation on the :doc:`type of request definitions <type>`.
+```{note}
+Only requests with the request method and uri can be sent. When trying to send a request without these components specified, a compile-time error will be reported. On how this is implemented, see the documentation on the [type of request definitions](type.md).
 ```
 
 ## Initial requests

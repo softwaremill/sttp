@@ -1,6 +1,6 @@
-// {cat=Hello, World!; effects=Direct; backend=HttpClient}: Post form data
+// {cat=Hello, World!; effects=Direct; backend=HttpClient}: POST form data
 
-//> using dep com.softwaremill.sttp.client4::core:4.0.0-M20
+//> using dep com.softwaremill.sttp.client4::core:4.0.0-M22
 
 package sttp.client4.examples
 
@@ -18,5 +18,5 @@ import sttp.client4.*
   val backend = DefaultSyncBackend()
   val response = request.send(backend)
 
+  // the resposne body should contain a "form" field with the uploaded form data
   println(response.body)
-  println(response.headers)

@@ -258,7 +258,7 @@ class MyCustomBackendHttpTest extends HttpTest[Future]:
 When implementing a backend wrapper using cats, it might be useful to import:
 
 ```scala
-import sttp.client4.impl.cats.implicits._
+import sttp.client4.impl.cats.implicits.*
 ```
 
 from the cats integration module. The module should be available on the classpath after adding following dependency:
