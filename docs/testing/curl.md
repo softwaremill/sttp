@@ -5,6 +5,8 @@ sttp comes with builtin request to curl converter. To convert request to curl in
 For example:
 
 ```scala mdoc
+import sttp.client4.*
+
 basicRequest.get(uri"http://httpbin.org/ip").toCurl
 ```
 
