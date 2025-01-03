@@ -1,4 +1,4 @@
-//> using dep com.softwaremill.sttp.client4::core:4.0.0-M20
+//> using dep com.softwaremill.sttp.client4::core:4.0.0-M22
 
 import sttp.client4.*
 
@@ -14,7 +14,7 @@ import sttp.client4.*
   val response = request.send(backend)
 
   // response.header(...): Option[String]
-  println(response.header("Content-Length")) 
+  println(response.header("Content-Length"))
 
-  // response.body: by default read into an Either[String, String] to indicate failure or success 
+  // response.body: by default read into an Either[String, String] to indicate failure or success
   println(response.body)
