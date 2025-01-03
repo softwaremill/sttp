@@ -73,7 +73,7 @@ def asWebSocketStream[S](s: Streams[S])(p: s.Pipe[WebSocketFrame.Data[_], WebSoc
   WebSocketStreamResponseAs[Either[String, Unit], S] = ???
 
 def asWebSocketStreamOrFail[S](s: Streams[S])(p: s.Pipe[WebSocketFrame.Data[_], WebSocketFrame]): 
-  WebSocketStreamResponseAs[Unit, S] =
+  WebSocketStreamResponseAs[Unit, S] = ???
 ```
 
 Using streaming websockets requires the backend to support the given streaming capability (see also [streaming](../requests/streaming.md)). Streaming capabilities are described as implementations of `Streams[S]`, and are provided by backend implementations, e.g. `PekkoStreams` or `Fs2Streams[F]`.

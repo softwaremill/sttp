@@ -102,7 +102,7 @@ Both HttpClient and OkHttp backends support regular [websockets](../other/websoc
 "com.softwaremill.sttp.client4" %% "ox" % "@VERSION@",
 ```
 
-```scala mdoc:compile-only
+```scala 
 import sttp.client4.*
 import sttp.client4.impl.ox.sse.OxServerSentEvents
 import java.io.InputStream
