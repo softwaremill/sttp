@@ -32,7 +32,7 @@ Here's an incomplete list of libraries which can be used to manage retries in va
 * for Monix/cats-effect: [cats-retry](https://github.com/cb372/cats-retry)
 * for Monix: `.restart` methods
 
-See also the "resiliency" [examples](../examples.md). 
+See also the "resiliency" and "backend wrapper" [examples](../examples.md). 
 
 ### Backend-specific retries
 

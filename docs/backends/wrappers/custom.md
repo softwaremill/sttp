@@ -35,16 +35,10 @@ See the appropriate section in docs on [redirects](../../conf/redirects.md).
 A good example on how to implement a logging backend wrapper is the [logging](logging.md) backend wrapper implementation. It uses the `ListenerBackend` to get notified about request lifecycle events.
 
 To adjust the logs to your needs, or to integrate with your logging framework, simply copy the code and modify as needed. 
+  
+## Examples backend wrappers
 
-## Example backend with rate limiter
-
-> "Prepare for a scale and establish reliability and HA of your service."
-
-Below is an example on how to implement a backend wrapper, which integrates with rate-limiter module from resilience4j library and wraps any backend:
-
-```scala mdoc:compile-only
-
-```         
+A number of example backend wrappers can be found in [examples](../../examples.md).
 
 ## Example new backend
 
