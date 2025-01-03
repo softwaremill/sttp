@@ -2,7 +2,7 @@
 
 //> using dep com.softwaremill.sttp.client4::fs2:4.0.0-M20
 
-package sttp.client4.examples
+package sttp.client4.examples.ws
 
 import sttp.client4.*
 import sttp.client4.ws.async.*

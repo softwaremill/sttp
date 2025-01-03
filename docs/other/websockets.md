@@ -126,7 +126,7 @@ basicRequest
   .send(backend)
 ```
 
-See the [full example here](https://github.com/softwaremill/sttp/blob/master/examples/src/main/scala/sttp/client4/examples/wsOxExample.scala).
+See the [full example here](https://github.com/softwaremill/sttp/blob/master/examples/src/main/scala/sttp/client4/examples/ws/wsOxExample.scala).
 
 Make sure that the `Source` is contiunually read. This will guarantee that server-side `Close` signal is received and handled. 
 If you don't want to process frames from the server, you can at least handle it with a `fork { source.drain() }`.

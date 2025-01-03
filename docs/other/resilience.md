@@ -14,6 +14,16 @@ Still, the input for a particular resilience model might involve both the result
 
 ## Retries
 
+Handling retries is a complex problem when it comes to HTTP requests. When is a request retryable? There are a couple of things to take into account:
+
+* connection exceptions are generally good candidates for retries
+* only idempotent HTTP methods (such as `GET`) could potentially be retried
+* some HTTP status codes might also be retryable (e.g. `500 Internal Server Error` or `503 Service Unavailable`)
+
+In some cases it's possible to implement a generic retry mechanism; such a mechanism should take into account logging, metrics, limiting the number of retries and a backoff mechanism. These mechanisms could be quite simple, or involve e.g. retry budgets (see [Finagle's](https://twitter.github.io/finagle/guide/Clients.html#retries) documentation on retries). In sttp, it's possible to recover from errors using the `monad`. 
+
+sttp client contains a default implementation of a predicate, which allows deciding if a request is retriable: if the body can be sent multiple times, and if the HTTP method is idempotent. This predicate is available as `RetryWhen.Default` and has type `(GenericRequest[_, _], Either[Throwable, Response[_]]) => Boolean`.
+
 Here's an incomplete list of libraries which can be used to manage retries in various Scala stacks:
 
 * for synchornous/direct-style: [Ox](https://github.com/softwaremill/ox)
@@ -22,10 +32,7 @@ Here's an incomplete list of libraries which can be used to manage retries in va
 * for Monix/cats-effect: [cats-retry](https://github.com/cb372/cats-retry)
 * for Monix: `.restart` methods
 
-sttp client contains a default implementation of a predicate, which allows deciding if a request is retriable: if the body can be sent multiple times, and if the HTTP method is idempotent.
-This predicate is available as `RetryWhen.Default` and has type `(GenericRequest[_, _], Either[Throwable, Response[_]]) => Boolean`.
-
-See also the "resiliency" [examples](../examples.md), as well as an example of a very simple [retrying backend wrapper](../backends/wrappers/custom.md). 
+See also the "resiliency" [examples](../examples.md). 
 
 ### Backend-specific retries
 
