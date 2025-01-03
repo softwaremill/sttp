@@ -4,7 +4,7 @@
 //> using dep com.softwaremill.sttp.client4::zio:4.0.0-M20
 //> using dep io.circe::circe-generic:0.14.10
 
-package sttp.client4.examples
+package sttp.client4.examples.json
 
 import io.circe.generic.auto.*
 import sttp.client4.*

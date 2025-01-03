@@ -2,7 +2,7 @@
 
 //> using dep com.softwaremill.sttp.client4::core:4.0.0-M20
 
-package sttp.client4.examples
+package sttp.client4.examples.testing
 
 import sttp.client4.*
 import sttp.client4.testing.*

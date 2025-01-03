@@ -3,7 +3,7 @@
 //> using dep com.softwaremill.sttp.client4::jsoniter:4.0.0-M22
 //> using dep com.github.plokhotnyuk.jsoniter-scala::jsoniter-scala-macros:2.33.0
 
-package sttp.client4.examples
+package sttp.client4.examples.json
 
 import sttp.client4.*
 import sttp.client4.jsoniter.*

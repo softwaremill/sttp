@@ -5,7 +5,7 @@
 //> using dep org.json4s::json4s-native:4.0.7
 //> using dep org.apache.pekko::pekko-stream:1.1.2
 
-package sttp.client4.examples
+package sttp.client4.examples.json
 
 import org.json4s.Formats
 import org.json4s.Serialization
