@@ -36,59 +36,6 @@ A good example on how to implement a logging backend wrapper is the [logging](lo
 
 To adjust the logs to your needs, or to integrate with your logging framework, simply copy the code and modify as needed. 
 
-## Example backend with circuit breaker
-
-> "When a system is seriously struggling, failing fast is better than making clients wait."
-
-There are many libraries that can help you achieve such a behavior: [hystrix](https://github.com/Netflix/Hystrix), [resilience4j](https://github.com/resilience4j/resilience4j), [akka's circuit breaker](https://doc.akka.io/docs/akka/current/common/circuitbreaker.html) or [monix catnap](https://monix.io/docs/3x/catnap/circuit-breaker.html) to name a few. Despite some small differences, both their apis and functionality are very similar, that's why we didn't want to support each of them explicitly.
-
-Below is an example on how to implement a backend wrapper, which integrates with circuit-breaker module from resilience4j library and wraps any backend:
-
-```scala mdoc:compile-only
-import io.github.resilience4j.circuitbreaker.{CallNotPermittedException, CircuitBreaker}
-import sttp.capabilities.Effect
-import sttp.client4.{GenericBackend, GenericRequest, Backend, Response}
-import sttp.client4.wrappers.DelegateBackend
-import sttp.monad.MonadError
-import java.util.concurrent.TimeUnit
-
-class CircuitSttpBackend[F[_], P](
-    circuitBreaker: CircuitBreaker,
-    delegate: GenericBackend[F, P]) extends DelegateBackend(delegate):
-
-  override def send[T](request: GenericRequest[T, P with Effect[F]]): F[Response[T]] = 
-    CircuitSttpBackend.decorateF(circuitBreaker, delegate.send(request))
-
-object CircuitSttpBackend:
-
-  def apply[F[_]](circuitBreaker: CircuitBreaker, backend: Backend[F]): Backend[F] =
-    new CircuitSttpBackend(circuitBreaker, backend) with Backend[F] {}
-
-  def decorateF[F[_], T](
-      circuitBreaker: CircuitBreaker,
-      service: => F[T]
-  )(implicit monadError: MonadError[F]): F[T] =
-    monadError.suspend:
-      if !circuitBreaker.tryAcquirePermission() then
-        monadError.error(CallNotPermittedException
-                              .createCallNotPermittedException(circuitBreaker))
-      else
-        val start = System.nanoTime()
-        try
-          monadError.handleError(monadError.map(service): r =>
-            circuitBreaker.onSuccess(System.nanoTime() - start, TimeUnit.NANOSECONDS)
-            r
-          ) {
-            case t =>
-              circuitBreaker.onError(System.nanoTime() - start, TimeUnit.NANOSECONDS, t)
-              monadError.error(t)
-          }
-        catch
-          case t: Throwable =>
-            circuitBreaker.onError(System.nanoTime() - start, TimeUnit.NANOSECONDS, t)
-            monadError.error(t)
-```      
-
 ## Example backend with rate limiter
 
 > "Prepare for a scale and establish reliability and HA of your service."

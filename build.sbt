@@ -973,6 +973,8 @@ lazy val examples = (projectMatrix in file("examples"))
       "io.circe" %% "circe-generic" % circeVersion,
       "org.json4s" %% "json4s-native" % json4sVersion,
       "com.github.plokhotnyuk.jsoniter-scala" %%% "jsoniter-scala-macros" % jsoniterVersion,
+      "io.github.resilience4j" % "resilience4j-circuitbreaker" % resilience4jVersion,
+      "io.github.resilience4j" % "resilience4j-ratelimiter" % resilience4jVersion,
       pekkoStreams,
       logback
     ),
@@ -1020,8 +1022,6 @@ lazy val docs: ProjectMatrix = (projectMatrix in file("generated-docs")) // impo
       "io.circe" %% "circe-generic" % circeVersion,
       "com.github.plokhotnyuk.jsoniter-scala" %% "jsoniter-scala-macros" % jsoniterVersion,
       "commons-io" % "commons-io" % "2.18.0",
-      "io.github.resilience4j" % "resilience4j-circuitbreaker" % resilience4jVersion,
-      "io.github.resilience4j" % "resilience4j-ratelimiter" % resilience4jVersion,
       "io.jaegertracing" % "jaeger-client" % jaegerClientVersion,
       "io.opentracing.brave" % "brave-opentracing" % braveOpentracingVersion,
       "io.zipkin.reporter2" % "zipkin-sender-okhttp3" % zipkinSenderOkHttpVersion,

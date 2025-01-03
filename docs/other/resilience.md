@@ -55,4 +55,4 @@ Some backends have built-in retry mechanisms:
 
 ## Java libraries
 
-* [resilience4j](https://github.com/resilience4j/resilience4j)
+* [resilience4j](https://github.com/resilience4j/resilience4j) (rate limiting, circuit breaking, retries, other resilience patterns)
