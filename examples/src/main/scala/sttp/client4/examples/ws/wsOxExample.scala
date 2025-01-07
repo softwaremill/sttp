@@ -17,7 +17,7 @@ import sttp.ws.WebSocketFrame
     supervised:
       val inputs = Source.fromValues(1, 2, 3).map(i => WebSocketFrame.text(s"Frame no $i"))
       val (wsSource, wsSink) = asSourceAndSink(ws)
-      fork:
+      forkDiscard:
         inputs.pipeTo(wsSink, propagateDone = true)
       wsSource.foreach: frame =>
         println(s"RECEIVED: $frame")

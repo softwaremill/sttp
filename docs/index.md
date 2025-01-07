@@ -96,6 +96,7 @@ Third party projects:
    :caption: How-to's
    
    examples
+   migrate_v3_v4
 
 .. toctree::
    :maxdepth: 2
