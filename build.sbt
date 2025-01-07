@@ -177,6 +177,8 @@ val tethysVersion = "0.29.3"
 
 val openTelemetryVersion = "1.45.0"
 
+val slf4jVersion = "1.7.36"
+
 val compileAndTest = "compile->compile;test->test"
 
 lazy val loomProjects: Seq[String] = Seq(ox, examples).flatMap(_.projectRefs).flatMap(projectId)
@@ -252,6 +254,7 @@ lazy val rawAllAggregates =
     armeriaFs2Backend.projectRefs ++
     scribeBackend.projectRefs ++
     slf4jBackend.projectRefs ++
+    caching.projectRefs ++
     examplesCe2.projectRefs ++
     examples.projectRefs ++
     docs.projectRefs ++
@@ -944,12 +947,25 @@ lazy val slf4jBackend = (projectMatrix in file("logging/slf4j"))
   .settings(
     name := "slf4j-backend",
     libraryDependencies ++= Seq(
-      "org.slf4j" % "slf4j-api" % "1.7.36"
+      "org.slf4j" % "slf4j-api" % slf4jVersion
     ),
     scalaTest
   )
   .jvmPlatform(scalaVersions = scala2And3)
   .dependsOn(core)
+
+lazy val caching = (projectMatrix in file("caching"))
+  .settings(commonJvmSettings)
+  .settings(
+    name := "caching-backend",
+    scalaTest,
+    libraryDependencies ++= Seq(
+      "org.slf4j" % "slf4j-api" % slf4jVersion,
+      "com.github.plokhotnyuk.jsoniter-scala" %%% "jsoniter-scala-macros" % jsoniterVersion % Compile
+    )
+  )
+  .jvmPlatform(scalaVersions = scala2And3)
+  .dependsOn(core, jsoniter)
 
 lazy val examplesCe2 = (projectMatrix in file("examples-ce2"))
   .settings(commonJvmSettings)
@@ -975,6 +991,7 @@ lazy val examples = (projectMatrix in file("examples"))
       "com.github.plokhotnyuk.jsoniter-scala" %%% "jsoniter-scala-macros" % jsoniterVersion,
       "io.github.resilience4j" % "resilience4j-circuitbreaker" % resilience4jVersion,
       "io.github.resilience4j" % "resilience4j-ratelimiter" % resilience4jVersion,
+      "redis.clients" % "jedis" % "5.2.0",
       pekkoStreams,
       logback
     ),
@@ -992,7 +1009,8 @@ lazy val examples = (projectMatrix in file("examples"))
     jsoniter,
     scribeBackend,
     slf4jBackend,
-    ox
+    ox,
+    caching
   )
 
 //TODO this should be invoked by compilation process, see #https://github.com/scalameta/mdoc/issues/355
