@@ -10,7 +10,7 @@ The caching backend caches eligible responses, and returns them from the cache i
 
 Caching happens if:
 
-* the request is a `GET` or `HEAD` request
+* the request is a `GET` or `HEAD` request (unless the backend's configuration specifies otherwise)
 * the response-as description is "cache-friendly". This excludes non-blocking streaming responses, file-based responses and WebSockets
 * the response contains a `Cache-Control` header with a `max-age` directive; the response is cached for the duration specified in this directive
 

@@ -20,7 +20,7 @@ import scala.util.Try
 /** A backend wrapper which implements caching of HTTP responses.
   *
   * Caching happens if:
-  *   - the request is a GET or HEAD request
+  *   - the request is a GET or HEAD request (unless the [[config]] specifies otherwise)
   *   - the response-as description is "cache-friendly". This excludes non-blocking streaming responses, file-based
   *     responses and WebSockets
   *   - the response contains a Cache-Control header with a max-age directive; the response is cached for the duration
@@ -33,17 +33,20 @@ import scala.util.Try
   *
   * The cache will be closed (using [[Cache.close]]) when this backend is closed.
   *
+  * @param config
+  *   The caching backend configuration.
   * @param delegate
   * @param cache
   */
-class CachingBackend[F[_], P](delegate: GenericBackend[F, P], cache: Cache[F]) extends DelegateBackend(delegate) {
+class CachingBackend[F[_], P](delegate: GenericBackend[F, P], cache: Cache[F], config: CachingConfig)
+    extends DelegateBackend(delegate) {
   private val log = LoggerFactory.getLogger(this.getClass())
 
   import sttp.monad.syntax._
   import CachedResponse.cachedResponseCodec
 
   override def send[T](request: GenericRequest[T, P with Effect[F]]): F[Response[T]] = {
-    val methodCacheable = request.method.is(Method.GET) || request.method.is(Method.HEAD)
+    val methodCacheable = config.attemptCachingForMethods.contains(request.method)
 
     // Only requests with "cache-friendly" response-as descriptions can be cached, so that we can convert a cached
     // response (as a byte array) into the desired type. This is not possible if we're requesting a non-blocking
@@ -182,20 +185,44 @@ class CachingBackend[F[_], P](delegate: GenericBackend[F, P], cache: Cache[F]) e
 
 object CachingBackend {
   def apply(backend: SyncBackend, cache: Cache[Identity]): SyncBackend =
-    new CachingBackend(backend, cache) with SyncBackend {}
+    new CachingBackend(backend, cache, CachingConfig.Default) with SyncBackend {}
 
   def apply[F[_]](backend: Backend[F], cache: Cache[F]): Backend[F] =
-    new CachingBackend(backend, cache) with Backend[F] {}
+    new CachingBackend(backend, cache, CachingConfig.Default) with Backend[F] {}
 
   def apply(backend: WebSocketSyncBackend, cache: Cache[Identity]): WebSocketSyncBackend =
-    new CachingBackend(backend, cache) with WebSocketSyncBackend {}
+    new CachingBackend(backend, cache, CachingConfig.Default) with WebSocketSyncBackend {}
 
   def apply[F[_]](backend: WebSocketBackend[F], cache: Cache[F]): WebSocketBackend[F] =
-    new CachingBackend(backend, cache) with WebSocketBackend[F] {}
+    new CachingBackend(backend, cache, CachingConfig.Default) with WebSocketBackend[F] {}
 
   def apply[F[_], S](backend: StreamBackend[F, S], cache: Cache[F]): StreamBackend[F, S] =
-    new CachingBackend(backend, cache) with StreamBackend[F, S] {}
+    new CachingBackend(backend, cache, CachingConfig.Default) with StreamBackend[F, S] {}
 
   def apply[F[_], S](backend: WebSocketStreamBackend[F, S], cache: Cache[F]): WebSocketStreamBackend[F, S] =
-    new CachingBackend(backend, cache) with WebSocketStreamBackend[F, S] {}
+    new CachingBackend(backend, cache, CachingConfig.Default) with WebSocketStreamBackend[F, S] {}
+
+  // with config
+
+  def apply(backend: SyncBackend, cache: Cache[Identity], config: CachingConfig): SyncBackend =
+    new CachingBackend(backend, cache, config) with SyncBackend {}
+
+  def apply[F[_]](backend: Backend[F], cache: Cache[F], config: CachingConfig): Backend[F] =
+    new CachingBackend(backend, cache, config) with Backend[F] {}
+
+  def apply(backend: WebSocketSyncBackend, cache: Cache[Identity], config: CachingConfig): WebSocketSyncBackend =
+    new CachingBackend(backend, cache, config) with WebSocketSyncBackend {}
+
+  def apply[F[_]](backend: WebSocketBackend[F], cache: Cache[F], config: CachingConfig): WebSocketBackend[F] =
+    new CachingBackend(backend, cache, config) with WebSocketBackend[F] {}
+
+  def apply[F[_], S](backend: StreamBackend[F, S], cache: Cache[F], config: CachingConfig): StreamBackend[F, S] =
+    new CachingBackend(backend, cache, config) with StreamBackend[F, S] {}
+
+  def apply[F[_], S](
+      backend: WebSocketStreamBackend[F, S],
+      cache: Cache[F],
+      config: CachingConfig
+  ): WebSocketStreamBackend[F, S] =
+    new CachingBackend(backend, cache, config) with WebSocketStreamBackend[F, S] {}
 }
