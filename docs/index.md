@@ -163,6 +163,7 @@ Third party projects:
    backends/wrappers/opentelemetry
    backends/wrappers/prometheus
    backends/wrappers/logging
+   backends/wrappers/cache
    backends/wrappers/custom
 
 .. toctree::

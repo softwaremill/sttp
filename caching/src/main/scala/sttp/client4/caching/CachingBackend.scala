@@ -26,7 +26,7 @@ import scala.util.Try
   *   - the response contains a Cache-Control header with a max-age directive; the response is cached for the duration
   *     specified in this directive
   *
-  * The cache key is created using the request method, uri, and the values of headers specified in the `Vary` header.
+  * The cache key is created using the request method, URI, and the values of headers specified in the `Vary` header.
   *
   * For requests which might be cached, the response's body is read into a byte array. If the cache-control header
   * specifies that the response should be cached, it is serialized to JSON and stored in the cache.
