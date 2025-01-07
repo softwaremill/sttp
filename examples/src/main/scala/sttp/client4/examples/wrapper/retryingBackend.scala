@@ -33,7 +33,7 @@ object RetryingBackendWrapper:
   def apply[F[_], L](backend: Backend[F], shouldRetry: RetryWhen, maxRetries: Int): Backend[F] =
     new RetryingBackendWrapper(backend, shouldRetry, maxRetries) with Backend[F]
 
-  // depending on the backend & effect type used, other variants might be needed heer
+  // depending on the backend & effect type used, other "apply" variants might be needed here
 
 @main def retryingBackend(): Unit =
   val backend: WebSocketSyncBackend = RetryingBackendWrapper(DefaultSyncBackend(), RetryWhen.Default, 3)
