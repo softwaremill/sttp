@@ -19,7 +19,7 @@ import sttp.client4.quick.*
   println(quickRequest.get(uri"http://httpbin.org/ip").send())
 ```
 
-sttp client addresses common HTTP client use cases, such as interacting with JSON APIs (with automatic serialization of request bodies and deserialization of response bodies), uploading and downloading files, submitting form data, handling multi-part requests, and working with WebSockets.
+sttp client addresses common HTTP client use cases, such as interacting with JSON APIs (with automatic serialization of request bodies and deserialization of response bodies), uploading and downloading files, submitting form data, handling multipart requests, and working with WebSockets.
 
 The driving principle of sttp client's design is to provide a clean, programmer-friendly API to describe HTTP requests, along with response handling. This ensures that resources, such as HTTP connections, are used safely, also in the presence of errors.
 
@@ -135,6 +135,7 @@ Third party projects:
    other/xml
    other/resilience
    other/openapi
+   other/sse
 
 .. toctree::
    :maxdepth: 2

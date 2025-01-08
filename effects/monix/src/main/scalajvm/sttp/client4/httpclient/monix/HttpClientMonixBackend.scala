@@ -141,7 +141,7 @@ object HttpClientMonixBackend {
   /** Create a stub backend for testing, which uses the [[Task]] response wrapper, and supports `Observable[ByteBuffer]`
     * streaming.
     *
-    * See [[SttpBackendStub]] for details on how to configure stub responses.
+    * See [[sttp.client4.testing.BackendStub]] for details on how to configure stub responses.
     */
   def stub: WebSocketStreamBackendStub[Task, MonixStreams] = WebSocketStreamBackendStub(TaskMonadAsyncError)
 }
