@@ -164,8 +164,8 @@ Third party projects:
    backends/wrappers/opentelemetry
    backends/wrappers/prometheus
    backends/wrappers/logging
-   backends/wrappers/custom
    backends/wrappers/cache
+   backends/wrappers/custom
 
 .. toctree::
    :maxdepth: 2
