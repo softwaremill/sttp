@@ -991,6 +991,7 @@ lazy val examples = (projectMatrix in file("examples"))
     circe,
     upickle,
     jsoniter,
+    zioJson,
     scribeBackend,
     slf4jBackend,
     ox
