@@ -165,6 +165,7 @@ Third party projects:
    backends/wrappers/prometheus
    backends/wrappers/logging
    backends/wrappers/custom
+   backends/wrappers/cache
 
 .. toctree::
    :maxdepth: 2
