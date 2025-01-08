@@ -1,6 +1,6 @@
 package sttp.client4.caching
 
-import com.github.plokhotnyuk.jsoniter_scala.core.*
+import com.github.plokhotnyuk.jsoniter_scala.core._
 import sttp.model.HeaderNames
 import sttp.model.Method
 import sttp.model.RequestMetadata

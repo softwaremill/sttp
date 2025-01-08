@@ -2,16 +2,14 @@ package sttp.client4.caching
 
 import org.slf4j.LoggerFactory
 import sttp.capabilities.Effect
-import sttp.client4.*
+import sttp.client4._
 import sttp.client4.wrappers.DelegateBackend
 import sttp.model.ResponseMetadata
 import sttp.shared.Identity
 
 import java.io.ByteArrayInputStream
-import scala.concurrent.duration.FiniteDuration
 import scala.util.Failure
 import scala.util.Success
-import scala.util.Try
 
 /** A backend wrapper which implements caching of HTTP responses.
   *

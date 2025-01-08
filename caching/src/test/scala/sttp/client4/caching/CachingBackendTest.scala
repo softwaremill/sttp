@@ -1,17 +1,18 @@
 package sttp.client4.caching
 
-import org.scalatest.matchers.should.Matchers
-import org.scalatest.flatspec.AnyFlatSpec
-import sttp.shared.Identity
-import sttp.client4._
-import sttp.client4.testing.ResponseStub
-import sttp.model.Header
-import sttp.model.headers.CacheDirective
-import sttp.model.HeaderNames
-import scala.concurrent.duration._
 import com.github.plokhotnyuk.jsoniter_scala.core._
 import com.github.plokhotnyuk.jsoniter_scala.macros._
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
+import sttp.client4._
 import sttp.client4.jsoniter._
+import sttp.client4.testing.ResponseStub
+import sttp.model.Header
+import sttp.model.HeaderNames
+import sttp.model.headers.CacheDirective
+import sttp.shared.Identity
+
+import scala.concurrent.duration._
 
 class CachingBackendTest extends AnyFlatSpec with Matchers {
 
