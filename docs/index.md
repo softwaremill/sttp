@@ -64,7 +64,7 @@ sttp client is licensed under Apache2, the source code is [available on GitHub](
 sttp is a family of Scala HTTP-related projects, and currently includes:
 
 * sttp client: this project
-* [sttp tapir](https://github.com/softwaremill/tapir): Typed API descRiptions
+* [sttp tapir](https://github.com/softwaremill/tapir): rapid development of self-documenting APIs
 * [sttp model](https://github.com/softwaremill/sttp-model): simple HTTP model classes (used by client & tapir)
 * [sttp shared](https://github.com/softwaremill/sttp-shared): shared web socket, FP abstractions, capabilities and streaming code.
 * [sttp apispec](https://github.com/softwaremill/sttp-apispec): OpenAPI, AsyncAPI and JSON Schema models.

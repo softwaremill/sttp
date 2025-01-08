@@ -118,10 +118,11 @@ Type `basicRequest.` and see where your IDE’s auto-complete gets you!
 sttp is a family of Scala HTTP-related projects, and currently includes:
 
 * sttp client: this project
-* [sttp tapir](https://github.com/softwaremill/tapir): Typed API descRiptions
+* [sttp tapir](https://github.com/softwaremill/tapir): rapid development of self-documenting APIs
 * [sttp model](https://github.com/softwaremill/sttp-model): simple HTTP model classes (used by client & tapir)
 * [sttp shared](https://github.com/softwaremill/sttp-shared): shared web socket, FP abstractions, capabilities and streaming code.
 * [sttp apispec](https://github.com/softwaremill/sttp-apispec): OpenAPI, AsyncAPI and JSON Schema models.
+* [sttp openai](https://github.com/softwaremill/sttp-openai): Scala client wrapper for OpenAI and OpenAI-compatible APIs. Use the power of ChatGPT inside your code!
 
 ## Contributing
 
