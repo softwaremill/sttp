@@ -6,9 +6,7 @@ import sttp.capabilities.Effect
 import sttp.client4.*
 import sttp.client4.wrappers.DelegateBackend
 import sttp.model.HeaderNames
-import sttp.model.Method
 import sttp.model.ResponseMetadata
-import sttp.model.headers.CacheDirective
 import sttp.shared.Identity
 
 import java.io.ByteArrayInputStream
@@ -19,12 +17,9 @@ import scala.util.Try
 
 /** A backend wrapper which implements caching of HTTP responses.
   *
-  * Caching happens if:
-  *   - the request is a GET or HEAD request (unless the [[config]] specifies otherwise)
-  *   - the response-as description is "cache-friendly". This excludes non-blocking streaming responses, file-based
-  *     responses and WebSockets
-  *   - the response contains a Cache-Control header with a max-age directive; the response is cached for the duration
-  *     specified in this directive
+  * Caching happens when response-as description is "cache-friendly". This excludes non-blocking streaming responses,
+  * file-based responses and WebSockets. Additionally, caching eligibility & duration is determined by the [[config]].
+  * See [[CachingConfig.Default]] for the default behavior.
   *
   * The cache key is created using the request method, URI, and the values of headers specified in the `Vary` header.
   *
@@ -46,15 +41,15 @@ class CachingBackend[F[_], P](delegate: GenericBackend[F, P], cache: Cache[F], c
   import CachedResponse.cachedResponseCodec
 
   override def send[T](request: GenericRequest[T, P with Effect[F]]): F[Response[T]] = {
-    val methodCacheable = config.attemptCachingForMethods.contains(request.method)
+    val cacheableFromConfig = config.eligibleForCaching(request)
 
     // Only requests with "cache-friendly" response-as descriptions can be cached, so that we can convert a cached
     // response (as a byte array) into the desired type. This is not possible if we're requesting a non-blocking
     // stream, storing the response to a file, or opening a web socket. These can only be handled by the backend
     // directly.
-    val cacheable = responseAsCacheFriendly(request.response.delegate) && methodCacheable
+    val cacheableFromResponseAs = responseAsCacheFriendly(request.response.delegate)
 
-    if (cacheable) {
+    if (cacheableFromConfig && cacheableFromResponseAs) {
       // checking if the request is already cached
       val key = cacheKey(request)
       cache.get(key).flatMap { cached =>
@@ -70,7 +65,9 @@ class CachingBackend[F[_], P](delegate: GenericBackend[F, P], cache: Cache[F], c
         }
       }
     } else {
-      log.debug(s"Request ${request.showBasic} is not cacheable.")
+      log.debug(s"Request ${request.showBasic} is not cacheable (${
+          if (!cacheableFromConfig) "due to config" else "due to response-as"
+        }).")
       delegate.send(request) // we know that we won't be able to cache the response
     }
   }
@@ -84,7 +81,7 @@ class CachingBackend[F[_], P](delegate: GenericBackend[F, P], cache: Cache[F], c
     delegate
       .send(byteArrayRequest)
       .flatMap { byteArrayResponse =>
-        cacheDuration(byteArrayResponse) match {
+        config.cacheDuration(request, byteArrayResponse) match {
           case Some(d) =>
             log.debug(s"Storing response for ${request.showBasic} in the cache.")
             cache
@@ -172,15 +169,6 @@ class CachingBackend[F[_], P](delegate: GenericBackend[F, P], cache: Cache[F], c
       case r: Request[T] @unchecked => r.response(asByteArrayAlways)
       case _ => throw new IllegalStateException("WebSocket/streaming requests are not cacheable!")
     }
-
-  private def cacheDuration(response: Response[_]): Option[FiniteDuration] = {
-    val directives: List[CacheDirective] =
-      response.header(HeaderNames.CacheControl).map(CacheDirective.parse).getOrElse(Nil).flatMap(_.toOption)
-
-    directives.collectFirst { case CacheDirective.MaxAge(d) =>
-      d
-    }
-  }
 }
 
 object CachingBackend {
