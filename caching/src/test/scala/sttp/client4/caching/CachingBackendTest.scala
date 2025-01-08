@@ -26,7 +26,7 @@ class CachingBackendTest extends AnyFlatSpec with Matchers {
 
     def timePassed(seconds: Int): Unit = {
       now += seconds
-      storage.filterInPlace { case (_, (_, ttl)) => ttl >= now }
+      storage = storage.filter { case (_, (_, ttl)) => ttl >= now }
     }
 
     override def get(key: Array[Byte]): Option[Array[Byte]] = storage.get(key.toList).map(_._1)
@@ -82,11 +82,11 @@ class CachingBackendTest extends AnyFlatSpec with Matchers {
     responseC.body shouldBe responseA.body
 
     // D: request to another endpoint
-    val _ = cachingBackend.send(request2)
+    cachingBackend.send(request2)
     invocationCounter shouldBe 3
 
     // E: another request to another endpoint, which shouldn't be cached
-    val _ = cachingBackend.send(request2)
+    cachingBackend.send(request2)
     invocationCounter shouldBe 4
   }
 
