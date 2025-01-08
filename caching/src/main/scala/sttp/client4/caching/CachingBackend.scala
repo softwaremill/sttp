@@ -1,11 +1,9 @@
 package sttp.client4.caching
 
-import com.github.plokhotnyuk.jsoniter_scala.core._
 import org.slf4j.LoggerFactory
 import sttp.capabilities.Effect
 import sttp.client4.*
 import sttp.client4.wrappers.DelegateBackend
-import sttp.model.HeaderNames
 import sttp.model.ResponseMetadata
 import sttp.shared.Identity
 
@@ -21,24 +19,25 @@ import scala.util.Try
   * file-based responses and WebSockets. Additionally, caching eligibility & duration is determined by the [[config]].
   * See [[CachingConfig.Default]] for the default behavior.
   *
-  * The cache key is created using the request method, URI, and the values of headers specified in the `Vary` header.
+  * For requests which might be cached, the response's body is read into a byte array. If the response is then
+  * determined to be cacheable, it is serialized and stored in the cache. After that, the response body is adjusted as
+  * specified by response-as and returned to the user.
   *
-  * For requests which might be cached, the response's body is read into a byte array. If the cache-control header
-  * specifies that the response should be cached, it is serialized to JSON and stored in the cache.
+  * For details on how the cache key is created, and the responses are serialized/deserialized, see [[CachingConfig]].
   *
   * The cache will be closed (using [[Cache.close]]) when this backend is closed.
   *
   * @param config
   *   The caching backend configuration.
-  * @param delegate
   * @param cache
+  *   The cache where responses will be stored. Must use the same effect type as the backend. If the backend and cache
+  *   are both synchronous, this should be [[sttp.shared.Identity]].
   */
 class CachingBackend[F[_], P](delegate: GenericBackend[F, P], cache: Cache[F], config: CachingConfig)
     extends DelegateBackend(delegate) {
   private val log = LoggerFactory.getLogger(this.getClass())
 
   import sttp.monad.syntax._
-  import CachedResponse.cachedResponseCodec
 
   override def send[T](request: GenericRequest[T, P with Effect[F]]): F[Response[T]] = {
     val cacheableFromConfig = config.eligibleForCaching(request)
@@ -51,9 +50,9 @@ class CachingBackend[F[_], P](delegate: GenericBackend[F, P], cache: Cache[F], c
 
     if (cacheableFromConfig && cacheableFromResponseAs) {
       // checking if the request is already cached
-      val key = cacheKey(request)
+      val key = config.cacheKey(request)
       cache.get(key).flatMap { cached =>
-        cached.map(c => Try(readFromArray[CachedResponse](c))) match {
+        cached.map(c => config.deserializeResponse(c)) match {
           case None => sendNotInCache(request, key)
           case Some(Success(cachedResponse)) =>
             log.debug(s"Found a cached response for ${request.showBasic}.")
@@ -85,7 +84,7 @@ class CachingBackend[F[_], P](delegate: GenericBackend[F, P], cache: Cache[F], c
           case Some(d) =>
             log.debug(s"Storing response for ${request.showBasic} in the cache.")
             cache
-              .set(key, writeToArray(CachedResponse(byteArrayResponse)), d)
+              .set(key, config.serializeResponse(CachedResponse(byteArrayResponse)), d)
               .map(_ => byteArrayResponse)
           case None => monad.unit(byteArrayResponse)
         }
@@ -102,19 +101,6 @@ class CachingBackend[F[_], P](delegate: GenericBackend[F, P], cache: Cache[F], c
     // We assume that it has been verified that responseAs is cache-friendly, so this won't throw an UOE.
     val body: T = runResponseAs(request.response.delegate, responseFromCache.body, responseFromCache)
     responseFromCache.copy(body = body)
-  }
-
-  private def cacheKey(request: GenericRequest[_, _]): Array[Byte] = {
-    val base = s"${request.method} ${request.uri}"
-    // the list of headers to include in the cache key, basing on the Vary header
-    val varyHeaders: List[String] = request
-      .header(HeaderNames.Vary)
-      .map(_.split(",").toList.map(_.trim))
-      .getOrElse(Nil)
-
-    varyHeaders
-      .foldLeft(base)((key, headerName) => key + s" ${headerName}=${request.header(headerName)}")
-      .getBytes()
   }
 
   private def responseAsCacheFriendly(responseAs: GenericResponseAs[_, _]): Boolean =

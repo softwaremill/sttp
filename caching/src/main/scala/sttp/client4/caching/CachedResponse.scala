@@ -10,7 +10,7 @@ import sttp.model.Uri
 import com.github.plokhotnyuk.jsoniter_scala.core.JsonValueCodec
 import com.github.plokhotnyuk.jsoniter_scala.macros.JsonCodecMaker
 
-private[caching] case class CachedResponse(
+case class CachedResponse(
     body: String,
     code: StatusCode,
     statusText: String,
@@ -29,7 +29,7 @@ private[caching] case class CachedResponse(
   )
 }
 
-private[caching] object CachedResponse {
+object CachedResponse {
   def apply(response: Response[Array[Byte]]): CachedResponse = CachedResponse(
     Base64.getEncoder.encodeToString(response.body),
     response.code,
