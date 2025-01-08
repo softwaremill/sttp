@@ -42,8 +42,8 @@ val client = WebClient.builder("https://my-service.com")
 val backend = ArmeriaScalazBackend.usingClient(client)
 ```
 
-```{eval-rst}
-.. note:: A WebClient could fail to follow redirects if the WebClient is created with a base URI and a redirect location is a different URI.
+```{note}
+A WebClient could fail to follow redirects if the WebClient is created with a base URI and a redirect location is a different URI.
 ```
 
 This backend is build on top of [Armeria](https://armeria.dev/docs/client-http).
@@ -56,4 +56,4 @@ This backend doesn't support non-blocking [streaming](../requests/streaming.md).
 
 ## Websockets
 
-The backend doesn't support [websockets](../websockets.md).
+The backend doesn't support [websockets](../other/websockets.md).

@@ -1,8 +1,8 @@
-// {cat=Resilience; effects=ZIO; backend=HttpClient}: Retry sending a request
+// {cat=Resilience; effects=ZIO; backend=HttpClient}: Retry sending a request using ZIO's retries
 
 //> using dep com.softwaremill.sttp.client4::zio:4.0.0-M22
 
-package sttp.client4.examples
+package sttp.client4.examples.resilience
 
 import sttp.client4.*
 import sttp.client4.httpclient.zio.HttpClientZioBackend

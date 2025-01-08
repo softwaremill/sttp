@@ -91,7 +91,7 @@ Synchronous backends don't support non-blocking [streaming](../requests/streamin
 
 ## Websockets
 
-Both HttpClient and OkHttp backends support regular [websockets](../websockets.md).
+Both HttpClient and OkHttp backends support regular [websockets](../other/websockets.md).
 
 ## Server-sent events
 
@@ -103,22 +103,16 @@ Both HttpClient and OkHttp backends support regular [websockets](../websockets.m
 ```
 
 ```scala 
-import ox.*
-import ox.channels.Source
 import sttp.client4.*
 import sttp.client4.impl.ox.sse.OxServerSentEvents
-import sttp.model.sse.ServerSentEvent
 import java.io.InputStream
 
-def handleSse(is: InputStream)(using IO): Unit =
-  supervised {
-    OxServerSentEvents.parse(is).foreach(event => println(s"Received event: $event"))
-  }
+def handleSse(is: InputStream): Unit =
+  OxServerSentEvents.parse(is).foreach(event => println(s"Received event: $event"))
 
 val backend = DefaultSyncBackend()
-IO.unsafe:
   basicRequest
     .get(uri"https://postman-echo.com/server-events/3")
-      .response(asInputStreamAlways(handleSse))
-      .send(backend)
+    .response(asInputStreamAlways(handleSse))
+    .send(backend)
 ```

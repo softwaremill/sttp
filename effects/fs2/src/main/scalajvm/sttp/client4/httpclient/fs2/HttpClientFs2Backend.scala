@@ -160,7 +160,7 @@ object HttpClientFs2Backend {
   /** Create a stub backend for testing, which uses the [[F]] response wrapper, and supports `Stream[F, Byte]`
     * streaming.
     *
-    * See [[SttpBackendStub]] for details on how to configure stub responses.
+    * See [[sttp.client4.testing.BackendStub]] for details on how to configure stub responses.
     */
   def stub[F[_]: Async]: WebSocketStreamBackendStub[F, Fs2Streams[F]] = WebSocketStreamBackendStub(implicitly)
 }

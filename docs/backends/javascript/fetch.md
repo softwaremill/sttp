@@ -1,4 +1,4 @@
-# JavaScript (Fetch) backend
+# Scala.js (Fetch) backend
 
 A JavaScript backend with web socket support. Implemented using the [Fetch API](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API).
 
@@ -61,7 +61,7 @@ your project:
 If you are on Cats Effect 2 (CE2) you will need to add the CE2 specific dependency instead:
 
 ```
-"com.softwaremill.sttp.client4" %%% "catsce2 % "@VERSION@"
+"com.softwaremill.sttp.client4" %%% "catsce2" % "@VERSION@"
 ```
 
 And create the backend instance:
@@ -151,13 +151,13 @@ val response: Task[Response[Observable[ByteBuffer]]] =
     .send(backend)
 ```      
 
-```{eval-rst}
-.. note:: Currently no browsers support passing a stream as the request body. As such, using the ``Fetch`` backend with a streaming request will result in it being converted into an in-memory array before being sent. Response bodies are returned as a "proper" stream.
+```{note}
+Currently no browsers support passing a stream as the request body. As such, using the `Fetch` backend with a streaming request will result in it being converted into an in-memory array before being sent. Response bodies are returned as a "proper" stream.
 ```
 
 ## Websockets
 
-The backend supports both regular and streaming [websockets](../../websockets.md).
+The backend supports both regular and streaming [websockets](../../other/websockets.md).
 
 ## Server-sent events
 

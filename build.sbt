@@ -36,18 +36,8 @@ val compileScoped =
 val testScoped =
   inputKey[Unit](s"Run tests in the given scope. Usage: testScoped [scala version] [platform]. $scopesDescription")
 
-val commonSettings = commonSmlBuildSettings ++ ossPublishSettings ++ Seq(
+val commonSettings = commonSmlBuildSettings ++ Seq(
   organization := "com.softwaremill.sttp.client4",
-  updateDocs := Def.taskDyn {
-    val files1 = UpdateVersionInDocs(sLog.value, organization.value, version.value, List(file("README.md")))
-    Def.task {
-      (docs.jvm(scala3) / mdoc).toTask("").value
-      // Generating the list only after mdoc is done (as it overrides what's in generated_doc)
-      // For the root project the sourceDirectory points to src, so ../ will point to the root directory of the project
-      GenerateListOfExamples(sLog.value, sourceDirectory.value.getParentFile)
-      files1 ++ Seq(file("generated-docs/out"))
-    }
-  }.value,
   ideSkipProject := (scalaVersion.value != ideScalaVersion)
     || thisProjectRef.value.project.contains("JS") || thisProjectRef.value.project.contains("Native"),
   bspEnabled := !ideSkipProject.value,
@@ -274,7 +264,8 @@ def filterByVersionAndPlatform(scalaVersionFilter: String, platformFilter: Strin
 }
 
 lazy val rootProject = (project in file("."))
-  .settings(commonSettings: _*)
+  .settings(commonSettings)
+  .settings(ossPublishSettings)
   .settings(
     publish / skip := true,
     name := "sttp",
@@ -287,7 +278,17 @@ lazy val rootProject = (project in file("."))
       Def.taskDyn((Test / test).all(filterByVersionAndPlatform(args.head, args(1))))
     }.evaluated,
     ideSkipProject := false,
-    scalaVersion := scala2_13
+    scalaVersion := scala2_13,
+    updateDocs := Def.taskDyn {
+      val files1 = UpdateVersionInDocs(sLog.value, organization.value, version.value, List(file("README.md")))
+      Def.task {
+        (docs.jvm(scala3) / mdoc).toTask("").value
+        // Generating the list only after mdoc is done (as it overrides what's in generated_doc)
+        // For the root project the sourceDirectory points to src, so ../ will point to the root directory of the project
+        GenerateListOfExamples(sLog.value, sourceDirectory.value.getParentFile)
+        files1 ++ Seq(file("generated-docs/out"))
+      }
+    }.value
   )
   .aggregate(allAggregates: _*)
 
@@ -972,6 +973,9 @@ lazy val examples = (projectMatrix in file("examples"))
     libraryDependencies ++= Seq(
       "io.circe" %% "circe-generic" % circeVersion,
       "org.json4s" %% "json4s-native" % json4sVersion,
+      "com.github.plokhotnyuk.jsoniter-scala" %%% "jsoniter-scala-macros" % jsoniterVersion,
+      "io.github.resilience4j" % "resilience4j-circuitbreaker" % resilience4jVersion,
+      "io.github.resilience4j" % "resilience4j-ratelimiter" % resilience4jVersion,
       pekkoStreams,
       logback
     ),
@@ -986,6 +990,8 @@ lazy val examples = (projectMatrix in file("examples"))
     json4s,
     circe,
     upickle,
+    jsoniter,
+    zioJson,
     scribeBackend,
     slf4jBackend,
     ox
@@ -1018,8 +1024,6 @@ lazy val docs: ProjectMatrix = (projectMatrix in file("generated-docs")) // impo
       "io.circe" %% "circe-generic" % circeVersion,
       "com.github.plokhotnyuk.jsoniter-scala" %% "jsoniter-scala-macros" % jsoniterVersion,
       "commons-io" % "commons-io" % "2.18.0",
-      "io.github.resilience4j" % "resilience4j-circuitbreaker" % resilience4jVersion,
-      "io.github.resilience4j" % "resilience4j-ratelimiter" % resilience4jVersion,
       "io.jaegertracing" % "jaeger-client" % jaegerClientVersion,
       "io.opentracing.brave" % "brave-opentracing" % braveOpentracingVersion,
       "io.zipkin.reporter2" % "zipkin-sender-okhttp3" % zipkinSenderOkHttpVersion,

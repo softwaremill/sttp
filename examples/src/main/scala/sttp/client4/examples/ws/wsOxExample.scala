@@ -2,7 +2,7 @@
 
 //> using dep com.softwaremill.sttp.client4::ox:4.0.0-M22
 
-package sttp.client4.examples
+package sttp.client4.examples.ws
 
 import ox.*
 import ox.channels.Source
@@ -17,7 +17,7 @@ import sttp.ws.WebSocketFrame
     supervised:
       val inputs = Source.fromValues(1, 2, 3).map(i => WebSocketFrame.text(s"Frame no $i"))
       val (wsSource, wsSink) = asSourceAndSink(ws)
-      fork:
+      forkDiscard:
         inputs.pipeTo(wsSink, propagateDone = true)
       wsSource.foreach: frame =>
         println(s"RECEIVED: $frame")

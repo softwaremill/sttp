@@ -17,4 +17,4 @@ This backend depends on [finagle](https://twitter.github.io/finagle/), and offer
 
 Please note that: 
 
-* the backend does not support non-blocking [streaming](../requests/streaming.md) or [websockets](../websockets.md).
+* the backend does not support non-blocking [streaming](../requests/streaming.md) or [websockets](../other/websockets.md).

@@ -14,7 +14,7 @@ As a starting point, the default backends are good choice. Depending on the plat
 
 These default backends provide limited customisation options, hence for any more advanced use-cases, simply substitute them with a specific implementation. E.g. the `HttpClientSyncBackend` backend, which is the underlying implementation of `DefaultSyncBackend`, offers customisation options not available in the default one.
 
-## Backends overview
+## JVM backends
 
 Which one to choose?
 
@@ -61,6 +61,8 @@ Backends supporting cats-effect are available in versions for cats-effect 2.x (d
 
 All backends that support asynchronous/non-blocking streams, also support server-sent events.
 
+## Backend wrappers
+
 There are also backends which wrap other backends to provide additional functionality. These include:
 
 * `TryBackend`, which safely wraps any exceptions thrown by a synchronous backend in `scala.util.Try`
@@ -72,6 +74,9 @@ There are also backends which wrap other backends to provide additional function
 * `ResolveRelativeUrisBackend` to resolve relative URIs given a base URI, or an arbitrary effectful function
 * `ListenerBackend` to listen for backend lifecycle events. See the [dedicated section](wrappers/custom.md).
 * `FollowRedirectsBackend`, which handles redirects. All implementation backends are created wrapped with this one.
+* `CachingBackend`, which caches responses. See the [dedicated section](wrappers/caching.md).
+
+## Scala.JS backends
 
 In addition, there are also backends for Scala.JS:
 
@@ -86,6 +91,8 @@ Class                            Effect type                      Supported stre
 ``FetchCatsBackend``             ``F[_]: cats.effect.Concurrent`` n/a                                       yes (regular)
 ================================ ================================ ========================================= ===================
 ```
+
+## Scala Native backends
 
 And a backend for scala-native:
 
