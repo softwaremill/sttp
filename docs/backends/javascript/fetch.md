@@ -1,4 +1,4 @@
-# JavaScript (Fetch) backend
+# Scala.js (Fetch) backend
 
 A JavaScript backend with web socket support. Implemented using the [Fetch API](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API).
 
