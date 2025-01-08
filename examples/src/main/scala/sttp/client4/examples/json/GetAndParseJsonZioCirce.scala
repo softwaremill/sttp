@@ -1,7 +1,7 @@
 // {cat=JSON; effects=ZIO; backend=HttpClient}: Receive & parse JSON using circe
 
-//> using dep com.softwaremill.sttp.client4::circe:4.0.0-M20
-//> using dep com.softwaremill.sttp.client4::zio:4.0.0-M20
+//> using dep com.softwaremill.sttp.client4::circe:4.0.0-M22
+//> using dep com.softwaremill.sttp.client4::zio:4.0.0-M22
 //> using dep io.circe::circe-generic:0.14.10
 
 package sttp.client4.examples.json

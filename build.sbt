@@ -129,7 +129,7 @@ val testServerSettings = Seq(
 
 val circeVersion: String = "0.14.10"
 
-val jsoniterVersion = "2.32.0"
+val jsoniterVersion = "2.33.0"
 
 val play29JsonVersion = "2.10.6"
 
@@ -169,7 +169,7 @@ val logback = "ch.qos.logback" % "logback-classic" % "1.5.14"
 val jaegerClientVersion = "1.8.1"
 val braveOpentracingVersion = "1.0.1"
 val zipkinSenderOkHttpVersion = "3.4.3"
-val resilience4jVersion = "2.2.0"
+val resilience4jVersion = "2.3.0"
 val http4s_ce2_version = "0.22.15"
 val http4s_ce3_version = "0.23.30"
 
@@ -764,7 +764,7 @@ lazy val zioJson = (projectMatrix in file("json/zio-json"))
   .settings(
     name := "zio-json",
     libraryDependencies ++= Seq(
-      "dev.zio" %%% "zio-json" % "0.7.3",
+      "dev.zio" %%% "zio-json" % "0.7.4",
       "com.softwaremill.sttp.shared" %%% "zio" % sttpSharedVersion
     ),
     scalaTest
@@ -915,7 +915,7 @@ lazy val openTelemetryTracingZioBackend = (projectMatrix in file("observability/
   .settings(
     name := "opentelemetry-tracing-zio-backend",
     libraryDependencies ++= Seq(
-      "dev.zio" %% "zio-opentelemetry" % "3.1.0",
+      "dev.zio" %% "zio-opentelemetry" % "3.1.1",
       "io.opentelemetry.semconv" % "opentelemetry-semconv" % "1.26.0-alpha",
       "io.opentelemetry" % "opentelemetry-api" % openTelemetryVersion,
       "io.opentelemetry" % "opentelemetry-sdk-testing" % openTelemetryVersion % Test
