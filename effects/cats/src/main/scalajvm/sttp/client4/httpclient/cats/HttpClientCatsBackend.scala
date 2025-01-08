@@ -139,7 +139,7 @@ object HttpClientCatsBackend {
 
   /** Create a stub backend for testing, which uses the [[F]] response wrapper.
     *
-    * See [[SttpBackendStub]] for details on how to configure stub responses.
+    * See [[sttp.client4.testing.BackendStub]] for details on how to configure stub responses.
     */
   def stub[F[_]: Async]: WebSocketBackendStub[F] = WebSocketBackendStub(new CatsMonadAsyncError[F])
 }

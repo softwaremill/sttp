@@ -36,18 +36,8 @@ val compileScoped =
 val testScoped =
   inputKey[Unit](s"Run tests in the given scope. Usage: testScoped [scala version] [platform]. $scopesDescription")
 
-val commonSettings = commonSmlBuildSettings ++ ossPublishSettings ++ Seq(
+val commonSettings = commonSmlBuildSettings ++ Seq(
   organization := "com.softwaremill.sttp.client4",
-  updateDocs := Def.taskDyn {
-    val files1 = UpdateVersionInDocs(sLog.value, organization.value, version.value, List(file("README.md")))
-    Def.task {
-      (docs.jvm(scala3) / mdoc).toTask("").value
-      // Generating the list only after mdoc is done (as it overrides what's in generated_doc)
-      // For the root project the sourceDirectory points to src, so ../ will point to the root directory of the project
-      GenerateListOfExamples(sLog.value, sourceDirectory.value.getParentFile)
-      files1 ++ Seq(file("generated-docs/out"))
-    }
-  }.value,
   ideSkipProject := (scalaVersion.value != ideScalaVersion)
     || thisProjectRef.value.project.contains("JS") || thisProjectRef.value.project.contains("Native"),
   bspEnabled := !ideSkipProject.value,
@@ -129,7 +119,7 @@ val testServerSettings = Seq(
 
 val circeVersion: String = "0.14.10"
 
-val jsoniterVersion = "2.32.0"
+val jsoniterVersion = "2.33.0"
 
 val play29JsonVersion = "2.10.6"
 
@@ -169,15 +159,13 @@ val logback = "ch.qos.logback" % "logback-classic" % "1.5.14"
 val jaegerClientVersion = "1.8.1"
 val braveOpentracingVersion = "1.0.1"
 val zipkinSenderOkHttpVersion = "3.4.3"
-val resilience4jVersion = "2.2.0"
+val resilience4jVersion = "2.3.0"
 val http4s_ce2_version = "0.22.15"
 val http4s_ce3_version = "0.23.30"
 
 val tethysVersion = "0.29.3"
 
 val openTelemetryVersion = "1.45.0"
-
-val slf4jVersion = "1.7.36"
 
 val compileAndTest = "compile->compile;test->test"
 
@@ -254,7 +242,6 @@ lazy val rawAllAggregates =
     armeriaFs2Backend.projectRefs ++
     scribeBackend.projectRefs ++
     slf4jBackend.projectRefs ++
-    caching.projectRefs ++
     examplesCe2.projectRefs ++
     examples.projectRefs ++
     docs.projectRefs ++
@@ -277,7 +264,8 @@ def filterByVersionAndPlatform(scalaVersionFilter: String, platformFilter: Strin
 }
 
 lazy val rootProject = (project in file("."))
-  .settings(commonSettings: _*)
+  .settings(commonSettings)
+  .settings(ossPublishSettings)
   .settings(
     publish / skip := true,
     name := "sttp",
@@ -290,7 +278,17 @@ lazy val rootProject = (project in file("."))
       Def.taskDyn((Test / test).all(filterByVersionAndPlatform(args.head, args(1))))
     }.evaluated,
     ideSkipProject := false,
-    scalaVersion := scala2_13
+    scalaVersion := scala2_13,
+    updateDocs := Def.taskDyn {
+      val files1 = UpdateVersionInDocs(sLog.value, organization.value, version.value, List(file("README.md")))
+      Def.task {
+        (docs.jvm(scala3) / mdoc).toTask("").value
+        // Generating the list only after mdoc is done (as it overrides what's in generated_doc)
+        // For the root project the sourceDirectory points to src, so ../ will point to the root directory of the project
+        GenerateListOfExamples(sLog.value, sourceDirectory.value.getParentFile)
+        files1 ++ Seq(file("generated-docs/out"))
+      }
+    }.value
   )
   .aggregate(allAggregates: _*)
 
@@ -767,7 +765,7 @@ lazy val zioJson = (projectMatrix in file("json/zio-json"))
   .settings(
     name := "zio-json",
     libraryDependencies ++= Seq(
-      "dev.zio" %%% "zio-json" % "0.7.3",
+      "dev.zio" %%% "zio-json" % "0.7.4",
       "com.softwaremill.sttp.shared" %%% "zio" % sttpSharedVersion
     ),
     scalaTest
@@ -918,7 +916,7 @@ lazy val openTelemetryTracingZioBackend = (projectMatrix in file("observability/
   .settings(
     name := "opentelemetry-tracing-zio-backend",
     libraryDependencies ++= Seq(
-      "dev.zio" %% "zio-opentelemetry" % "3.1.0",
+      "dev.zio" %% "zio-opentelemetry" % "3.1.1",
       "io.opentelemetry.semconv" % "opentelemetry-semconv" % "1.26.0-alpha",
       "io.opentelemetry" % "opentelemetry-api" % openTelemetryVersion,
       "io.opentelemetry" % "opentelemetry-sdk-testing" % openTelemetryVersion % Test
@@ -947,25 +945,12 @@ lazy val slf4jBackend = (projectMatrix in file("logging/slf4j"))
   .settings(
     name := "slf4j-backend",
     libraryDependencies ++= Seq(
-      "org.slf4j" % "slf4j-api" % slf4jVersion
+      "org.slf4j" % "slf4j-api" % "1.7.36"
     ),
     scalaTest
   )
   .jvmPlatform(scalaVersions = scala2And3)
   .dependsOn(core)
-
-lazy val caching = (projectMatrix in file("caching"))
-  .settings(commonJvmSettings)
-  .settings(
-    name := "caching-backend",
-    scalaTest,
-    libraryDependencies ++= Seq(
-      "org.slf4j" % "slf4j-api" % slf4jVersion,
-      "com.github.plokhotnyuk.jsoniter-scala" %%% "jsoniter-scala-macros" % jsoniterVersion % Compile
-    )
-  )
-  .jvmPlatform(scalaVersions = scala2And3)
-  .dependsOn(core, jsoniter)
 
 lazy val examplesCe2 = (projectMatrix in file("examples-ce2"))
   .settings(commonJvmSettings)
@@ -991,7 +976,6 @@ lazy val examples = (projectMatrix in file("examples"))
       "com.github.plokhotnyuk.jsoniter-scala" %%% "jsoniter-scala-macros" % jsoniterVersion,
       "io.github.resilience4j" % "resilience4j-circuitbreaker" % resilience4jVersion,
       "io.github.resilience4j" % "resilience4j-ratelimiter" % resilience4jVersion,
-      "redis.clients" % "jedis" % "5.2.0",
       pekkoStreams,
       logback
     ),
@@ -1007,10 +991,10 @@ lazy val examples = (projectMatrix in file("examples"))
     circe,
     upickle,
     jsoniter,
+    zioJson,
     scribeBackend,
     slf4jBackend,
-    ox,
-    caching
+    ox
   )
 
 //TODO this should be invoked by compilation process, see #https://github.com/scalameta/mdoc/issues/355

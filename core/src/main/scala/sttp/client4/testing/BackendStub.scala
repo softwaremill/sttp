@@ -19,7 +19,6 @@ import scala.concurrent.ExecutionContext
   * Predicates can match requests basing on the URI or headers. A [[ClassCastException]] might occur if for a given
   * request, a response is specified with the incorrect or inconvertible body type.
   */
-
 class BackendStub[F[_]](
     monad: MonadError[F],
     matchers: PartialFunction[GenericRequest[_, _], F[Response[_]]],

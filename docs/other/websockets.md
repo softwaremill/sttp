@@ -1,6 +1,6 @@
 # WebSockets
 
-One of the optional capabilities (represented as `WebSockets`) that a backend can support are websockets (see [backends summary](../backends/summary.md)). Websocket requests are described exactly the same as regular requests, starting with `basicRequest`, adding headers, specifying the request method and uri.
+One of the optional capabilities that a backend can support are websockets (see [backends summary](../backends/summary.md)). Websocket requests are described exactly the same as regular requests, starting with `basicRequest`, adding headers, specifying the request method and uri.
 
 A websocket request will be sent instead of a regular one if the response specification includes handling the response as a websocket. Depending on the backend you are using, there are three variants of websocket response specifications: synchronous, asynchronous and streaming. To use them, add one of the following imports:
 
@@ -10,9 +10,11 @@ A websocket request will be sent instead of a regular one if the response specif
 
 The above imports will bring into scope a number of `asWebSocket(...)` methods, giving a couple of variants of working with websockets. Alternatively, you can extend the `SttpWebSocketSyncApi`, `SttpWebSocketAsyncApi` or `SttpWebSocketStreamApi` traits, to group all used sttp client features within a single object.
 
+Refer to the documentation of individual backends for additional notes, or restrictions, when using WebSockets.
+
 ## Using `WebSocket`
 
-The first variant of interacting with web sockets is using `sttp.client4.ws.SyncWebSocket` (sync variant), or `sttp.ws.WebSocket[F]` (async variant), where `F` is the backend-specific effects wrapper, such as `Future` or `IO`. These classes contain two basic methods:
+The first possibility of interacting with web sockets is using `sttp.client4.ws.SyncWebSocket` (sync variant), or `sttp.ws.WebSocket[F]` (async variant), where `F` is the backend-specific effects wrapper, such as `Future` or `IO`. These classes contain two basic methods:
  
 * `def receive: WebSocketFrame` (optionally wrapped with `F[_]` in the async variant) which will complete once a message is available, and return the next incoming frame (which can be a data, ping, pong or close)
 * `def send(f: WebSocketFrame, isContinuation: Boolean = false): Unit` (again optionally wrapped with `F[_]`), which sends a message to the websocket. The `WebSocketFrame` companion object contains methods for creating binary/text messages. When using fragmentation, the first message should be sent using `finalFragment = false`, and subsequent messages using `isContinuation = true`.
@@ -92,7 +94,7 @@ effect type      class name
 ================ ==========================================
 ```
 
-## Using blocking, sycnhronous Ox streams
+## Using blocking, synchronous Ox streams
 
 [Ox](https://ox.softwaremill.com) is a Scala 3 toolkit that allows you to handle concurrency and resiliency in direct-style, leveraging Java 21 virtual threads.
 If you're using Ox with `sttp`, you can use the `DefaultSyncBackend` from `sttp-core` for HTTP communication. An additional `ox` module allows handling WebSockets 
@@ -128,14 +130,14 @@ basicRequest
 
 See the [full example here](https://github.com/softwaremill/sttp/blob/master/examples/src/main/scala/sttp/client4/examples/ws/wsOxExample.scala).
 
-Make sure that the `Source` is contiunually read. This will guarantee that server-side `Close` signal is received and handled. 
+Make sure that the `Source` is continually read. This will guarantee that server-side `Close` signal is received and handled. 
 If you don't want to process frames from the server, you can at least handle it with a `fork { source.drain() }`.
   
 You don't need to manually call `ws.close()` when using this approach, this will be handled automatically underneath, 
 according to following rules:
  - If the request `Sink` is closed due to an upstream error, a `Close` frame is sent, and the `Source` with incoming responses gets completed as `Done`.
  - If the request `Sink` completes as `Done`, a `Close` frame is sent, and the response `Sink` keeps receiving responses until the server closes communication.
- - If the response `Source` is closed by a `Close` frome from the server or due to an error, the request Sink is closed as `Done`, which will still send all outstanding buffered frames, and then finish.
+ - If the response `Source` is closed by a `Close` frame from the server or due to an error, the request Sink is closed as `Done`, which will still send all outstanding buffered frames, and then finish.
 
 Read more about Ox, structured concurrency, Sources and Sinks on the [project website](https://ox.softwaremill.com).
 

@@ -19,7 +19,7 @@ import sttp.client4.quick.*
   println(quickRequest.get(uri"http://httpbin.org/ip").send())
 ```
 
-sttp client addresses common HTTP client use cases, such as interacting with JSON APIs (with automatic serialization of request bodies and deserialization of response bodies), uploading and downloading files, submitting form data, handling multi-part requests, and working with WebSockets.
+sttp client addresses common HTTP client use cases, such as interacting with JSON APIs (with automatic serialization of request bodies and deserialization of response bodies), uploading and downloading files, submitting form data, handling multipart requests, and working with WebSockets.
 
 The driving principle of sttp client's design is to provide a clean, programmer-friendly API to describe HTTP requests, along with response handling. This ensures that resources, such as HTTP connections, are used safely, also in the presence of errors.
 
@@ -64,7 +64,7 @@ sttp client is licensed under Apache2, the source code is [available on GitHub](
 sttp is a family of Scala HTTP-related projects, and currently includes:
 
 * sttp client: this project
-* [sttp tapir](https://github.com/softwaremill/tapir): Typed API descRiptions
+* [sttp tapir](https://github.com/softwaremill/tapir): rapid development of self-documenting APIs
 * [sttp model](https://github.com/softwaremill/sttp-model): simple HTTP model classes (used by client & tapir)
 * [sttp shared](https://github.com/softwaremill/sttp-shared): shared web socket, FP abstractions, capabilities and streaming code.
 * [sttp apispec](https://github.com/softwaremill/sttp-apispec): OpenAPI, AsyncAPI and JSON Schema models.
@@ -135,6 +135,7 @@ Third party projects:
    other/xml
    other/resilience
    other/openapi
+   other/sse
 
 .. toctree::
    :maxdepth: 2
@@ -163,7 +164,6 @@ Third party projects:
    backends/wrappers/opentelemetry
    backends/wrappers/prometheus
    backends/wrappers/logging
-   backends/wrappers/cache
    backends/wrappers/custom
 
 .. toctree::

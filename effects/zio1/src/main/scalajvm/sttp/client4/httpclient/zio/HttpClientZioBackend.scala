@@ -175,7 +175,7 @@ object HttpClientZioBackend {
   /** Create a stub backend for testing, which uses the [[Task]] response wrapper, and supports `Stream[Throwable,
     * ByteBuffer]` streaming.
     *
-    * See [[SttpBackendStub]] for details on how to configure stub responses.
+    * See [[sttp.client4.testing.BackendStub]] for details on how to configure stub responses.
     */
   def stub: WebSocketStreamBackendStub[Task, ZioStreams] = WebSocketStreamBackendStub(new RIOMonadAsyncError[Any])
 
