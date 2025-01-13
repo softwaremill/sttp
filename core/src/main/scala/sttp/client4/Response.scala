@@ -31,7 +31,8 @@ case class Response[+T](
     s"Response($body,$code,$statusText,${Headers.toStringSafe(headers)},$history,$request)"
 }
 
-private[sttp] object Response {
+/** For testing, responses can be more conveniently created using [[ResponseStub]]. */
+object Response {
 
   def apply[T](body: T, code: StatusCode, requestMetadata: RequestMetadata): Response[T] =
     Response(body, code, resolveStatusText(code), Nil, Nil, requestMetadata)
