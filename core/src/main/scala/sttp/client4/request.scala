@@ -59,6 +59,8 @@ sealed trait GenericRequest[+T, -R] extends RequestBuilder[GenericRequest[T, R]]
     case _: WebSocketStreamRequest[_, _] => true
     case _                               => false
   }
+
+  override def showBasic: String = s"$method $uri"
 }
 
 //
@@ -85,8 +87,6 @@ case class Request[T](
     attributes: AttributeMap
 ) extends GenericRequest[T, Any]
     with RequestBuilder[Request[T]] {
-
-  override def showBasic: String = s"$method $uri"
 
   override def method(method: Method, uri: Uri): Request[T] = copy(uri = uri, method = method)
   override def withHeaders(headers: Seq[Header]): Request[T] = copy(headers = headers)
@@ -212,8 +212,6 @@ final case class StreamRequest[T, R](
 ) extends GenericRequest[T, R]
     with RequestBuilder[StreamRequest[T, R]] {
 
-  override def showBasic: String = s"$method $uri"
-
   override def method(method: Method, uri: Uri): StreamRequest[T, R] = copy(method = method, uri = uri)
   override def withHeaders(headers: Seq[Header]): StreamRequest[T, R] = copy(headers = headers)
   override def withOptions(options: RequestOptions): StreamRequest[T, R] = copy(options = options)
@@ -294,8 +292,6 @@ final case class WebSocketRequest[F[_], T](
 ) extends GenericRequest[T, WebSockets with Effect[F]]
     with RequestBuilder[WebSocketRequest[F, T]] {
 
-  override def showBasic: String = s"$method (WebSocket) $uri"
-
   override def method(method: Method, uri: Uri): WebSocketRequest[F, T] = copy(method = method, uri = uri)
   override def withHeaders(headers: Seq[Header]): WebSocketRequest[F, T] = copy(headers = headers)
   override def withOptions(options: RequestOptions): WebSocketRequest[F, T] = copy(options = options)
@@ -373,8 +369,6 @@ final case class WebSocketStreamRequest[T, S](
     attributes: AttributeMap
 ) extends GenericRequest[T, S with WebSockets]
     with RequestBuilder[WebSocketStreamRequest[T, S]] {
-
-  override def showBasic: String = s"$method (WebSocket) $uri"
 
   override def method(method: Method, uri: Uri): WebSocketStreamRequest[T, S] = copy(method = method, uri = uri)
   override def withHeaders(headers: Seq[Header]): WebSocketStreamRequest[T, S] = copy(headers = headers)
