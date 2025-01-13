@@ -2,7 +2,7 @@ package sttp.client4.testing
 
 import org.scalatest.freespec.AnyFreeSpecLike
 import sttp.client4._
-import sttp.client4.wrappers.{FollowRedirectsBackend, TooManyRedirectsException}
+import sttp.client4.wrappers.FollowRedirectsBackend
 import sttp.model.{Header, StatusCode}
 
 import java.io.File
@@ -38,14 +38,14 @@ trait SyncHttpTestExtensions extends AnyFreeSpecLike {
     }
 
     "break redirect loops" in {
-      intercept[TooManyRedirectsException] {
+      intercept[SttpClientException.TooManyRedirectsException] {
         loop.send(backend)
       }.redirects shouldBe FollowRedirectsBackend.MaxRedirects
     }
 
     "break redirect loops after user-specified count" in {
       val maxRedirects = 10
-      intercept[TooManyRedirectsException] {
+      intercept[SttpClientException.TooManyRedirectsException] {
         loop.maxRedirects(maxRedirects).send(backend)
       }.redirects shouldBe maxRedirects
     }
