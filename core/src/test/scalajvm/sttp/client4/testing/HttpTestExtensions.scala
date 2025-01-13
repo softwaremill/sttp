@@ -10,7 +10,7 @@ import sttp.model.{Header, HeaderNames, StatusCode}
 import scala.concurrent.Future
 import HttpTest.endpoint
 import org.scalatest.freespec.AsyncFreeSpecLike
-import sttp.client4.wrappers.{DigestAuthenticationBackend, FollowRedirectsBackend, TooManyRedirectsException}
+import sttp.client4.wrappers.{DigestAuthenticationBackend, FollowRedirectsBackend}
 import sttp.model.headers.CookieWithMeta
 import sttp.model.Encodings
 import java.util.zip.GZIPInputStream
@@ -132,8 +132,8 @@ trait HttpTestExtensions[F[_]] extends AsyncFreeSpecLike { self: HttpTest[F] =>
     "break redirect loops" in {
       // sync backends can throw exceptions when evaluating send(), before the toFuture() conversion
       Future(loop.send(backend).toFuture()).flatMap(identity).failed.map {
-        case TooManyRedirectsException(_, redirects) =>
-          redirects shouldBe FollowRedirectsBackend.MaxRedirects
+        case e: SttpClientException.TooManyRedirectsException =>
+          e.redirects shouldBe FollowRedirectsBackend.MaxRedirects
         case e => fail(e)
       }
     }
@@ -141,8 +141,8 @@ trait HttpTestExtensions[F[_]] extends AsyncFreeSpecLike { self: HttpTest[F] =>
     "break redirect loops after user-specified count" in {
       val maxRedirects = 10
       Future(loop.maxRedirects(maxRedirects).send(backend).toFuture()).flatMap(identity).failed.collect {
-        case TooManyRedirectsException(_, redirects) =>
-          redirects shouldBe maxRedirects
+        case e: SttpClientException.TooManyRedirectsException =>
+          e.redirects shouldBe maxRedirects
       }
     }
 

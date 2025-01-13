@@ -1,6 +1,7 @@
 package sttp.client4
 
 import sttp.monad.MonadError
+import sttp.model.Uri
 
 /** Known exceptions that might occur when using a backend. Currently this covers:
   *   - connect exceptions: when a connection (tcp socket) can't be established to the target host
@@ -27,6 +28,9 @@ object SttpClientException extends SttpClientExceptionExtensions {
   class ReadException(request: GenericRequest[_, _], cause: Exception) extends SttpClientException(request, cause)
 
   class TimeoutException(request: GenericRequest[_, _], cause: Exception) extends ReadException(request, cause)
+
+  class TooManyRedirectsException(request: GenericRequest[_, _], val redirects: Int)
+      extends ReadException(request, null)
 
   def adjustExceptions[F[_], T](
       monadError: MonadError[F]

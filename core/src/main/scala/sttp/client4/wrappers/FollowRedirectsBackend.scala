@@ -37,7 +37,7 @@ abstract class FollowRedirectsBackend[F[_], P] private (
   ): F[Response[T]] =
     response.header(HeaderNames.Location).fold(monad.unit(response)) { loc =>
       if (redirects >= request.options.maxRedirects) {
-        monad.error(TooManyRedirectsException(request.uri, redirects))
+        monad.error(new SttpClientException.TooManyRedirectsException(request, redirects))
       } else {
         followRedirect(request, response, redirects, loc)
       }
@@ -120,8 +120,6 @@ object FollowRedirectsBackend {
   /** By default, the conversion is a no-op */
   val DefaultUriTransform: Uri => Uri = (uri: Uri) => uri
 }
-
-case class TooManyRedirectsException(uri: Uri, redirects: Int) extends Exception
 
 /** @param transformUri
   *   Defines if and how [[Uri]] s from the `Location` header should be transformed. For example, this enables changing
