@@ -42,11 +42,11 @@ case class DeserializationException(body: String, cause: Exception, override val
       response
     )
 
-object HttpError {
-  @tailrec def find(exception: Throwable): Option[HttpError[_]] =
+object ResponseException {
+  @tailrec def find(exception: Throwable): Option[ResponseException[_]] =
     Option(exception) match {
-      case Some(error: HttpError[_]) => Some(error)
-      case Some(_)                   => find(exception.getCause)
-      case None                      => Option.empty
+      case Some(e: ResponseException[_]) => Some(e)
+      case Some(_)                       => find(exception.getCause)
+      case None                          => None
     }
 }

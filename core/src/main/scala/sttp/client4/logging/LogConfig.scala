@@ -32,7 +32,9 @@ case class LogConfig(
     /** The log level that is used for the log message, that is being logged after receiving a response, depending on
       * the status code.
       */
-    responseLogLevel: StatusCode => LogLevel = DefaultLog.defaultResponseLogLevel,
+    responseLogLevel: StatusCode => LogLevel = { (c: StatusCode) =>
+      if (c.isClientError) LogLevel.Error else { if (c.isServerError) LogLevel.Warn else LogLevel.Debug }
+    },
     /** The log level that is used for the log message, that is being logged when an exception occurs during sending of
       * a request.
       */

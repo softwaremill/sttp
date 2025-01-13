@@ -9,6 +9,7 @@ import sttp.shared.Identity
 
 import scala.collection.immutable.Seq
 import scala.collection.mutable
+import sttp.client4.testing.ResponseStub
 
 class LogTests extends AnyFlatSpec with Matchers with BeforeAndAfter {
   private class SpyLogger extends Logger[Identity] {
@@ -19,11 +20,13 @@ class LogTests extends AnyFlatSpec with Matchers with BeforeAndAfter {
     def reset(): Unit =
       logs.clear()
 
-    def apply(level: LogLevel, message: => String, context: Map[String, Any]): Identity[Unit] =
-      logs += ((level, message, None))
-
-    def apply(level: LogLevel, message: => String, throwable: Throwable, context: Map[String, Any]): Identity[Unit] =
-      logs += ((level, message, Some(throwable)))
+    def apply(
+        level: LogLevel,
+        message: => String,
+        throwable: Option[Throwable],
+        context: Map[String, Any]
+    ): Identity[Unit] =
+      logs += ((level, message, throwable))
   }
 
   private val spyLogger = new SpyLogger()
@@ -65,6 +68,26 @@ class LogTests extends AnyFlatSpec with Matchers with BeforeAndAfter {
           LogLevel.Debug,
           "Request: GET http://example.org, response: 200 Ok, headers: Server: sttp server",
           None
+        )
+      )
+    )
+  }
+
+  it should "log a DeserializationException as a response" in {
+    val exception =
+      new DeserializationException("response body", new RuntimeException("boom!"), ResponseStub.ok("response body"))
+    defaultLog.requestException(
+      request = basicRequest.get(uri"http://example.org"),
+      elapsed = None,
+      e = exception
+    )
+
+    spyLogger.probe should be(
+      List(
+        (
+          LogLevel.Debug,
+          "Request: GET http://example.org, response: 200 Ok, headers: ",
+          Some(exception)
         )
       )
     )
