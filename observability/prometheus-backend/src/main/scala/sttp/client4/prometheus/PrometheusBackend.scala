@@ -14,11 +14,10 @@ import sttp.shared.Identity
 import java.util.concurrent.ConcurrentHashMap
 
 object PrometheusBackend {
-  /*
-    Metrics names and model for Prometheus is based on these two specifications:
-    https://prometheus.io/docs/practices/naming/
-    https://prometheus.io/docs/concepts/data_model/#metric-names-and-labels
-   * */
+  // Metrics names and model for Prometheus is based on these two specifications:
+  // https://prometheus.io/docs/practices/naming/
+  // https://prometheus.io/docs/concepts/data_model/#metric-names-and-labels
+
   val DefaultHistogramName = "http_client_request_duration_seconds"
   val DefaultRequestSizeName = "http_client_request_size_bytes"
   val DefaultResponseSizeName = "http_client_response_size_bytes"
@@ -123,8 +122,7 @@ object PrometheusBackend {
     else if (s.isServerError) "5xx"
     else s.code.toString
 
-  /** Clear cached collectors (gauges and histograms) both from the given collector registry, and from the backend.
-    */
+  /** Clear cached collectors (gauges and histograms) both from the given collector registry, and from the backend. */
   def clear(prometheusRegistry: PrometheusRegistry): Unit = {
     clear(prometheusRegistry, histograms)
     clear(prometheusRegistry, gauges)

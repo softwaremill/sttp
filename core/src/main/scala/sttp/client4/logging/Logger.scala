@@ -1,13 +1,9 @@
 package sttp.client4.logging
 
-/** Interfaces with a logger system.
-  */
+/** Interfaces with a logger system. */
 trait Logger[F[_]] {
-
   def apply(level: LogLevel, message: => String, context: Map[String, Any]): F[Unit]
-
   def apply(level: LogLevel, message: => String, throwable: Throwable, context: Map[String, Any]): F[Unit]
-
 }
 
 sealed trait LogLevel

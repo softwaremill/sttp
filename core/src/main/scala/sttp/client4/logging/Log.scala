@@ -5,8 +5,7 @@ import sttp.model.StatusCode
 
 import scala.concurrent.duration.Duration
 
-/** Performs logging before requests are sent and after requests complete successfully or with an exception.
-  */
+/** Performs logging before requests are sent and after requests complete successfully or with an exception. */
 trait Log[F[_]] {
   def beforeRequestSend(request: GenericRequest[_, _]): F[Unit]
   def response(

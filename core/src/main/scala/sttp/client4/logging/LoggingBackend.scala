@@ -4,6 +4,14 @@ import sttp.client4._
 import sttp.client4.listener.ListenerBackend
 import sttp.shared.Identity
 
+/** The logging backend uses the given [[Logger]] instance (which provides integration with an underlying logging
+  * library), to log information before sending a request, and after a response is received.
+  *
+  * The information included in the log messages is configurable via [[LogConfig]]. Additionally, the formatting of the
+  * messages can be changed by providing a custom [[Log]] implementation.
+  *
+  * Configuration for individual requests can be partially altered by using [[Request.loggingOptions]].
+  */
 object LoggingBackend {
   def apply(delegate: SyncBackend, logger: Logger[Identity]): SyncBackend =
     apply(delegate, logger, LogConfig.Default)

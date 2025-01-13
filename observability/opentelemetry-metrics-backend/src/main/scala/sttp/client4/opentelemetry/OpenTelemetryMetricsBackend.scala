@@ -12,11 +12,10 @@ import java.time.Clock
 import java.util.concurrent.ConcurrentHashMap
 
 object OpenTelemetryMetricsBackend {
-  /*
-    Metrics names and model for Open Telemetry is based on these two specifications:
-    https://opentelemetry.io/docs/specs/semconv/http/http-metrics/#http-client
-    https://github.com/open-telemetry/opentelemetry-specification/blob/v1.31.0/specification/metrics/api.md#instrument
-   * */
+  // Metrics names and model for Open Telemetry is based on these two specifications:
+  // https://opentelemetry.io/docs/specs/semconv/http/http-metrics/#http-client
+  // https://github.com/open-telemetry/opentelemetry-specification/blob/v1.31.0/specification/metrics/api.md#instrument
+
   val DefaultLatencyHistogramName = "http.client.request.duration"
   val DefaultRequestSizeHistogramName = "http.client.request.size.bytes"
   val DefaultResponseSizeHistogramName = "http.client.response.size.bytes"
@@ -212,10 +211,8 @@ private class OpenTelemetryMetricsListener(
     b.build()
   }
 
-  /*
-    OpenTelemetry HTTP Client Metrics Spec: Mapping request attributes as per
-    https://opentelemetry.io/docs/specs/semconv/http/http-metrics/#http-client
-   * */
+  // OpenTelemetry HTTP Client Metrics Spec: Mapping request attributes as per
+  // https://opentelemetry.io/docs/specs/semconv/http/http-metrics/#http-client
   private def createRequestAttributes(request: GenericRequest[_, _]): Attributes = {
     val attributes = Attributes
       .builder()
@@ -227,10 +224,8 @@ private class OpenTelemetryMetricsListener(
     attributes
   }
 
-  /*
-    OpenTelemetry HTTP Client Metrics Spec: Mapping response attributes as per
-    https://opentelemetry.io/docs/specs/semconv/http/http-metrics/#http-client
-   * */
+  // OpenTelemetry HTTP Client Metrics Spec: Mapping response attributes as per
+  // https://opentelemetry.io/docs/specs/semconv/http/http-metrics/#http-client
   private def createResponseAttributes(response: Response[_]): Attributes =
     Attributes
       .builder()
