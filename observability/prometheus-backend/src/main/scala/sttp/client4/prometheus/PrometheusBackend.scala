@@ -204,8 +204,8 @@ class PrometheusListener(
       e: Exception
   ): Unit =
     HttpError.find(e) match {
-      case Some(HttpError(body, statusCode)) =>
-        requestSuccessful(request, Response(body, statusCode, request.onlyMetadata), requestCollectors)
+      case Some(HttpError(body, meta)) =>
+        requestSuccessful(request, Response(body, meta.code, request.onlyMetadata), requestCollectors)
       case _ =>
         requestCollectors.maybeTimer.foreach(_.observeDuration())
         requestCollectors.maybeGauge.foreach(_.dec())

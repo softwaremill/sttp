@@ -1,6 +1,9 @@
 package sttp.client4.logging
 
-import sttp.client4.{GenericRequest, HttpError, Response}
+import sttp.client4.GenericRequest
+import sttp.client4.HttpError
+import sttp.client4.Response
+import sttp.model.ResponseMetadata
 import sttp.model.StatusCode
 
 import scala.concurrent.duration.Duration
@@ -78,7 +81,7 @@ class DefaultLog[F[_]](
       responseBody: Option[String],
       elapsed: Option[Duration]
   ): F[Unit] = handleResponse(
-    request.showBasic,
+    request,
     response,
     responseBody,
     request.loggingOptions.logResponseBody.getOrElse(responseBody.isDefined),
@@ -87,29 +90,36 @@ class DefaultLog[F[_]](
   )
 
   private def handleResponse(
-      showBasic: String,
-      response: Response[_],
+      request: GenericRequest[_, _],
+      response: ResponseMetadata,
       responseBody: Option[String],
       logResponseBody: Boolean,
       _logResponseHeaders: Boolean,
       elapsed: Option[Duration]
-  ): F[Unit] =
+  ): F[Unit] = {
+    val responseWithBody = Response(
+      responseBody.getOrElse(""),
+      response.code,
+      response.statusText,
+      response.headers,
+      Nil,
+      request
+    )
+
     logger(
       level = responseLogLevel(response.code),
       message = {
-        val responseAsString =
-          response
-            .copy(body = responseBody.getOrElse(""))
-            .show(logResponseBody, _logResponseHeaders, sensitiveHeaders)
-        s"Request: $showBasic${took(elapsed)}, response: $responseAsString"
+        val responseAsString = responseWithBody.show(logResponseBody, _logResponseHeaders, sensitiveHeaders)
+        s"Request: ${request.showBasic}${took(elapsed)}, response: $responseAsString"
       },
-      context = logContext.forResponse(response, elapsed)
+      context = logContext.forResponse(request, response, elapsed)
     )
+  }
 
   override def requestException(request: GenericRequest[_, _], elapsed: Option[Duration], e: Exception): F[Unit] = {
     val logLevel = HttpError.find(e) match {
-      case Some(HttpError(_, statusCode)) =>
-        responseLogLevel(statusCode)
+      case Some(HttpError(_, meta)) =>
+        responseLogLevel(meta.code)
       case _ =>
         responseExceptionLogLevel
     }

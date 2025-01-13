@@ -109,11 +109,13 @@ class BackendStubTests extends AnyFlatSpec with Matchers with ScalaFutures {
     val request = () =>
       basicRequest
         .get(uri"./test")
-        .response(asString.map(_ => throw DeserializationException("", new RuntimeException("test"))))
+        .response(
+          asString.mapWithMetadata((_, meta) => throw DeserializationException("", new RuntimeException("test"), meta))
+        )
         .send(testingBackend)
 
     val readException = the[sttp.client4.SttpClientException.ReadException] thrownBy request()
-    readException.cause shouldBe a[sttp.client4.DeserializationException[_]]
+    readException.cause shouldBe a[sttp.client4.DeserializationException]
   }
 
   it should "use rules in partial function" in {

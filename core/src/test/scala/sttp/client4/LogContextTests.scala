@@ -42,7 +42,7 @@ class LogContextTests extends AnyFlatSpec with Matchers {
       request = basicRequest.get(uri"http://example.org").auth.bearer("token")
     )
 
-    defaultLogContext.forResponse(response, Some(1234.millis)) should be(
+    defaultLogContext.forResponse(response.request, response, Some(1234.millis)) should be(
       Map(
         "http.request.uri" -> "http://example.org",
         "http.request.method" -> "GET",
@@ -65,7 +65,7 @@ class LogContextTests extends AnyFlatSpec with Matchers {
       request = basicRequest.get(uri"http://example.org").auth.bearer("token")
     )
 
-    defaultLogContext.forResponse(response, Some(1234.millis)) should be(
+    defaultLogContext.forResponse(response.request, response, Some(1234.millis)) should be(
       Map(
         "http.request.uri" -> "http://example.org",
         "http.request.method" -> "GET",

@@ -10,9 +10,6 @@ import scala.util.{Failure, Success, Try}
 import sttp.client4.ResponseAs.deserializeEitherWithErrorOrThrow
 
 trait SttpPlayJsonApi {
-  implicit val errorMessageForPlayError: ShowError[JsError] = new ShowError[JsError] {
-    override def show(t: JsError): String = t.errors.mkString(",")
-  }
 
   /** Serialize the given value as JSON, to be used as a request's body using [[sttp.client4.Request.body]]. */
   def asJson[B: Writes](b: B): StringBody =
@@ -23,7 +20,7 @@ trait SttpPlayJsonApi {
     *   - `Left(HttpError(String))` if the response code was other than 2xx (deserialization is not attempted)
     *   - `Left(DeserializationException)` if there's an error during deserialization
     */
-  def asJson[B: Reads: IsOption]: ResponseAs[Either[ResponseException[String, JsError], B]] =
+  def asJson[B: Reads: IsOption]: ResponseAs[Either[ResponseException[String], B]] =
     asString.mapWithMetadata(ResponseAs.deserializeRightWithError(deserializeJson[B])).showAsJson
 
   /** If the response is successful (2xx), tries to deserialize the body from a string into JSON. Otherwise, if the
@@ -36,8 +33,8 @@ trait SttpPlayJsonApi {
     *   - `Right(b)` if the parsing was successful
     *   - `Left(DeserializationException)` if there's an error during deserialization
     */
-  def asJsonAlways[B: Reads: IsOption]: ResponseAs[Either[DeserializationException[JsError], B]] =
-    asStringAlways.map(ResponseAs.deserializeWithError(deserializeJson[B])).showAsJsonAlways
+  def asJsonAlways[B: Reads: IsOption]: ResponseAs[Either[DeserializationException, B]] =
+    asStringAlways.mapWithMetadata(ResponseAs.deserializeWithError(deserializeJson[B])).showAsJsonAlways
 
   /** Tries to deserialize the body from a string into JSON, using different deserializers depending on the status code.
     * Returns:
@@ -45,12 +42,12 @@ trait SttpPlayJsonApi {
     *   - `Left(HttpError(E))` if the response was other than 2xx and parsing was successful
     *   - `Left(DeserializationException)` if there's an error during deserialization
     */
-  def asJsonEither[E: Reads: IsOption, B: Reads: IsOption]: ResponseAs[Either[ResponseException[E, JsError], B]] =
-    asJson[B].mapLeft { (l: ResponseException[String, JsError]) =>
+  def asJsonEither[E: Reads: IsOption, B: Reads: IsOption]: ResponseAs[Either[ResponseException[E], B]] =
+    asJson[B].mapLeft { (l: ResponseException[String]) =>
       l match {
-        case HttpError(e, code) =>
-          deserializeJson[E].apply(e).fold(DeserializationException(e, _), HttpError(_, code))
-        case de @ DeserializationException(_, _) => de
+        case HttpError(e, meta) =>
+          deserializeJson[E].apply(e).fold(DeserializationException(e, _, meta), HttpError(_, meta))
+        case de: DeserializationException => de
       }
     }.showAsJsonEither
 
@@ -64,16 +61,19 @@ trait SttpPlayJsonApi {
 
   // Note: None of the play-json utilities attempt to catch invalid
   // json, so Json.parse needs to be wrapped in Try
-  def deserializeJson[B: Reads: IsOption]: String => Either[JsError, B] =
+  def deserializeJson[B: Reads: IsOption]: String => Either[PlayJsErrorException, B] =
     JsonInput.sanitize[B].andThen { s =>
       Try(Json.parse(s)) match {
-        case Failure(e: Exception) => Left(JsError(e.getMessage))
+        case Failure(e: Exception) => Left(PlayJsErrorException(JsError(e.getMessage), Some(e)))
         case Failure(t: Throwable) => throw t
         case Success(json) =>
           Json.fromJson(json).asEither match {
-            case Left(failures) => Left(JsError(failures))
+            case Left(failures) => Left(PlayJsErrorException(JsError(failures), None))
             case Right(success) => Right(success)
           }
       }
     }
+
+  case class PlayJsErrorException(jsError: JsError, cause: Option[Exception])
+      extends Exception(jsError.errors.mkString(","), cause.orNull)
 }

@@ -10,21 +10,21 @@ import io.circe.generic.auto.*
 import sttp.client4.*
 import sttp.client4.circe.*
 
-@main def getRawResponseBodySynchronous(): Unit =
-  case class HttpBinResponse(origin: String, headers: Map[String, String])
+// @main def getRawResponseBodySynchronous(): Unit =
+//   case class HttpBinResponse(origin: String, headers: Map[String, String])
 
-  val request = basicRequest
-    .get(uri"https://httpbin.org/get")
-    .response(asBoth(asJson[HttpBinResponse], asStringAlways))
+//   val request = basicRequest
+//     .get(uri"https://httpbin.org/get")
+//     .response(asBoth(asJson[HttpBinResponse], asStringAlways))
 
-  val backend: SyncBackend = DefaultSyncBackend()
+//   val backend: SyncBackend = DefaultSyncBackend()
 
-  try
-    val response: Response[(Either[ResponseException[String, circe.Error], HttpBinResponse], String)] =
-      request.send(backend)
+//   try
+//     val response: Response[(Either[ResponseException[String], HttpBinResponse], String)] =
+//       request.send(backend)
 
-    val (parsed, raw) = response.body
+//     val (parsed, raw) = response.body
 
-    println("Got response - parsed: " + parsed)
-    println("Got response - raw: " + raw)
-  finally backend.close()
+//     println("Got response - parsed: " + parsed)
+//     println("Got response - raw: " + raw)
+//   finally backend.close()

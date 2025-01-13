@@ -1,8 +1,7 @@
 package sttp.client4
 
-import sttp.model.StatusCode
-
 import scala.annotation.tailrec
+import sttp.model.ResponseMetadata
 
 /** Used to represent errors, that might occur when handling the response body. Typically, this type is used as the
   * left-side of a top-level either (where the right-side represents a successful request and deserialization).
@@ -19,11 +18,12 @@ import scala.annotation.tailrec
   * @tparam HE
   *   The type of the body to which the response is deserialized, when the response code is different than success
   *   (typically 2xx status code).
-  * @tparam DE
-  *   A deserialization-library-specific error type, describing the deserialization error in more detail.
   */
-sealed abstract class ResponseException[+HE, +DE](error: String, cause: Option[Throwable])
-    extends Exception(error, cause.orNull)
+sealed abstract class ResponseException[+HE](
+    error: String,
+    cause: Option[Throwable],
+    val response: ResponseMetadata
+) extends Exception(error, cause.orNull)
 
 /** Represents an http error, where the response was received successfully, but the status code is other than the
   * expected one (typically other than 2xx).
@@ -31,18 +31,15 @@ sealed abstract class ResponseException[+HE, +DE](error: String, cause: Option[T
   * @tparam HE
   *   The type of the body to which the error response is deserialized.
   */
-case class HttpError[+HE](body: HE, statusCode: StatusCode)
-    extends ResponseException[HE, Nothing](s"statusCode: $statusCode, response: $body", None)
+case class HttpError[+HE](body: HE, override val response: ResponseMetadata)
+    extends ResponseException[HE](s"statusCode: $${response.statusCode}, response: $body", None, response)
 
-/** Represents an error that occurred during deserialization of `body`.
-  *
-  * @tparam DE
-  *   A deserialization-library-specific error type, describing the deserialization error in more detail.
-  */
-case class DeserializationException[+DE: ShowError](body: String, error: DE)
-    extends ResponseException[Nothing, DE](
-      implicitly[ShowError[DE]].show(error),
-      if (error.isInstanceOf[Throwable]) Some(error.asInstanceOf[Throwable]) else None
+/** Represents an error that occurred during deserialization of `body`. */
+case class DeserializationException(body: String, cause: Exception, override val response: ResponseMetadata)
+    extends ResponseException[Nothing](
+      cause.getMessage(),
+      Some(cause),
+      response
     )
 
 object HttpError {
@@ -52,14 +49,4 @@ object HttpError {
       case Some(_)                   => find(exception.getCause)
       case None                      => Option.empty
     }
-}
-
-trait ShowError[-T] {
-  def show(t: T): String
-}
-
-object ShowError {
-  implicit val showErrorMessageFromException: ShowError[Exception] = new ShowError[Exception] {
-    override def show(t: Exception): String = t.getMessage
-  }
 }

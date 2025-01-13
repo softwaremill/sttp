@@ -376,7 +376,11 @@ class PrometheusBackendTest
     assertThrows[SttpClientException] {
       basicRequest
         .get(uri"http://127.0.0.1/foo")
-        .response(asString.map(_ => throw DeserializationException("Unknown body", new Exception("Unable to parse"))))
+        .response(
+          asString.mapWithMetadata((_, meta) =>
+            throw DeserializationException("Unknown body", new Exception("Unable to parse"), meta)
+          )
+        )
         .send(backend)
     }
 
@@ -420,7 +424,9 @@ class PrometheusBackendTest
   it should "report correct host when it is extracted from the response" in {
     // given
     val backendStub =
-      SyncBackendStub.whenAnyRequest.thenRespondF(_ => throw new HttpError("boom", StatusCode.BadRequest))
+      SyncBackendStub.whenAnyRequest.thenRespondF(_ =>
+        throw new HttpError("boom", ResponseStub("", StatusCode.BadRequest))
+      )
 
     import sttp.client4.prometheus.PrometheusBackend.{DefaultFailureCounterName, addMethodLabel}
 

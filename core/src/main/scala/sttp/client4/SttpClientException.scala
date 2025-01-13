@@ -39,10 +39,8 @@ object SttpClientException extends SttpClientExceptionExtensions {
   /** Wraps a [[ResponseException]] which occurred during response handling. Enriches the response exception with the
     * context of the request, for which it happened.
     */
-  class ResponseHandlingException[+HE, +DE](
-      request: GenericRequest[_, _],
-      val responseException: ResponseException[HE, DE]
-  ) extends ReadException(request, responseException)
+  class ResponseHandlingException[+HE](request: GenericRequest[_, _], val responseException: ResponseException[HE])
+      extends ReadException(request, responseException)
 
   def adjustExceptions[F[_], T](
       monadError: MonadError[F]

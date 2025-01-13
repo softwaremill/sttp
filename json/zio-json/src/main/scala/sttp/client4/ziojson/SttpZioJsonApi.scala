@@ -6,7 +6,6 @@ import sttp.client4.IsOption
 import sttp.client4.JsonInput
 import sttp.client4.ResponseAs
 import sttp.client4.ResponseException
-import sttp.client4.ShowError
 import sttp.client4.StringBody
 import sttp.client4.asString
 import sttp.client4.asStringAlways
@@ -16,7 +15,6 @@ import sttp.model.MediaType
 
 trait SttpZioJsonApi extends SttpZioJsonApiExtensions {
   import zio.json._
-  private[ziojson] implicit val stringShowError: ShowError[String] = t => t
 
   /** Serialize the given value as JSON, to be used as a request's body using [[sttp.client4.Request.body]]. */
   def asJson[B: JsonEncoder](b: B): StringBody = StringBody(b.toJson, Utf8, MediaType.ApplicationJson)
@@ -26,7 +24,7 @@ trait SttpZioJsonApi extends SttpZioJsonApiExtensions {
     *   - `Left(HttpError(String))` if the response code was other than 2xx (deserialization is not attempted)
     *   - `Left(DeserializationException)` if there's an error during deserialization
     */
-  def asJson[B: JsonDecoder: IsOption]: ResponseAs[Either[ResponseException[String, String], B]] =
+  def asJson[B: JsonDecoder: IsOption]: ResponseAs[Either[ResponseException[String], B]] =
     asString.mapWithMetadata(ResponseAs.deserializeRightWithError(deserializeJson)).showAsJson
 
   /** If the response is successful (2xx), tries to deserialize the body from a string into JSON. Otherwise, if the
@@ -39,8 +37,8 @@ trait SttpZioJsonApi extends SttpZioJsonApiExtensions {
     *   - `Right(b)` if the parsing was successful
     *   - `Left(DeserializationException)` if there's an error during deserialization
     */
-  def asJsonAlways[B: JsonDecoder: IsOption]: ResponseAs[Either[DeserializationException[String], B]] =
-    asStringAlways.map(ResponseAs.deserializeWithError(deserializeJson)).showAsJsonAlways
+  def asJsonAlways[B: JsonDecoder: IsOption]: ResponseAs[Either[DeserializationException, B]] =
+    asStringAlways.mapWithMetadata(ResponseAs.deserializeWithError(deserializeJson)).showAsJsonAlways
 
   /** Tries to deserialize the body from a string into JSON, using different deserializers depending on the status code.
     * Returns:
@@ -48,12 +46,12 @@ trait SttpZioJsonApi extends SttpZioJsonApiExtensions {
     *   - `Left(HttpError(E))` if the response was other than 2xx and parsing was successful
     *   - `Left(DeserializationException)` if there's an error during deserialization
     */
-  def asJsonEither[E: JsonDecoder: IsOption, B: JsonDecoder: IsOption]
-      : ResponseAs[Either[ResponseException[E, String], B]] =
-    asJson[B].mapLeft { (l: ResponseException[String, String]) =>
+  def asJsonEither[E: JsonDecoder: IsOption, B: JsonDecoder: IsOption]: ResponseAs[Either[ResponseException[E], B]] =
+    asJson[B].mapLeft { (l: ResponseException[String]) =>
       l match {
-        case HttpError(e, code) => deserializeJson[E].apply(e).fold(DeserializationException(e, _), HttpError(_, code))
-        case de @ DeserializationException(_, _) => de
+        case HttpError(e, meta) =>
+          deserializeJson[E].apply(e).fold(DeserializationException(e, _, meta), HttpError(_, meta))
+        case de: DeserializationException => de
       }
     }.showAsJsonEither
 
@@ -65,6 +63,8 @@ trait SttpZioJsonApi extends SttpZioJsonApiExtensions {
       .mapWithMetadata(ResponseAs.deserializeEitherWithErrorOrThrow(deserializeJson[E], deserializeJson[B]))
       .showAsJsonEitherOrFail
 
-  def deserializeJson[B: JsonDecoder: IsOption]: String => Either[String, B] =
-    JsonInput.sanitize[B].andThen(_.fromJson[B])
+  def deserializeJson[B: JsonDecoder: IsOption]: String => Either[Exception, B] =
+    JsonInput.sanitize[B].andThen(_.fromJson[B].left.map(ZioJsonException(_)))
+
+  case class ZioJsonException(error: String) extends Exception
 }

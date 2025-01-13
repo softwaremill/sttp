@@ -67,7 +67,7 @@ class UpickleTests extends AnyFlatSpec with Matchers with EitherValues {
 
     val responseAs = asJson[Inner]
 
-    RunResponseAs(responseAs)("").left.value should matchPattern { case DeserializationException(_, _) => }
+    RunResponseAs(responseAs)("").left.value should matchPattern { case DeserializationException(_, _, _) => }
   }
 
   it should "fail to decode invalid json" in {
@@ -78,7 +78,7 @@ class UpickleTests extends AnyFlatSpec with Matchers with EitherValues {
 
     val responseAs = asJson[Outer]
 
-    val Left(DeserializationException(original, _)) = RunResponseAs(responseAs)(body)
+    val Left(DeserializationException(original, _, _)) = RunResponseAs(responseAs)(body)
     original shouldBe body
   }
 
@@ -169,7 +169,7 @@ class UpickleTests extends AnyFlatSpec with Matchers with EitherValues {
 
     val body = """invalid json"""
 
-    assertThrows[DeserializationException[Exception]] {
+    assertThrows[DeserializationException] {
       RunResponseAs(asJsonOrFail[Outer])(body)
     }
   }

@@ -18,7 +18,7 @@ trait SttpSprayJsonApi {
     *   - `Left(HttpError(String))` if the response code was other than 2xx (deserialization is not attempted)
     *   - `Left(DeserializationException)` if there's an error during deserialization
     */
-  def asJson[B: JsonReader: IsOption]: ResponseAs[Either[ResponseException[String, Exception], B]] =
+  def asJson[B: JsonReader: IsOption]: ResponseAs[Either[ResponseException[String], B]] =
     asString.mapWithMetadata(ResponseAs.deserializeRightCatchingExceptions(deserializeJson[B])).showAsJson
 
   /** If the response is successful (2xx), tries to deserialize the body from a string into JSON. Otherwise, if the
@@ -31,8 +31,8 @@ trait SttpSprayJsonApi {
     *   - `Right(b)` if the parsing was successful
     *   - `Left(DeserializationException)` if there's an error during deserialization
     */
-  def asJsonAlways[B: JsonReader: IsOption]: ResponseAs[Either[DeserializationException[Exception], B]] =
-    asStringAlways.map(ResponseAs.deserializeCatchingExceptions(deserializeJson[B])).showAsJsonAlways
+  def asJsonAlways[B: JsonReader: IsOption]: ResponseAs[Either[DeserializationException, B]] =
+    asStringAlways.mapWithMetadata(ResponseAs.deserializeCatchingExceptions(deserializeJson[B])).showAsJsonAlways
 
   /** Tries to deserialize the body from a string into JSON, using different deserializers depending on the status code.
     * Returns:
@@ -40,13 +40,12 @@ trait SttpSprayJsonApi {
     *   - `Left(HttpError(E))` if the response was other than 2xx and parsing was successful
     *   - `Left(DeserializationException)` if there's an error during deserialization
     */
-  def asJsonEither[E: JsonReader: IsOption, B: JsonReader: IsOption]
-      : ResponseAs[Either[ResponseException[E, Exception], B]] =
-    asJson[B].mapLeft { (l: ResponseException[String, Exception]) =>
+  def asJsonEither[E: JsonReader: IsOption, B: JsonReader: IsOption]: ResponseAs[Either[ResponseException[E], B]] =
+    asJson[B].mapLeft { (l: ResponseException[String]) =>
       l match {
-        case HttpError(e, code) =>
-          ResponseAs.deserializeCatchingExceptions(deserializeJson[E])(e).fold(identity, HttpError(_, code))
-        case de @ DeserializationException(_, _) => de
+        case HttpError(e, meta) =>
+          ResponseAs.deserializeCatchingExceptions(deserializeJson[E])(e, meta).fold(identity, HttpError(_, meta))
+        case de: DeserializationException => de
       }
     }.showAsJsonEither
 

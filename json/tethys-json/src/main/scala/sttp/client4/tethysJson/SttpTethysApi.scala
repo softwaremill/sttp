@@ -25,7 +25,7 @@ trait SttpTethysApi {
     */
   def asJson[B: JsonReader: IsOption](implicit
       producer: TokenIteratorProducer
-  ): ResponseAs[Either[ResponseException[String, ReaderError], B]] =
+  ): ResponseAs[Either[ResponseException[String], B]] =
     asString.mapWithMetadata(ResponseAs.deserializeRightWithError(deserializeJson)).showAsJson
 
   /** If the response is successful (2xx), tries to deserialize the body from a string into JSON. Otherwise, if the
@@ -42,8 +42,8 @@ trait SttpTethysApi {
     */
   def asJsonAlways[B: JsonReader: IsOption](implicit
       producer: TokenIteratorProducer
-  ): ResponseAs[Either[DeserializationException[ReaderError], B]] =
-    asStringAlways.map(ResponseAs.deserializeWithError(deserializeJson)).showAsJsonAlways
+  ): ResponseAs[Either[DeserializationException, B]] =
+    asStringAlways.mapWithMetadata(ResponseAs.deserializeWithError(deserializeJson)).showAsJsonAlways
 
   /** Deserializes the body from a string into JSON, using different deserializers depending on the status code. If a
     * deserialization error occurs, throws a [[DeserializationException]] / returns a failed effect.

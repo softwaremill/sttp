@@ -4,7 +4,7 @@ import io.opentelemetry.sdk.OpenTelemetrySdk
 import io.opentelemetry.sdk.metrics.SdkMeterProvider
 import io.opentelemetry.sdk.metrics.data.{HistogramPointData, MetricData}
 import io.opentelemetry.sdk.testing.exporter.InMemoryMetricReader
-import io.opentelemetry.api.common.{AttributeKey, Attributes}
+import io.opentelemetry.api.common.AttributeKey
 import org.scalatest.OptionValues
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
@@ -212,7 +212,11 @@ class OpenTelemetryMetricsBackendTest extends AnyFlatSpec with Matchers with Opt
     assertThrows[SttpClientException] {
       basicRequest
         .get(uri"http://127.0.0.1/foo")
-        .response(asString.map(_ => throw DeserializationException("Unknown body", new Exception("Unable to parse"))))
+        .response(
+          asString.mapWithMetadata((_, meta) =>
+            throw DeserializationException("Unknown body", new Exception("Unable to parse"), meta)
+          )
+        )
         .send(backend)
     }
 

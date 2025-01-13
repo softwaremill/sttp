@@ -85,22 +85,22 @@ case class ResponseAs[+T](delegate: GenericResponseAs[T, Any]) extends ResponseA
     mapWithMetadata { case (t, meta) =>
       (t: Either[A, B]) match {
         case Left(a: Exception) => throw a
-        case Left(a)            => throw HttpError(a, meta.code)
+        case Left(a)            => throw HttpError(a, meta)
         case Right(b)           => b
       }
     }
 
-  /** If the type to which the response body should be deserialized is an `Either[ResponseException[HE, DE], B]`, either
+  /** If the type to which the response body should be deserialized is an `Either[ResponseException[HE], B]`, either
     * throws / returns a failed effect with the [[DeserializationException]], returns the deserialized body from the
     * [[HttpError]], or the deserialized successful body `B`.
     */
-  def orFailDeserialization[HE, DE, B](implicit
-      tIsEither: T <:< Either[ResponseException[HE, DE], B]
+  def orFailDeserialization[HE, B](implicit
+      tIsEither: T <:< Either[ResponseException[HE], B]
   ): ResponseAs[Either[HE, B]] = map { t =>
-    (t: Either[ResponseException[HE, DE], B]) match {
-      case Left(HttpError(he, _))               => Left(he)
-      case Left(d: DeserializationException[_]) => throw d
-      case Right(b)                             => Right(b)
+    (t: Either[ResponseException[HE], B]) match {
+      case Left(HttpError(he, _))            => Left(he)
+      case Left(d: DeserializationException) => throw d
+      case Right(b)                          => Right(b)
     }
   }
 
@@ -114,9 +114,9 @@ object ResponseAs {
     */
   def deserializeRightCatchingExceptions[T](
       doDeserialize: String => T
-  ): (Either[String, String], ResponseMetadata) => Either[ResponseException[String, Exception], T] = {
-    case (Left(s), meta) => Left(HttpError(s, meta.code))
-    case (Right(s), _)   => deserializeCatchingExceptions(doDeserialize)(s)
+  ): (Either[String, String], ResponseMetadata) => Either[ResponseException[String], T] = {
+    case (Left(s), meta)  => Left(HttpError(s, meta))
+    case (Right(s), meta) => deserializeCatchingExceptions(doDeserialize)(s, meta)
   }
 
   /** Returns a function, which attempts to deserialize `Right` values using the given function, catching any exceptions
@@ -124,7 +124,7 @@ object ResponseAs {
     */
   def deserializeCatchingExceptions[T](
       doDeserialize: String => T
-  ): String => Either[DeserializationException[Exception], T] =
+  ): (String, ResponseMetadata) => Either[DeserializationException, T] =
     deserializeWithError((s: String) =>
       Try(doDeserialize(s)) match {
         case Failure(e: Exception) => Left(e)
@@ -136,60 +136,62 @@ object ResponseAs {
   /** Returns a function, which maps `Left` values to [[HttpError]] s, and attempts to deserialize `Right` values using
     * the given function.
     */
-  def deserializeRightWithError[E: ShowError, T](
-      doDeserialize: String => Either[E, T]
-  ): (Either[String, String], ResponseMetadata) => Either[ResponseException[String, E], T] = {
-    case (Left(s), meta) => Left(HttpError(s, meta.code))
-    case (Right(s), _)   => deserializeWithError(doDeserialize)(implicitly[ShowError[E]])(s)
+  def deserializeRightWithError[T](
+      doDeserialize: String => Either[Exception, T]
+  ): (Either[String, String], ResponseMetadata) => Either[ResponseException[String], T] = {
+    case (Left(s), meta)  => Left(HttpError(s, meta))
+    case (Right(s), meta) => deserializeWithError(doDeserialize)(s, meta)
   }
 
   /** Returns a function, which keeps `Left` unchanged, and attempts to deserialize `Right` values using the given
     * function. If deserialization fails, an exception is thrown
     */
-  def deserializeRightOrThrow[E: ShowError, T](
-      doDeserialize: String => Either[E, T]
-  ): Either[String, String] => Either[String, T] = {
-    case Left(s)  => Left(s)
-    case Right(s) => Right(deserializeOrThrow(doDeserialize)(implicitly[ShowError[E]])(s))
+  def deserializeRightOrThrow[T](
+      doDeserialize: String => Either[Exception, T]
+  ): (Either[String, String], ResponseMetadata) => Either[String, T] = {
+    case (Left(s), _)  => Left(s)
+    case (Right(s), m) => Right(deserializeOrThrow(doDeserialize)(s, m))
   }
 
   /** Converts a deserialization function, which returns errors of type `E`, into a function where errors are wrapped
     * using [[DeserializationException]].
     */
-  def deserializeWithError[E: ShowError, T](
-      doDeserialize: String => Either[E, T]
-  ): String => Either[DeserializationException[E], T] =
-    s =>
+  def deserializeWithError[T](
+      doDeserialize: String => Either[Exception, T]
+  ): (String, ResponseMetadata) => Either[DeserializationException, T] =
+    (s, meta) =>
       doDeserialize(s) match {
-        case Left(e)  => Left(DeserializationException(s, e))
+        case Left(e)  => Left(DeserializationException(s, e, meta))
         case Right(b) => Right(b)
       }
 
   /** Converts a deserialization function, which returns errors of type `E`, into a function where errors are thrown as
     * exceptions, and results are returned unwrapped.
     */
-  def deserializeOrThrow[E: ShowError, T](doDeserialize: String => Either[E, T]): String => T =
-    s =>
+  def deserializeOrThrow[T](
+      doDeserialize: String => Either[Exception, T]
+  ): (String, ResponseMetadata) => T =
+    (s, meta) =>
       doDeserialize(s) match {
-        case Left(e)  => throw DeserializationException(s, e)
+        case Left(e)  => throw DeserializationException(s, e, meta)
         case Right(b) => b
       }
 
   /** Converts deserialization functions, which both return errors of type `E`, into a function where errors are thrown
-    * as exceptions, and results are parsed using either of the functions, depending if the response was successfull, or
+    * as exceptions, and results are parsed using either of the functions, depending if the response was successful, or
     * not.
     */
-  def deserializeEitherWithErrorOrThrow[E: ShowError, T, T2](
-      doDeserializeHttpError: String => Either[E, T],
-      doDeserializeHttpSuccess: String => Either[E, T2]
+  def deserializeEitherWithErrorOrThrow[T, T2](
+      doDeserializeHttpError: String => Either[Exception, T],
+      doDeserializeHttpSuccess: String => Either[Exception, T2]
   ): (String, ResponseMetadata) => Either[T, T2] =
     (s, m) =>
-      if (m.isSuccess) Right(deserializeOrThrow(doDeserializeHttpSuccess).apply(s))
-      else Left(deserializeOrThrow(doDeserializeHttpError).apply(s))
+      if (m.isSuccess) Right(deserializeOrThrow(doDeserializeHttpSuccess).apply(s, m))
+      else Left(deserializeOrThrow(doDeserializeHttpError).apply(s, m))
 
   /** Converts deserialization functions, which both throw exceptions upon errors, into a function where errors still
     * thrown as exceptions, and results are parsed using either of the functions, depending if the response was
-    * successfull, or not.
+    * successful, or not.
     */
   def deserializeEitherOrThrow[T, T2](
       doDeserializeHttpError: String => T,
@@ -234,7 +236,7 @@ case class StreamResponseAs[+T, S](delegate: GenericResponseAs[T, S]) extends Re
     mapWithMetadata { case (t, meta) =>
       (t: Either[A, B]) match {
         case Left(a: Exception) => throw a
-        case Left(a)            => throw HttpError(a, meta.code)
+        case Left(a)            => throw HttpError(a, meta)
         case Right(b)           => b
       }
     }
@@ -275,7 +277,7 @@ case class WebSocketResponseAs[F[_], +T](delegate: GenericResponseAs[T, Effect[F
     mapWithMetadata { case (t, meta) =>
       (t: Either[A, B]) match {
         case Left(a: Exception) => throw a
-        case Left(a)            => throw HttpError(a, meta.code)
+        case Left(a)            => throw HttpError(a, meta)
         case Right(b)           => b
       }
     }
@@ -316,7 +318,7 @@ case class WebSocketStreamResponseAs[+T, S](delegate: GenericResponseAs[T, S wit
     mapWithMetadata { case (t, meta) =>
       (t: Either[A, B]) match {
         case Left(a: Exception) => throw a
-        case Left(a)            => throw HttpError(a, meta.code)
+        case Left(a)            => throw HttpError(a, meta)
         case Right(b)           => b
       }
     }

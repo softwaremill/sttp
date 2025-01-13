@@ -58,7 +58,7 @@ class TethysTests extends AnyFlatSpec with Matchers with EitherValues {
   it should "fail to decode from empty input" in {
     val responseAs = asJson[Inner]
 
-    RunResponseAs(responseAs)("") should matchPattern { case Left(DeserializationException("", _: ReaderError)) =>
+    RunResponseAs(responseAs)("") should matchPattern { case Left(DeserializationException("", _: ReaderError, _)) =>
     }
   }
 
@@ -67,7 +67,7 @@ class TethysTests extends AnyFlatSpec with Matchers with EitherValues {
 
     val responseAs = asJson[Outer]
 
-    val Left(DeserializationException(original, _)) = RunResponseAs(responseAs)(body)
+    val Left(DeserializationException(original, _, _)) = RunResponseAs(responseAs)(body)
     original shouldBe body
   }
 
@@ -108,7 +108,7 @@ class TethysTests extends AnyFlatSpec with Matchers with EitherValues {
   it should "fail when using asJsonOrFail for incorrect JSON" in {
     val body = """invalid json"""
 
-    assertThrows[DeserializationException[ReaderError]] {
+    assertThrows[DeserializationException] {
       RunResponseAs(asJsonOrFail[Outer])(body)
     }
   }

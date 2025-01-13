@@ -22,7 +22,7 @@ trait SttpCirceApi {
     *   - `Left(HttpError(String))` if the response code was other than 2xx (deserialization is not attempted)
     *   - `Left(DeserializationException)` if there's an error during deserialization
     */
-  def asJson[B: Decoder: IsOption]: ResponseAs[Either[ResponseException[String, io.circe.Error], B]] =
+  def asJson[B: Decoder: IsOption]: ResponseAs[Either[ResponseException[String], B]] =
     asString.mapWithMetadata(ResponseAs.deserializeRightWithError(deserializeJson)).showAsJson
 
   /** If the response is successful (2xx), tries to deserialize the body from a string into JSON. Otherwise, if the
@@ -35,8 +35,8 @@ trait SttpCirceApi {
     *   - `Right(b)` if the parsing was successful
     *   - `Left(DeserializationException)` if there's an error during deserialization
     */
-  def asJsonAlways[B: Decoder: IsOption]: ResponseAs[Either[DeserializationException[io.circe.Error], B]] =
-    asStringAlways.map(ResponseAs.deserializeWithError(deserializeJson)).showAsJsonAlways
+  def asJsonAlways[B: Decoder: IsOption]: ResponseAs[Either[DeserializationException, B]] =
+    asStringAlways.mapWithMetadata(ResponseAs.deserializeWithError(deserializeJson)).showAsJsonAlways
 
   /** Tries to deserialize the body from a string into JSON, using different deserializers depending on the status code.
     * Returns:
@@ -44,12 +44,12 @@ trait SttpCirceApi {
     *   - `Left(HttpError(E))` if the response was other than 2xx and parsing was successful
     *   - `Left(DeserializationException)` if there's an error during deserialization
     */
-  def asJsonEither[E: Decoder: IsOption, B: Decoder: IsOption]
-      : ResponseAs[Either[ResponseException[E, io.circe.Error], B]] =
-    asJson[B].mapLeft { (l: ResponseException[String, io.circe.Error]) =>
+  def asJsonEither[E: Decoder: IsOption, B: Decoder: IsOption]: ResponseAs[Either[ResponseException[E], B]] =
+    asJson[B].mapLeft { (l: ResponseException[String]) =>
       l match {
-        case HttpError(e, code) => deserializeJson[E].apply(e).fold(DeserializationException(e, _), HttpError(_, code))
-        case de @ DeserializationException(_, _) => de
+        case HttpError(e, meta) =>
+          deserializeJson[E].apply(e).fold(DeserializationException(e, _, meta), HttpError(_, meta))
+        case de @ DeserializationException(_, _, _) => de
       }
     }.showAsJsonEither
 

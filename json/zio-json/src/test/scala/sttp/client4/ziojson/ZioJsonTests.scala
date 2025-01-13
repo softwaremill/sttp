@@ -54,14 +54,14 @@ class ZioJsonTests extends AnyFlatSpec with Matchers with EitherValues {
 
     val responseAs = asJson[Outer]
 
-    val Left(DeserializationException(original, _)) = RunResponseAs(responseAs)(body)
+    val Left(DeserializationException(original, _, _)) = RunResponseAs(responseAs)(body)
     original shouldBe body
   }
 
   it should "fail to decode from empty input" in {
     val responseAs = asJson[Inner]
 
-    RunResponseAs(responseAs)("").left.value should matchPattern { case DeserializationException("", _: String) =>
+    RunResponseAs(responseAs)("").left.value should matchPattern { case DeserializationException("", _, _) =>
     }
   }
 
@@ -117,7 +117,7 @@ class ZioJsonTests extends AnyFlatSpec with Matchers with EitherValues {
   it should "fail when using asJsonOrFail for incorrect JSON" in {
     val body = """invalid json"""
 
-    assertThrows[DeserializationException[Exception]] {
+    assertThrows[DeserializationException] {
       RunResponseAs(asJsonOrFail[Outer])(body)
     }
   }
