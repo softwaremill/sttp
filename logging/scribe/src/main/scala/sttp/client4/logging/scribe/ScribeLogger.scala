@@ -21,8 +21,8 @@ case class ScribeLogger[F[_]](monad: MonadError[F]) extends Logger[F] {
       context: Map[String, Any]
   ): F[Unit] =
     throwable match {
-      case Some(t) => monad.eval(scribe.log(levelMap(level), MDC.global, message, data(context), throwable))
-      case None    => scribe.log(levelMap(level), MDC.global, message, data(context))
+      case Some(t) => monad.eval(scribe.log(levelMap(level), MDC.global, message, data(context), t))
+      case None    => monad.eval(scribe.log(levelMap(level), MDC.global, message, data(context)))
     }
 
 }
