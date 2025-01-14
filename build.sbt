@@ -163,10 +163,9 @@ val resilience4jVersion = "2.3.0"
 val http4s_ce2_version = "0.22.15"
 val http4s_ce3_version = "0.23.30"
 val osLibVersion = "0.11.3"
-
 val tethysVersion = "0.29.3"
-
 val openTelemetryVersion = "1.46.0"
+val slf4jVersion = "1.7.36"
 
 val compileAndTest = "compile->compile;test->test"
 
@@ -243,6 +242,7 @@ lazy val rawAllAggregates =
     armeriaFs2Backend.projectRefs ++
     scribeBackend.projectRefs ++
     slf4jBackend.projectRefs ++
+    cachingBackend.projectRefs ++
     examplesCe2.projectRefs ++
     examples.projectRefs ++
     docs.projectRefs ++
@@ -945,12 +945,25 @@ lazy val slf4jBackend = (projectMatrix in file("logging/slf4j"))
   .settings(
     name := "slf4j-backend",
     libraryDependencies ++= Seq(
-      "org.slf4j" % "slf4j-api" % "1.7.36"
+      "org.slf4j" % "slf4j-api" % slf4jVersion
     ),
     scalaTest
   )
   .jvmPlatform(scalaVersions = scala2And3)
   .dependsOn(core)
+
+lazy val cachingBackend = (projectMatrix in file("caching"))
+  .settings(commonJvmSettings)
+  .settings(
+    name := "caching-backend",
+    libraryDependencies ++= Seq(
+      "org.slf4j" % "slf4j-api" % slf4jVersion,
+      "com.github.plokhotnyuk.jsoniter-scala" %%% "jsoniter-scala-macros" % jsoniterVersion % Compile
+    ),
+    scalaTest
+  )
+  .jvmPlatform(scalaVersions = scala2And3)
+  .dependsOn(core, jsoniter)
 
 lazy val examplesCe2 = (projectMatrix in file("examples-ce2"))
   .settings(commonJvmSettings)
@@ -977,6 +990,7 @@ lazy val examples = (projectMatrix in file("examples"))
       "io.github.resilience4j" % "resilience4j-circuitbreaker" % resilience4jVersion,
       "io.github.resilience4j" % "resilience4j-ratelimiter" % resilience4jVersion,
       "com.lihaoyi" %% "os-lib" % osLibVersion,
+      "redis.clients" % "jedis" % "5.2.0",
       pekkoStreams,
       logback
     ),
@@ -995,7 +1009,8 @@ lazy val examples = (projectMatrix in file("examples"))
     zioJson,
     scribeBackend,
     slf4jBackend,
-    ox
+    ox,
+    cachingBackend
   )
 
 //TODO this should be invoked by compilation process, see #https://github.com/scalameta/mdoc/issues/355
