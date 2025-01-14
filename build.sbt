@@ -162,6 +162,7 @@ val zipkinSenderOkHttpVersion = "3.4.3"
 val resilience4jVersion = "2.3.0"
 val http4s_ce2_version = "0.22.15"
 val http4s_ce3_version = "0.23.30"
+val osLibVersion = "0.11.3"
 
 val tethysVersion = "0.29.3"
 
@@ -976,7 +977,7 @@ lazy val examples = (projectMatrix in file("examples"))
       "com.github.plokhotnyuk.jsoniter-scala" %%% "jsoniter-scala-macros" % jsoniterVersion,
       "io.github.resilience4j" % "resilience4j-circuitbreaker" % resilience4jVersion,
       "io.github.resilience4j" % "resilience4j-ratelimiter" % resilience4jVersion,
-      "com.lihaoyi" %% "os-lib" % "0.11.3",
+      "com.lihaoyi" %% "os-lib" % osLibVersion,
       pekkoStreams,
       logback
     ),
