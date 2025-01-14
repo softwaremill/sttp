@@ -16,21 +16,21 @@ import sttp.client4.pekkohttp.*
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-// @main def getAndParseJsonPekkoHttpJson4s(): Unit =
-//   case class HttpBinResponse(origin: String, headers: Map[String, String])
+@main def getAndParseJsonPekkoHttpJson4s(): Unit =
+  case class HttpBinResponse(origin: String, headers: Map[String, String])
 
-//   given Serialization = org.json4s.native.Serialization
-//   given Formats = org.json4s.DefaultFormats
+  given Serialization = org.json4s.native.Serialization
+  given Formats = org.json4s.DefaultFormats
 
-//   val request = basicRequest
-//     .get(uri"https://httpbin.org/get")
-//     .response(asJson[HttpBinResponse])
+  val request = basicRequest
+    .get(uri"https://httpbin.org/get")
+    .response(asJson[HttpBinResponse])
 
-//   val backend: Backend[Future] = PekkoHttpBackend()
-//   val response: Future[Response[Either[ResponseException[String], HttpBinResponse]]] =
-//     request.send(backend)
+  val backend: Backend[Future] = PekkoHttpBackend()
+  val response: Future[Response[Either[ResponseException[String], HttpBinResponse]]] =
+    request.send(backend)
 
-//   for r <- response do
-//     println(s"Got response code: ${r.code}")
-//     println(r.body)
-//     backend.close()
+  for r <- response do
+    println(s"Got response code: ${r.code}")
+    println(r.body)
+    backend.close()
