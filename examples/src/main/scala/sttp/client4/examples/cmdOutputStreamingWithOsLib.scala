@@ -1,3 +1,6 @@
+// {cat=Other; effects=Direct; backend=HttpClient}: Command output streaming with os-lib support
+
+//> using dep com.lihaoyi::os-lib:0.11.3
 package sttp.client4.examples
 
 import sttp.client4.*

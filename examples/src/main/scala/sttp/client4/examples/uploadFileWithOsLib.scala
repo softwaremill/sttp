@@ -1,4 +1,4 @@
-// {cat=Other; effects=Direct; backend=HttpClient}: Download file
+// {cat=Other; effects=Direct; backend=HttpClient}: Download file with os-lib support
 
 //> using dep com.lihaoyi::os-lib:0.11.3
 package sttp.client4.examples
