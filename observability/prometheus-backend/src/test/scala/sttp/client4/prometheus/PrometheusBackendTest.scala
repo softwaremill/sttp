@@ -373,13 +373,11 @@ class PrometheusBackendTest
     val backend = PrometheusBackend(backendStub)
 
     // when
-    assertThrows[SttpClientException] {
+    assertThrows[IllegalStateException] {
       basicRequest
         .get(uri"http://127.0.0.1/foo")
         .response(
-          asString.mapWithMetadata((_, meta) =>
-            throw DeserializationException("Unknown body", new Exception("Unable to parse"), meta)
-          )
+          asString.map(_ => throw new IllegalStateException())
         )
         .send(backend)
     }

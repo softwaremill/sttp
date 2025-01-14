@@ -209,13 +209,11 @@ class OpenTelemetryMetricsBackendTest extends AnyFlatSpec with Matchers with Opt
     val backend = OpenTelemetryMetricsBackend(backendStub, spawnNewOpenTelemetry(reader))
 
     // when
-    assertThrows[SttpClientException] {
+    assertThrows[IllegalStateException] {
       basicRequest
         .get(uri"http://127.0.0.1/foo")
         .response(
-          asString.mapWithMetadata((_, meta) =>
-            throw DeserializationException("Unknown body", new Exception("Unable to parse"), meta)
-          )
+          asString.mapWithMetadata((_, meta) => throw new IllegalStateException())
         )
         .send(backend)
     }
