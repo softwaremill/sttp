@@ -4,16 +4,16 @@ import scala.annotation.tailrec
 import sttp.model.ResponseMetadata
 
 /** Used to represent errors, that might occur when handling the response body. Typically, this type is used as the
-  * left-side of a top-level either (where the right-side represents a successful request and deserialization).
+  * left-side of a top-level either (where the right-side represents a successful request and deserialization),
   *
-  * A response exception can itself either be one of two cases:
+  * A response exception can itself be one of two cases:
   *   - a [[HttpError]], when the response code is other than 2xx (or whatever is considered "success" by the response
   *     handling description); the body is deserialized to `HE`
   *   - a [[DeserializationException]], when there's an error during deserialization (this might include both
   *     deserialization exceptions of the success and error branches)
   *
-  * When thrown/returned when sending a request, will be additionally wrapped with a
-  * [[SttpClientException.ResponseHandlingException]].
+  * When thrown/returned when sending a request (e.g. in `...OrFailed` response handling descriptions), will be
+  * additionally wrapped with a [[SttpClientException.ResponseHandlingException]].
   *
   * @tparam HE
   *   The type of the body to which the response is deserialized, when the response code is different than success
