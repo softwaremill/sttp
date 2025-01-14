@@ -17,6 +17,7 @@ The type signatures vary depending on the underlying library (required implicits
 
 ```scala mdoc:compile-only
 import sttp.client4.*
+import sttp.client4.ResponseException.DeserializationException
 
 // request bodies
 def asJson[B](b: B): StringBody = ???
