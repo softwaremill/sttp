@@ -976,6 +976,7 @@ lazy val examples = (projectMatrix in file("examples"))
       "com.github.plokhotnyuk.jsoniter-scala" %%% "jsoniter-scala-macros" % jsoniterVersion,
       "io.github.resilience4j" % "resilience4j-circuitbreaker" % resilience4jVersion,
       "io.github.resilience4j" % "resilience4j-ratelimiter" % resilience4jVersion,
+      "com.lihaoyi" %% "os-lib" % "0.11.3",
       pekkoStreams,
       logback
     ),
