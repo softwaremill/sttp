@@ -10,6 +10,7 @@ import sttp.model._
 import com.github.plokhotnyuk.jsoniter_scala.core._
 import com.github.plokhotnyuk.jsoniter_scala.macros._
 import sttp.client4.json.RunResponseAs
+import sttp.client4.ResponseException.DeserializationException
 
 class JsoniterJsonTests extends AnyFlatSpec with Matchers with EitherValues {
 
@@ -44,13 +45,13 @@ class JsoniterJsonTests extends AnyFlatSpec with Matchers with EitherValues {
 
     val responseAs = asJson[Outer]
 
-    val Left(DeserializationException(original, _)) = RunResponseAs(responseAs)(body)
+    val Left(DeserializationException(original, _, _)) = RunResponseAs(responseAs)(body)
     original shouldBe body
   }
 
   it should "fail to decode from empty input" in {
     val responseAs = asJson[Inner]
-    RunResponseAs(responseAs)("").left.value should matchPattern { case DeserializationException("", _: Exception) =>
+    RunResponseAs(responseAs)("").left.value should matchPattern { case DeserializationException("", _: Exception, _) =>
     }
   }
 
@@ -105,7 +106,7 @@ class JsoniterJsonTests extends AnyFlatSpec with Matchers with EitherValues {
   it should "fail when using asJsonOrFail for incorrect JSON" in {
     val body = """invalid json"""
 
-    assertThrows[DeserializationException[Exception]] {
+    assertThrows[DeserializationException] {
       RunResponseAs(asJsonOrFail[Outer])(body)
     }
   }

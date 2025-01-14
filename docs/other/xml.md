@@ -33,7 +33,7 @@ trait SttpScalaxbApi:
         case e: Exception => Left(e)
 
   // response body handling description
-  def asXml[B: XMLFormat]: ResponseAs[Either[ResponseException[String, Exception], B], Any] =
+  def asXml[B: XMLFormat]: ResponseAs[Either[ResponseException[String], B], Any] =
     asString.mapWithMetadata(ResponseAs.deserializeRightWithError(deserializeXml[B]))
       .showAs("either(as string, as xml)")
 ```
@@ -64,7 +64,7 @@ given XmlElementLabel = XmlElementLabel("outer")
 // this import may differ depending on location of generated code
 import generated.Generated_OuterFormat 
 
-val response: Response[Either[ResponseException[String, Exception], Outer]] =
+val response: Response[Either[ResponseException[String], Outer]] =
   basicRequest
     .post(uri"...")
     .body(asXml(requestPayload))

@@ -3,12 +3,16 @@ package sttp.client4.testing
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
-import sttp.client4.SttpClientException.ReadException
 import sttp.client4._
+import sttp.client4.ResponseException.DeserializationException
+import sttp.client4.SttpClientException.ReadException
 import sttp.client4.internal._
 import sttp.client4.ws.async._
 import sttp.model._
-import sttp.monad.{FutureMonad, IdentityMonad, MonadError, TryMonad}
+import sttp.monad.FutureMonad
+import sttp.monad.IdentityMonad
+import sttp.monad.MonadError
+import sttp.monad.TryMonad
 import sttp.shared.Identity
 import sttp.ws.WebSocketFrame
 import sttp.ws.testing.WebSocketStub
@@ -18,7 +22,9 @@ import java.util.concurrent.TimeoutException
 import java.util.concurrent.atomic.AtomicInteger
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
-import scala.util.{Failure, Success, Try}
+import scala.util.Failure
+import scala.util.Success
+import scala.util.Try
 
 class BackendStubTests extends AnyFlatSpec with Matchers with ScalaFutures {
   private val testingStub = SyncBackendStub
@@ -109,11 +115,13 @@ class BackendStubTests extends AnyFlatSpec with Matchers with ScalaFutures {
     val request = () =>
       basicRequest
         .get(uri"./test")
-        .response(asString.map(_ => throw DeserializationException("", new RuntimeException("test"))))
+        .response(
+          asString.mapWithMetadata((_, meta) => throw DeserializationException("", new RuntimeException("test"), meta))
+        )
         .send(testingBackend)
 
-    val readException = the[sttp.client4.SttpClientException.ReadException] thrownBy request()
-    readException.cause shouldBe a[sttp.client4.DeserializationException[_]]
+    val readException = the[SttpClientException.ReadException] thrownBy request()
+    readException.cause shouldBe a[DeserializationException]
   }
 
   it should "use rules in partial function" in {

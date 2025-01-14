@@ -8,6 +8,7 @@ import sttp.model._
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import sttp.client4.json.RunResponseAs
+import sttp.client4.ResponseException.DeserializationException
 
 class CirceTests extends AnyFlatSpec with Matchers with EitherValues {
 
@@ -62,7 +63,7 @@ class CirceTests extends AnyFlatSpec with Matchers with EitherValues {
     val responseAs = asJson[Inner]
 
     RunResponseAs(responseAs)("").left.value should matchPattern {
-      case DeserializationException("", _: io.circe.ParsingFailure) =>
+      case DeserializationException("", _: io.circe.ParsingFailure, _) =>
     }
   }
 
@@ -71,7 +72,7 @@ class CirceTests extends AnyFlatSpec with Matchers with EitherValues {
 
     val responseAs = asJson[Outer]
 
-    val Left(DeserializationException(original, _)) = RunResponseAs(responseAs)(body)
+    val Left(DeserializationException(original, _, _)) = RunResponseAs(responseAs)(body)
     original shouldBe body
   }
 
@@ -130,7 +131,7 @@ class CirceTests extends AnyFlatSpec with Matchers with EitherValues {
   it should "fail when using asJsonOrFail for incorrect JSON" in {
     val body = """invalid json"""
 
-    assertThrows[DeserializationException[io.circe.Error]] {
+    assertThrows[DeserializationException] {
       RunResponseAs(asJsonOrFail[Outer])(body)
     }
   }

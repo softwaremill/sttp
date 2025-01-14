@@ -14,12 +14,15 @@ case class ScribeLogger[F[_]](monad: MonadError[F]) extends Logger[F] {
     LogLevel.Error -> scribe.Level.Error
   )
 
-  override def apply(level: LogLevel, message: => String, context: Map[String, Any]): F[Unit] = monad.eval(
-    scribe.log(levelMap(level), MDC.global, message, data(context))
-  )
+  override def apply(
+      level: LogLevel,
+      message: => String,
+      throwable: Option[Throwable],
+      context: Map[String, Any]
+  ): F[Unit] =
+    throwable match {
+      case Some(t) => monad.eval(scribe.log(levelMap(level), MDC.global, message, data(context), t))
+      case None    => monad.eval(scribe.log(levelMap(level), MDC.global, message, data(context)))
+    }
 
-  override def apply(level: LogLevel, message: => String, throwable: Throwable, context: Map[String, Any]): F[Unit] =
-    monad.eval(
-      scribe.log(levelMap(level), MDC.global, message, data(context), throwable)
-    )
 }

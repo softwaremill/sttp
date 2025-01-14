@@ -16,7 +16,7 @@ trait SttpWebSocketSyncApi {
     asWebSocketEither(asStringAlways, asWebSocketAlways(f))
 
   /** Handles the response as a web socket, providing an open [[WebSocket]] instance to the `f` function, if the status
-    * code is 2xx. Otherwise, throws an [[HttpError]].
+    * code is 2xx. Otherwise, throws an [[UnexpectedStatusCode]].
     *
     * The web socket is always closed after `f` completes.
     *

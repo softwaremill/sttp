@@ -12,6 +12,7 @@ import scala.language.higherKinds
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import sttp.client4.json.RunResponseAs
+import sttp.client4.ResponseException.DeserializationException
 
 class Json4sTests extends AnyFlatSpec with Matchers with EitherValues {
   implicit val serialization: Serialization.type = native.Serialization
@@ -59,7 +60,8 @@ class Json4sTests extends AnyFlatSpec with Matchers with EitherValues {
   it should "fail to decode from empty input" in {
     val responseAs = asJson[Inner]
 
-    RunResponseAs(responseAs)("") should matchPattern { case Left(DeserializationException(_, _: MappingException)) =>
+    RunResponseAs(responseAs)("") should matchPattern {
+      case Left(DeserializationException(_, _: MappingException, _)) =>
     }
   }
 
@@ -68,7 +70,8 @@ class Json4sTests extends AnyFlatSpec with Matchers with EitherValues {
 
     val responseAs = asJson[Outer]
 
-    RunResponseAs(responseAs)(body) should matchPattern { case Left(DeserializationException(_, _: ParseException)) =>
+    RunResponseAs(responseAs)(body) should matchPattern {
+      case Left(DeserializationException(_, _: ParseException, _)) =>
     }
   }
 

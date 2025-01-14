@@ -2,27 +2,27 @@ package sttp.client4.ziojson
 
 import sttp.capabilities.Effect
 import sttp.capabilities.zio.ZioStreams
-import sttp.client4.DeserializationException
-import sttp.client4.HttpError
 import sttp.client4.ResponseException
 import sttp.client4.StreamResponseAs
-import sttp.client4.asStream
+import sttp.client4.asStreamWithMetadata
 import zio.RIO
 import zio.ZIO
 import zio.blocking.Blocking
 import zio.json.JsonDecoder
 import zio.stream.ZTransducer
+import sttp.client4.ResponseException.DeserializationException
+import sttp.client4.ResponseException.UnexpectedStatusCode
 
 trait SttpZioJsonApiExtensions { this: SttpZioJsonApi =>
   def asJsonStream[B: JsonDecoder]
-      : StreamResponseAs[Either[ResponseException[String, String], B], ZioStreams with Effect[RIO[Blocking, *]]] =
-    asStream(ZioStreams)(s =>
+      : StreamResponseAs[Either[ResponseException[String], B], ZioStreams with Effect[RIO[Blocking, *]]] =
+    asStreamWithMetadata(ZioStreams)((s, meta) =>
       JsonDecoder[B]
         .decodeJsonStream(s >>> ZTransducer.utf8Decode.mapChunks(_.flatMap(_.toCharArray)))
         .map(Right(_))
-        .catchSome { case e => ZIO.left(DeserializationException("", e.getMessage)) }
+        .catchSome { case e: Exception => ZIO.left(DeserializationException("", e, meta)) }
     ).mapWithMetadata {
-      case (Left(s), meta) => Left(HttpError(s, meta.code))
+      case (Left(s), meta) => Left(UnexpectedStatusCode(s, meta))
       case (Right(s), _)   => s
     }
 }

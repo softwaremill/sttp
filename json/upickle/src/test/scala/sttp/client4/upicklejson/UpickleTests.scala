@@ -8,6 +8,7 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import ujson.Obj
 import sttp.client4.json.RunResponseAs
+import sttp.client4.ResponseException.DeserializationException
 
 class UpickleTests extends AnyFlatSpec with Matchers with EitherValues {
   "The upickle module" should "encode arbitrary bodies given an encoder" in {
@@ -67,7 +68,7 @@ class UpickleTests extends AnyFlatSpec with Matchers with EitherValues {
 
     val responseAs = asJson[Inner]
 
-    RunResponseAs(responseAs)("").left.value should matchPattern { case DeserializationException(_, _) => }
+    RunResponseAs(responseAs)("").left.value should matchPattern { case DeserializationException(_, _, _) => }
   }
 
   it should "fail to decode invalid json" in {
@@ -78,7 +79,7 @@ class UpickleTests extends AnyFlatSpec with Matchers with EitherValues {
 
     val responseAs = asJson[Outer]
 
-    val Left(DeserializationException(original, _)) = RunResponseAs(responseAs)(body)
+    val Left(DeserializationException(original, _, _)) = RunResponseAs(responseAs)(body)
     original shouldBe body
   }
 
@@ -169,7 +170,7 @@ class UpickleTests extends AnyFlatSpec with Matchers with EitherValues {
 
     val body = """invalid json"""
 
-    assertThrows[DeserializationException[Exception]] {
+    assertThrows[DeserializationException] {
       RunResponseAs(asJsonOrFail[Outer])(body)
     }
   }

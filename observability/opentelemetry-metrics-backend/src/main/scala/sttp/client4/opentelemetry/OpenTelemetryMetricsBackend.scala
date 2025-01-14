@@ -138,9 +138,9 @@ private class OpenTelemetryMetricsListener(
     val requestAttributes = createRequestAttributes(request)
     val errorAttributes = createErrorAttributes(e)
 
-    HttpError.find(e) match {
-      case Some(HttpError(body, statusCode)) =>
-        requestSuccessful(request, Response(body, statusCode, request.onlyMetadata), tag)
+    ResponseException.find(e) match {
+      case Some(re) =>
+        requestSuccessful(request, Response((), re.response.code, request.onlyMetadata), tag)
       case _ =>
         incrementCounter(requestToFailureCounterMapper(request, e), errorAttributes)
         recordHistogram(requestToLatencyHistogramMapper(request), tag.map(clock.millis() - _), errorAttributes)
@@ -162,7 +162,7 @@ private class OpenTelemetryMetricsListener(
 
   private def incrementCounter(collectorConfig: Option[CollectorConfig], attributes: Attributes): Unit =
     collectorConfig
-      .foreach(config => getOrCreateMetric(counters, config, createNewCounter).add(1, config.attributes))
+      .foreach(config => getOrCreateMetric(counters, config, createNewCounter).add(1, attributes))
 
   private def getOrCreateMetric[T](
       cache: ConcurrentHashMap[String, T],

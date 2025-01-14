@@ -54,8 +54,8 @@ trait SttpApi extends SttpExtensions with UriInterpolator {
   val basicRequest: PartialRequest[Either[String, String]] =
     emptyRequest.acceptEncoding("gzip, deflate")
 
-  /** A starting request which always reads the response body as a string, if the response code is successfull (2xx),
-    * and fails (throws an exception, or returns a failed effect) otherwise.
+  /** A starting request which always reads the response body as a string, if the response code is successful (2xx), and
+    * fails (throws an exception, or returns a failed effect) otherwise.
     */
   val quickRequest: PartialRequest[String] = basicRequest.response(asStringOrFail)
 
@@ -96,8 +96,8 @@ trait SttpApi extends SttpExtensions with UriInterpolator {
       }
       .showAs("as string")
 
-  /** Reads the response as a `String`, if the status code is 2xx. Otherwise, throws an [[HttpError]] / returns a failed
-    * effect. Use the `utf-8` charset by default, unless specified otherwise in the response headers.
+  /** Reads the response as a `String`, if the status code is 2xx. Otherwise, throws an [[UnexpectedStatusCode]] /
+    * returns a failed effect. Use the `utf-8` charset by default, unless specified otherwise in the response headers.
     *
     * @see
     *   the [[ResponseAs#orFail]] method can be used to convert any response description which returns an `Either` into
@@ -116,7 +116,7 @@ trait SttpApi extends SttpExtensions with UriInterpolator {
   def asByteArrayAlways: ResponseAs[Array[Byte]] = ResponseAs(ResponseAsByteArray)
 
   /** Reads the response as an array of bytes, without any processing, if the status code is 2xx. Otherwise, throws an
-    * [[HttpError]] / returns a failed effect.
+    * [[UnexpectedStatusCode]] / returns a failed effect.
     *
     * @see
     *   the [[ResponseAs#orFail]] method can be used to convert any response description which returns an `Either` into
@@ -148,8 +148,9 @@ trait SttpApi extends SttpExtensions with UriInterpolator {
     asStringAlways(charset2).map(GenericResponseAs.parseParams(_, charset2)).showAs("as params")
   }
 
-  /** Deserializes the response as form parameters, if the status code is 2xx. Otherwise, throws an [[HttpError]] /
-    * returns a failed effect. Uses the `utf-8` charset by default, unless specified otherwise in the response headers.
+  /** Deserializes the response as form parameters, if the status code is 2xx. Otherwise, throws an
+    * [[UnexpectedStatusCode]] / returns a failed effect. Uses the `utf-8` charset by default, unless specified
+    * otherwise in the response headers.
     *
     * @see
     *   the [[ResponseAs#orFail]] method can be used to convert any response description which returns an `Either` into
@@ -284,8 +285,8 @@ trait SttpApi extends SttpExtensions with UriInterpolator {
     asEither(asStringAlways, asStreamAlways(s)(f))
 
   /** Handles the response body by providing a stream with the response's data to `f`, if the status code is 2xx.
-    * Otherwise, returns a failed effect (with [[HttpError]]). The effect type used by `f` must be compatible with the
-    * effect type of the backend. The stream is always closed after `f` completes.
+    * Otherwise, returns a failed effect (with [[UnexpectedStatusCode]]). The effect type used by `f` must be compatible
+    * with the effect type of the backend. The stream is always closed after `f` completes.
     *
     * A non-blocking, asynchronous streaming implementation must be provided as the [[Streams]] parameter.
     *

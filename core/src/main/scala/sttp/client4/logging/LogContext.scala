@@ -1,15 +1,14 @@
 package sttp.client4.logging
 
-import sttp.client4.Response
 import sttp.model.{HeaderNames, RequestMetadata}
 
 import scala.collection.mutable
 import scala.concurrent.duration.Duration
+import sttp.model.ResponseMetadata
 
 trait LogContext {
   def forRequest(request: RequestMetadata): Map[String, Any]
-
-  def forResponse(response: Response[_], duration: Option[Duration]): Map[String, Any]
+  def forResponse(request: RequestMetadata, response: ResponseMetadata, duration: Option[Duration]): Map[String, Any]
 }
 
 object LogContext {
@@ -18,7 +17,11 @@ object LogContext {
     */
   def empty: LogContext = new LogContext {
     def forRequest(request: RequestMetadata): Map[String, Any] = Map.empty
-    def forResponse(response: Response[_], duration: Option[Duration]): Map[String, Any] = Map.empty
+    def forResponse(
+        request: RequestMetadata,
+        response: ResponseMetadata,
+        duration: Option[Duration]
+    ): Map[String, Any] = Map.empty
   }
 
   /** Default log context, which logs the main request and response metadata.
@@ -45,10 +48,14 @@ object LogContext {
       context.toMap
     }
 
-    def forResponse(response: Response[_], duration: Option[Duration]): Map[String, Any] = {
+    def forResponse(
+        request: RequestMetadata,
+        response: ResponseMetadata,
+        duration: Option[Duration]
+    ): Map[String, Any] = {
       val context = mutable.Map.empty[String, Any]
 
-      context ++= forRequest(response.request)
+      context ++= forRequest(request)
       context += "http.response.status_code" -> response.code.code
 
       if (logResponseHeaders)

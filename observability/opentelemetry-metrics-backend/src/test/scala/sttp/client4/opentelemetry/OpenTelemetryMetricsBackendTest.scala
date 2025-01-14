@@ -4,12 +4,12 @@ import io.opentelemetry.sdk.OpenTelemetrySdk
 import io.opentelemetry.sdk.metrics.SdkMeterProvider
 import io.opentelemetry.sdk.metrics.data.{HistogramPointData, MetricData}
 import io.opentelemetry.sdk.testing.exporter.InMemoryMetricReader
-import io.opentelemetry.api.common.{AttributeKey, Attributes}
+import io.opentelemetry.api.common.AttributeKey
 import org.scalatest.OptionValues
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import sttp.client4.testing.{ResponseStub, SyncBackendStub}
-import sttp.client4.{asString, basicRequest, DeserializationException, SttpClientException, UriContext}
+import sttp.client4.{asString, basicRequest, SttpClientException, UriContext}
 import sttp.model.{Header, StatusCode}
 
 import scala.collection.JavaConverters._
@@ -209,10 +209,12 @@ class OpenTelemetryMetricsBackendTest extends AnyFlatSpec with Matchers with Opt
     val backend = OpenTelemetryMetricsBackend(backendStub, spawnNewOpenTelemetry(reader))
 
     // when
-    assertThrows[SttpClientException] {
+    assertThrows[IllegalStateException] {
       basicRequest
         .get(uri"http://127.0.0.1/foo")
-        .response(asString.map(_ => throw DeserializationException("Unknown body", new Exception("Unable to parse"))))
+        .response(
+          asString.mapWithMetadata((_, meta) => throw new IllegalStateException())
+        )
         .send(backend)
     }
 

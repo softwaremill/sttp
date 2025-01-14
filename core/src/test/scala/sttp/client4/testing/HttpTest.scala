@@ -160,7 +160,7 @@ trait HttpTest[F[_]]
         }
     }
 
-    "as failure, when the request is successfull" in {
+    "as failure, when the request is successful" in {
       basicRequest
         .post(uri"$endpoint/echo/custom_status/200")
         .body(testBody)
@@ -170,7 +170,7 @@ trait HttpTest[F[_]]
         .map(_.body shouldBe s"POST /echo/custom_status/200 $testBody")
     }
 
-    "as failure, when the request is not successfull" in {
+    "as failure, when the request is not successful" in {
       implicit val monadError: MonadError[F] = backend.monad
       basicRequest
         .post(uri"$endpoint/echo/custom_status/400")
@@ -183,7 +183,7 @@ trait HttpTest[F[_]]
         }
         .toFuture()
         .map(
-          _ shouldBe "sttp.client4.HttpError: statusCode: 400, response: POST /echo/custom_status/400 this is the body"
+          _ shouldBe "sttp.client4.ResponseException$UnexpectedStatusCode: statusCode: 400, response: POST /echo/custom_status/400 this is the body"
         )
     }
 

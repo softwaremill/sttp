@@ -1,6 +1,6 @@
 package sttp.client4
 
-import sttp.client4.SttpClientException.{ConnectException, ReadException, TimeoutException}
+import sttp.client4.SttpClientException.{ConnectException, ReadException, ResponseHandlingException, TimeoutException}
 import sttp.client4.ws.{GotAWebSocketException, NotAWebSocketException}
 
 import scala.annotation.tailrec
@@ -23,7 +23,7 @@ trait SttpClientExceptionExtensions {
       case e: java.io.IOException                   => Some(new ReadException(request, e))
       case e: NotAWebSocketException                => Some(new ReadException(request, e))
       case e: GotAWebSocketException                => Some(new ReadException(request, e))
-      case e: ResponseException[_, _]               => Some(new ReadException(request, e))
+      case e: ResponseException[_]                  => Some(new ResponseHandlingException(request, e))
       case e if e.getCause != null && e.getCause.isInstanceOf[Exception] =>
         defaultExceptionToSttpClientException(request, e.getCause.asInstanceOf[Exception])
       case _ => None

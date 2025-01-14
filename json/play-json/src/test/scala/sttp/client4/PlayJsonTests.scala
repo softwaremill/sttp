@@ -9,6 +9,7 @@ import sttp.model.StatusCode
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import sttp.client4.json.RunResponseAs
+import sttp.client4.ResponseException.DeserializationException
 
 class PlayJsonTests extends AnyFlatSpec with Matchers with EitherValues {
 
@@ -61,7 +62,7 @@ class PlayJsonTests extends AnyFlatSpec with Matchers with EitherValues {
   it should "fail to decode from empty input" in {
     val responseAs = asJson[Inner]
 
-    RunResponseAs(responseAs)("") should matchPattern { case Left(DeserializationException("", _)) =>
+    RunResponseAs(responseAs)("") should matchPattern { case Left(DeserializationException("", _, _)) =>
     }
   }
 
@@ -70,7 +71,7 @@ class PlayJsonTests extends AnyFlatSpec with Matchers with EitherValues {
 
     val responseAs = asJson[Outer]
 
-    RunResponseAs(responseAs)(body) should matchPattern { case Left(DeserializationException(`body`, _)) =>
+    RunResponseAs(responseAs)(body) should matchPattern { case Left(DeserializationException(`body`, _, _)) =>
     }
   }
 
@@ -127,7 +128,7 @@ class PlayJsonTests extends AnyFlatSpec with Matchers with EitherValues {
   it should "fail when using asJsonOrFail for incorrect JSON" in {
     val body = """invalid json"""
 
-    assertThrows[DeserializationException[JsError]] {
+    assertThrows[DeserializationException] {
       RunResponseAs(asJsonOrFail[Outer])(body)
     }
   }

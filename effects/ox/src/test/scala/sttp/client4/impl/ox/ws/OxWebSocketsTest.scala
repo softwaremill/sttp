@@ -144,10 +144,8 @@ class OxWebSocketTest extends AnyFlatSpec with BeforeAndAfterAll with Matchers w
     val msgCounter = new AtomicInteger()
     val errCounter = new AtomicInteger()
 
-    override def apply(level: LogLevel, message: => String, context: Map[String, Any]): Unit =
-      msgCounter.incrementAndGet().discard
-    override def apply(level: LogLevel, message: => String, t: Throwable, context: Map[String, Any]): Unit =
-      errCounter.incrementAndGet().discard
+    override def apply(level: LogLevel, message: => String, t: Option[Throwable], context: Map[String, Any]): Unit =
+      if level == LogLevel.Error then errCounter.incrementAndGet().discard else msgCounter.incrementAndGet().discard
 
   it should "work with LoggingBackend" in supervised {
     val logger = new TestLogger()

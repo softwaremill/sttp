@@ -9,6 +9,8 @@ import tethys.readers.ReaderError
 import tethys.readers.tokens.TokenIteratorProducer
 import tethys.writers.tokens.TokenWriterProducer
 import sttp.client4.ResponseAs.deserializeEitherWithErrorOrThrow
+import sttp.client4.ResponseException.UnexpectedStatusCode
+import sttp.client4.ResponseException.DeserializationException
 
 trait SttpTethysApi {
 
@@ -20,12 +22,13 @@ trait SttpTethysApi {
 
   /** If the response is successful (2xx), tries to deserialize the body from a string into JSON. Returns:
     *   - `Right(b)` if the parsing was successful
-    *   - `Left(HttpError(String))` if the response code was other than 2xx (deserialization is not attempted)
+    *   - `Left(UnexpectedStatusCode(String))` if the response code was other than 2xx (deserialization is not
+    *     attempted)
     *   - `Left(DeserializationException)` if there's an error during deserialization
     */
   def asJson[B: JsonReader: IsOption](implicit
       producer: TokenIteratorProducer
-  ): ResponseAs[Either[ResponseException[String, ReaderError], B]] =
+  ): ResponseAs[Either[ResponseException[String], B]] =
     asString.mapWithMetadata(ResponseAs.deserializeRightWithError(deserializeJson)).showAsJson
 
   /** If the response is successful (2xx), tries to deserialize the body from a string into JSON. Otherwise, if the
@@ -42,8 +45,8 @@ trait SttpTethysApi {
     */
   def asJsonAlways[B: JsonReader: IsOption](implicit
       producer: TokenIteratorProducer
-  ): ResponseAs[Either[DeserializationException[ReaderError], B]] =
-    asStringAlways.map(ResponseAs.deserializeWithError(deserializeJson)).showAsJsonAlways
+  ): ResponseAs[Either[DeserializationException, B]] =
+    asStringAlways.mapWithMetadata(ResponseAs.deserializeWithError(deserializeJson)).showAsJsonAlways
 
   /** Deserializes the body from a string into JSON, using different deserializers depending on the status code. If a
     * deserialization error occurs, throws a [[DeserializationException]] / returns a failed effect.

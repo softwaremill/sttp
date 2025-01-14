@@ -20,51 +20,42 @@ class Slf4jLogger[F[_]](name: String, monad: MonadError[F]) extends Logger[F] {
   override def apply(
       level: LogLevel,
       message: => String,
+      throwable: Option[Throwable],
       context: Map[String, Any]
-  ): F[Unit] = monad.eval {
-    setContext(context)
-    try
-      level match {
-        case LogLevel.Trace if underlying.isTraceEnabled =>
-          underlying.trace(message)
-
-        case LogLevel.Debug if underlying.isDebugEnabled =>
-          underlying.debug(message)
-
-        case LogLevel.Info if underlying.isInfoEnabled =>
-          underlying.info(message)
-
-        case LogLevel.Warn if underlying.isWarnEnabled =>
-          underlying.warn(message)
-
-        case LogLevel.Error if underlying.isErrorEnabled =>
-          underlying.error(message)
-
-        case _ => ()
-      }
-    finally
-      clearContext(context)
-  }
-
-  override def apply(level: LogLevel, message: => String, throwable: Throwable, context: Map[String, Any]): F[Unit] =
+  ): F[Unit] =
     monad.eval {
       setContext(context)
       try
         level match {
           case LogLevel.Trace if underlying.isTraceEnabled =>
-            underlying.trace(message, throwable)
+            throwable match {
+              case Some(t) => underlying.trace(message, throwable)
+              case None    => underlying.trace(message)
+            }
 
           case LogLevel.Debug if underlying.isDebugEnabled =>
-            underlying.debug(message, throwable)
+            throwable match {
+              case Some(t) => underlying.debug(message, throwable)
+              case None    => underlying.debug(message)
+            }
 
           case LogLevel.Info if underlying.isInfoEnabled =>
-            underlying.info(message, throwable)
+            throwable match {
+              case Some(t) => underlying.info(message, throwable)
+              case None    => underlying.info(message)
+            }
 
           case LogLevel.Warn if underlying.isWarnEnabled =>
-            underlying.warn(message, throwable)
+            throwable match {
+              case Some(t) => underlying.warn(message, throwable)
+              case None    => underlying.warn(message)
+            }
 
           case LogLevel.Error if underlying.isErrorEnabled =>
-            underlying.error(message, throwable)
+            throwable match {
+              case Some(t) => underlying.error(message, throwable)
+              case None    => underlying.error(message)
+            }
 
           case _ => ()
         }

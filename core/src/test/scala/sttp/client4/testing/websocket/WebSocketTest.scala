@@ -162,10 +162,10 @@ abstract class WebSocketTest[F[_]]
     val msgCounter = new AtomicInteger()
     val errCounter = new AtomicInteger()
 
-    override def apply(level: LogLevel, message: => String, context: Map[String, Any]): F[Unit] =
-      monad.unit(println(message)).map(_ => msgCounter.incrementAndGet())
-    override def apply(level: LogLevel, message: => String, t: Throwable, context: Map[String, Any]): F[Unit] =
-      monad.unit(println(message + t.toString)).map(_ => errCounter.incrementAndGet())
+    override def apply(level: LogLevel, message: => String, t: Option[Throwable], context: Map[String, Any]): F[Unit] =
+      monad.unit(println(message + t.fold("")(_.toString))).map { _ =>
+        val _ = if (level == LogLevel.Error) errCounter.incrementAndGet() else msgCounter.incrementAndGet()
+      }
   }
 
   it should "work with LoggingBackend" in {

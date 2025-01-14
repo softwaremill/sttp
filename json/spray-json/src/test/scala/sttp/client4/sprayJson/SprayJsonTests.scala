@@ -11,9 +11,9 @@ import sttp.client4.basicRequest
 import sttp.client4.PartialRequest
 import sttp.client4.StringBody
 import sttp.client4.Request
-import sttp.client4.DeserializationException
 import spray.json.JsonParser.ParsingException
 import sttp.client4.json.RunResponseAs
+import sttp.client4.ResponseException.DeserializationException
 
 class SprayJsonTests extends AnyFlatSpec with Matchers with EitherValues {
   import SprayJsonTests._
@@ -61,7 +61,8 @@ class SprayJsonTests extends AnyFlatSpec with Matchers with EitherValues {
   it should "fail to decode from empty input" in {
     val responseAs = asJson[Inner]
 
-    RunResponseAs(responseAs)("") should matchPattern { case Left(DeserializationException(_, _: ParsingException)) =>
+    RunResponseAs(responseAs)("") should matchPattern {
+      case Left(DeserializationException(_, _: ParsingException, _)) =>
     }
   }
 
@@ -70,7 +71,8 @@ class SprayJsonTests extends AnyFlatSpec with Matchers with EitherValues {
 
     val responseAs = asJson[Outer]
 
-    RunResponseAs(responseAs)(body) should matchPattern { case Left(DeserializationException(_, _: ParsingException)) =>
+    RunResponseAs(responseAs)(body) should matchPattern {
+      case Left(DeserializationException(_, _: ParsingException, _)) =>
     }
   }
 
@@ -110,7 +112,7 @@ class SprayJsonTests extends AnyFlatSpec with Matchers with EitherValues {
   it should "fail when using asJsonOrFail for incorrect JSON" in {
     val body = """invalid json"""
 
-    assertThrows[DeserializationException[Exception]] {
+    assertThrows[DeserializationException] {
       RunResponseAs(asJsonOrFail[Outer])(body)
     }
   }

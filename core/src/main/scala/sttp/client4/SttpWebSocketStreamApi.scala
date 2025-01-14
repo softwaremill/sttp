@@ -20,7 +20,7 @@ trait SttpWebSocketStreamApi {
 
   /** Handles the response as a web socket, using the given `p` stream processing pipe to handle the incoming & produce
     * the outgoing web socket frames, if the status code is 2xx. Otherwise, returns a failed effect (with
-    * [[HttpError]]).
+    * [[UnexpectedStatusCode]]).
     *
     * The effect type used by `f` must be compatible with the effect type of the backend. The web socket is always
     * closed after `p` completes.

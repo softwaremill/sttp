@@ -91,10 +91,10 @@ import sttp.client4.*
 basicRequest.response(asStringOrFail): PartialRequest[String]
 ```
 
-The `.orFail` combinator works in all cases where the response body is specified to be deserialized as an `Either`. If the left is already an exception, it will be thrown unchanged. Otherwise, the left-value will be wrapped in an `HttpError`.
+The `.orFail` combinator works in all cases where the response body is specified to be deserialized as an `Either`. If the left is already an exception, it will be thrown unchanged. Otherwise, the left-value will be wrapped in an `UnexpectedStatusCode`.
 
 ```{note}
-While both ``asStringAlways`` and ``asStringOrFail`` have the type ``ResponseAs[String]``, they are different. The first will return the response body as a string always, regardless of the responses' status code. The second will return a failed effect / throw a ``HttpError`` exception for non-2xx status codes, and the string as body only for 2xx status codes.
+While both `asStringAlways` and `asStringOrFail` have the type `ResponseAs[String]`, they are different. The first will return the response body as a string always, regardless of the responses' status code. The second will return a failed effect / throw a `UnexpectedStatusCode` exception for non-2xx status codes, and the string as body only for 2xx status codes.
 ```
 
 There's also a variant of the combinator, `.orFailDeserialization`, which can be used to extract typed errors and fail the effect if there's a deserialization error.
@@ -153,7 +153,7 @@ sealed trait MyModel
 case class SuccessModel(name: String, age: Int) extends MyModel
 case class ErrorModel(message: String) extends MyModel
 
-val myRequest: Request[Either[ResponseException[String, io.circe.Error], MyModel]] =
+val myRequest: Request[Either[ResponseException[String], MyModel]] =
   basicRequest
     .get(uri"https://example.com")
     .response(fromMetadata(

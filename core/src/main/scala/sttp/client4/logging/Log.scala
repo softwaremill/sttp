@@ -1,9 +1,12 @@
 package sttp.client4.logging
 
-import sttp.client4.{GenericRequest, HttpError, Response}
+import sttp.client4.GenericRequest
+import sttp.client4.Response
+import sttp.model.ResponseMetadata
 import sttp.model.StatusCode
 
 import scala.concurrent.duration.Duration
+import sttp.client4.ResponseException
 
 /** Performs logging before requests are sent and after requests complete successfully or with an exception. */
 trait Log[F[_]] {
@@ -69,6 +72,7 @@ class DefaultLog[F[_]](
           if (beforeCurlInsteadOfShow && _logRequestBody && _logRequestHeaders) request.toCurl(sensitiveHeaders)
           else request.show(includeBody = _logRequestBody, _logRequestHeaders, sensitiveHeaders)
         }",
+      throwable = None,
       context = logContext.forRequest(request)
     )
 
@@ -77,54 +81,51 @@ class DefaultLog[F[_]](
       response: Response[_],
       responseBody: Option[String],
       elapsed: Option[Duration]
-  ): F[Unit] = handleResponse(
-    request.showBasic,
-    response,
-    responseBody,
-    request.loggingOptions.logResponseBody.getOrElse(responseBody.isDefined),
-    request.loggingOptions.logResponseHeaders.getOrElse(logResponseHeaders),
-    elapsed
-  )
+  ): F[Unit] = handleResponse(request, response, responseBody, elapsed, None)
 
   private def handleResponse(
-      showBasic: String,
-      response: Response[_],
+      request: GenericRequest[_, _],
+      response: ResponseMetadata,
       responseBody: Option[String],
-      logResponseBody: Boolean,
-      _logResponseHeaders: Boolean,
-      elapsed: Option[Duration]
-  ): F[Unit] =
+      elapsed: Option[Duration],
+      e: Option[Throwable]
+  ): F[Unit] = {
+    val responseWithBody = Response(
+      responseBody.getOrElse(""),
+      response.code,
+      response.statusText,
+      response.headers,
+      Nil,
+      request
+    )
+
     logger(
       level = responseLogLevel(response.code),
       message = {
-        val responseAsString =
-          response
-            .copy(body = responseBody.getOrElse(""))
-            .show(logResponseBody, _logResponseHeaders, sensitiveHeaders)
-        s"Request: $showBasic${took(elapsed)}, response: $responseAsString"
+        val responseAsString = responseWithBody.show(
+          request.loggingOptions.logResponseBody.getOrElse(responseBody.isDefined),
+          request.loggingOptions.logResponseHeaders.getOrElse(logResponseHeaders),
+          sensitiveHeaders
+        )
+        s"Request: ${request.showBasic}${took(elapsed)}, response: $responseAsString"
       },
-      context = logContext.forResponse(response, elapsed)
-    )
-
-  override def requestException(request: GenericRequest[_, _], elapsed: Option[Duration], e: Exception): F[Unit] = {
-    val logLevel = HttpError.find(e) match {
-      case Some(HttpError(_, statusCode)) =>
-        responseLogLevel(statusCode)
-      case _ =>
-        responseExceptionLogLevel
-    }
-    logger(
-      level = logLevel,
-      message = s"Exception when sending request: ${request.showBasic}${took(elapsed)}",
       throwable = e,
-      context = logContext.forRequest(request)
+      context = logContext.forResponse(request, response, elapsed)
     )
   }
 
-  private def took(elapsed: Option[Duration]): String = elapsed.fold("")(e => f", took: ${e.toMillis / 1000.0}%.3fs")
-}
+  override def requestException(request: GenericRequest[_, _], elapsed: Option[Duration], e: Exception): F[Unit] =
+    ResponseException.find(e) match {
+      case Some(re) =>
+        handleResponse(request, re.response, None, elapsed, Some(e))
+      case None =>
+        logger(
+          level = responseExceptionLogLevel,
+          message = s"Exception when sending request: ${request.showBasic}${took(elapsed)}",
+          throwable = Some(e),
+          context = logContext.forRequest(request)
+        )
+    }
 
-object DefaultLog {
-  def defaultResponseLogLevel(c: StatusCode): LogLevel =
-    if (c.isClientError || c.isServerError) LogLevel.Warn else LogLevel.Debug
+  private def took(elapsed: Option[Duration]): String = elapsed.fold("")(e => f", took: ${e.toMillis / 1000.0}%.3fs")
 }
