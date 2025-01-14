@@ -183,7 +183,7 @@ trait HttpTest[F[_]]
         }
         .toFuture()
         .map(
-          _ shouldBe "sttp.client4.ResponseException.UnexpectedStatusCode: statusCode: 400, response: POST /echo/custom_status/400 this is the body"
+          _ shouldBe "sttp.client4.ResponseException$UnexpectedStatusCode: statusCode: 400, response: POST /echo/custom_status/400 this is the body"
         )
     }
 

@@ -286,7 +286,7 @@ abstract class StreamingTest[F[_], S]
       }
       .toFuture()
       .map(
-        _ shouldBe "sttp.client4.ResponseException.UnexpectedStatusCode: statusCode: 400, response: POST /echo/custom_status/400 streaming test"
+        _ shouldBe "sttp.client4.ResponseException$UnexpectedStatusCode: statusCode: 400, response: POST /echo/custom_status/400 streaming test"
       )
   }
 
