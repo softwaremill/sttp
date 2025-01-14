@@ -1,7 +1,5 @@
 package sttp.client4.jsoniter
 
-import sttp.client4.DeserializationException
-import sttp.client4.HttpError
 import sttp.client4.IsOption
 import sttp.client4.JsonInput
 import sttp.client4.ResponseAs
@@ -12,6 +10,8 @@ import sttp.client4.asStringAlways
 import sttp.client4.internal.Utf8
 import sttp.client4.json.RichResponseAs
 import sttp.model.MediaType
+import sttp.client4.ResponseException.DeserializationException
+import sttp.client4.ResponseException.UnexpectedStatusCode
 
 trait SttpJsoniterJsonApi {
   import com.github.plokhotnyuk.jsoniter_scala.core._
@@ -22,7 +22,8 @@ trait SttpJsoniterJsonApi {
 
   /** If the response is successful (2xx), tries to deserialize the body from a string into JSON. Returns:
     *   - `Right(b)` if the parsing was successful
-    *   - `Left(HttpError(String))` if the response code was other than 2xx (deserialization is not attempted)
+    *   - `Left(UnexpectedStatusCode(String))` if the response code was other than 2xx (deserialization is not
+    *     attempted)
     *   - `Left(DeserializationException)` if there's an error during deserialization
     */
   def asJson[B: JsonValueCodec: IsOption]: ResponseAs[Either[ResponseException[String], B]] =
@@ -44,7 +45,7 @@ trait SttpJsoniterJsonApi {
   /** Tries to deserialize the body from a string into JSON, using different deserializers depending on the status code.
     * Returns:
     *   - `Right(B)` if the response was 2xx and parsing was successful
-    *   - `Left(HttpError(E))` if the response was other than 2xx and parsing was successful
+    *   - `Left(UnexpectedStatusCode(E))` if the response was other than 2xx and parsing was successful
     *   - `Left(DeserializationException)` if there's an error during deserialization
     */
   def asJsonEither[
@@ -54,8 +55,8 @@ trait SttpJsoniterJsonApi {
     asJson[B].mapLeft { (l: ResponseException[String]) =>
       l match {
         case de @ DeserializationException(_, _, _) => de
-        case HttpError(e, meta) =>
-          deserializeJson[E].apply(e).fold(DeserializationException(e, _, meta), HttpError(_, meta))
+        case UnexpectedStatusCode(e, meta) =>
+          deserializeJson[E].apply(e).fold(DeserializationException(e, _, meta), UnexpectedStatusCode(_, meta))
       }
     }.showAsJsonEither
 

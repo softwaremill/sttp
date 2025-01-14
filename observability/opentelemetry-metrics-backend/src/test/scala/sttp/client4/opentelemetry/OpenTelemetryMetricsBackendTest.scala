@@ -9,7 +9,7 @@ import org.scalatest.OptionValues
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import sttp.client4.testing.{ResponseStub, SyncBackendStub}
-import sttp.client4.{asString, basicRequest, DeserializationException, SttpClientException, UriContext}
+import sttp.client4.{asString, basicRequest, SttpClientException, UriContext}
 import sttp.model.{Header, StatusCode}
 
 import scala.collection.JavaConverters._

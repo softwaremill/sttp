@@ -15,7 +15,7 @@ trait SttpWebSocketAsyncApi {
     asWebSocketEither(asStringAlways, asWebSocketAlways(f))
 
   /** Handles the response as a web socket, providing an open [[WebSocket]] instance to the `f` function, if the status
-    * code is 2xx. Otherwise, returns a failed effect (with [[HttpError]]).
+    * code is 2xx. Otherwise, returns a failed effect (with [[]]).
     *
     * The effect type used by `f` must be compatible with the effect type of the backend. The web socket is always
     * closed after `f` completes.

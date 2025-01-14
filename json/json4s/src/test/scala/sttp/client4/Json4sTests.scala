@@ -12,6 +12,7 @@ import scala.language.higherKinds
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import sttp.client4.json.RunResponseAs
+import sttp.client4.ResponseException.DeserializationException
 
 class Json4sTests extends AnyFlatSpec with Matchers with EitherValues {
   implicit val serialization: Serialization.type = native.Serialization

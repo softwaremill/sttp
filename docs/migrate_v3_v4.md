@@ -42,4 +42,5 @@ Any `Either`-based response description can be converted to a failing one using 
 * `async-http-client` backends are removed (as there's no reactive streams support in v3, making integration difficult)
 * request attributes replace request tags (same mechanism as in Tapir)
 * the parametrization of `ResponseException` is simplified, `DeserializationException` does not have a type parameter, always requiring an `Exception` as the cause instead
-* when a `DeserializationException` is thrown in the response handling specification, this will be logged as a successful response (as the response was received correctly), and counted as a success in the metrics as well
+* when a `ResponseException` is thrown in the response handling specification, this will be logged as a successful response (as the response was received correctly), and counted as a success in the metrics as well
+* `HttpError` is renamed to `UnexpectedStatusCode`, and along with `DeserializationException`, both types are nested within `ResponseException`

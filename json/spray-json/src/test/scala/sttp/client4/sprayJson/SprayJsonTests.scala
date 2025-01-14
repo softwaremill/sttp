@@ -11,9 +11,9 @@ import sttp.client4.basicRequest
 import sttp.client4.PartialRequest
 import sttp.client4.StringBody
 import sttp.client4.Request
-import sttp.client4.DeserializationException
 import spray.json.JsonParser.ParsingException
 import sttp.client4.json.RunResponseAs
+import sttp.client4.ResponseException.DeserializationException
 
 class SprayJsonTests extends AnyFlatSpec with Matchers with EitherValues {
   import SprayJsonTests._

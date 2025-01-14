@@ -10,6 +10,7 @@ import sttp.model._
 import com.github.plokhotnyuk.jsoniter_scala.core._
 import com.github.plokhotnyuk.jsoniter_scala.macros._
 import sttp.client4.json.RunResponseAs
+import sttp.client4.ResponseException.DeserializationException
 
 class JsoniterJsonTests extends AnyFlatSpec with Matchers with EitherValues {
 

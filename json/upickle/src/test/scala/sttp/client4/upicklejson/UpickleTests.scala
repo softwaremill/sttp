@@ -8,6 +8,7 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import ujson.Obj
 import sttp.client4.json.RunResponseAs
+import sttp.client4.ResponseException.DeserializationException
 
 class UpickleTests extends AnyFlatSpec with Matchers with EitherValues {
   "The upickle module" should "encode arbitrary bodies given an encoder" in {

@@ -12,6 +12,7 @@ import tethys.readers.tokens.TokenIterator
 import tethys.readers.{FieldName, ReaderError}
 import tethys.{JsonReader, JsonWriter}
 import sttp.client4.json.RunResponseAs
+import sttp.client4.ResponseException.DeserializationException
 
 import scala.util.{Failure, Success, Try}
 

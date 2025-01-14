@@ -24,7 +24,7 @@ Unknown exceptions aren't categorized and are re-thrown unchanged.
 
 ## Response-handling, deserialization errors
 
-Exceptions might be thrown when deserializing the response body - depending on the specification of how to handle response bodies. The built-in deserializers (see e.g. [json](../other/json.md)) return errors represented as `ResponseException[HE]`, which can either be a `HttpError` (protocol-level failures, containing a potentially deserialized body value) or a `DeserializationException` (containing a deserialization-library-specific exception).
+Exceptions might be thrown when deserializing the response body - depending on the specification of how to handle response bodies. The built-in deserializers (see e.g. [json](../other/json.md)) return errors represented as `ResponseException[HE]`, which can either be a `UnexpectedStatusCode` (protocol-level failures, containing a potentially deserialized body value) or a `DeserializationException` (containing a deserialization-library-specific exception).
 
 This means that a typical `asJson` response specification will result in the body being read as:
 

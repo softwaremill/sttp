@@ -8,6 +8,7 @@ import sttp.model._
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import sttp.client4.json.RunResponseAs
+import sttp.client4.ResponseException.DeserializationException
 
 class CirceTests extends AnyFlatSpec with Matchers with EitherValues {
 

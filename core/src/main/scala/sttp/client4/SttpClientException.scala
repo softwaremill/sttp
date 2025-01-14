@@ -23,13 +23,15 @@ import sttp.monad.MonadError
   * @param cause
   *   The original exception.
   */
-abstract class SttpClientException(val request: GenericRequest[_, _], val cause: Exception)
+sealed abstract class SttpClientException(val request: GenericRequest[_, _], val cause: Exception)
     extends Exception(s"Exception when sending request: ${request.method} ${request.uri}", cause)
 
 object SttpClientException extends SttpClientExceptionExtensions {
   class ConnectException(request: GenericRequest[_, _], cause: Exception) extends SttpClientException(request, cause)
 
   class ReadException(request: GenericRequest[_, _], cause: Exception) extends SttpClientException(request, cause)
+
+  //
 
   class TimeoutException(request: GenericRequest[_, _], cause: Exception) extends ReadException(request, cause)
 
@@ -41,6 +43,8 @@ object SttpClientException extends SttpClientExceptionExtensions {
     */
   class ResponseHandlingException[+HE](request: GenericRequest[_, _], val responseException: ResponseException[HE])
       extends ReadException(request, responseException)
+
+  //
 
   def adjustExceptions[F[_], T](
       monadError: MonadError[F]

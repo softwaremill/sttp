@@ -10,6 +10,7 @@ import sttp.model._
 import zio.Chunk
 import zio.json.ast.Json
 import sttp.client4.json.RunResponseAs
+import sttp.client4.ResponseException.DeserializationException
 
 class ZioJsonTests extends AnyFlatSpec with Matchers with EitherValues {
 

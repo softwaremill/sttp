@@ -423,7 +423,7 @@ class PrometheusBackendTest
     // given
     val backendStub =
       SyncBackendStub.whenAnyRequest.thenRespondF(_ =>
-        throw new HttpError("boom", ResponseStub("", StatusCode.BadRequest))
+        throw new ResponseException.UnexpectedStatusCode("boom", ResponseStub("", StatusCode.BadRequest))
       )
 
     import sttp.client4.prometheus.PrometheusBackend.{DefaultFailureCounterName, addMethodLabel}

@@ -10,6 +10,7 @@ import sttp.shared.Identity
 import scala.collection.immutable.Seq
 import scala.collection.mutable
 import sttp.client4.testing.ResponseStub
+import sttp.client4.ResponseException.DeserializationException
 
 class LogTests extends AnyFlatSpec with Matchers with BeforeAndAfter {
   private class SpyLogger extends Logger[Identity] {

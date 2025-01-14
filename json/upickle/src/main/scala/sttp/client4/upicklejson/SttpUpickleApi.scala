@@ -5,6 +5,8 @@ import sttp.client4.internal.Utf8
 import sttp.model.MediaType
 import sttp.client4.json._
 import sttp.client4.ResponseAs.deserializeEitherWithErrorOrThrow
+import sttp.client4.ResponseException.DeserializationException
+import sttp.client4.ResponseException.UnexpectedStatusCode
 
 trait SttpUpickleApi {
   val upickleApi: upickle.Api
@@ -15,7 +17,8 @@ trait SttpUpickleApi {
 
   /** If the response is successful (2xx), tries to deserialize the body from a string into JSON. Returns:
     *   - `Right(b)` if the parsing was successful
-    *   - `Left(HttpError(String))` if the response code was other than 2xx (deserialization is not attempted)
+    *   - `Left(UnexpectedStatusCode(String))` if the response code was other than 2xx (deserialization is not
+    *     attempted)
     *   - `Left(DeserializationException)` if there's an error during deserialization
     */
   def asJson[B: upickleApi.Reader: IsOption]: ResponseAs[Either[ResponseException[String], B]] =
@@ -37,15 +40,15 @@ trait SttpUpickleApi {
   /** Tries to deserialize the body from a string into JSON, using different deserializers depending on the status code.
     * Returns:
     *   - `Right(B)` if the response was 2xx and parsing was successful
-    *   - `Left(HttpError(E))` if the response was other than 2xx and parsing was successful
+    *   - `Left(UnexpectedStatusCode(E))` if the response was other than 2xx and parsing was successful
     *   - `Left(DeserializationException)` if there's an error during deserialization
     */
   def asJsonEither[E: upickleApi.Reader: IsOption, B: upickleApi.Reader: IsOption]
       : ResponseAs[Either[ResponseException[E], B]] =
     asJson[B].mapLeft { (l: ResponseException[String]) =>
       l match {
-        case HttpError(e, meta) =>
-          deserializeJson[E].apply(e).fold(DeserializationException(e, _, meta), HttpError(_, meta))
+        case UnexpectedStatusCode(e, meta) =>
+          deserializeJson[E].apply(e).fold(DeserializationException(e, _, meta), UnexpectedStatusCode(_, meta))
         case de: DeserializationException => de
       }
     }.showAsJsonEither
