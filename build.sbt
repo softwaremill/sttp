@@ -36,7 +36,7 @@ val compileScoped =
 val testScoped =
   inputKey[Unit](s"Run tests in the given scope. Usage: testScoped [scala version] [platform]. $scopesDescription")
 
-val commonSettings = commonSmlBuildSettings ++ Seq(
+val commonSettings = commonSmlBuildSettings ++ ossPublishSettings ++ Seq(
   organization := "com.softwaremill.sttp.client4",
   ideSkipProject := (scalaVersion.value != ideScalaVersion)
     || thisProjectRef.value.project.contains("JS") || thisProjectRef.value.project.contains("Native"),
@@ -266,7 +266,6 @@ def filterByVersionAndPlatform(scalaVersionFilter: String, platformFilter: Strin
 
 lazy val rootProject = (project in file("."))
   .settings(commonSettings)
-  .settings(ossPublishSettings)
   .settings(
     publish / skip := true,
     name := "sttp",
