@@ -7,8 +7,7 @@ import sttp.client4.*
 import os.*
 
 private val fileSize = 8192
-private val dest: os.Path =
-  os.pwd / "examples" / "src" / "main" / "resources" / s"file-example-$fileSize-bytes"
+private val dest: os.Path = os.Path(s"/tmp/file-example-$fileSize-bytes")
 private val backend: SyncBackend = DefaultSyncBackend()
 
 @main def downloadFileWithOsLib(): Unit = {
