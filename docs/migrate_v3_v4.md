@@ -41,3 +41,4 @@ Any `Either`-based response description can be converted to a failing one using 
 * the `autoDecompressionDisabled` option is superseded by `autoDecompressionEnabled`
 * `async-http-client` backends are removed (as there's no reactive streams support in v3, making integration difficult)
 * request attributes replace request tags (same mechanism as in Tapir)
+* the parametrization of `ResponseException` is simplified, `DeserializationException` does not have a type parameter, always requiring an `Exception` as the cause instead
