@@ -32,7 +32,7 @@ sealed abstract class ResponseException[+HE](
   *   The type of the body to which the error response is deserialized.
   */
 case class HttpError[+HE](body: HE, override val response: ResponseMetadata)
-    extends ResponseException[HE](s"statusCode: $${response.statusCode}, response: $body", None, response)
+    extends ResponseException[HE](s"statusCode: ${response.code}, response: $body", None, response)
 
 /** Represents an error that occurred during deserialization of `body`. */
 case class DeserializationException(body: String, cause: Exception, override val response: ResponseMetadata)
