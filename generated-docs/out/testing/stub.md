@@ -1,20 +1,27 @@
-# Testing
+# The stub backend
 
-If you need a stub backend for use in tests instead of a "real" backend (you probably don't want to make HTTP calls during unit tests), you can use the `SttpBackendStub` class. It allows specifying how the backend should respond to requests matching given predicates.
+If you need a stub backend for use in tests instead of a "real" backend (you probably don't want to make HTTP calls during unit tests), you can use the `BackendStub` class. It allows specifying how the backend should respond to requests matching given predicates.
 
-You can also create a stub backend using [akka-http routes](backends/akka.md).
+The [pekko-http](../backends/pekko.md) or [akka-http](../backends/akka.md) backends also provide an alternative way to create a stub, from a request-transforming function.
 
 ## Creating a stub backend
 
 An empty backend stub can be created using the following ways:
 
 * by calling `.stub` on the "real" base backend's companion object, e.g. `HttpClientZioBackend.stub` or `HttpClientMonixBackend.stub`
-* by using one of the factory methods `SttpBackendStub.synchronous` or `SttpBackendStub.asynchronousFuture`, which return stubs which use the `Identity` or standard Scala's `Future` effects without streaming support
+* by using one of the factory methods `BackendStub.synchronous` or `BackendStub.asynchronousFuture`, which return stubs which use the `Identity` or standard Scala's `Future` effects without streaming support
 * by explicitly specifying the effect and supported capabilities:
-  * for Monix `SttpBackendStub[Task, MonixStreams with WebSockets](TaskMonad)`
-  * for cats `SttpBackendStub[IO, WebSockets](implicitly[MonadAsyncError[IO]])`
-  * for zio `SttpBackendStub[Task, WebSockets](new RIOMonadAsyncError[Any])`
+  * for cats-effect `BackendStub[IO](implicitly[MonadAsyncError[IO]])`
+  * for ZIO `BackendStub[Task](new RIOMonadAsyncError[Any])`
+  * for Monix `BackendStub[Task](TaskMonad)`
+* by instantiating backend stubs which support streaming or WebSockets, mirroring the hierarchy of the base backends:
+  * `StreamBackendStub`, e.g. `StreamBackendStub[IO, Fs2Streams[IO]](implicitly[MonadAsyncError[IO]])` (for cats-effect with fs2)
+  * `WebSocketBackendStub`, e.g. `WebSocketBackendStub[Task](new RIOMonadAsyncError[Any])` (for ZIO)
+  * `WebSocketStreamBackendStub`
+  * `WebSocketSyncBackendStub`
 * by specifying a fallback/delegate backend, see below
+
+Responses used in the stubbing can be created either by directly instantiating the `Response` class, or by using factory methods from `ResponseStub`.
 
 Some code which will be reused among following examples:
 
@@ -68,13 +75,11 @@ val response2 = basicRequest.post(uri"http://example.org/partialAda").send(testi
 // response2.body will be Right("Ada")
 ```
 
-```{eval-rst}
-.. note::
-
-  This approach to testing has one caveat: the responses are not type-safe. That is, the stub backend cannot match on or verify that the type of the response body matches the response body type, as it was requested. However, when a "raw" response is provided (a ``String``, ``Array[Byte]``, ``InputStream``, or a non-blocking stream wrapped in ``RawStream``), it will be handled as specified by the response specification - see below for details.
+```{note}
+This approach to testing has one caveat: the responses are not type-safe. That is, the stub backend cannot match on or verify that the type of the response body matches the response body type, as it was requested. However, when a "raw" response is provided (a `String`, `Array[Byte]`, `InputStream`, or a non-blocking stream wrapped in `RawStream`), it will be handled as specified by the response specification - see below for details.
 ```
 
-Another way to specify the behaviour is passing response wrapped in the effect to the stub. It is useful if you need to test a scenario with a slow server, when the response should be not returned immediately, but after some time. Example with Futures:
+Another way to specify the behavior is passing response wrapped in the effect to the stub. It is useful if you need to test a scenario with a slow server, when the response should be not returned immediately, but after some time. Example with Futures:
 
 ```scala
 val testingBackend = BackendStub.asynchronousFuture
@@ -114,7 +119,7 @@ basicRequest.get(uri"http://example.org").send(testingBackend)       // Right("O
 basicRequest.get(uri"http://example.org").send(testingBackend)       // Right("OK, first")
 ```
 
-Or multiple `Response` instances:
+Or multiple `Response` instances, created using `ResponseStub`:
 
 ```scala
 val testingBackend: SyncBackendStub = SyncBackendStub
@@ -165,7 +170,7 @@ The following conversions are supported:
 * `InputStream` and `String` to `Array[Byte]`
 * `WebSocketStub` to `WebSocket`
 * `WebSocketStub` and `WebSocket` are supplied to the websocket-consuming functions, if the response specification describes such interactions
-* `SttpBackendStub.RawStream` is always treated as a raw stream value, and returned when the response should be returned as a stream or consumed using the provided function
+* `BackendStub.RawStream` is always treated as a raw stream value, and returned when the response should be returned as a stream or consumed using the provided function
 * any of the above to custom types through mapped response specifications
 
 ## Example: returning JSON
@@ -184,7 +189,7 @@ val response = basicRequest.get(uri"http://example.com")
   .send(testingBackend)
 ```
 
-In the example above, the stub's rules specify that a response with a `String`-body should be returned for any request; the request, on the other hand, specifies that response body should be parsed from a byte array to a custom `User` type. These type don't match, so the `SttpBackendStub` will in this case convert the body to the desired type.
+In the example above, the stub's rules specify that a response with a `String`-body should be returned for any request; the request, on the other hand, specifies that response body should be parsed from a byte array to a custom `User` type. These type don't match, so the `BackendStub` will in this case convert the body to the desired type.
 
 ## Example: returning a file
 
@@ -242,7 +247,7 @@ val response2 = basicRequest.post(uri"http://api.internal/b").send(testingBacken
 
 ## Testing streams
 
-Streaming responses can be stubbed the same as ordinary values, with one difference. If the stubbed response contains the raw stream, which should be then transformed as described by the response specification, the stub must know that it handles a raw stream. This can be achieved by wrapping the stubbed stream using `SttpBackendStub.RawStream`.
+Streaming responses can be stubbed the same as ordinary values, with one difference. If the stubbed response contains the raw stream, which should be then transformed as described by the response specification, the stub must know that it handles a raw stream. This can be achieved by wrapping the stubbed stream using `BackendStub.RawStream`.
 
 If the response specification is a resource-safe consumer of the stream, the function will only be invoked if the body is a `RawStream` (with the contained value).
 
@@ -287,7 +292,7 @@ the `WebSocket` trait is recommended.
 
 Using `RecordingSttpBackend` it's possible to capture all interactions in which a backend has been involved.
 
-The recording backend is a [backend wrapper](backends/wrappers/custom.md), and it can wrap any backend, but it's most
+The recording backend is a [backend wrapper](../backends/wrappers/custom.md), and it can wrap any backend, but it's most
 useful when combined with the backend stub.
 
 Example usage:

@@ -21,7 +21,7 @@ Class                                 Supported stream type                     
 To use, you don't need any extra dependencies, `core` is enough:
 
 ```
-"com.softwaremill.sttp.client4" %% "core" % "4.0.0-M22"
+"com.softwaremill.sttp.client4" %% "core" % "4.0.0-M23"
 ```
 
 You'll need the following imports:
@@ -59,7 +59,7 @@ Host header override is supported in environments running Java 12 onwards, but i
 To use, add the following dependency to your project:
 
 ```scala
-"com.softwaremill.sttp.client4" %% "okhttp-backend" % "4.0.0-M22"
+"com.softwaremill.sttp.client4" %% "okhttp-backend" % "4.0.0-M23"
 ```
 
 and some imports:
@@ -91,7 +91,7 @@ This backend depends on [OkHttp](http://square.github.io/okhttp/) and fully supp
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client4" %% "armeria-backend" % "4.0.0-M22"
+"com.softwaremill.sttp.client4" %% "armeria-backend" % "4.0.0-M23"
 ```
 
 add imports:
@@ -125,8 +125,8 @@ val client = WebClient.builder("https://my-service.com")
 val backend = ArmeriaFutureBackend.usingClient(client)
 ```
 
-```{eval-rst}
-.. note:: A WebClient could fail to follow redirects if the WebClient is created with a base URI and a redirect location is a different URI.
+```{note}
+A WebClient could fail to follow redirects if the WebClient is created with a base URI and a redirect location is a different URI.
 ```
 
 This backend is build on top of [Armeria](https://armeria.dev/docs/client-http) and doesn't support host header override.
@@ -141,4 +141,4 @@ Other backends don't support non-blocking [streaming](../requests/streaming.md).
 
 ## Websockets
 
-Some of the backends (see above) support regular and streaming [websockets](../websockets.md).
+Some of the backends (see above) support regular and streaming [websockets](../other/websockets.md).

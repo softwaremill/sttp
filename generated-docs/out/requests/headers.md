@@ -1,5 +1,7 @@
 # Headers
 
+## Arbitrary headers
+
 Arbitrary headers can be set on the request using the `.header` method:
 
 ```scala
@@ -42,3 +44,16 @@ basicRequest.acceptEncoding("gzip, deflate")
 ```    
 
 See also documentation on setting [cookies](cookies.md) and [authentication](authentication.md).
+
+## Header names
+
+To avoid using string literals for header names, the `HeaderNames` object from sttp model can be used:
+
+```scala
+import sttp.client4.*
+import sttp.model.HeaderNames
+import sttp.model.headers.CacheDirective
+import scala.concurrent.duration.*
+
+basicRequest.header(HeaderNames.CacheControl, CacheDirective.MaxAge(1.day).toString)
+```    

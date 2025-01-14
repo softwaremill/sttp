@@ -4,15 +4,33 @@
 
 Welcome!
 
-[sttp client](https://github.com/softwaremill/sttp) is an open-source library which provides a clean, programmer-friendly API to describe HTTP
-requests and how to handle responses. Requests are sent using one of the backends, which wrap lower-level Scala or Java HTTP client implementations. The backends can integrate with a variety of Scala stacks, providing both synchronous and asynchronous, procedural and functional interfaces.
+sttp client is an open-source HTTP client for Scala, supporting various approaches to writing Scala code: synchronous (direct-style), `Future`-based, and using functional effect systems (cats-effect, ZIO, Monix, Kyo, scalaz).
 
-Backend implementations include the HTTP client that is shipped with Java, as well as ones based on [akka-http](https://doc.akka.io/docs/akka-http/current/scala/http/), [pekko-http](https://pekko.apache.org/docs/pekko-http/current/), [http4s](https://http4s.org), [OkHttp](http://square.github.io/okhttp/). They integrate with [Akka](https://akka.io), [Monix](https://monix.io), [fs2](https://github.com/functional-streams-for-scala/fs2), [cats-effect](https://github.com/typelevel/cats-effect), [scalaz](https://github.com/scalaz/scalaz) and [ZIO](https://github.com/zio/zio). Supported Scala versions include 2.12, 2.13 and 3, Scala.JS and Scala Native; supported Java versions include 11+.
+The library is available for Scala 2.12, 2.13 and 3. Supported platforms are the JVM (Java 11+), Scala.JS and Scala Native.
 
 Here's a quick example of sttp client in action, runnable using [scala-cli](https://scala-cli.virtuslab.org):
 
 ```scala
-//> using dep com.softwaremill.sttp.client4::core:4.0.0-M20
+//> using dep com.softwaremill.sttp.client4::core:4.0.0-M23
+
+import sttp.client4.quick.*
+
+@main def run(): Unit =
+  println(quickRequest.get(uri"http://httpbin.org/ip").send())
+```
+
+sttp client addresses common HTTP client use cases, such as interacting with JSON APIs (with automatic serialization of request bodies and deserialization of response bodies), uploading and downloading files, submitting form data, handling multipart requests, and working with WebSockets.
+
+The driving principle of sttp client's design is to provide a clean, programmer-friendly API to describe HTTP requests, along with response handling. This ensures that resources, such as HTTP connections, are used safely, also in the presence of errors.
+
+sttp client integrates with a number of lower-level Scala and Java HTTP client implementations through backends (using Java's `HttpClient`, Akka HTTP, Pekko HTTP, http4s, OkHttp, Armeria), offering a wide range of choices when it comes to protocol support, connectivity settings and programming stack compatibility. 
+
+Additionally, sttp client seamlessly integrates with popular libraries for JSON handling (e.g., circe, uPickle, jsoniter, json4s, play-json, ZIO Json), logging, metrics, and tracing (e.g., slf4j, scribe, OpenTelemetry, Prometheus). It also supports streaming libraries (e.g., fs2, ZIO Streams, Akka Streams, Pekko Streams) and provides tools for testing HTTP interactions.
+
+Some more features: URI interpolation, a self-managed backend, and type-safe HTTP error/success representation, are demonstrated by the below example:
+
+```scala
+//> using dep com.softwaremill.sttp.client4::core:4.0.0-M23
 
 import sttp.client4.*
 
@@ -22,7 +40,8 @@ import sttp.client4.*
 
   // the `query` parameter is automatically url-encoded
   // `sort` is removed, as the value is not defined
-  val request = basicRequest.get(uri"https://api.github.com/search/repositories?q=$query&sort=$sort")
+  val request = basicRequest.get(
+    uri"https://api.github.com/search/repositories?q=$query&sort=$sort")
 
   val backend = DefaultSyncBackend()
   val response = request.send(backend)
@@ -30,40 +49,34 @@ import sttp.client4.*
   // response.header(...): Option[String]
   println(response.header("Content-Length")) 
 
-  // response.body: by default read into an Either[String, String] to indicate failure or success 
+  // response.body: read into an Either[String, String] to indicate failure or success 
   println(response.body)
 ```
 
-For more examples, see the [usage examples](examples.md) section. To start using sttp client in your project, see the [quickstart](quickstart.md). Or, browse the documentation to find the topics that interest you the most! ScalaDoc is available at [https://www.javadoc.io](https://www.javadoc.io/doc/com.softwaremill.sttp.client4/core_2.12/4.0.0-M9).
+But that's just a small glimpse of sttp client's features! For more examples, see the [usage examples](examples.md) section. 
+
+To start using sttp client in your project, see the [quickstart](quickstart.md). Or, browse the documentation to find the topics that interest you the most! ScalaDoc is available at [https://www.javadoc.io](https://www.javadoc.io/doc/com.softwaremill.sttp.client4/core_2.12/4.0.0-M23).
+
+sttp client is licensed under Apache2, the source code is [available on GitHub](https://github.com/softwaremill/sttp).
 
 ## Other sttp projects
 
 sttp is a family of Scala HTTP-related projects, and currently includes:
 
 * sttp client: this project
-* [sttp tapir](https://github.com/softwaremill/tapir): Typed API descRiptions
+* [sttp tapir](https://github.com/softwaremill/tapir): rapid development of self-documenting APIs
 * [sttp model](https://github.com/softwaremill/sttp-model): simple HTTP model classes (used by client & tapir)
 * [sttp shared](https://github.com/softwaremill/sttp-shared): shared web socket, FP abstractions, capabilities and streaming code.
 * [sttp apispec](https://github.com/softwaremill/sttp-apispec): OpenAPI, AsyncAPI and JSON Schema models.
+* [sttp openai](https://github.com/softwaremill/sttp-openai): Scala client wrapper for OpenAI and OpenAI-compatible APIs. Use the power of ChatGPT inside your code!
 
 Third party projects:
 
 * [sttp-oauth2](https://github.com/ocadotechnology/sttp-oauth2): OAuth2 client library for Scala
-* [sttp openai](https://github.com/softwaremill/sttp-openai): Scala client wrapper for OpenAI (and OpenAI-compatible) API. Use the power of ChatGPT inside your code!
 
 ## Try sttp client in your browser!
 
 [Check out & play with a simple example on Scastie!](https://scastie.scala-lang.org/adamw/aOf32MZsTPesobwfWG5nDQ)
-
-## Sponsors
-
-Development and maintenance of sttp client is sponsored by [SoftwareMill](https://softwaremill.com), a software development and consulting company. We help clients scale their business through software. Our areas of expertise include backends, distributed systems, machine learning, platform engineering and data analytics.
-
-[![](https://files.softwaremill.com/logo/logo.png "SoftwareMill")](https://softwaremill.com)
-
-## Commercial Support
-
-We offer commercial support for sttp and related technologies, as well as development services. [Contact us](https://softwaremill.com/contact/) to learn more about our offer!
 
 # Table of contents
 
@@ -74,6 +87,7 @@ We offer commercial support for sttp and related technologies, as well as develo
 
    quickstart
    how
+   support
    goals
    community
 
@@ -82,6 +96,7 @@ We offer commercial support for sttp and related technologies, as well as develo
    :caption: How-to's
    
    examples
+   migrate_v3_v4
 
 .. toctree::
    :maxdepth: 2
@@ -115,11 +130,12 @@ We offer commercial support for sttp and related technologies, as well as develo
    :maxdepth: 2
    :caption: Other topics
 
-   websockets
-   json
-   xml
-   resilience
-   openapi
+   other/websockets
+   other/json
+   other/xml
+   other/resilience
+   other/openapi
+   other/sse
 
 .. toctree::
    :maxdepth: 2
@@ -148,13 +164,15 @@ We offer commercial support for sttp and related technologies, as well as develo
    backends/wrappers/opentelemetry
    backends/wrappers/prometheus
    backends/wrappers/logging
+   backends/wrappers/cache
    backends/wrappers/custom
 
 .. toctree::
    :maxdepth: 2
    :caption: Testing
 
-   testing
+   testing/stub
+   testing/curl
 
 .. toctree::
    :maxdepth: 2

@@ -8,7 +8,7 @@ The [Scalaz](https://github.com/scalaz/scalaz) backend is **asynchronous**. Send
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client4" %% "armeria-backend-scalaz" % "4.0.0-M22"
+"com.softwaremill.sttp.client4" %% "armeria-backend-scalaz" % "4.0.0-M23"
 ```
 
 add imports:
@@ -42,8 +42,8 @@ val client = WebClient.builder("https://my-service.com")
 val backend = ArmeriaScalazBackend.usingClient(client)
 ```
 
-```{eval-rst}
-.. note:: A WebClient could fail to follow redirects if the WebClient is created with a base URI and a redirect location is a different URI.
+```{note}
+A WebClient could fail to follow redirects if the WebClient is created with a base URI and a redirect location is a different URI.
 ```
 
 This backend is build on top of [Armeria](https://armeria.dev/docs/client-http).
@@ -56,4 +56,4 @@ This backend doesn't support non-blocking [streaming](../requests/streaming.md).
 
 ## Websockets
 
-The backend doesn't support [websockets](../websockets.md).
+The backend doesn't support [websockets](../other/websockets.md).

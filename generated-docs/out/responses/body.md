@@ -2,7 +2,7 @@
 
 By default, the received response body will be read as a `Either[String, String]`, using the encoding specified in the `Content-Type` response header (and if none is specified, using `UTF-8`). This is of course configurable: response bodies can be ignored, deserialized into custom types, received as a stream or saved to a file.
 
-The default `response.body` will be a:
+When using `basicRequest`, the default `response.body` will be a:
 
 * `Left(errorMessage)` if the request is successful, but response code is not 2xx.
 * `Right(body)` if the request is successful, and the response code is 2xx.
@@ -14,12 +14,12 @@ How the response body will be read is part of the request description, as alread
 To conveniently specify how to deserialize the response body, a number of `as(...Type...)` methods are available. They can be used to provide a value for the request description's `response` property:
 
 ```scala
-import sttp.client4._
+import sttp.client4.*
 
 basicRequest.response(asByteArray)
 ```
 
-When the above request is completely described and sent, it will result in a `Response[Either[String, Array[Byte]]]` (where the left and right correspond to non-2xx and 2xx status codes, as above). 
+When the above request is completely described and sent, it will result in a `Response[Either[String, Array[Byte]]]` (where the left and right correspond to non-2xx and 2xx status codes, as above).
 
 Other possible response descriptions include:
 
@@ -31,12 +31,16 @@ import java.nio.file.Path
 def ignore: ResponseAs[Unit] = ???
 def asString: ResponseAs[Either[String, String]] = ???
 def asStringAlways: ResponseAs[String] = ???
+def asStringOrFail: ResponseAs[String] = ???
 def asString(encoding: String): ResponseAs[Either[String, String]] = ???
 def asStringAlways(encoding: String): ResponseAs[String] = ???
+def asStringOrFail(encoding: String): ResponseAs[String] = ???
 def asByteArray: ResponseAs[Either[String, Array[Byte]]] = ???
 def asByteArrayAlways: ResponseAs[Array[Byte]] = ???
+def asByteArrayOrFail: ResponseAs[Array[Byte]] = ???
 def asParams: ResponseAs[Either[String, Seq[(String, String)]]] = ???
 def asParamsAlways: ResponseAs[Seq[(String, String)]] = ???
+def asParamsOrFail: ResponseAs[Seq[(String, String)]] = ???
 def asParams(encoding: String): ResponseAs[Either[String, Seq[(String, String)]]] = ???
 def asParamsAlways(encoding: String): ResponseAs[Seq[(String, String)]] = ???
 def asFile(file: File): ResponseAs[Either[String, File]] = ???
@@ -71,41 +75,39 @@ val someFile = new File("some/path")
 basicRequest.response(asFile(someFile))
 ```
 
-```{eval-rst}
-.. note::
-
- As the handling of response is specified upfront, there's no need to "consume" the response body. It can be safely discarded if not needed.
+```{note}
+As the handling of response is specified upfront, there's no need to "consume" the response body. It can be safely discarded if not needed.
 ```
+
+The `as...Always` response descriptions will read the response body as the target type always, regardless of the status code.
 
 ## Failing when the response code is not 2xx
 
-Sometimes it's convenient to get a failed effect (or an exception thrown) when the response status code is not successful. In such cases, the response description can be modified using the `.orFail` combinator:
+Sometimes it's convenient to get a failed effect (or an exception thrown) when the response status code is not successful. In such cases, you should use the `...OrFail` response description, or modify an existing response description using the `.orFail` combinator:
 
 ```scala
 import sttp.client4.*
 
-basicRequest.response(asString.orFail): PartialRequest[String]
+basicRequest.response(asStringOrFail): PartialRequest[String]
 ```
 
-The combinator works in all cases where the response body is specified to be deserialized as an `Either`. If the left is already an exception, it will be thrown unchanged. Otherwise, the left-value will be wrapped in an `HttpError`.
+The `.orFail` combinator works in all cases where the response body is specified to be deserialized as an `Either`. If the left is already an exception, it will be thrown unchanged. Otherwise, the left-value will be wrapped in an `UnexpectedStatusCode`.
 
-```{eval-rst}
-.. note::
-
- While both ``asStringAlways`` and ``asString.orFail`` have the type ``ResponseAs[String, Any]``, they are different. The first will return the response body as a string always, regardless of the responses' status code. The second will return a failed effect / throw a ``HttpError`` exception for non-2xx status codes, and the string as body only for 2xx status codes.
+```{note}
+While both `asStringAlways` and `asStringOrFail` have the type `ResponseAs[String]`, they are different. The first will return the response body as a string always, regardless of the responses' status code. The second will return a failed effect / throw a `UnexpectedStatusCode` exception for non-2xx status codes, and the string as body only for 2xx status codes.
 ```
 
-There's also a variant of the combinator, `.getEither`, which can be used to extract typed errors and fail the effect if there's a deserialization error.
+There's also a variant of the combinator, `.orFailDeserialization`, which can be used to extract typed errors and fail the effect if there's a deserialization error.
 
 ## Custom body deserializers
 
 It's possible to define custom body deserializers by taking any of the built-in response descriptions and mapping over them. Each `ResponseAs` instance has `map` and `mapWithMetadata` methods, which can be used to transform it to a description for another type (optionally using response metadata, such as headers or the status code). Each such value is immutable and can be used multiple times.
 
-```{eval-rst}
-.. note:: Alternatively, response descriptions can be modified directly from the request description, by using the ``request.mapResponse(...)`` and ``request.mapResponseRight(...)`` methods (which is available, if the response body is deserialized to an either). That's equivalent to calling ``request.response(request.response.map(...))``, that is setting a new response description, to a modified old response description; but with shorter syntax.
+```{note}
+Alternatively, response descriptions can be modified directly from the request description, by using the ``request.mapResponse(...)`` method. That's equivalent to calling ``request.response(request.response.map(...))``, that is setting a new response description, to a modified old response description; but with shorter syntax.
 ```
 
-As an example, to read the response body as an int, the following response description can be defined (warning: this ignores the possibility of exceptions!):
+As an example, to read the response body as an `Int`, the following response description can be defined (warning: this ignores the possibility of exceptions!):
 
 ```scala
 import sttp.client4.*
@@ -132,7 +134,7 @@ basicRequest
   .response(asJson)
 ```
 
-A number of JSON libraries are supported out-of-the-box, see [json support](../json.md).
+A number of JSON libraries are supported out-of-the-box, see [json support](../other/json.md).
 
 ## Response-metadata dependent deserializers
 
@@ -151,7 +153,7 @@ sealed trait MyModel
 case class SuccessModel(name: String, age: Int) extends MyModel
 case class ErrorModel(message: String) extends MyModel
 
-val myRequest: Request[Either[ResponseException[String, io.circe.Error], MyModel]] =
+val myRequest: Request[Either[ResponseException[String], MyModel]] =
   basicRequest
     .get(uri"https://example.com")
     .response(fromMetadata(
@@ -201,6 +203,9 @@ import sttp.model.ResponseMetadata
 def asStream[F[_], T, S](s: Streams[S])(f: s.BinaryStream => F[T]): 
   StreamResponseAs[Either[String, T], Effect[F] with S] = ???
 
+def asStreamOrFail[F[_], T, S](s: Streams[S])(f: s.BinaryStream => F[T]): 
+  StreamResponseAs[T, S with Effect[F]] = ???
+
 def asStreamWithMetadata[F[_], T, S](s: Streams[S])(
       f: (s.BinaryStream, ResponseMetadata) => F[T] 
   ): StreamResponseAs[Either[String, T], Effect[F] with S] = ???
@@ -219,7 +224,7 @@ def asStreamUnsafeAlways[S](s: Streams[S]):
   StreamResponseAs[s.BinaryStream, S] = ???
 ```
 
-All of these descriptions require the streaming capability to be passed as a parameter, an implementation of `Streams[S]`. This is used to determine the type of binary streams that are supported, and to require that the backend used to send the request supports the given type of streams. These implementations are provided by the backend implementations, e.g. `AkkaStreams` or `Fs2Streams[F]`. 
+All of these descriptions require the streaming capability to be passed as a parameter, an implementation of `Streams[S]`. This is used to determine the type of binary streams that are supported, and to require that the backend used to send the request supports the given type of streams. These implementations are provided by the backend implementations, e.g. `PekkoStreams` or `Fs2Streams[F]`. 
 
 The first two "safe" variants pass the response stream to the user-provided function, which should consume the stream entirely. Once the effect returned by the function is complete, the backend will try to close the stream (if the streaming implementation allows it).
 

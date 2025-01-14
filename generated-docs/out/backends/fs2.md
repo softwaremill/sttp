@@ -1,6 +1,6 @@
 # fs2 backend
 
-The [fs2](https://github.com/functional-streams-for-scala/fs2) backends are **asynchronous**. They can be created for any type implementing the `cats.effect.Async` typeclass, such as `cats.effect.IO`. Sending a request is a non-blocking, lazily-evaluated operation and results in a wrapped response. There's a transitive dependency on `cats-effect`. 
+The [fs2](https://github.com/functional-streams-for-scala/fs2) backends are **asynchronous**. They can be created for any type implementing the `cats.effect.kernel.Async` typeclass, such as `cats.effect.IO`. Sending a request is a non-blocking, lazily-evaluated operation and results in a wrapped response. There's a transitive dependency on `cats-effect`. 
 
 ## Using HttpClient
 
@@ -12,9 +12,9 @@ Creation of the backend can be done in two basic ways:
 Firstly, add the following dependency to your project:
 
 ```scala
-"com.softwaremill.sttp.client4" %% "fs2" % "4.0.0-M22" // for cats-effect 3.x & fs2 3.x
+"com.softwaremill.sttp.client4" %% "fs2" % "4.0.0-M23" // for cats-effect 3.x & fs2 3.x
 // or 
-"com.softwaremill.sttp.client4" %% "fs2ce2" % "4.0.0-M22" // for cats-effect 2.x & fs2 2.x
+"com.softwaremill.sttp.client4" %% "fs2ce2" % "4.0.0-M23" // for cats-effect 2.x & fs2 2.x
 ```
 
 Obtain a cats-effect `Resource` which creates the backend, and closes the thread pool after the resource is no longer used:
@@ -77,9 +77,10 @@ Host header override is supported in environments running Java 12 onwards, but i
 To use, add the following dependency to your project:
 
 ```scala
-"com.softwaremill.sttp.client4" %% "armeria-backend-fs2" % "4.0.0-M22" // for cats-effect 3.x & fs2 3.x
-// or
-"com.softwaremill.sttp.client4" %% "armeria-backend-fs2" % "4.0.0-M22" // for cats-effect 2.x & fs2 2.x
+// for cats-effect 3.x & fs2 3.x
+"com.softwaremill.sttp.client4" %% "armeria-backend-fs2" % "4.0.0-M23" 
+// or for cats-effect 2.x & fs2 2.x
+"com.softwaremill.sttp.client4" %% "armeria-backend-fs2" % "4.0.0-M23" 
 ```
 
 create client:
@@ -117,8 +118,8 @@ val client = WebClient.builder("https://my-service.com")
 val backend = ArmeriaFs2Backend.usingClient[IO](client, dispatcher)
 ```
 
-```{eval-rst}
-.. note:: A WebClient could fail to follow redirects if the WebClient is created with a base URI and a redirect location is a different URI.
+```{note}
+A WebClient could fail to follow redirects if the WebClient is created with a base URI and a redirect location is a different URI.
 ```
 
 This backend is built on top of [Armeria](https://armeria.dev/docs/client-http).
@@ -174,7 +175,7 @@ val effect = HttpClientFs2Backend.resource[IO]().use { backend =>
 
 ## Websockets
 
-The fs2 backends support both regular and streaming [websockets](../websockets.md).
+The fs2 backends support both regular and streaming [websockets](../other/websockets.md).
 
 ## Server-sent events
 

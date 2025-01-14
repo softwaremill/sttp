@@ -12,7 +12,7 @@ Creation of the backend can be done in two basic ways:
 Firstly, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client4" %% "monix" % "4.0.0-M22"
+"com.softwaremill.sttp.client4" %% "monix" % "4.0.0-M23"
 ```
 
 and create the backend using:
@@ -49,7 +49,7 @@ Host header override is supported in environments running Java 12 onwards, but i
 To use, add the following dependency to your project:
 
 ```scala
-"com.softwaremill.sttp.client4" %% "okhttp-backend-monix" % "4.0.0-M22"
+"com.softwaremill.sttp.client4" %% "okhttp-backend-monix" % "4.0.0-M23"
 ```
 
 Create the backend using:
@@ -75,7 +75,7 @@ This backend depends on [OkHttp](http://square.github.io/okhttp/) and fully supp
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client4" %% "armeria-backend-monix" % "4.0.0-M22"
+"com.softwaremill.sttp.client4" %% "armeria-backend-monix" % "4.0.0-M23"
 ```
 
 add imports:
@@ -110,8 +110,8 @@ val client = WebClient.builder("https://my-service.com")
 val backend = ArmeriaMonixBackend.usingClient(client)
 ```
 
-```{eval-rst}
-.. note:: A WebClient could fail to follow redirects if the WebClient is created with a base URI and a redirect location is a different URI.
+```{note}
+A WebClient could fail to follow redirects if the WebClient is created with a base URI and a redirect location is a different URI.
 ```
 
 This backend is build on top of [Armeria](https://armeria.dev/docs/client-http).
@@ -163,7 +163,7 @@ HttpClientMonixBackend().flatMap { backend =>
 
 ## Websockets
 
-The Monix backend supports both regular and streaming [websockets](../websockets.md).
+The Monix backend supports both regular and streaming [websockets](../other/websockets.md).
 
 ## Server-sent events
 

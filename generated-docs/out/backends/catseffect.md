@@ -1,7 +1,7 @@
 # cats-effect backend
 
 The [Cats Effect](https://github.com/typelevel/cats-effect) backend is **asynchronous**. 
-It can be created for any type implementing the `cats.effect.Concurrent` typeclass, such as `cats.effect.IO`. 
+It can be created for any type implementing the `cats.effect.kernel.Async` typeclass, such as `cats.effect.IO`. 
 Sending a request is a non-blocking, lazily-evaluated operation and results in a wrapped response. 
 There's a transitive dependency on `cats-effect`. 
 
@@ -14,7 +14,7 @@ Also note that the [http4s](http4s.md) backend can also be created for a type im
 Firstly, add the following dependency to your project:
 
 ```scala
-"com.softwaremill.sttp.client4" %% "cats" % "4.0.0-M22"
+"com.softwaremill.sttp.client4" %% "cats" % "4.0.0-M23"
 ```
 
 Obtain a cats-effect `Resource` which creates the backend, and closes the thread pool after the resource is no longer used:
@@ -82,9 +82,10 @@ Creation of the backend can be done in two basic ways:
 Firstly, add the following dependency to your project:
 
 ```scala
-"com.softwaremill.sttp.client4" %% "armeria-backend-cats" % "4.0.0-M22" // for cats-effect 3.x
-// or
-"com.softwaremill.sttp.client4" %% "armeria-backend-cats-ce2" % "4.0.0-M22" // for cats-effect 2.x
+// for cats-effect 3.x
+"com.softwaremill.sttp.client4" %% "armeria-backend-cats" % "4.0.0-M23" 
+// or for cats-effect 2.x
+"com.softwaremill.sttp.client4" %% "armeria-backend-cats-ce2" % "4.0.0-M23" 
 ```
 
 create client:
@@ -126,8 +127,8 @@ val client = WebClient.builder("https://my-service.com")
 val backend = ArmeriaCatsBackend.usingClient[IO](client)
 ```
 
-```{eval-rst}
-.. note:: A WebClient could fail to follow redirects if the WebClient is created with a base URI and a redirect location is a different URI.
+```{note}
+A WebClient could fail to follow redirects if the WebClient is created with a base URI and a redirect location is a different URI.
 ```
 
 This backend is build on top of [Armeria](https://armeria.dev/docs/client-http).
@@ -140,4 +141,4 @@ This backend doesn't support non-blocking [streaming](../requests/streaming.md).
 
 ## Websockets
 
-The backend doesn't support [websockets](../websockets.md).
+The backend doesn't support [websockets](../other/websockets.md).

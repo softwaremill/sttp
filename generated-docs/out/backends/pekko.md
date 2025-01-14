@@ -3,7 +3,7 @@
 This backend is based on [pekko-http](https://pekko.apache.org/docs/pekko-http/current/). To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client4" %% "pekko-http-backend" % "4.0.0-M22"
+"com.softwaremill.sttp.client4" %% "pekko-http-backend" % "4.0.0-M23"
 ```
 
 A fully **asynchronous** backend. Uses the `Future` effect to return responses. There are also [other `Future`-based backends](future.md), which don't depend on Pekko. 
@@ -11,7 +11,7 @@ A fully **asynchronous** backend. Uses the `Future` effect to return responses. 
 Note that you'll also need an explicit dependency on pekko-streams, as pekko-http doesn't depend on any specific pekko-streams version. So you'll also need to add, for example:
 
 ```
-"org.apache.pekko" %% "pekko-stream" % "1.1.2"
+"org.apache.pekko" %% "pekko-stream" % "1.1.3"
 ```
 
 Next you'll need to add create the backend instance:
@@ -71,11 +71,11 @@ val response: Future[Response[Either[String, Source[ByteString, Any]]]] =
     .send(backend)
 ```
 
-The pekko-http backend support both regular and streaming [websockets](../websockets.md).
+The pekko-http backend support both regular and streaming [websockets](../other/websockets.md).
 
 ## Testing
 
-Apart from testing using [the stub](../testing.md), you can create a backend using any `HttpRequest => Future[HttpResponse]` function, or an pekko-http `Route`.
+Apart from testing using [the stub](../testing/stub.md), you can create a backend using any `HttpRequest => Future[HttpResponse]` function, or an pekko-http `Route`.
 
 That way, you can "mock" a server that the backend will talk to, without starting any actual server or making any HTTP calls.
 

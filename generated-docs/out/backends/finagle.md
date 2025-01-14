@@ -3,7 +3,7 @@
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client4" %% "finagle-backend" % "4.0.0-M22"
+"com.softwaremill.sttp.client4" %% "finagle-backend" % "4.0.0-M23"
 ```
 
 Next you'll need to add an implicit value:
@@ -17,4 +17,4 @@ This backend depends on [finagle](https://twitter.github.io/finagle/), and offer
 
 Please note that: 
 
-* the backend does not support non-blocking [streaming](../requests/streaming.md) or [websockets](../websockets.md).
+* the backend does not support non-blocking [streaming](../requests/streaming.md) or [websockets](../other/websockets.md).

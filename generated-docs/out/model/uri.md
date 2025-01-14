@@ -11,8 +11,8 @@ The `Uri` class is immutable, and can be constructed by hand, but in many cases 
 Using the URI interpolator it's possible to conveniently create `Uri` instances, for example:
 
 ```scala
-import sttp.client4._
-import sttp.model._
+import sttp.client4.*
+import sttp.model.*
 
 val user = "Mary Smith"
 val filter = "programming languages"

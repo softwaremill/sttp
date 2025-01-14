@@ -4,8 +4,8 @@ Responses are represented as instances of the case class `Response[T]`, where `T
 
 If sending the request fails, either due to client or connection errors, an exception will be thrown (synchronous backends), or a failed effect will be returned (e.g. a failed future).
 
-```{eval-rst}
-.. note:: If the request completes, but results in a non-2xx return code, the request is still considered successful, that is, a ``Response[T]`` will be returned. See :doc:`response body specifications <body>` for details on how such cases are handled.
+```{note}
+If the request completes, but results in a non-2xx return code, the request is still considered successful, that is, a `Response[T]` will be returned. See [response body specifications](body.md) for details on how such cases are handled.
 ```
 
 ## Response code
@@ -23,8 +23,7 @@ import sttp.model.*
 import sttp.client4.*
 
 val backend = DefaultSyncBackend()
-val request = basicRequest
-    .get(uri"https://httpbin.org/get")
+val request = basicRequest.get(uri"https://httpbin.org/get")
 val response = request.send(backend)
 
 val singleHeader: Option[String] = response.header(HeaderNames.Server)

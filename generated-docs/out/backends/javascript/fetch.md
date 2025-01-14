@@ -1,4 +1,4 @@
-# JavaScript (Fetch) backend
+# Scala.js (Fetch) backend
 
 A JavaScript backend with web socket support. Implemented using the [Fetch API](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API).
 
@@ -7,7 +7,7 @@ A JavaScript backend with web socket support. Implemented using the [Fetch API](
 This is the default backend, available in the main jar for JS. To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client4" %%% "core" % "4.0.0-M22"
+"com.softwaremill.sttp.client4" %%% "core" % "4.0.0-M23"
 ```
 
 And create the backend instance:
@@ -26,7 +26,7 @@ Note that `Fetch` does not pass cookies by default. If your request needs cookie
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client4" %%% "monix" % "4.0.0-M22"
+"com.softwaremill.sttp.client4" %%% "monix" % "4.0.0-M23"
 ```
 
 And create the backend instance:
@@ -40,7 +40,7 @@ val backend = FetchMonixBackend()
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client4" %%% "zio" % "4.0.0-M22"
+"com.softwaremill.sttp.client4" %%% "zio" % "4.0.0-M23"
 ```
 
 And create the backend instance:
@@ -55,13 +55,13 @@ Any effect implementing the cats-effect `Concurrent` typeclass can be used. To u
 your project:
 
 ```
-"com.softwaremill.sttp.client4" %%% "cats" % "4.0.0-M22"
+"com.softwaremill.sttp.client4" %%% "cats" % "4.0.0-M23"
 ```
 
 If you are on Cats Effect 2 (CE2) you will need to add the CE2 specific dependency instead:
 
 ```
-"com.softwaremill.sttp.client4" %%% "catsce2 % "4.0.0-M22"
+"com.softwaremill.sttp.client4" %%% "catsce2" % "4.0.0-M23"
 ```
 
 And create the backend instance:
@@ -129,7 +129,7 @@ Streaming support is provided via `FetchMonixBackend`. Note that streaming suppo
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client4" %%% "monix" % "4.0.0-M22"
+"com.softwaremill.sttp.client4" %%% "monix" % "4.0.0-M23"
 ```
 
 An example of streaming a response:
@@ -151,13 +151,13 @@ val response: Task[Response[Observable[ByteBuffer]]] =
     .send(backend)
 ```      
 
-```{eval-rst}
-.. note:: Currently no browsers support passing a stream as the request body. As such, using the ``Fetch`` backend with a streaming request will result in it being converted into an in-memory array before being sent. Response bodies are returned as a "proper" stream.
+```{note}
+Currently no browsers support passing a stream as the request body. As such, using the `Fetch` backend with a streaming request will result in it being converted into an in-memory array before being sent. Response bodies are returned as a "proper" stream.
 ```
 
 ## Websockets
 
-The backend supports both regular and streaming [websockets](../../websockets.md).
+The backend supports both regular and streaming [websockets](../../other/websockets.md).
 
 ## Server-sent events
 
