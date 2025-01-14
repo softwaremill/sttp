@@ -29,6 +29,9 @@
 
 ## Other
 
+* [Command output streaming with os-lib support](https://github.com/softwaremill/sttp/tree/master/examples/src/main/scala/sttp/client4/examples/cmdOutputStreamingWithOsLib.scala) <span class="example-tag example-backend">HttpClient</span> <span class="example-tag example-effects">Direct</span>
+* [Download file with os-lib support](https://github.com/softwaremill/sttp/tree/master/examples/src/main/scala/sttp/client4/examples/uploadFileWithOsLib.scala) <span class="example-tag example-backend">HttpClient</span> <span class="example-tag example-effects">Direct</span>
+* [Download file with os-lib support](https://github.com/softwaremill/sttp/tree/master/examples/src/main/scala/sttp/client4/examples/downloadFileWitOsLib.scala) <span class="example-tag example-backend">HttpClient</span> <span class="example-tag example-effects">Direct</span>
 * [Handle the body by both parsing it to JSON and returning the raw string](https://github.com/softwaremill/sttp/tree/master/examples/src/main/scala/sttp/client4/examples/GetRawResponseBodySynchronous.scala) <span class="example-tag example-backend">HttpClient</span> <span class="example-tag example-effects">Direct</span>
 
 ## Resilience
