@@ -45,7 +45,7 @@ OpenTelemetryMetricsBackend(
   sttpBackend,
   OpenTelemetryMetricsConfig(
     openTelemetry,
-    responseToSuccessCounterMapper = _ => Some(CollectorConfig("my_custom_counter_name"))
+    responseToSuccessCounterMapper = (_, _) => Some(CollectorConfig("my_custom_counter_name"))
   )
 )
 ```
