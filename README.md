@@ -3,7 +3,6 @@
 [![Ideas, suggestions, problems, questions](https://img.shields.io/badge/Discourse-ask%20question-blue)](https://softwaremill.community/c/sttp-client)
 [![CI](https://github.com/softwaremill/sttp/workflows/CI/badge.svg)](https://github.com/softwaremill/sttp/actions?query=workflow%3ACI+branch%3Amaster)
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.softwaremill.sttp.client4/core_2.12/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.softwaremill.sttp.client4/core_2.12)
-[![Open in Gitpod](https://img.shields.io/badge/open%20in-gitpod-blue)](https://gitpod.io/#https://github.com/softwaremill/sttp)
 
 # The Scala HTTP client that you always wanted!
 
