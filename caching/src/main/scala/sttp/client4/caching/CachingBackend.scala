@@ -54,7 +54,7 @@ class CachingBackend[F[_], P](delegate: GenericBackend[F, P], cache: Cache[F], c
           case None => sendNotInCache(request, key)
           case Some(Success(cachedResponse)) =>
             log.debug(s"Found a cached response for ${request.showBasic}.")
-            monad.unit(adjustResponseReadFromCache(cachedResponse.toResponse, request))
+            monad.unit(adjustResponseReadFromCache(cachedResponse.toResponse(request), request))
           case Some(Failure(e)) =>
             log.warn(s"Exception when deserializing response from cache for: ${request.showBasic}", e)
             // clear the cache & send the request
