@@ -95,11 +95,11 @@ private class OpenTelemetryMetricsListener(
     clock: Clock,
     requestToLatencyHistogramMapper: GenericRequest[_, _] => Option[HistogramCollectorConfig],
     requestToInProgressCounterMapper: GenericRequest[_, _] => Option[CollectorConfig],
-    responseToSuccessCounterMapper: Response[_] => Option[CollectorConfig],
-    requestToErrorCounterMapper: Response[_] => Option[CollectorConfig],
+    responseToSuccessCounterMapper: (GenericRequest[_, _], Response[_]) => Option[CollectorConfig],
+    requestToErrorCounterMapper: (GenericRequest[_, _], Response[_]) => Option[CollectorConfig],
     requestToFailureCounterMapper: (GenericRequest[_, _], Throwable) => Option[CollectorConfig],
     requestToSizeHistogramMapper: GenericRequest[_, _] => Option[HistogramCollectorConfig],
-    responseToSizeHistogramMapper: Response[_] => Option[HistogramCollectorConfig]
+    responseToSizeHistogramMapper: (GenericRequest[_, _], Response[_]) => Option[HistogramCollectorConfig]
 ) extends RequestListener[Identity, Option[Long]] {
 
   private val counters = new ConcurrentHashMap[String, LongCounter]
@@ -124,12 +124,12 @@ private class OpenTelemetryMetricsListener(
     val combinedAttributes = requestAttributes.toBuilder().putAll(responseAttributes).build()
 
     if (response.isSuccess) {
-      incrementCounter(responseToSuccessCounterMapper(response), combinedAttributes)
+      incrementCounter(responseToSuccessCounterMapper(request, response), combinedAttributes)
     } else {
-      incrementCounter(requestToErrorCounterMapper(response), combinedAttributes)
+      incrementCounter(requestToErrorCounterMapper(request, response), combinedAttributes)
     }
 
-    recordHistogram(responseToSizeHistogramMapper(response), response.contentLength, combinedAttributes)
+    recordHistogram(responseToSizeHistogramMapper(request, response), response.contentLength, combinedAttributes)
     recordHistogram(requestToLatencyHistogramMapper(request), tag.map(clock.millis() - _), combinedAttributes)
     updateInProgressCounter(request, -1, requestAttributes)
   }
