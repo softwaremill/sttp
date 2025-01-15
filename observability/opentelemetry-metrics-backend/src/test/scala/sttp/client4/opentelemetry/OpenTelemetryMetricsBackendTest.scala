@@ -75,7 +75,7 @@ class OpenTelemetryMetricsBackendTest extends AnyFlatSpec with Matchers with Opt
     val reader = InMemoryMetricReader.create()
     val config = OpenTelemetryMetricsConfig(
       spawnNewOpenTelemetry(reader),
-      responseToSuccessCounterMapper = _ => Some(CollectorConfig(customSuccessCounterName))
+      responseToSuccessCounterMapper = (_, _) => Some(CollectorConfig(customSuccessCounterName))
     )
     val backend = OpenTelemetryMetricsBackend(stubAlwaysOk, config)
     val requestsNumber = 5
@@ -97,7 +97,7 @@ class OpenTelemetryMetricsBackendTest extends AnyFlatSpec with Matchers with Opt
     val config = OpenTelemetryMetricsConfig(
       spawnNewOpenTelemetry(reader),
       responseToSuccessCounterMapper =
-        _ => Some(CollectorConfig(customSuccessCounterName, Some(description), Some(unit)))
+        (_, _) => Some(CollectorConfig(customSuccessCounterName, Some(description), Some(unit)))
     )
     val backend = OpenTelemetryMetricsBackend(stubAlwaysOk, config)
     val requestsNumber1 = 5
@@ -117,7 +117,7 @@ class OpenTelemetryMetricsBackendTest extends AnyFlatSpec with Matchers with Opt
     val reader = InMemoryMetricReader.create()
     val config = OpenTelemetryMetricsConfig(
       spawnNewOpenTelemetry(reader),
-      responseToSuccessCounterMapper = _ => None
+      responseToSuccessCounterMapper = (_, _) => None
     )
     val backend = OpenTelemetryMetricsBackend(stubAlwaysOk, config)
     val requestsNumber = 6
