@@ -68,10 +68,9 @@ class DefaultLog[F[_]](
   private def before(request: GenericRequest[_, _], _logRequestBody: Boolean, _logRequestHeaders: Boolean): F[Unit] =
     logger(
       level = beforeRequestSendLogLevel,
-      message = s"Sending request: ${
-          if (beforeCurlInsteadOfShow && _logRequestBody && _logRequestHeaders) request.toCurl(sensitiveHeaders)
-          else request.show(includeBody = _logRequestBody, _logRequestHeaders, sensitiveHeaders)
-        }",
+      message =
+        s"Sending request: ${if (beforeCurlInsteadOfShow && _logRequestBody && _logRequestHeaders) request.toCurl(sensitiveHeaders)
+          else request.show(includeBody = _logRequestBody, _logRequestHeaders, sensitiveHeaders)}",
       throwable = None,
       context = logContext.forRequest(request)
     )

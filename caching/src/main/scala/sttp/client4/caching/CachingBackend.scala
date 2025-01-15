@@ -62,9 +62,8 @@ class CachingBackend[F[_], P](delegate: GenericBackend[F, P], cache: Cache[F], c
         }
       }
     } else {
-      log.debug(s"Request ${request.showBasic} is not cacheable (${
-          if (!cacheableFromConfig) "due to config" else "due to response-as"
-        }).")
+      log.debug(s"Request ${request.showBasic} is not cacheable (${if (!cacheableFromConfig) "due to config"
+        else "due to response-as"}).")
       delegate.send(request) // we know that we won't be able to cache the response
     }
   }
