@@ -158,7 +158,7 @@ case class Request[T](
   /** Sends the request, using the given backend.
     *
     * @return
-    *   An `F`-effect, containing a [[Response]], with the body handled as specified by this request (see
+    *   An `F` -effect, containing a [[Response]], with the body handled as specified by this request (see
     *   [[Request.response]]). Effects might include asynchronous computations (e.g. [[scala.concurrent.Future]]), pure
     *   effect descriptions (`IO`), or error wrappers (e.g. [[TryBackend]]). Exceptions are represented as failed
     *   effects (e.g. failed futures).
@@ -249,7 +249,7 @@ final case class StreamRequest[T, R](
     * supported streams type must match, as well as the optional effect type.
     *
     * @return
-    *   An `F`-effect, containing a [[Response]], with the body handled as specified by this request (see
+    *   An `F` -effect, containing a [[Response]], with the body handled as specified by this request (see
     *   [[Request.response]]). Effects might include asynchronous computations (e.g. [[scala.concurrent.Future]]), pure
     *   effect descriptions (`IO`), or error wrappers (e.g. [[TryBackend]]). Exceptions are represented as failed
     *   effects (e.g. failed futures).
@@ -314,7 +314,7 @@ final case class WebSocketRequest[F[_], T](
   /** Sends the WebSocket request, using the given backend.
     *
     * @return
-    *   An `F`-effect, containing a [[Response]], with the body handled as specified by this request (see
+    *   An `F` -effect, containing a [[Response]], with the body handled as specified by this request (see
     *   [[Request.response]]). Effects might include asynchronous computations (e.g. [[scala.concurrent.Future]]), pure
     *   effect descriptions (`IO`), or error wrappers (e.g. [[TryBackend]]). Exceptions are represented as failed
     *   effects (e.g. failed futures).
@@ -383,7 +383,7 @@ final case class WebSocketStreamRequest[T, S](
     * The required streams capability `S` must match the streams supported by the backend.
     *
     * @return
-    *   An `F`-effect, containing a [[Response]], with the body handled as specified by this request (see
+    *   An `F` -effect, containing a [[Response]], with the body handled as specified by this request (see
     *   [[Request.response]]). Effects might include asynchronous computations (e.g. [[scala.concurrent.Future]]), pure
     *   effect descriptions (`IO`), or error wrappers (e.g. [[TryBackend]]). Exceptions are represented as failed
     *   effects (e.g. failed futures).

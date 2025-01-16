@@ -43,8 +43,7 @@ object CircuitBreakerBackendWrapper:
         try
           monadError.handleError(monadError.map(service): r =>
             circuitBreaker.onSuccess(System.nanoTime() - start, TimeUnit.NANOSECONDS)
-            r
-          ) { case t =>
+            r) { case t =>
             circuitBreaker.onError(System.nanoTime() - start, TimeUnit.NANOSECONDS, t)
             monadError.error(t)
           }

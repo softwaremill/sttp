@@ -38,7 +38,7 @@ trait GenericBackend[F[_], +P] {
     */
   def close(): F[Unit]
 
-  /** A monad instance for the `F` effect type. Allows writing wrapper backends, which `map`/`flatMap`` over the return
+  /** A monad instance for the `F` effect type. Allows writing wrapper backends, which `map` /`flatMap`` over the return
     * value of [[send]].
     */
   def monad: MonadError[F]

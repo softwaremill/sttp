@@ -23,7 +23,7 @@ class SyncWebSocket(val delegate: WebSocket[Identity]) {
     * happen.
     *
     * However, not all implementations expose the close frame, and web sockets might also get closed without the proper
-    * close frame exchange. In such cases, as well as when invoking `receive`/`send` after receiving a close frame, a
+    * close frame exchange. In such cases, as well as when invoking `receive` /`send` after receiving a close frame, a
     * [[WebSocketClosed]] exception will be thrown.
     *
     * *Should be only called sequentially!* (from a single thread/fiber). Because web socket frames might be fragmented,
