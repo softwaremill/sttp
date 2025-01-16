@@ -80,7 +80,7 @@ To use, add the following dependency to your project:
 // for cats-effect 3.x & fs2 3.x
 "com.softwaremill.sttp.client4" %% "armeria-backend-fs2" % "@VERSION@" 
 // or for cats-effect 2.x & fs2 2.x
-"com.softwaremill.sttp.client4" %% "armeria-backend-fs2" % "@VERSION@" 
+"com.softwaremill.sttp.client4" %% "armeria-backend-fs2-ce2" % "@VERSION@" 
 ```
 
 create client:
