@@ -1,14 +1,16 @@
 package sttp.client4.opentelemetry
 
 import io.opentelemetry.api.OpenTelemetry
-import io.opentelemetry.api.common.{AttributeKey, Attributes}
-import io.opentelemetry.api.metrics.{DoubleHistogram, LongCounter, LongUpDownCounter, Meter}
-import sttp.client4.listener.{ListenerBackend, RequestListener}
-import sttp.client4.wrappers.FollowRedirectsBackend
+import io.opentelemetry.api.common.Attributes
+import io.opentelemetry.api.metrics.DoubleHistogram
+import io.opentelemetry.api.metrics.LongCounter
+import io.opentelemetry.api.metrics.LongUpDownCounter
 import sttp.client4._
+import sttp.client4.listener.ListenerBackend
+import sttp.client4.listener.RequestListener
+import sttp.client4.wrappers.FollowRedirectsBackend
 import sttp.shared.Identity
 
-import java.time.Clock
 import java.util.concurrent.ConcurrentHashMap
 
 object OpenTelemetryMetricsBackend {
@@ -43,24 +45,24 @@ object OpenTelemetryMetricsBackend {
     apply(delegate, OpenTelemetryMetricsConfig(openTelemetry))
 
   def apply(delegate: SyncBackend, config: OpenTelemetryMetricsConfig): SyncBackend = {
-    val listener = OpenTelemetryMetricsListener(config)
+    val listener = new OpenTelemetryMetricsListener(config)
     // redirects should be handled before metrics
     FollowRedirectsBackend(ListenerBackend(delegate, RequestListener.lift(listener, delegate.monad)))
   }
 
   def apply[F[_]](delegate: Backend[F], config: OpenTelemetryMetricsConfig): Backend[F] = {
-    val listener = OpenTelemetryMetricsListener(config)
+    val listener = new OpenTelemetryMetricsListener(config)
     // redirects should be handled before metrics
     wrappers.FollowRedirectsBackend(ListenerBackend(delegate, RequestListener.lift(listener, delegate.monad)))
   }
 
   def apply[F[_]](delegate: WebSocketBackend[F], config: OpenTelemetryMetricsConfig): WebSocketBackend[F] = {
-    val listener = OpenTelemetryMetricsListener(config)
+    val listener = new OpenTelemetryMetricsListener(config)
     wrappers.FollowRedirectsBackend(ListenerBackend(delegate, RequestListener.lift(listener, delegate.monad)))
   }
 
   def apply[F[_], S](delegate: StreamBackend[F, S], config: OpenTelemetryMetricsConfig): StreamBackend[F, S] = {
-    val listener = OpenTelemetryMetricsListener(config)
+    val listener = new OpenTelemetryMetricsListener(config)
     wrappers.FollowRedirectsBackend(
       ListenerBackend(delegate, RequestListener.lift(listener, delegate.monad))
     )
@@ -70,86 +72,68 @@ object OpenTelemetryMetricsBackend {
       delegate: WebSocketStreamBackend[F, S],
       config: OpenTelemetryMetricsConfig
   ): WebSocketStreamBackend[F, S] = {
-    val listener = OpenTelemetryMetricsListener(config)
+    val listener = new OpenTelemetryMetricsListener(config)
     wrappers.FollowRedirectsBackend(ListenerBackend(delegate, RequestListener.lift(listener, delegate.monad)))
   }
 }
 
-private object OpenTelemetryMetricsListener {
-  def apply(config: OpenTelemetryMetricsConfig): OpenTelemetryMetricsListener =
-    new OpenTelemetryMetricsListener(
-      config.meter,
-      config.clock,
-      config.requestToLatencyHistogramMapper,
-      config.requestToInProgressCounterMapper,
-      config.responseToSuccessCounterMapper,
-      config.requestToErrorCounterMapper,
-      config.requestToFailureCounterMapper,
-      config.requestToSizeHistogramMapper,
-      config.responseToSizeHistogramMapper
-    )
-}
-
-private class OpenTelemetryMetricsListener(
-    meter: Meter,
-    clock: Clock,
-    requestToLatencyHistogramMapper: GenericRequest[_, _] => Option[HistogramCollectorConfig],
-    requestToInProgressCounterMapper: GenericRequest[_, _] => Option[CollectorConfig],
-    responseToSuccessCounterMapper: (GenericRequest[_, _], Response[_]) => Option[CollectorConfig],
-    requestToErrorCounterMapper: (GenericRequest[_, _], Response[_]) => Option[CollectorConfig],
-    requestToFailureCounterMapper: (GenericRequest[_, _], Throwable) => Option[CollectorConfig],
-    requestToSizeHistogramMapper: GenericRequest[_, _] => Option[HistogramCollectorConfig],
-    responseToSizeHistogramMapper: (GenericRequest[_, _], Response[_]) => Option[HistogramCollectorConfig]
-) extends RequestListener[Identity, Option[Long]] {
+private class OpenTelemetryMetricsListener(config: OpenTelemetryMetricsConfig)
+    extends RequestListener[Identity, Option[Long]] {
 
   private val counters = new ConcurrentHashMap[String, LongCounter]
   private val histograms = new ConcurrentHashMap[String, DoubleHistogram]()
   private val upAndDownCounter = new ConcurrentHashMap[String, LongUpDownCounter]()
 
   override def beforeRequest(request: GenericRequest[_, _]): Option[Long] = {
-    val attributes = createRequestAttributes(request)
+    val attributes = config.requestAttributes(request)
 
     updateInProgressCounter(request, 1, attributes)
-    recordHistogram(requestToSizeHistogramMapper(request), request.contentLength, attributes)
-    requestToLatencyHistogramMapper(request).map { _ =>
-      val timestamp = clock.millis()
-      timestamp
-    }
+    recordHistogram(config.requestToSizeHistogramMapper(request), request.contentLength, attributes)
+    config.requestToLatencyHistogramMapper(request).map { _ => config.clock.millis() }
   }
 
   override def requestSuccessful(request: GenericRequest[_, _], response: Response[_], tag: Option[Long]): Unit = {
-    val requestAttributes = createRequestAttributes(request)
-    val responseAttributes = createResponseAttributes(response)
+    val requestAttributes = config.requestAttributes(request)
+    val responseAttributes = config.responseAttributes(response)
 
     val combinedAttributes = requestAttributes.toBuilder().putAll(responseAttributes).build()
 
     if (response.isSuccess) {
-      incrementCounter(responseToSuccessCounterMapper(request, response), combinedAttributes)
+      incrementCounter(config.responseToSuccessCounterMapper(request, response), combinedAttributes)
     } else {
-      incrementCounter(requestToErrorCounterMapper(request, response), combinedAttributes)
+      incrementCounter(config.requestToErrorCounterMapper(request, response), combinedAttributes)
     }
 
-    recordHistogram(responseToSizeHistogramMapper(request, response), response.contentLength, combinedAttributes)
-    recordHistogram(requestToLatencyHistogramMapper(request), tag.map(clock.millis() - _), combinedAttributes)
+    recordHistogram(config.responseToSizeHistogramMapper(request, response), response.contentLength, combinedAttributes)
+    recordHistogram(
+      config.requestToLatencyHistogramMapper(request),
+      tag.map(config.clock.millis() - _),
+      combinedAttributes
+    )
     updateInProgressCounter(request, -1, requestAttributes)
   }
 
   override def requestException(request: GenericRequest[_, _], tag: Option[Long], e: Exception): Unit = {
-    val requestAttributes = createRequestAttributes(request)
-    val errorAttributes = createErrorAttributes(e)
+    val requestAttributes = config.requestAttributes(request)
+    val errorAttributes = config.errorAttributes(e)
 
     ResponseException.find(e) match {
       case Some(re) =>
         requestSuccessful(request, Response((), re.response.code, request.onlyMetadata), tag)
       case _ =>
-        incrementCounter(requestToFailureCounterMapper(request, e), errorAttributes)
-        recordHistogram(requestToLatencyHistogramMapper(request), tag.map(clock.millis() - _), errorAttributes)
+        incrementCounter(config.requestToFailureCounterMapper(request, e), errorAttributes)
+        recordHistogram(
+          config.requestToLatencyHistogramMapper(request),
+          tag.map(config.clock.millis() - _),
+          errorAttributes
+        )
         updateInProgressCounter(request, -1, requestAttributes)
     }
   }
 
   private def updateInProgressCounter[R, T](request: GenericRequest[T, R], delta: Long, attributes: Attributes): Unit =
-    requestToInProgressCounterMapper(request)
+    config
+      .requestToInProgressCounterMapper(request)
       .foreach(config => getOrCreateMetric(upAndDownCounter, config, createNewUpDownCounter).add(delta, attributes))
 
   private def recordHistogram(
@@ -189,57 +173,27 @@ private class OpenTelemetryMetricsListener(
     )
 
   private def createNewUpDownCounter(collectorConfig: CollectorConfig): LongUpDownCounter = {
-    var b = meter.upDownCounterBuilder(collectorConfig.name)
+    var b = config.meter.upDownCounterBuilder(collectorConfig.name)
     b = collectorConfig.unit.fold(b)(b.setUnit)
     b = collectorConfig.description.fold(b)(b.setDescription)
     b.build()
   }
 
   private def createNewCounter(collectorConfig: CollectorConfig): LongCounter = {
-    var b = meter.counterBuilder(collectorConfig.name)
+    var b = config.meter.counterBuilder(collectorConfig.name)
     b = collectorConfig.unit.fold(b)(b.setUnit)
     b = collectorConfig.description.fold(b)(b.setDescription)
     b.build()
   }
 
-  private def createNewHistogram(config: HistogramCollectorConfig): DoubleHistogram = {
-    var b = meter
-      .histogramBuilder(config.name)
-      .setExplicitBucketBoundariesAdvice(config.buckets)
-      .setUnit(config.unit)
-    b = config.description.fold(b)(b.setDescription)
+  private def createNewHistogram(histogramConfig: HistogramCollectorConfig): DoubleHistogram = {
+    var b = config.meter
+      .histogramBuilder(histogramConfig.name)
+      .setExplicitBucketBoundariesAdvice(histogramConfig.buckets)
+      .setUnit(histogramConfig.unit)
+    b = histogramConfig.description.fold(b)(b.setDescription)
     b.build()
   }
-
-  // OpenTelemetry HTTP Client Metrics Spec: Mapping request attributes as per
-  // https://opentelemetry.io/docs/specs/semconv/http/http-metrics/#http-client
-  private def createRequestAttributes(request: GenericRequest[_, _]): Attributes = {
-    val attributes = Attributes
-      .builder()
-      .put(AttributeKey.stringKey("http.request.method"), request.method.method)
-      .put(AttributeKey.stringKey("server.address"), request.uri.host.getOrElse("unknown"))
-      .put(AttributeKey.longKey("server.port"), request.uri.port.getOrElse(80))
-      .build()
-
-    attributes
-  }
-
-  // OpenTelemetry HTTP Client Metrics Spec: Mapping response attributes as per
-  // https://opentelemetry.io/docs/specs/semconv/http/http-metrics/#http-client
-  private def createResponseAttributes(response: Response[_]): Attributes =
-    Attributes
-      .builder()
-      .put(AttributeKey.longKey("http.response.status_code"), response.code.code)
-      .build()
-
-  private def createErrorAttributes(e: Throwable): Attributes = {
-    val errorType = e match {
-      case _: java.net.UnknownHostException => "unknown_host"
-      case _                                => e.getClass.getSimpleName
-    }
-    Attributes.builder().put("error.type", errorType).build()
-  }
-
 }
 
 case class CollectorConfig(
@@ -265,9 +219,4 @@ object HistogramCollectorConfig {
   // Should go as follows 100 bytes, 1Kb, 10Kb, 100kB, 1 Mb, 10 Mb, 100Mb, 100Mb +
   val DefaultSizeBuckets: java.util.List[java.lang.Double] =
     java.util.List.of(100, 1024, 10240, 102400, 1048576, 10485760, 104857600)
-}
-
-case class MeterConfig(name: String, version: String)
-object MeterConfig {
-  val Default: MeterConfig = MeterConfig("sttp-client4", "1.0.0")
 }
