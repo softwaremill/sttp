@@ -19,7 +19,7 @@ final case class OpenTelemetryMetricsConfig(
     requestToSizeHistogramMapper: GenericRequest[_, _] => Option[HistogramCollectorConfig],
     responseToSizeHistogramMapper: (GenericRequest[_, _], Response[_]) => Option[HistogramCollectorConfig],
     requestAttributes: GenericRequest[_, _] => Attributes,
-    responseAttributes: Response[_] => Attributes,
+    responseAttributes: (GenericRequest[_, _], Response[_]) => Attributes,
     errorAttributes: Throwable => Attributes
 )
 
@@ -64,7 +64,8 @@ object OpenTelemetryMetricsConfig {
           ),
       spanName: GenericRequest[_, _] => String = OpenTelemetryDefaults.spanName _,
       requestAttributes: GenericRequest[_, _] => Attributes = OpenTelemetryDefaults.requestAttributes _,
-      responseAttributes: Response[_] => Attributes = OpenTelemetryDefaults.responseAttributes _,
+      responseAttributes: (GenericRequest[_, _], Response[_]) => Attributes =
+        OpenTelemetryDefaults.responseAttributes _,
       errorAttributes: Throwable => Attributes = OpenTelemetryDefaults.errorAttributes _
   ): OpenTelemetryMetricsConfig = usingMeter(
     openTelemetry
@@ -123,7 +124,8 @@ object OpenTelemetryMetricsConfig {
             )
           ),
       requestAttributes: GenericRequest[_, _] => Attributes = OpenTelemetryDefaults.requestAttributes _,
-      responseAttributes: Response[_] => Attributes = OpenTelemetryDefaults.responseAttributes _,
+      responseAttributes: (GenericRequest[_, _], Response[_]) => Attributes =
+        OpenTelemetryDefaults.responseAttributes _,
       errorAttributes: Throwable => Attributes = OpenTelemetryDefaults.errorAttributes _
   ): OpenTelemetryMetricsConfig =
     OpenTelemetryMetricsConfig(

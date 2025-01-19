@@ -14,7 +14,7 @@ case class OpenTelemetryTracingSyncConfig(
     clock: Clock,
     spanName: GenericRequest[_, _] => String,
     requestAttributes: GenericRequest[_, _] => Attributes,
-    responseAttributes: Response[_] => Attributes,
+    responseAttributes: (GenericRequest[_, _], Response[_]) => Attributes,
     errorAttributes: Throwable => Attributes
 )
 
@@ -24,7 +24,8 @@ object OpenTelemetryTracingSyncConfig {
       clock: Clock = Clock.systemUTC(),
       spanName: GenericRequest[_, _] => String = OpenTelemetryDefaults.spanName _,
       requestAttributes: GenericRequest[_, _] => Attributes = OpenTelemetryDefaults.requestAttributesWithFullUrl _,
-      responseAttributes: Response[_] => Attributes = OpenTelemetryDefaults.responseAttributes _,
+      responseAttributes: (GenericRequest[_, _], Response[_]) => Attributes =
+        OpenTelemetryDefaults.responseAttributes _,
       errorAttributes: Throwable => Attributes = OpenTelemetryDefaults.errorAttributes _
   ): OpenTelemetryTracingSyncConfig = usingTracer(
     openTelemetry
@@ -45,7 +46,8 @@ object OpenTelemetryTracingSyncConfig {
       clock: Clock = Clock.systemUTC(),
       spanName: GenericRequest[_, _] => String = OpenTelemetryDefaults.spanName _,
       requestAttributes: GenericRequest[_, _] => Attributes = OpenTelemetryDefaults.requestAttributesWithFullUrl _,
-      responseAttributes: Response[_] => Attributes = OpenTelemetryDefaults.responseAttributes _,
+      responseAttributes: (GenericRequest[_, _], Response[_]) => Attributes =
+        OpenTelemetryDefaults.responseAttributes _,
       errorAttributes: Throwable => Attributes = OpenTelemetryDefaults.errorAttributes _
   ): OpenTelemetryTracingSyncConfig =
     OpenTelemetryTracingSyncConfig(

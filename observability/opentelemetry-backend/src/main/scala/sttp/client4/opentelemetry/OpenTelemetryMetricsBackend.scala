@@ -94,7 +94,7 @@ private class OpenTelemetryMetricsListener(config: OpenTelemetryMetricsConfig)
 
   override def requestSuccessful(request: GenericRequest[_, _], response: Response[_], tag: Option[Long]): Unit = {
     val requestAttributes = config.requestAttributes(request)
-    val responseAttributes = config.responseAttributes(response)
+    val responseAttributes = config.responseAttributes(request, response)
 
     val combinedAttributes = requestAttributes.toBuilder().putAll(responseAttributes).build()
 
