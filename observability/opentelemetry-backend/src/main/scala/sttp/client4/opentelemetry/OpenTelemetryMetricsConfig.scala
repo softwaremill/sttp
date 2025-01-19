@@ -1,6 +1,7 @@
 package sttp.client4.opentelemetry
 
 import io.opentelemetry.api.OpenTelemetry
+import io.opentelemetry.api.common.Attributes
 import io.opentelemetry.api.metrics.Meter
 import sttp.client4._
 import sttp.client4.opentelemetry.OpenTelemetryMetricsBackend._
@@ -16,13 +17,15 @@ final case class OpenTelemetryMetricsConfig(
     requestToErrorCounterMapper: (GenericRequest[_, _], Response[_]) => Option[CollectorConfig],
     requestToFailureCounterMapper: (GenericRequest[_, _], Throwable) => Option[CollectorConfig],
     requestToSizeHistogramMapper: GenericRequest[_, _] => Option[HistogramCollectorConfig],
-    responseToSizeHistogramMapper: (GenericRequest[_, _], Response[_]) => Option[HistogramCollectorConfig]
+    responseToSizeHistogramMapper: (GenericRequest[_, _], Response[_]) => Option[HistogramCollectorConfig],
+    requestAttributes: GenericRequest[_, _] => Attributes,
+    responseAttributes: (GenericRequest[_, _], Response[_]) => Attributes,
+    errorAttributes: Throwable => Attributes
 )
 
 object OpenTelemetryMetricsConfig {
   def apply(
       openTelemetry: OpenTelemetry,
-      meterConfig: MeterConfig = MeterConfig.Default,
       clock: Clock = Clock.systemUTC(),
       requestToLatencyHistogramMapper: GenericRequest[_, _] => Option[HistogramCollectorConfig] =
         (_: GenericRequest[_, _]) =>
@@ -58,9 +61,17 @@ object OpenTelemetryMetricsConfig {
               buckets = HistogramCollectorConfig.DefaultSizeBuckets,
               unit = HistogramCollectorConfig.Bytes
             )
-          )
+          ),
+      spanName: GenericRequest[_, _] => String = OpenTelemetryDefaults.spanName _,
+      requestAttributes: GenericRequest[_, _] => Attributes = OpenTelemetryDefaults.requestAttributes _,
+      responseAttributes: (GenericRequest[_, _], Response[_]) => Attributes =
+        OpenTelemetryDefaults.responseAttributes _,
+      errorAttributes: Throwable => Attributes = OpenTelemetryDefaults.errorAttributes _
   ): OpenTelemetryMetricsConfig = usingMeter(
-    openTelemetry.meterBuilder(meterConfig.name).setInstrumentationVersion(meterConfig.version).build(),
+    openTelemetry
+      .meterBuilder(OpenTelemetryDefaults.instrumentationScopeName)
+      .setInstrumentationVersion(OpenTelemetryDefaults.instrumentationScopeVersion)
+      .build(),
     clock,
     requestToLatencyHistogramMapper = requestToLatencyHistogramMapper,
     requestToInProgressCounterMapper = requestToInProgressCounterMapper,
@@ -68,7 +79,10 @@ object OpenTelemetryMetricsConfig {
     responseToErrorCounterMapper = responseToErrorCounterMapper,
     requestToFailureCounterMapper = requestToFailureCounterMapper,
     requestToSizeHistogramMapper = requestToSizeHistogramMapper,
-    responseToSizeHistogramMapper = responseToSizeHistogramMapper
+    responseToSizeHistogramMapper = responseToSizeHistogramMapper,
+    requestAttributes = requestAttributes,
+    responseAttributes = responseAttributes,
+    errorAttributes = errorAttributes
   )
 
   def usingMeter(
@@ -108,7 +122,11 @@ object OpenTelemetryMetricsConfig {
               buckets = HistogramCollectorConfig.DefaultSizeBuckets,
               unit = HistogramCollectorConfig.Bytes
             )
-          )
+          ),
+      requestAttributes: GenericRequest[_, _] => Attributes = OpenTelemetryDefaults.requestAttributes _,
+      responseAttributes: (GenericRequest[_, _], Response[_]) => Attributes =
+        OpenTelemetryDefaults.responseAttributes _,
+      errorAttributes: Throwable => Attributes = OpenTelemetryDefaults.errorAttributes _
   ): OpenTelemetryMetricsConfig =
     OpenTelemetryMetricsConfig(
       meter,
@@ -119,6 +137,9 @@ object OpenTelemetryMetricsConfig {
       responseToErrorCounterMapper,
       requestToFailureCounterMapper,
       requestToSizeHistogramMapper,
-      responseToSizeHistogramMapper
+      responseToSizeHistogramMapper,
+      requestAttributes,
+      responseAttributes,
+      errorAttributes
     )
 }

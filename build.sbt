@@ -165,6 +165,7 @@ val http4s_ce3_version = "0.23.30"
 val osLibVersion = "0.11.3"
 val tethysVersion = "0.29.3"
 val openTelemetryVersion = "1.46.0"
+val openTelemetrySemconvVersion = "1.26.0-alpha"
 val slf4jVersion = "1.7.36"
 
 val compileAndTest = "compile->compile;test->test"
@@ -228,7 +229,7 @@ lazy val rawAllAggregates =
     playJson.projectRefs ++
     tethysJson.projectRefs ++
     prometheusBackend.projectRefs ++
-    openTelemetryMetricsBackend.projectRefs ++
+    openTelemetryBackend.projectRefs ++
     openTelemetryTracingZioBackend.projectRefs ++
     finagleBackend.projectRefs ++
     armeriaBackend.projectRefs ++
@@ -898,11 +899,12 @@ lazy val prometheusBackend = (projectMatrix in file("observability/prometheus-ba
   .jvmPlatform(scalaVersions = scala2And3)
   .dependsOn(core)
 
-lazy val openTelemetryMetricsBackend = (projectMatrix in file("observability/opentelemetry-metrics-backend"))
+lazy val openTelemetryBackend = (projectMatrix in file("observability/opentelemetry-backend"))
   .settings(commonJvmSettings)
   .settings(
-    name := "opentelemetry-metrics-backend",
+    name := "opentelemetry-backend",
     libraryDependencies ++= Seq(
+      "io.opentelemetry.semconv" % "opentelemetry-semconv" % openTelemetrySemconvVersion,
       "io.opentelemetry" % "opentelemetry-api" % openTelemetryVersion,
       "io.opentelemetry" % "opentelemetry-sdk-testing" % openTelemetryVersion % Test
     ),
@@ -917,7 +919,7 @@ lazy val openTelemetryTracingZioBackend = (projectMatrix in file("observability/
     name := "opentelemetry-tracing-zio-backend",
     libraryDependencies ++= Seq(
       "dev.zio" %% "zio-opentelemetry" % "3.1.1",
-      "io.opentelemetry.semconv" % "opentelemetry-semconv" % "1.26.0-alpha",
+      "io.opentelemetry.semconv" % "opentelemetry-semconv" % openTelemetrySemconvVersion,
       "io.opentelemetry" % "opentelemetry-api" % openTelemetryVersion,
       "io.opentelemetry" % "opentelemetry-sdk-testing" % openTelemetryVersion % Test
     )
@@ -1065,7 +1067,7 @@ lazy val docs: ProjectMatrix = (projectMatrix in file("generated-docs")) // impo
     // okhttpMonixBackend,
     http4sBackend,
     prometheusBackend,
-    openTelemetryMetricsBackend,
+    openTelemetryBackend,
     openTelemetryTracingZioBackend,
     slf4jBackend
   )
