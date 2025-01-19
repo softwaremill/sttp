@@ -10,7 +10,9 @@ import io.opentelemetry.semconv.ServerAttributes
 import io.opentelemetry.api.common.AttributesBuilder
 
 object OpenTelemetryDefaults {
-  def spanName(request: GenericRequest[_, _]): String = s"HTTP ${request.method.method}"
+
+  /** @see https://opentelemetry.io/docs/specs/semconv/http/http-spans/#name */
+  def spanName(request: GenericRequest[_, _]): String = s"${request.method.method}"
 
   /** @see https://opentelemetry.io/docs/specs/semconv/http/http-metrics/#http-client */
   def requestAttributes(request: GenericRequest[_, _]): Attributes = requestAttributesBuilder(request).build()

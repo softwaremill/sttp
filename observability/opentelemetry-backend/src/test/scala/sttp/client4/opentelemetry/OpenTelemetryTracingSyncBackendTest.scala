@@ -31,6 +31,9 @@ class OpenTelemetryTracingSyncBackendTest extends AnyFlatSpec with Matchers {
     spanItems should have size 1
 
     val span = spanItems.head
+
+    span.getName() shouldBe "GET"
+
     val attributes = span.getAttributes().asMap().asScala
     attributes(UrlAttributes.URL_FULL) shouldBe "http://test.com/foo"
     attributes(HttpAttributes.HTTP_RESPONSE_STATUS_CODE) shouldBe (200: java.lang.Long)

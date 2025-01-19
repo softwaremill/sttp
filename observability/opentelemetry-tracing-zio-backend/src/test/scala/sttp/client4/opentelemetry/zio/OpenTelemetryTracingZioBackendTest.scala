@@ -63,7 +63,7 @@ class OpenTelemetryTracingZioBackendTest extends AnyFlatSpec with Matchers with 
 
     val spans = spanExporter.getFinishedSpanItems.asScala
     spans should have size 1
-    spans.head.getName shouldBe "HTTP POST"
+    spans.head.getName shouldBe "POST"
   }
 
   it should "propagate span" in {

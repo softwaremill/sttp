@@ -10,6 +10,7 @@ import zio._
 import zio.telemetry.opentelemetry.context.OutgoingContextCarrier
 import zio.telemetry.opentelemetry.tracing.Tracing
 import zio.telemetry.opentelemetry.tracing.propagation.TraceContextPropagator
+import io.opentelemetry.semconv.ServerAttributes
 
 abstract class OpenTelemetryTracingZioBackend[+P](
     delegate: GenericBackend[Task, P],
@@ -71,11 +72,13 @@ trait OpenTelemetryTracer {
 
 object OpenTelemetryTracer {
   lazy val Default: OpenTelemetryTracer = new OpenTelemetryTracer {
-    override def spanName[T](request: GenericRequest[T, Nothing]): String = s"HTTP ${request.method.method}"
+    override def spanName[T](request: GenericRequest[T, Nothing]): String = s"${request.method.method}"
     override def requestAttributes[T](request: GenericRequest[T, Nothing]): Attributes =
       Attributes.builder
         .put(HttpAttributes.HTTP_REQUEST_METHOD, request.method.method)
         .put(UrlAttributes.URL_FULL, request.uri.toString())
+        .put(ServerAttributes.SERVER_ADDRESS, request.uri.host.getOrElse("unknown"))
+        .put(ServerAttributes.SERVER_PORT, request.uri.port.getOrElse(80))
         .build()
 
     override def responseAttributes[T](response: Response[T]): Attributes =
