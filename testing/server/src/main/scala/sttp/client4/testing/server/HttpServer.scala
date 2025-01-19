@@ -413,7 +413,9 @@ private class HttpServer(port: Int, info: String => Unit) extends AutoCloseable 
           protocol = HttpProtocols.`HTTP/1.1`
         )
       )
-    } ~ pathPrefix("retry") { // #1616: calling the endpoint with the same tag will give status codes 401, 401, 400, 200, ...
+    } ~ pathPrefix(
+      "retry"
+    ) { // #1616: calling the endpoint with the same tag will give status codes 401, 401, 400, 200, ...
       parameter("tag") { tag =>
         val current = Option(retryTestCache.get(tag)).getOrElse(0)
         retryTestCache.put(tag, current + 1)
