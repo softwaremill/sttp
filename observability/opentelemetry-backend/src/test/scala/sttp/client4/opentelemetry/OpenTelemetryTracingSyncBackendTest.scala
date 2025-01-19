@@ -8,10 +8,10 @@ import io.opentelemetry.sdk.trace.`export`.SimpleSpanProcessor
 import sttp.client4.testing.SyncBackendStub
 import sttp.client4._
 import io.opentelemetry.sdk.OpenTelemetrySdk
-import scala.jdk.CollectionConverters._
 import io.opentelemetry.semconv.UrlAttributes
 import io.opentelemetry.semconv.HttpAttributes
 import io.opentelemetry.semconv.ErrorAttributes
+import scala.collection.JavaConverters._
 
 class OpenTelemetryTracingSyncBackendTest extends AnyFlatSpec with Matchers {
   it should "capture successful spans" in {
@@ -33,7 +33,7 @@ class OpenTelemetryTracingSyncBackendTest extends AnyFlatSpec with Matchers {
     val span = spanItems.head
     val attributes = span.getAttributes().asMap().asScala
     attributes(UrlAttributes.URL_FULL) shouldBe "http://test.com/foo"
-    attributes(HttpAttributes.HTTP_RESPONSE_STATUS_CODE) shouldBe 200
+    attributes(HttpAttributes.HTTP_RESPONSE_STATUS_CODE) shouldBe (200: java.lang.Long)
   }
 
   it should "capture spans which end in an exception" in {
