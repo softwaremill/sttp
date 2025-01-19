@@ -113,7 +113,7 @@ val testServerSettings = Seq(
     .evaluated,
   Test / testOptions += Tests.Setup { () =>
     val port = (testServer2_13 / testServerPort).value
-    PollingUtils.waitUntilServerAvailable(new URL(s"http://localhost:$port"))
+    PollingUtils.waitUntilServerAvailable(url(s"http://localhost:$port"))
   }
 )
 
