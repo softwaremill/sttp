@@ -1,7 +1,7 @@
 package sttp.client4
 
 import sttp.client4.httpclient.HttpClientSyncBackend
-import sttp.client4.httpclient.RequestBodyProgressCallback
+import sttp.client4.httpclient.BodyProgressCallback
 import sttp.client4.testing.ConvertToFuture
 import sttp.client4.testing.HttpTest
 import sttp.model.StatusCode
@@ -23,7 +23,7 @@ class HttpClientSyncHttpTest extends HttpTest[Identity] {
   "callback" - {
     "should be invoked as described in the callback protocol" in {
       val trail = new ConcurrentLinkedQueue[String]()
-      val callback = new RequestBodyProgressCallback {
+      val callback = new BodyProgressCallback {
 
         override def onInit(contentLength: Option[Long]): Unit = {
           val _ = trail.add(s"init ${contentLength.getOrElse(-1)}")
@@ -43,7 +43,7 @@ class HttpClientSyncHttpTest extends HttpTest[Identity] {
       }
 
       val contentLength = 2048 * 100
-      val req = postEcho.body("x" * contentLength).attribute(RequestBodyProgressCallback.Attribute, callback)
+      val req = postEcho.body("x" * contentLength).attribute(BodyProgressCallback.RequestAttribute, callback)
 
       (req.send(backend): Identity[Response[Either[String, String]]]).toFuture().map { response =>
         val t = trail.asScala

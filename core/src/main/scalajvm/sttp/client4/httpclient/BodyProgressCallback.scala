@@ -11,10 +11,10 @@ import sttp.attributes.AttributeKey
   * All of the methods should be non-blocking and complete as fast as possible, so as not to obstruct sending data over
   * the network.
   *
-  * To register a callback, set the [[RequestBodyProgressCallback.Attribute]] on a request, using the
+  * To register a callback, set the [[BodyProgressCallback.RequestAttribute]] on a request, using the
   * [[sttp.client4.Request.attribute]] method.
   */
-trait RequestBodyProgressCallback {
+trait BodyProgressCallback {
   def onInit(contentLength: Option[Long]): Unit
 
   def onNext(bytesCount: Long): Unit
@@ -23,10 +23,10 @@ trait RequestBodyProgressCallback {
   def onError(t: Throwable): Unit
 }
 
-object RequestBodyProgressCallback {
+object BodyProgressCallback {
 
   /** The key of the attribute that should be set on a request, to receive callbacks on the progress of sending the
     * request body.
     */
-  val Attribute = AttributeKey[RequestBodyProgressCallback]
+  val RequestAttribute = new AttributeKey[BodyProgressCallback](classOf[BodyProgressCallback].getName() + "_request")
 }

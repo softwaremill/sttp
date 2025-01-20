@@ -1,23 +1,29 @@
 package sttp.client4.internal.httpclient
 
 import sttp.capabilities.Streams
-import sttp.client4.internal.SttpToJavaConverters.toJavaSupplier
-import sttp.client4.internal.{throwNestedMultipartNotAllowed, Utf8}
-import sttp.client4.compression.Compressor
 import sttp.client4._
-import sttp.model.{Header, HeaderNames, Part}
+import sttp.client4.compression.Compressor
+import sttp.client4.httpclient.BodyProgressCallback
+import sttp.client4.internal.SttpToJavaConverters.toJavaSupplier
+import sttp.client4.internal.Utf8
+import sttp.client4.internal.throwNestedMultipartNotAllowed
+import sttp.model.Header
+import sttp.model.HeaderNames
+import sttp.model.Part
 import sttp.monad.MonadError
 import sttp.monad.syntax._
 
-import java.io.{ByteArrayInputStream, InputStream}
+import java.io.ByteArrayInputStream
+import java.io.InputStream
 import java.net.http.HttpRequest
-import java.net.http.HttpRequest.{BodyPublisher, BodyPublishers}
-import java.nio.{Buffer, ByteBuffer}
+import java.net.http.HttpRequest.BodyPublisher
+import java.net.http.HttpRequest.BodyPublishers
+import java.nio.Buffer
+import java.nio.ByteBuffer
 import java.util.concurrent.Flow
+import java.util.concurrent.Flow.Subscription
 import java.util.function.Supplier
 import scala.collection.JavaConverters._
-import java.util.concurrent.Flow.Subscription
-import sttp.client4.httpclient.RequestBodyProgressCallback
 
 private[client4] trait BodyToHttpClient[F[_], S, R] {
   val streams: Streams[S]
@@ -51,7 +57,7 @@ private[client4] trait BodyToHttpClient[F[_], S, R] {
       case Some(cl) => body.map(b => withKnownContentLength(b, cl))
     }
 
-    request.attribute(RequestBodyProgressCallback.Attribute) match {
+    request.attribute(BodyProgressCallback.RequestAttribute) match {
       case None           => bodyWithContentLength
       case Some(callback) => bodyWithContentLength.map(withCallback(_, callback))
     }
@@ -99,7 +105,7 @@ private[client4] trait BodyToHttpClient[F[_], S, R] {
 
   private def withCallback(
       delegate: HttpRequest.BodyPublisher,
-      callback: RequestBodyProgressCallback
+      callback: BodyProgressCallback
   ): HttpRequest.BodyPublisher =
     new HttpRequest.BodyPublisher {
       override def contentLength(): Long = delegate.contentLength()
