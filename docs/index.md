@@ -136,6 +136,7 @@ Third party projects:
    other/resilience
    other/openapi
    other/sse
+   other/body_callbacks
 
 .. toctree::
    :maxdepth: 2

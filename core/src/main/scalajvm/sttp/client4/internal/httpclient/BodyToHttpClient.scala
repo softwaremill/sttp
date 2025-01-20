@@ -16,6 +16,8 @@ import java.nio.{Buffer, ByteBuffer}
 import java.util.concurrent.Flow
 import java.util.function.Supplier
 import scala.collection.JavaConverters._
+import java.util.concurrent.Flow.Subscription
+import sttp.client4.httpclient.RequestBodyCallback
 
 private[client4] trait BodyToHttpClient[F[_], S, R] {
   val streams: Streams[S]
@@ -44,9 +46,14 @@ private[client4] trait BodyToHttpClient[F[_], S, R] {
         multipartBodyPublisher.build().unit
     }
 
-    contentLength match {
+    val bodyWithContentLength = contentLength match {
       case None     => body
       case Some(cl) => body.map(b => withKnownContentLength(b, cl))
+    }
+
+    request.attribute(RequestBodyCallback.Attribute) match {
+      case None           => bodyWithContentLength
+      case Some(callback) => bodyWithContentLength.map(withCallback(_, callback))
     }
   }
 
@@ -88,6 +95,46 @@ private[client4] trait BodyToHttpClient[F[_], S, R] {
     new HttpRequest.BodyPublisher {
       override def contentLength(): Long = cl
       override def subscribe(subscriber: Flow.Subscriber[_ >: ByteBuffer]): Unit = delegate.subscribe(subscriber)
+    }
+
+  private def withCallback(
+      delegate: HttpRequest.BodyPublisher,
+      callback: RequestBodyCallback
+  ): HttpRequest.BodyPublisher =
+    new HttpRequest.BodyPublisher {
+      override def contentLength(): Long = delegate.contentLength()
+      override def subscribe(subscriber: Flow.Subscriber[_ >: ByteBuffer]): Unit = {
+        delegate.subscribe(new Flow.Subscriber[ByteBuffer] {
+          override def onSubscribe(subscription: Subscription): Unit = {
+            runCallbackSafe {
+              val cl = contentLength()
+              callback.onInit(if (cl < 0) None else Some(cl))
+            }
+            subscriber.onSubscribe(subscription)
+          }
+
+          override def onNext(item: ByteBuffer): Unit = {
+            runCallbackSafe(callback.onNext(item))
+            subscriber.onNext(item)
+          }
+
+          override def onComplete(): Unit = {
+            runCallbackSafe(callback.onComplete())
+            subscriber.onComplete()
+          }
+          override def onError(throwable: Throwable): Unit = {
+            runCallbackSafe(callback.onError(throwable))
+            subscriber.onError(throwable)
+          }
+
+          private def runCallbackSafe(f: => Unit): Unit =
+            try f
+            catch {
+              case e: Exception =>
+                System.getLogger(this.getClass().getName()).log(System.Logger.Level.ERROR, "Error in callback", e)
+            }
+        })
+      }
     }
 
   // https://stackoverflow.com/a/6603018/362531
