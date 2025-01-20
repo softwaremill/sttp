@@ -17,7 +17,7 @@ import java.util.concurrent.Flow
 import java.util.function.Supplier
 import scala.collection.JavaConverters._
 import java.util.concurrent.Flow.Subscription
-import sttp.client4.httpclient.RequestBodyCallback
+import sttp.client4.httpclient.RequestBodyProgressCallback
 
 private[client4] trait BodyToHttpClient[F[_], S, R] {
   val streams: Streams[S]
@@ -51,7 +51,7 @@ private[client4] trait BodyToHttpClient[F[_], S, R] {
       case Some(cl) => body.map(b => withKnownContentLength(b, cl))
     }
 
-    request.attribute(RequestBodyCallback.Attribute) match {
+    request.attribute(RequestBodyProgressCallback.Attribute) match {
       case None           => bodyWithContentLength
       case Some(callback) => bodyWithContentLength.map(withCallback(_, callback))
     }
@@ -99,7 +99,7 @@ private[client4] trait BodyToHttpClient[F[_], S, R] {
 
   private def withCallback(
       delegate: HttpRequest.BodyPublisher,
-      callback: RequestBodyCallback
+      callback: RequestBodyProgressCallback
   ): HttpRequest.BodyPublisher =
     new HttpRequest.BodyPublisher {
       override def contentLength(): Long = delegate.contentLength()
@@ -114,7 +114,7 @@ private[client4] trait BodyToHttpClient[F[_], S, R] {
           }
 
           override def onNext(item: ByteBuffer): Unit = {
-            runCallbackSafe(callback.onNext(item))
+            runCallbackSafe(callback.onNext(item.remaining()))
             subscriber.onNext(item)
           }
 
