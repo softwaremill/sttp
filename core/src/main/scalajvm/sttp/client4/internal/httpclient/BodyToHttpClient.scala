@@ -1,19 +1,27 @@
 package sttp.client4.internal.httpclient
 
 import sttp.capabilities.Streams
-import sttp.client4.internal.SttpToJavaConverters.toJavaSupplier
-import sttp.client4.internal.{throwNestedMultipartNotAllowed, Utf8}
-import sttp.client4.compression.Compressor
 import sttp.client4._
-import sttp.model.{Header, HeaderNames, Part}
+import sttp.client4.compression.Compressor
+import sttp.client4.httpclient.BodyProgressCallback
+import sttp.client4.internal.SttpToJavaConverters.toJavaSupplier
+import sttp.client4.internal.Utf8
+import sttp.client4.internal.throwNestedMultipartNotAllowed
+import sttp.model.Header
+import sttp.model.HeaderNames
+import sttp.model.Part
 import sttp.monad.MonadError
 import sttp.monad.syntax._
 
-import java.io.{ByteArrayInputStream, InputStream}
+import java.io.ByteArrayInputStream
+import java.io.InputStream
 import java.net.http.HttpRequest
-import java.net.http.HttpRequest.{BodyPublisher, BodyPublishers}
-import java.nio.{Buffer, ByteBuffer}
+import java.net.http.HttpRequest.BodyPublisher
+import java.net.http.HttpRequest.BodyPublishers
+import java.nio.Buffer
+import java.nio.ByteBuffer
 import java.util.concurrent.Flow
+import java.util.concurrent.Flow.Subscription
 import java.util.function.Supplier
 import scala.collection.JavaConverters._
 
@@ -44,9 +52,14 @@ private[client4] trait BodyToHttpClient[F[_], S, R] {
         multipartBodyPublisher.build().unit
     }
 
-    contentLength match {
+    val bodyWithContentLength = contentLength match {
       case None     => body
       case Some(cl) => body.map(b => withKnownContentLength(b, cl))
+    }
+
+    request.attribute(BodyProgressCallback.RequestAttribute) match {
+      case None           => bodyWithContentLength
+      case Some(callback) => bodyWithContentLength.map(withCallback(_, callback))
     }
   }
 
@@ -88,6 +101,46 @@ private[client4] trait BodyToHttpClient[F[_], S, R] {
     new HttpRequest.BodyPublisher {
       override def contentLength(): Long = cl
       override def subscribe(subscriber: Flow.Subscriber[_ >: ByteBuffer]): Unit = delegate.subscribe(subscriber)
+    }
+
+  private def withCallback(
+      delegate: HttpRequest.BodyPublisher,
+      callback: BodyProgressCallback
+  ): HttpRequest.BodyPublisher =
+    new HttpRequest.BodyPublisher {
+      override def contentLength(): Long = delegate.contentLength()
+      override def subscribe(subscriber: Flow.Subscriber[_ >: ByteBuffer]): Unit = {
+        delegate.subscribe(new Flow.Subscriber[ByteBuffer] {
+          override def onSubscribe(subscription: Subscription): Unit = {
+            runCallbackSafe {
+              val cl = contentLength()
+              callback.onInit(if (cl < 0) None else Some(cl))
+            }
+            subscriber.onSubscribe(subscription)
+          }
+
+          override def onNext(item: ByteBuffer): Unit = {
+            runCallbackSafe(callback.onNext(item.remaining()))
+            subscriber.onNext(item)
+          }
+
+          override def onComplete(): Unit = {
+            runCallbackSafe(callback.onComplete())
+            subscriber.onComplete()
+          }
+          override def onError(throwable: Throwable): Unit = {
+            runCallbackSafe(callback.onError(throwable))
+            subscriber.onError(throwable)
+          }
+
+          private def runCallbackSafe(f: => Unit): Unit =
+            try f
+            catch {
+              case e: Exception =>
+                System.getLogger(this.getClass().getName()).log(System.Logger.Level.ERROR, "Error in callback", e)
+            }
+        })
+      }
     }
 
   // https://stackoverflow.com/a/6603018/362531
