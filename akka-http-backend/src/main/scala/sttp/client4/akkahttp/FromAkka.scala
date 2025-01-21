@@ -1,6 +1,7 @@
 package sttp.client4.akkahttp
 
 import akka.http.scaladsl.model.HttpResponse
+import akka.http.scaladsl.model.EntityStreamSizeException
 import sttp.client4.{GenericRequest, SttpClientException}
 import sttp.model.{Header, HeaderNames}
 
@@ -25,6 +26,7 @@ private[akkahttp] object FromAkka {
           case _ => Some(new SttpClientException.ReadException(request, e))
         }
       case e: akka.stream.scaladsl.TcpIdleTimeoutException => Some(new SttpClientException.TimeoutException(request, e))
+      case e: EntityStreamSizeException                    => Some(new SttpClientException.ReadException(request, e))
       case e: Exception => SttpClientException.defaultExceptionToSttpClientException(request, e)
     }
 }

@@ -2,6 +2,7 @@ package sttp.client4.pekkohttp
 
 import org.apache.pekko
 import pekko.http.scaladsl.model.HttpResponse
+import pekko.http.scaladsl.model.EntityStreamSizeException
 import sttp.client4.{GenericRequest, SttpClientException}
 import sttp.model.{Header, HeaderNames}
 
@@ -27,6 +28,7 @@ private[pekkohttp] object FromPekko {
         }
       case e: pekko.stream.scaladsl.TcpIdleTimeoutException =>
         Some(new SttpClientException.TimeoutException(request, e))
-      case e: Exception => SttpClientException.defaultExceptionToSttpClientException(request, e)
+      case e: EntityStreamSizeException => Some(new SttpClientException.ReadException(request, e))
+      case e: Exception                 => SttpClientException.defaultExceptionToSttpClientException(request, e)
     }
 }

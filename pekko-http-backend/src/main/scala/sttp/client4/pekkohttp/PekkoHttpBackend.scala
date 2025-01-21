@@ -133,11 +133,18 @@ class PekkoHttpBackend private (
     val body = bodyFromPekko(
       r.response,
       responseMetadata,
-      wsFlow.map(Right(_)).getOrElse(Left(decodePekkoResponse(hr, r.autoDecompressionEnabled)))
+      wsFlow
+        .map(Right(_))
+        .getOrElse(
+          Left(decodePekkoResponse(limitPekkoResponseIfNeeded(hr, r.maxResponseBodyLength), r.autoDecompressionEnabled))
+        )
     )
 
     body.map(sttp.client4.Response(_, code, statusText, headers, Nil, r.onlyMetadata))
   }
+
+  private def limitPekkoResponseIfNeeded(response: HttpResponse, limit: Option[Long]): HttpResponse =
+    limit.fold(response)(l => response.withEntity(response.entity.withSizeLimit(l)))
 
   // http://doc.akka.io/docs/akka-http/10.0.7/scala/http/common/de-coding.html
   private def decodePekkoResponse(response: HttpResponse, enableAutoDecompression: Boolean): HttpResponse =
