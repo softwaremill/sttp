@@ -20,6 +20,7 @@ import java.net.http.{HttpClient, HttpRequest, HttpResponse}
 import sttp.client4.compression.CompressionHandlers
 import sttp.client4.compression.Compressor
 import sttp.client4.compression.Decompressor
+import sttp.tapir.server.jdkhttp.internal.FailingLimitedInputStream
 
 class HttpClientCatsBackend[F[_]: Async] private (
     client: HttpClient,
@@ -68,6 +69,9 @@ class HttpClientCatsBackend[F[_]: Async] private (
   override protected def bodyHandlerBodyToBody(p: InputStream): InputStream = p
 
   override protected def emptyBody(): InputStream = emptyInputStream()
+
+  override protected def bodyToLimitedBody(b: InputStream, limit: Long): InputStream =
+    new FailingLimitedInputStream(b, limit)
 }
 
 object HttpClientCatsBackend {

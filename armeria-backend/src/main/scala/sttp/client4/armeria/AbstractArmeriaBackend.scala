@@ -40,6 +40,7 @@ import sttp.model._
 import sttp.monad.syntax._
 import sttp.monad.{Canceler, MonadAsyncError}
 import sttp.client4.compression.Compressor
+import com.linecorp.armeria.common.ContentTooLargeException
 
 abstract class AbstractArmeriaBackend[F[_], S <: Streams[S]](
     client: WebClient = WebClient.of(),
@@ -122,7 +123,7 @@ abstract class AbstractArmeriaBackend[F[_], S <: Streams[S]](
 
     val contentType = customContentType.getOrElse(ArmeriaMediaType.parse(request.body.defaultContentType.toString()))
 
-    body match {
+    val withBody = body match {
       case NoBody => requestPreparation
       case StringBody(s, encoding, _) =>
         val charset =
@@ -149,6 +150,8 @@ abstract class AbstractArmeriaBackend[F[_], S <: Streams[S]](
       case StreamBody(s) =>
         requestPreparation.content(contentType, streamToPublisher(s.asInstanceOf[streams.BinaryStream]))
     }
+
+    request.maxResponseBodyLength.fold(withBody)(l => withBody.maxResponseLength(l))
   }
 
   private def methodToArmeria(method: Method): HttpMethod =
@@ -203,10 +206,9 @@ abstract class AbstractArmeriaBackend[F[_], S <: Streams[S]](
       case ex: UnprocessedRequestException =>
         // The cause of an UnprocessedRequestException is always not null
         Some(new ConnectException(request, ex.getCause.asInstanceOf[Exception]))
-      case ex: ResponseTimeoutException =>
-        Some(new TimeoutException(request, ex))
-      case ex: ClosedStreamException =>
-        Some(new ReadException(request, ex))
+      case ex: ResponseTimeoutException => Some(new TimeoutException(request, ex))
+      case ex: ClosedStreamException    => Some(new ReadException(request, ex))
+      case ex: ContentTooLargeException => Some(new ReadException(request, ex))
       case ex =>
         SttpClientException.defaultExceptionToSttpClientException(request, ex)
     }

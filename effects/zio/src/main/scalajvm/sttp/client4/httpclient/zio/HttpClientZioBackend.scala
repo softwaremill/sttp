@@ -85,6 +85,9 @@ class HttpClientZioBackend private (
     } yield new ZioSimpleQueue(queue, runtime)
 
   override protected def createSequencer: Task[Sequencer[Task]] = ZioSequencer.create
+
+  override protected def bodyToLimitedBody(b: ZioStreams.BinaryStream, limit: Long): ZioStreams.BinaryStream =
+    ZioStreams.limitBytes(b, limit)
 }
 
 object HttpClientZioBackend {

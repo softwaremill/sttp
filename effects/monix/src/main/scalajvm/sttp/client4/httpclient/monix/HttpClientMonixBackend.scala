@@ -24,6 +24,7 @@ import java.{util => ju}
 import scala.collection.JavaConverters._
 import sttp.client4.compression.CompressionHandlers
 import sttp.client4.compression.Compressor
+import sttp.capabilities.StreamMaxLengthExceededException
 
 class HttpClientMonixBackend private (
     client: HttpClient,
@@ -74,6 +75,19 @@ class HttpClientMonixBackend private (
       .map(_.safeRead())
 
   override protected def emptyBody(): Observable[Array[Byte]] = Observable.empty
+
+  override protected def bodyToLimitedBody(b: Observable[Array[Byte]], limit: Long): Observable[Array[Byte]] = {
+    b
+      .scan((0L, Option.empty[Array[Byte]])) { case ((acc, _), chunk) =>
+        val newAcc = acc + chunk.length
+        if (newAcc > limit) (newAcc, None) // Signal overflow
+        else (newAcc, Some(chunk)) // Allow the chunk
+      }
+      .flatMap {
+        case (_, Some(chunk)) => Observable.now(chunk) // Pass through chunks
+        case (_, None)        => Observable.raiseError(new StreamMaxLengthExceededException(limit))
+      }
+  }
 }
 
 object HttpClientMonixBackend {

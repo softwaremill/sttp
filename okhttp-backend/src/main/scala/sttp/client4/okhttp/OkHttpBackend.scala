@@ -23,6 +23,7 @@ import scala.collection.JavaConverters._
 import sttp.client4.compression.Compressor
 import sttp.client4.compression.CompressionHandlers
 import sttp.client4.compression.Decompressor
+import sttp.tapir.server.jdkhttp.internal.FailingLimitedInputStream
 
 abstract class OkHttpBackend[F[_], S <: Streams[S], P](
     client: OkHttpClient,
@@ -89,6 +90,9 @@ abstract class OkHttpBackend[F[_], S <: Streams[S], P](
     val responseMetadata = ResponseMetadata(StatusCode(res.code()), res.message(), headers)
     val encoding = headers.collectFirst { case h if h.is(HeaderNames.ContentEncoding) => h.value }
     val method = Method(res.request().method())
+    val inputStream = res.body().byteStream()
+    val limitedInputStream =
+      request.maxResponseBodyLength.fold(inputStream)(l => new FailingLimitedInputStream(inputStream, l))
     val byteBody =
       if (
         method != Method.HEAD && !res
@@ -97,10 +101,10 @@ abstract class OkHttpBackend[F[_], S <: Streams[S], P](
       ) {
         encoding
           .filterNot(_.isEmpty)
-          .map(e => Decompressor.decompressIfPossible(res.body().byteStream(), e, compressionHandlers.decompressors))
-          .getOrElse(res.body().byteStream())
+          .map(e => Decompressor.decompressIfPossible(limitedInputStream, e, compressionHandlers.decompressors))
+          .getOrElse(limitedInputStream)
       } else {
-        res.body().byteStream()
+        limitedInputStream
       }
 
     val body = bodyFromOkHttp(byteBody, responseAs, responseMetadata, None)

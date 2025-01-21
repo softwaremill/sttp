@@ -40,6 +40,7 @@ import scala.concurrent.duration.Duration
 import sttp.client4.GenericRequestBody
 import sttp.client4.compression.CompressionHandlers
 import sttp.client4.compression.Decompressor
+import sttp.tapir.server.jdkhttp.internal.FailingLimitedInputStream
 
 class HttpURLConnectionBackend private (
     opts: BackendOptions,
@@ -81,7 +82,8 @@ class HttpURLConnectionBackend private (
 
       try {
         val is = c.getInputStream
-        readResponse(c, is, r)
+        val limitedIs = r.options.maxResponseBodyLength.fold(is)(new FailingLimitedInputStream(is, _))
+        readResponse(c, limitedIs, r)
       } catch {
         case e: CharacterCodingException     => throw e
         case e: UnsupportedEncodingException => throw e

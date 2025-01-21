@@ -16,6 +16,10 @@ import sttp.client4.logging.LoggingOptions
   *   [[sttp.model.Encodings.Gzip]] and [[sttp.model.Encodings.Deflate]] encodings, but others might available as well;
   *   refer to the backend documentation for details. If an encoding is not supported, an exception is thrown / a failed
   *   effect returned, when sending the request.
+  * @param maxResponseBodyLength
+  *   The maximum length of the response body (in bytes). When sending the request, if the response body is longer, an
+  *   exception is thrown / a failed effect is returned. By default, when `None`, the is no limit on the response body's
+  *   length.
   */
 case class RequestOptions(
     followRedirects: Boolean,
@@ -25,5 +29,6 @@ case class RequestOptions(
     decompressResponseBody: Boolean,
     compressRequestBody: Option[String],
     httpVersion: Option[HttpVersion],
-    loggingOptions: LoggingOptions
+    loggingOptions: LoggingOptions,
+    maxResponseBodyLength: Option[Long]
 )

@@ -6,7 +6,7 @@ import cats.effect.concurrent.MVar
 import cats.effect.{Blocker, Concurrent, ConcurrentEffect, ContextShift, Resource, Sync}
 import cats.implicits._
 import cats.effect.implicits._
-import fs2.{Chunk, Stream}
+import fs2.{Chunk, Stream, Pull}
 import org.http4s.{EntityBody, Request => Http4sRequest, Status}
 import org.http4s
 import org.http4s.blaze.client.BlazeClientBuilder
@@ -27,6 +27,7 @@ import sttp.client4.compression.CompressionHandlers
 import sttp.client4.impl.fs2.GZipFs2Decompressor
 import sttp.client4.impl.fs2.DeflateFs2Decompressor
 import sttp.client4.compression.Decompressor
+import sttp.capabilities.StreamMaxLengthExceededException
 
 import scala.concurrent.ExecutionContext
 
@@ -84,6 +85,10 @@ class Http4sBackend[F[_]: ConcurrentEffect: ContextShift](
               val statusText = response.status.reason
               val responseMetadata = ResponseMetadata(code, statusText, headers)
 
+              val limitedResponse: org.http4s.Response[F] =
+                r.options.maxResponseBodyLength
+                  .fold(response)(limit => response.copy(body = limitBytes(response.body, limit)))
+
               val signalBodyComplete = responseBodyCompleteVar.tryPut(()).map(_ => ())
               val body =
                 bodyFromResponseAs(signalBodyComplete)(
@@ -91,7 +96,7 @@ class Http4sBackend[F[_]: ConcurrentEffect: ContextShift](
                   responseMetadata,
                   Left(
                     onFinalizeSignal(
-                      decompressResponseBodyIfNotHead(r.method, response, r.autoDecompressionEnabled),
+                      decompressResponseBodyIfNotHead(r.method, limitedResponse, r.autoDecompressionEnabled),
                       signalBodyComplete
                     )
                   )
@@ -259,6 +264,24 @@ class Http4sBackend[F[_]: ConcurrentEffect: ContextShift](
       case e: org.http4s.InvalidResponseException => Some(new SttpClientException.ReadException(request, e))
       case e: Exception => SttpClientException.defaultExceptionToSttpClientException(request, e)
     }
+
+  // based on Fs2Streams.limitBytes (for ce3)
+  private def limitBytes[F[_]](stream: Stream[F, Byte], maxBytes: Long): Stream[F, Byte] = {
+    def go(s: Stream[F, Byte], remaining: Long): Pull[F, Byte, Unit] = {
+      if (remaining < 0) throw new StreamMaxLengthExceededException(maxBytes)
+      else
+        s.pull.uncons.flatMap {
+          case Some((chunk, tail)) =>
+            val chunkSize = chunk.size.toLong
+            if (chunkSize <= remaining)
+              Pull.output(chunk) >> go(tail, remaining - chunkSize)
+            else
+              throw new StreamMaxLengthExceededException(maxBytes)
+          case None => Pull.done
+        }
+    }
+    go(stream, maxBytes).stream
+  }
 
   override implicit val monad: MonadError[F] = new CatsMonadAsyncError
 

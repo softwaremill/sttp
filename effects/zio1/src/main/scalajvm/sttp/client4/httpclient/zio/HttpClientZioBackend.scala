@@ -25,6 +25,7 @@ import java.{util => ju}
 import scala.collection.JavaConverters._
 import sttp.client4.compression.CompressionHandlers
 import sttp.client4.compression.Compressor
+import sttp.capabilities.StreamMaxLengthExceededException
 
 class HttpClientZioBackend private (
     client: HttpClient,
@@ -85,6 +86,19 @@ class HttpClientZioBackend private (
     } yield new ZioSimpleQueue(queue, runtime)
 
   override protected def createSequencer: Task[Sequencer[Task]] = ZioSequencer.create
+
+  override protected def bodyToLimitedBody(b: ZioStreams.BinaryStream, limit: Long): ZioStreams.BinaryStream =
+    b
+      .mapChunks { chunk => Chunk(chunk) }
+      .mapAccumM(0L) { (totalBytesRead, chunk) =>
+        val newTotal = totalBytesRead + chunk.size
+        if (newTotal > limit) {
+          ZIO.fail(new StreamMaxLengthExceededException(limit))
+        } else {
+          ZIO.succeed((newTotal, chunk))
+        }
+      }
+      .mapChunks(chunk => chunk.flatten)
 }
 
 object HttpClientZioBackend {

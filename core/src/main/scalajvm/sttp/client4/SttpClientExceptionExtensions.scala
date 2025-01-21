@@ -5,6 +5,7 @@ import sttp.client4.ws.{GotAWebSocketException, NotAWebSocketException}
 
 import scala.annotation.tailrec
 import sttp.client4.SttpClientException.ResponseHandlingException
+import sttp.capabilities.StreamMaxLengthExceededException
 
 trait SttpClientExceptionExtensions {
   @tailrec
@@ -25,6 +26,7 @@ trait SttpClientExceptionExtensions {
       case e: java.io.IOException                   => Some(new ReadException(request, e))
       case e: NotAWebSocketException                => Some(new ReadException(request, e))
       case e: GotAWebSocketException                => Some(new ReadException(request, e))
+      case e: StreamMaxLengthExceededException      => Some(new ReadException(request, e))
       case e: ResponseException[_]                  => Some(new ResponseHandlingException(request, e))
       case e if e.getCause != null && e.getCause.isInstanceOf[Exception] =>
         defaultExceptionToSttpClientException(request, e.getCause.asInstanceOf[Exception])

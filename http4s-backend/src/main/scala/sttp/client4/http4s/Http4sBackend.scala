@@ -83,6 +83,11 @@ class Http4sBackend[F[_]: Async](
               val statusText = response.status.reason
               val responseMetadata = ResponseMetadata(code, statusText, headers)
 
+              val limitedResponse: org.http4s.Response[F] =
+                r.options.maxResponseBodyLength.fold(response)(limit =>
+                  response.copy(body = Fs2Streams.limitBytes(response.body, limit))
+                )
+
               val signalBodyComplete = responseBodyCompleteVar.complete(()).map(_ => ())
               val body =
                 bodyFromResponseAs(signalBodyComplete)(
@@ -90,7 +95,7 @@ class Http4sBackend[F[_]: Async](
                   responseMetadata,
                   Left(
                     onFinalizeSignal(
-                      decompressResponseBodyIfNotHead(r.method, response, r.autoDecompressionEnabled),
+                      decompressResponseBodyIfNotHead(r.method, limitedResponse, r.autoDecompressionEnabled),
                       signalBodyComplete
                     )
                   )

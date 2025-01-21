@@ -17,6 +17,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import sttp.client4.compression.Compressor
 import sttp.client4.compression.CompressionHandlers
 import sttp.client4.compression.Decompressor
+import sttp.tapir.server.jdkhttp.internal.FailingLimitedInputStream
 
 class HttpClientFutureBackend private (
     client: HttpClient,
@@ -63,6 +64,9 @@ class HttpClientFutureBackend private (
   override protected def bodyHandlerBodyToBody(p: InputStream): InputStream = p
 
   override protected def emptyBody(): InputStream = emptyInputStream()
+
+  override protected def bodyToLimitedBody(b: InputStream, limit: Long): InputStream =
+    new FailingLimitedInputStream(b, limit)
 }
 
 object HttpClientFutureBackend {

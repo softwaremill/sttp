@@ -82,6 +82,9 @@ class HttpClientFs2Backend[F[_]: Async] private (
       .flatMap(data => Stream.emits(data.asScala.map(Chunk.byteBuffer)).flatMap(Stream.chunk))
 
   override protected def emptyBody(): Stream[F, Byte] = Stream.empty
+
+  override protected def bodyToLimitedBody(b: Stream[F, Byte], limit: Long): Stream[F, Byte] =
+    Fs2Streams.limitBytes(b, limit)
 }
 
 object HttpClientFs2Backend {

@@ -371,6 +371,14 @@ trait PartialRequestBuilder[+PR <: PartialRequestBuilder[PR, R], +R]
     */
   def loggingOptions: LoggingOptions = options.loggingOptions
 
+  /** Set the maximum response body length. When sending the request, if the response body is longer, an exception is
+    * thrown / a failed effect is returned. By default, there's no limit on the response body's length.
+    */
+  def maxResponseBodyLength(limit: Long): PR = withOptions(options.copy(maxResponseBodyLength = Some(limit)))
+
+  /** The maximum response body length, if any. */
+  def maxResponseBodyLength: Option[Long] = options.maxResponseBodyLength
+
   /** Reads a per-request attribute for the given key, if present. */
   def attribute[T](k: AttributeKey[T]): Option[T] = attributes.get(k)
 
