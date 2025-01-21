@@ -58,6 +58,7 @@ trait HttpTest[F[_]]
   protected def supportsDeflateWrapperChecking = true
   protected def supportsEmptyContentEncoding = true
   protected def supportsNonAsciiHeaderValues = true
+  protected def supportsMaxResponseBodyLength = true
 
   "request parsing" - {
     "Inf timeout should not throw exception" in {
@@ -739,24 +740,26 @@ trait HttpTest[F[_]]
     }
   }
 
-  "maxResponseBodyLength" - {
-    "should be enforced when set" in {
-      val req = postEchoExact
-        .body("01234567890123456789") // 20 bytes
-        .maxResponseBodyLength(10)
+  if (supportsMaxResponseBodyLength) {
+    "maxResponseBodyLength" - {
+      "should be enforced when set" in {
+        val req = postEchoExact
+          .body("01234567890123456789") // 20 bytes
+          .maxResponseBodyLength(10)
 
-      Future(req.send(backend)).flatMap(_.toFuture()).failed.map { e =>
-        e shouldBe a[SttpClientException.ReadException]
+        Future(req.send(backend)).flatMap(_.toFuture()).failed.map { e =>
+          e shouldBe a[SttpClientException.ReadException]
+        }
       }
-    }
 
-    "should have no effect when the limit is not reached" in {
-      val req = postEchoExact
-        .body("0123456789")
-        .maxResponseBodyLength(10) // the limit is reached exactly
+      "should have no effect when the limit is not reached" in {
+        val req = postEchoExact
+          .body("0123456789")
+          .maxResponseBodyLength(10) // the limit is reached exactly
 
-      Future(req.send(backend)).flatMap(_.toFuture()).map { r =>
-        r.body shouldBe Right("0123456789")
+        Future(req.send(backend)).flatMap(_.toFuture()).map { r =>
+          r.body shouldBe Right("0123456789")
+        }
       }
     }
   }
