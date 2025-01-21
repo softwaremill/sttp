@@ -7,7 +7,7 @@ import java.{util => ju}
 import cats.effect._
 import cats.effect.implicits._
 import cats.implicits._
-import fs2.{Chunk, Stream}
+import fs2.{Chunk, Stream, Pull}
 import fs2.concurrent.InspectableQueue
 import fs2.interop.reactivestreams._
 import org.reactivestreams.FlowAdapters
@@ -29,6 +29,7 @@ import sttp.client4.compression.CompressionHandlers
 import sttp.client4.compression.Compressor
 import sttp.client4.impl.fs2.GZipFs2Decompressor
 import sttp.client4.impl.fs2.DeflateFs2Decompressor
+import sttp.capabilities.StreamMaxLengthExceededException
 
 class HttpClientFs2Backend[F[_]: ConcurrentEffect: ContextShift] private (
     client: HttpClient,
@@ -81,6 +82,26 @@ class HttpClientFs2Backend[F[_]: ConcurrentEffect: ContextShift] private (
       .flatMap(data => Stream.emits(data.asScala.map(Chunk.byteBuffer)).flatMap(Stream.chunk))
 
   override protected def emptyBody(): Stream[F, Byte] = Stream.empty
+
+  override protected def bodyToLimitedBody(b: Stream[F, Byte], limit: Long): Stream[F, Byte] = limitBytes(b, limit)
+
+  // based on Fs2Streams.limitBytes (for ce3)
+  private def limitBytes[F[_]](stream: Stream[F, Byte], maxBytes: Long): Stream[F, Byte] = {
+    def go(s: Stream[F, Byte], remaining: Long): Pull[F, Byte, Unit] = {
+      if (remaining < 0) throw new StreamMaxLengthExceededException(maxBytes)
+      else
+        s.pull.uncons.flatMap {
+          case Some((chunk, tail)) =>
+            val chunkSize = chunk.size.toLong
+            if (chunkSize <= remaining)
+              Pull.output(chunk) >> go(tail, remaining - chunkSize)
+            else
+              throw new StreamMaxLengthExceededException(maxBytes)
+          case None => Pull.done
+        }
+    }
+    go(stream, maxBytes).stream
+  }
 }
 
 object HttpClientFs2Backend {
