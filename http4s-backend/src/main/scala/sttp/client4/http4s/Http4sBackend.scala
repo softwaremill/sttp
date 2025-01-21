@@ -83,7 +83,7 @@ class Http4sBackend[F[_]: Async](
               val statusText = response.status.reason
               val responseMetadata = ResponseMetadata(code, statusText, headers)
 
-              val limitedResponse =
+              val limitedResponse: org.http4s.Response[F] =
                 r.options.maxResponseBodyLength.fold(response)(limit =>
                   response.copy(body = Fs2Streams.limitBytes(response.body, limit))
                 )

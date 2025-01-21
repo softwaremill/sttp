@@ -85,7 +85,7 @@ class Http4sBackend[F[_]: ConcurrentEffect: ContextShift](
               val statusText = response.status.reason
               val responseMetadata = ResponseMetadata(code, statusText, headers)
 
-              val limitedResponse =
+              val limitedResponse: org.http4s.Response[F] =
                 r.options.maxResponseBodyLength
                   .fold(response)(limit => response.copy(body = limitBytes(response.body, limit)))
 
