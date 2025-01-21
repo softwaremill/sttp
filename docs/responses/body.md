@@ -266,4 +266,4 @@ If you'd like to use additional decompression algorithms, you'll need to:
 
 To limit the size of the response body, use the `maxResponseBodyLength` method on the request description. This modified the `RequestOption`s associated with the request. By default, there's no limit set.
 
-When a limit is set and it is exceed, sending the request will fail with a `SttpClientException.ReadException`, with the cause being `StreamMaxLengthExceededException`.
+When a limit is set and it is exceed, sending the request will fail with a `SttpClientException.ReadException`.
