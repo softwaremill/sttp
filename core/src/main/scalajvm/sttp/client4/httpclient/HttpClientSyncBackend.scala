@@ -20,6 +20,7 @@ import java.util.concurrent.{ArrayBlockingQueue, CompletionException}
 import sttp.client4.compression.Compressor
 import sttp.client4.compression.CompressionHandlers
 import sttp.client4.compression.Decompressor
+import sttp.tapir.server.jdkhttp.internal.FailingLimitedInputStream
 
 class HttpClientSyncBackend private (
     client: HttpClient,
@@ -38,7 +39,9 @@ class HttpClientSyncBackend private (
   override protected def sendRegular[T](request: GenericRequest[T, R]): Response[T] = {
     val jRequest = customizeRequest(convertRequest(request))
     val response = client.send(jRequest, BodyHandlers.ofInputStream())
-    readResponse(response, Left(response.body()), request)
+    val body = response.body()
+    val limitedBody = request.options.maxResponseBodyLength.fold(body)(new FailingLimitedInputStream(body, _))
+    readResponse(response, Left(limitedBody), request)
   }
 
   override protected def sendWebSocket[T](request: GenericRequest[T, R]): Response[T] = {

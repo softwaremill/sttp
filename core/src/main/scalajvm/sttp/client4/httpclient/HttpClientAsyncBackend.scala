@@ -37,6 +37,7 @@ abstract class HttpClientAsyncBackend[F[_], S <: Streams[S], BH, B](
   protected def createSequencer: F[Sequencer[F]]
   protected def createBodyHandler: HttpResponse.BodyHandler[BH]
   protected def bodyHandlerBodyToBody(p: BH): B
+  protected def bodyToLimitedBody(b: B, limit: Long): B
   protected def emptyBody(): B
 
   override def sendRegular[T](request: GenericRequest[T, R]): F[Response[T]] =
@@ -55,7 +56,9 @@ abstract class HttpClientAsyncBackend[F[_], S <: Streams[S], BH, B](
               .map(bodyHandlerBodyToBody)
               .getOrElse(emptyBody())
 
-            try success(readResponse(t, Left(body), request))
+            val limitedBody = request.options.maxResponseBodyLength.fold(body)(bodyToLimitedBody(body, _))
+
+            try success(readResponse(t, Left(limitedBody), request))
             catch {
               case e: Exception => error(e)
             }

@@ -1,4 +1,4 @@
-# Response body descriptions
+# Response body
 
 By default, the received response body will be read as a `Either[String, String]`, using the encoding specified in the `Content-Type` response header (and if none is specified, using `UTF-8`). This is of course configurable: response bodies can be ignored, deserialized into custom types, received as a stream or saved to a file.
 
@@ -251,7 +251,7 @@ val response: Future[Response[Either[String, Source[ByteString, Any]]]] =
 
 It's also possible to parse the received stream as server-sent events (SSE), using an implementation-specific mapping function. Refer to the documentation for particular backends for more details.
 
-## Decompressing bodies (handling the Conent-Encoding header)
+## Decompressing bodies (handling the Content-Encoding header)
 
 If the response body is compressed using `gzip` or `deflate` algorithms, it will be decompressed if the `decompressResponseBody` request option is set. By default this is set to `true`, and can be disabled using the `request.disableAutoDecompression` method.
 
@@ -260,4 +260,10 @@ The encoding of the response body is determined by the encodings that are accept
 If you'd like to use additional decompression algorithms, you'll need to:
 
 * amend the `Accept-Encoding` header that's set on the request
-* add a decompression algorithm to the backend; that can be done on backend creation time, by customising the `compressionHandlers` parameter, and adding a `Decompressor` implementation. Such an implementation has to specify the encoding, which it handles, as well as appropriate body transformation (which is backend-specific).
+* add a decompression algorithm to the backend; that can be done on backend creation time, by customizing the `compressionHandlers` parameter, and adding a `Decompressor` implementation. Such an implementation has to specify the encoding, which it handles, as well as appropriate body transformation (which is backend-specific).
+
+## Limiting the response body size
+
+To limit the size of the response body, use the `maxResponseBodyLength` method on the request description. This modified the `RequestOption`s associated with the request. By default, there's no limit set.
+
+When a limit is set and it is exceed, sending the request will fail with a `SttpClientException.ReadException`, with the cause being `StreamMaxLengthExceededException`.
