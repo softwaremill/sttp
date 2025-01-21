@@ -207,13 +207,17 @@ class FinagleBackend(client: Option[Client] = None) extends Backend[TFuture] {
         case _             => Http.client
       }
     }
+
+    val limitedClient =
+      request.maxResponseBodyLength.fold(client)(l => client.withMaxResponseSize(util.StorageUnit.fromBytes(l)))
+
     val timeout = request.options.readTimeout
     if (timeout.isFinite) {
-      client
+      limitedClient
         .withRequestTimeout(Duration.fromMilliseconds(timeout.toMillis))
         .newService(uriToFinagleDestination(request.uri))
     } else {
-      client
+      limitedClient
         .withRequestTimeout(Duration.Top) // Finagle counterpart of Duration.Inf as far as I understand
         .newService(uriToFinagleDestination(request.uri))
     }
@@ -239,6 +243,8 @@ class FinagleBackend(client: Option[Client] = None) extends Backend[TFuture] {
       case e: com.twitter.finagle.ChannelClosedException => Some(new SttpClientException.ReadException(request, e))
       case e: com.twitter.finagle.IndividualRequestTimeoutException =>
         Some(new SttpClientException.TimeoutException(request, e))
+      case e: com.twitter.finagle.http.TooLongMessageException =>
+        Some(new SttpClientException.ReadException(request, e))
       case e: Exception => SttpClientException.defaultExceptionToSttpClientException(request, e)
     }
 }
