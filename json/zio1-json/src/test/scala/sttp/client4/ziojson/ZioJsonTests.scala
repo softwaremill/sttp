@@ -80,7 +80,7 @@ class ZioJsonTests extends AnyFlatSpec with Matchers with EitherValues {
 
     val ct = req.headers.map(h => (h.name, h.value)).toMap.get("Content-Type")
 
-    ct shouldBe Some(MediaType.ApplicationJson.copy(charset = Some(Utf8)).toString)
+    ct shouldBe Some(MediaType.ApplicationJson.toString)
   }
 
   it should "only set the content type if it was not set earlier" in {
