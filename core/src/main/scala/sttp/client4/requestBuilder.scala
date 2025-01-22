@@ -182,8 +182,7 @@ trait PartialRequestBuilder[+PR <: PartialRequestBuilder[PR, R], +R]
     *
     * If content length is not yet specified, will be set to the number of bytes in the string using the given encoding.
     */
-  def body(b: String, encoding: String): PR =
-    body(StringBody(b, encoding)).setContentLengthIfMissing(b.getBytes(encoding).length.toLong)
+  def body(b: String, encoding: String): PR = body(StringBody(b, encoding))
 
   /** Sets the body of this request to the given byte array.
     *
@@ -191,7 +190,7 @@ trait PartialRequestBuilder[+PR <: PartialRequestBuilder[PR, R], +R]
     *
     * If content length is not yet specified, will be set to the length of the given array.
     */
-  def body(b: Array[Byte]): PR = body(ByteArrayBody(b)).setContentLengthIfMissing(b.length.toLong)
+  def body(b: Array[Byte]): PR = body(ByteArrayBody(b))
 
   /** Sets the body of this request to the given byte buffer.
     *
@@ -209,7 +208,7 @@ trait PartialRequestBuilder[+PR <: PartialRequestBuilder[PR, R], +R]
     *
     * If content length is not yet specified, will be set to the length of the given file.
     */
-  private[client4] def body(f: SttpFile): PR = body(FileBody(f)).setContentLengthIfMissing(f.size)
+  private[client4] def body(f: SttpFile): PR = body(FileBody(f))
 
   /** Sets the body of this request to the given form-data parameters. The parameters are encoded using UTF-8.
     *
@@ -251,18 +250,14 @@ trait PartialRequestBuilder[+PR <: PartialRequestBuilder[PR, R], +R]
 
   private def formDataBody(fs: Seq[(String, String)], encoding: String): PR = {
     val b = BasicBody.paramsToStringBody(fs, encoding)
-    copyWithBody(b)
-      .setContentTypeIfMissing(MediaType.ApplicationXWwwFormUrlencoded)
-      .setContentLengthIfMissing(b.s.getBytes(encoding).length.toLong)
+    setContentTypeIfMissing(MediaType.ApplicationXWwwFormUrlencoded).body(b)
   }
 
   /** Sets the body of this request to the given multipart form parts. */
-  def multipartBody(ps: Seq[Part[BasicBodyPart]]): PR = copyWithBody(BasicMultipartBody(ps))
+  def multipartBody(ps: Seq[Part[BasicBodyPart]]): PR = body(BasicMultipartBody(ps))
 
   /** Sets the body of this request to the given multipart form parts. */
-  def multipartBody(p1: Part[BasicBodyPart], ps: Part[BasicBodyPart]*): PR = copyWithBody(
-    BasicMultipartBody(p1 :: ps.toList)
-  )
+  def multipartBody(p1: Part[BasicBodyPart], ps: Part[BasicBodyPart]*): PR = body(BasicMultipartBody(p1 :: ps.toList))
 
   /** Sets the body of this request to the given [[BasicBody]] implementation.
     *
@@ -271,13 +266,19 @@ trait PartialRequestBuilder[+PR <: PartialRequestBuilder[PR, R], +R]
     */
   def body(body: BasicBody): PR = {
     val defaultCt = body match {
-      case StringBody(_, encoding, ct) =>
-        ct.copy(charset = Some(encoding))
-      case _ =>
-        body.defaultContentType
+      case StringBody(_, encoding, ct) => ct.copy(charset = Some(encoding))
+      case _                           => body.defaultContentType
     }
 
-    copyWithBody(body).setContentTypeIfMissing(defaultCt)
+    val withBody = copyWithBody(body).setContentTypeIfMissing(defaultCt)
+
+    body match {
+      case StringBody(b, encoding, _) => withBody.setContentLengthIfMissing(b.getBytes(encoding).length.toLong)
+      case ByteArrayBody(b, _)        => withBody.setContentLengthIfMissing(b.length.toLong)
+      case ByteBufferBody(b, _)       => withBody.setContentLengthIfMissing(b.remaining().toLong)
+      case FileBody(f, _)             => withBody.setContentLengthIfMissing(f.size)
+      case _                          => withBody
+    }
   }
 
   /** When the request is sent, if reading the response times out (there's no activity for the given period of time), a
