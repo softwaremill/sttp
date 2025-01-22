@@ -4,7 +4,6 @@ import org.scalatest.EitherValues
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import sttp.client4._
-import sttp.client4.internal._
 import sttp.model._
 import tethys.derivation.semiauto.{jsonReader, jsonWriter}
 import tethys.jackson.{jacksonTokenIteratorProducer, jacksonTokenWriterProducer}
@@ -87,7 +86,7 @@ class TethysTests extends AnyFlatSpec with Matchers with EitherValues {
 
     val ct = req.headers.map(h => (h.name, h.value)).toMap.get("Content-Type")
 
-    ct shouldBe Some(MediaType.ApplicationJson.copy(charset = Some(Utf8)).toString)
+    ct shouldBe Some(MediaType.ApplicationJson.toString)
   }
 
   it should "only set the content type if it was not set earlier" in {

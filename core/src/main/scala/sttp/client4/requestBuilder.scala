@@ -266,8 +266,11 @@ trait PartialRequestBuilder[+PR <: PartialRequestBuilder[PR, R], +R]
     */
   def body(body: BasicBody): PR = {
     val defaultCt = body match {
-      case StringBody(_, encoding, ct) => ct.copy(charset = Some(encoding))
-      case _                           => body.defaultContentType
+      // from the textual content types, application/json is always utf-8 and doesn't need the charset parameter
+      // for all others, the charset parameter is added
+      case StringBody(_, encoding, ct) =>
+        if (ct != MediaType.ApplicationJson || encoding != Utf8) ct.copy(charset = Some(encoding)) else ct
+      case _ => body.defaultContentType
     }
 
     val withBody = copyWithBody(body).setContentTypeIfMissing(defaultCt)

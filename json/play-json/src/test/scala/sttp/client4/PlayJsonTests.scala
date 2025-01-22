@@ -1,6 +1,5 @@
 package sttp.client4
 
-import sttp.client4.internal._
 import sttp.client4.playJson._
 import sttp.model._
 import play.api.libs.json._
@@ -90,7 +89,7 @@ class PlayJsonTests extends AnyFlatSpec with Matchers with EitherValues {
 
     val ct = req.headers.map(h => (h.name, h.value)).toMap.get("Content-Type")
 
-    ct shouldBe Some(MediaType.ApplicationJson.copy(charset = Some(Utf8)).toString)
+    ct shouldBe Some(MediaType.ApplicationJson.toString)
   }
 
   it should "only set the content type if it was not set earlier" in {
@@ -112,7 +111,7 @@ class PlayJsonTests extends AnyFlatSpec with Matchers with EitherValues {
     val actualContentType: Option[String] = request.contentType
 
     val expectedBody: String = "string: {\"location\":\"hometown\",\"bio\":\"Scala programmer\"}"
-    val expectedContentType: Option[String] = Some("application/json; charset=utf-8")
+    val expectedContentType: Option[String] = Some("application/json")
 
     actualBody should be(expectedBody)
     actualContentType should be(expectedContentType)
