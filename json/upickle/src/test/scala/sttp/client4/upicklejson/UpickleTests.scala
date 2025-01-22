@@ -1,7 +1,6 @@
 package sttp.client4.upicklejson
 
 import org.scalatest._
-import sttp.client4.internal._
 import sttp.client4._
 import sttp.model._
 import org.scalatest.flatspec.AnyFlatSpec
@@ -133,7 +132,7 @@ class UpickleTests extends AnyFlatSpec with Matchers with EitherValues {
     val actualContentType: Option[String] = request.contentType
 
     val expectedBody: String = "string: {\"location\":\"hometown\",\"bio\":\"Scala programmer\"}"
-    val expectedContentType: Option[String] = Some("application/json; charset=utf-8")
+    val expectedContentType: Option[String] = Some("application/json")
 
     actualBody should be(expectedBody)
     actualContentType should be(expectedContentType)

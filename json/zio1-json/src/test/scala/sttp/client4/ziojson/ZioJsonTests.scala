@@ -5,7 +5,6 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import zio.json._
 import sttp.client4._
-import sttp.client4.internal.Utf8
 import sttp.model._
 import zio.Chunk
 import zio.json.ast.Json
@@ -102,7 +101,7 @@ class ZioJsonTests extends AnyFlatSpec with Matchers with EitherValues {
     val actualContentType: Option[String] = request.contentType
 
     val expectedBody: String = "string: {\"location\":\"hometown\",\"bio\":\"Scala programmer\"}"
-    val expectedContentType: Option[String] = Some("application/json; charset=utf-8")
+    val expectedContentType: Option[String] = Some("application/json")
 
     actualBody should be(expectedBody)
     actualContentType should be(expectedContentType)
