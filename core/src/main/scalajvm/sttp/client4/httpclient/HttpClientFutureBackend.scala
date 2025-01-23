@@ -1,23 +1,32 @@
 package sttp.client4.httpclient
 
+import sttp.client4.BackendOptions
+import sttp.client4.WebSocketBackend
+import sttp.client4.compression.CompressionHandlers
+import sttp.client4.compression.Compressor
+import sttp.client4.compression.Decompressor
+import sttp.client4.internal.NoStreams
+import sttp.client4.internal.emptyInputStream
 import sttp.client4.internal.httpclient._
-import sttp.client4.internal.ws.{FutureSimpleQueue, SimpleQueue}
-import sttp.client4.internal.{emptyInputStream, NoStreams}
+import sttp.client4.internal.ws.FutureSimpleQueue
+import sttp.client4.internal.ws.SimpleQueue
 import sttp.client4.testing.WebSocketBackendStub
-import sttp.client4.{wrappers, BackendOptions, WebSocketBackend}
-import sttp.monad.{FutureMonad, MonadError}
-import sttp.ws.{WebSocket, WebSocketFrame}
+import sttp.client4.wrappers
+import sttp.monad.FutureMonad
+import sttp.monad.MonadError
+import sttp.tapir.server.jdkhttp.internal.FailingLimitedInputStream
+import sttp.ws.WebSocket
+import sttp.ws.WebSocketFrame
 
 import java.io.InputStream
+import java.net.http.HttpClient
+import java.net.http.HttpRequest
 import java.net.http.HttpRequest.BodyPublisher
+import java.net.http.HttpResponse
 import java.net.http.HttpResponse.BodyHandlers
-import java.net.http.{HttpClient, HttpRequest, HttpResponse}
 import java.util.concurrent.Executor
-import scala.concurrent.{ExecutionContext, Future}
-import sttp.client4.compression.Compressor
-import sttp.client4.compression.CompressionHandlers
-import sttp.client4.compression.Decompressor
-import sttp.tapir.server.jdkhttp.internal.FailingLimitedInputStream
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 
 class HttpClientFutureBackend private (
     client: HttpClient,
@@ -61,12 +70,19 @@ class HttpClientFutureBackend private (
 
   override protected def createBodyHandler: HttpResponse.BodyHandler[InputStream] = BodyHandlers.ofInputStream()
 
-  override protected def bodyHandlerBodyToBody(p: InputStream): InputStream = p
+  override protected def lowLevelBodyToBody(p: InputStream): InputStream = p
+
+  override protected def cancelLowLevelBody(p: InputStream): Unit = p.close()
 
   override protected def emptyBody(): InputStream = emptyInputStream()
 
   override protected def bodyToLimitedBody(b: InputStream, limit: Long): InputStream =
     new FailingLimitedInputStream(b, limit)
+
+  override protected def ensureOnAbnormal[T](effect: Future[T])(finalizer: => Future[Unit]): Future[T] =
+    effect.recoverWith { case e =>
+      finalizer.flatMap(_ => Future.failed(e))
+    }
 }
 
 object HttpClientFutureBackend {

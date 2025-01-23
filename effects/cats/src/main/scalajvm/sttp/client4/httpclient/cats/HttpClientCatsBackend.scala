@@ -1,26 +1,37 @@
 package sttp.client4.httpclient.cats
 
-import cats.effect.kernel.{Async, Resource, Sync}
-import cats.effect.std.{Dispatcher, Queue}
-import cats.implicits.{toFlatMapOps, toFunctorOps}
-import sttp.client4.httpclient.{HttpClientAsyncBackend, HttpClientBackend}
-import sttp.client4.impl.cats.CatsMonadAsyncError
-import sttp.client4.internal.httpclient._
-import sttp.client4.internal.ws.SimpleQueue
-import sttp.client4.internal.{emptyInputStream, NoStreams}
-import sttp.client4.testing.WebSocketBackendStub
-import sttp.client4.{wrappers, BackendOptions, WebSocketBackend}
-import sttp.monad.MonadError
-import sttp.ws.{WebSocket, WebSocketFrame}
-
-import java.io.InputStream
-import java.net.http.HttpRequest.BodyPublisher
-import java.net.http.HttpResponse.BodyHandlers
-import java.net.http.{HttpClient, HttpRequest, HttpResponse}
+import cats.effect.kernel.Async
+import cats.effect.kernel.Resource
+import cats.effect.kernel.Sync
+import cats.effect.std.Dispatcher
+import cats.effect.std.Queue
+import cats.implicits.toFlatMapOps
+import cats.implicits.toFunctorOps
+import sttp.client4.BackendOptions
+import sttp.client4.WebSocketBackend
 import sttp.client4.compression.CompressionHandlers
 import sttp.client4.compression.Compressor
 import sttp.client4.compression.Decompressor
+import sttp.client4.httpclient.HttpClientAsyncBackend
+import sttp.client4.httpclient.HttpClientBackend
+import sttp.client4.impl.cats.CatsMonadAsyncError
+import sttp.client4.internal.NoStreams
+import sttp.client4.internal.emptyInputStream
+import sttp.client4.internal.httpclient._
+import sttp.client4.internal.ws.SimpleQueue
+import sttp.client4.testing.WebSocketBackendStub
+import sttp.client4.wrappers
+import sttp.monad.MonadError
 import sttp.tapir.server.jdkhttp.internal.FailingLimitedInputStream
+import sttp.ws.WebSocket
+import sttp.ws.WebSocketFrame
+
+import java.io.InputStream
+import java.net.http.HttpClient
+import java.net.http.HttpRequest
+import java.net.http.HttpRequest.BodyPublisher
+import java.net.http.HttpResponse
+import java.net.http.HttpResponse.BodyHandlers
 
 class HttpClientCatsBackend[F[_]: Async] private (
     client: HttpClient,
@@ -66,7 +77,14 @@ class HttpClientCatsBackend[F[_]: Async] private (
 
   override protected def createBodyHandler: HttpResponse.BodyHandler[InputStream] = BodyHandlers.ofInputStream()
 
-  override protected def bodyHandlerBodyToBody(p: InputStream): InputStream = p
+  override protected def lowLevelBodyToBody(p: InputStream): InputStream = p
+
+  override protected def cancelLowLevelBody(p: InputStream): Unit = p.close()
+
+  override protected def ensureOnAbnormal[T](effect: F[T])(finalizer: => F[Unit]): F[T] =
+    Async[F].guaranteeCase(effect) { outcome =>
+      if (outcome.isSuccess) Async[F].unit else finalizer
+    }
 
   override protected def emptyBody(): InputStream = emptyInputStream()
 

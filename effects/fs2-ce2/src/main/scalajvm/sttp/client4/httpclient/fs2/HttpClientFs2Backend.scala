@@ -1,35 +1,43 @@
 package sttp.client4.httpclient.fs2
 
-import java.net.http.HttpRequest.BodyPublishers
-import java.net.http.{HttpClient, HttpRequest, HttpResponse}
-import java.nio.ByteBuffer
-import java.{util => ju}
 import cats.effect._
 import cats.effect.implicits._
 import cats.implicits._
-import fs2.{Chunk, Stream, Pull}
+import fs2.Chunk
+import fs2.Pull
+import fs2.Stream
 import fs2.concurrent.InspectableQueue
 import fs2.interop.reactivestreams._
 import org.reactivestreams.FlowAdapters
+import sttp.capabilities.StreamMaxLengthExceededException
 import sttp.capabilities.fs2.Fs2Streams
-import sttp.client4.internal.httpclient.{BodyFromHttpClient, BodyToHttpClient, Sequencer}
+import sttp.client4._
+import sttp.client4.compression.CompressionHandlers
+import sttp.client4.compression.Compressor
+import sttp.client4.httpclient.HttpClientAsyncBackend
+import sttp.client4.httpclient.HttpClientBackend
 import sttp.client4.impl.cats.implicits._
+import sttp.client4.impl.fs2.DeflateFs2Decompressor
 import sttp.client4.impl.fs2.Fs2SimpleQueue
+import sttp.client4.impl.fs2.GZipFs2Decompressor
+import sttp.client4.internal.httpclient.BodyFromHttpClient
+import sttp.client4.internal.httpclient.BodyToHttpClient
+import sttp.client4.internal.httpclient.Sequencer
+import sttp.client4.internal.httpclient.cancelPublisher
 import sttp.client4.internal.ws.SimpleQueue
 import sttp.client4.testing.WebSocketStreamBackendStub
-import sttp.client4._
-import sttp.client4.httpclient.{HttpClientAsyncBackend, HttpClientBackend}
 import sttp.client4.wrappers.FollowRedirectsBackend
 import sttp.monad.MonadError
 
+import java.net.http.HttpClient
+import java.net.http.HttpRequest
+import java.net.http.HttpRequest.BodyPublishers
+import java.net.http.HttpResponse
 import java.net.http.HttpResponse.BodyHandlers
+import java.nio.ByteBuffer
+import java.{util => ju}
 import java.util.concurrent.Flow.Publisher
 import scala.collection.JavaConverters._
-import sttp.client4.compression.CompressionHandlers
-import sttp.client4.compression.Compressor
-import sttp.client4.impl.fs2.GZipFs2Decompressor
-import sttp.client4.impl.fs2.DeflateFs2Decompressor
-import sttp.capabilities.StreamMaxLengthExceededException
 
 class HttpClientFs2Backend[F[_]: ConcurrentEffect: ContextShift] private (
     client: HttpClient,
@@ -75,11 +83,18 @@ class HttpClientFs2Backend[F[_]: ConcurrentEffect: ContextShift] private (
 
   override protected def createSequencer: F[Sequencer[F]] = Fs2Sequencer.create
 
-  override protected def bodyHandlerBodyToBody(p: Publisher[ju.List[ByteBuffer]]): Stream[F, Byte] =
+  override protected def lowLevelBodyToBody(p: Publisher[ju.List[ByteBuffer]]): Stream[F, Byte] =
     FlowAdapters
       .toPublisher(p)
       .toStream[F]
       .flatMap(data => Stream.emits(data.asScala.map(Chunk.byteBuffer)).flatMap(Stream.chunk))
+
+  override protected def cancelLowLevelBody(p: Publisher[ju.List[ByteBuffer]]): Unit = cancelPublisher(p)
+
+  override protected def ensureOnAbnormal[T](effect: F[T])(finalizer: => F[Unit]): F[T] =
+    ConcurrentEffect[F].guaranteeCase(effect) { exitCase =>
+      if (exitCase == ExitCase.Completed) ConcurrentEffect[F].unit else finalizer
+    }
 
   override protected def emptyBody(): Stream[F, Byte] = Stream.empty
 

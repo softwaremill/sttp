@@ -1,30 +1,40 @@
 package sttp.client4.httpclient.monix
 
+import cats.effect.ExitCase
 import cats.effect.Resource
 import monix.eval.Task
 import monix.execution.Scheduler
 import monix.reactive.Observable
 import org.reactivestreams.FlowAdapters
+import sttp.capabilities.StreamMaxLengthExceededException
 import sttp.capabilities.monix.MonixStreams
-import sttp.client4.httpclient.{HttpClientAsyncBackend, HttpClientBackend}
-import sttp.client4.impl.monix.{MonixSimpleQueue, TaskMonadAsyncError}
-import sttp.client4.internal._
-import sttp.client4.internal.httpclient.{BodyFromHttpClient, BodyToHttpClient, Sequencer}
-import sttp.client4.internal.ws.SimpleQueue
-import sttp.client4.testing.WebSocketStreamBackendStub
-import sttp.client4.{wrappers, BackendOptions, WebSocketStreamBackend}
-import sttp.monad.MonadError
-
-import java.net.http.HttpRequest.BodyPublishers
-import java.net.http.HttpResponse.BodyHandlers
-import java.net.http.{HttpClient, HttpRequest, HttpResponse}
-import java.nio.ByteBuffer
-import java.util.concurrent.Flow.Publisher
-import java.{util => ju}
-import scala.collection.JavaConverters._
+import sttp.client4.BackendOptions
+import sttp.client4.WebSocketStreamBackend
 import sttp.client4.compression.CompressionHandlers
 import sttp.client4.compression.Compressor
-import sttp.capabilities.StreamMaxLengthExceededException
+import sttp.client4.httpclient.HttpClientAsyncBackend
+import sttp.client4.httpclient.HttpClientBackend
+import sttp.client4.impl.monix.MonixSimpleQueue
+import sttp.client4.impl.monix.TaskMonadAsyncError
+import sttp.client4.internal._
+import sttp.client4.internal.httpclient.BodyFromHttpClient
+import sttp.client4.internal.httpclient.BodyToHttpClient
+import sttp.client4.internal.httpclient.Sequencer
+import sttp.client4.internal.httpclient.cancelPublisher
+import sttp.client4.internal.ws.SimpleQueue
+import sttp.client4.testing.WebSocketStreamBackendStub
+import sttp.client4.wrappers
+import sttp.monad.MonadError
+
+import java.net.http.HttpClient
+import java.net.http.HttpRequest
+import java.net.http.HttpRequest.BodyPublishers
+import java.net.http.HttpResponse
+import java.net.http.HttpResponse.BodyHandlers
+import java.nio.ByteBuffer
+import java.{util => ju}
+import java.util.concurrent.Flow.Publisher
+import scala.collection.JavaConverters._
 
 class HttpClientMonixBackend private (
     client: HttpClient,
@@ -68,11 +78,16 @@ class HttpClientMonixBackend private (
   override protected def createBodyHandler: HttpResponse.BodyHandler[Publisher[ju.List[ByteBuffer]]] =
     BodyHandlers.ofPublisher()
 
-  override protected def bodyHandlerBodyToBody(p: Publisher[ju.List[ByteBuffer]]): Observable[Array[Byte]] =
+  override protected def lowLevelBodyToBody(p: Publisher[ju.List[ByteBuffer]]): Observable[Array[Byte]] =
     Observable
       .fromReactivePublisher(FlowAdapters.toPublisher(p))
       .flatMapIterable(_.asScala.toList)
       .map(_.safeRead())
+
+  override protected def cancelLowLevelBody(p: Publisher[ju.List[ByteBuffer]]): Unit = cancelPublisher(p)
+
+  override protected def ensureOnAbnormal[T](effect: Task[T])(finalizer: => Task[Unit]): Task[T] =
+    effect.guaranteeCase { exit => if (exit == ExitCase.Completed) Task.unit else finalizer }
 
   override protected def emptyBody(): Observable[Array[Byte]] = Observable.empty
 

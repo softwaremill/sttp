@@ -3,31 +3,43 @@ package sttp.client4.httpclient.zio
 import _root_.zio.interop.reactivestreams._
 import org.reactivestreams.FlowAdapters
 import sttp.capabilities.zio.ZioStreams
-import sttp.client4.httpclient.{HttpClientAsyncBackend, HttpClientBackend}
-import sttp.client4.impl.zio.{RIOMonadAsyncError, ZioSimpleQueue}
+import sttp.client4.BackendOptions
+import sttp.client4.GenericRequest
+import sttp.client4.Response
+import sttp.client4.WebSocketStreamBackend
+import sttp.client4.compression.CompressionHandlers
+import sttp.client4.compression.Compressor
+import sttp.client4.httpclient.HttpClientAsyncBackend
+import sttp.client4.httpclient.HttpClientBackend
+import sttp.client4.impl.zio.DeflateZioCompressor
+import sttp.client4.impl.zio.DeflateZioDecompressor
+import sttp.client4.impl.zio.GZipZioCompressor
+import sttp.client4.impl.zio.GZipZioDecompressor
+import sttp.client4.impl.zio.RIOMonadAsyncError
+import sttp.client4.impl.zio.ZioSimpleQueue
 import sttp.client4.internal._
-import sttp.client4.internal.httpclient.{BodyFromHttpClient, BodyToHttpClient, Sequencer}
+import sttp.client4.internal.httpclient.BodyFromHttpClient
+import sttp.client4.internal.httpclient.BodyToHttpClient
+import sttp.client4.internal.httpclient.Sequencer
+import sttp.client4.internal.httpclient.cancelPublisher
 import sttp.client4.internal.ws.SimpleQueue
 import sttp.client4.testing.WebSocketStreamBackendStub
-import sttp.client4.{wrappers, BackendOptions, GenericRequest, Response, WebSocketStreamBackend}
+import sttp.client4.wrappers
 import sttp.monad.MonadError
-import zio.Chunk.ByteArray
 import zio._
+import zio.Chunk.ByteArray
 import zio.stream.ZStream
 
-import java.net.http.HttpRequest.{BodyPublisher, BodyPublishers}
+import java.net.http.HttpClient
+import java.net.http.HttpRequest
+import java.net.http.HttpRequest.BodyPublisher
+import java.net.http.HttpRequest.BodyPublishers
+import java.net.http.HttpResponse
 import java.net.http.HttpResponse.BodyHandlers
-import java.net.http.{HttpClient, HttpRequest, HttpResponse}
 import java.nio.ByteBuffer
 import java.util
-import java.util.concurrent.Flow.Publisher
 import java.{util => ju}
-import sttp.client4.compression.Compressor
-import sttp.client4.impl.zio.{DeflateZioCompressor, DeflateZioDecompressor, GZipZioCompressor, GZipZioDecompressor}
-import sttp.client4.compression.CompressionHandlers
-import sttp.monad.Canceler
-import sttp.client4.internal.SttpToJavaConverters.toJavaBiConsumer
-import java.util.concurrent.atomic.AtomicReference
+import java.util.concurrent.Flow.Publisher
 
 class HttpClientZioBackend private (
     client: HttpClient,
@@ -55,11 +67,18 @@ class HttpClientZioBackend private (
 
   override protected def emptyBody(): ZStream[Any, Throwable, Byte] = ZStream.empty
 
-  override protected def bodyHandlerBodyToBody(p: Publisher[util.List[ByteBuffer]]): ZStream[Any, Throwable, Byte] =
+  override protected def lowLevelBodyToBody(p: Publisher[util.List[ByteBuffer]]): ZStream[Any, Throwable, Byte] =
     FlowAdapters.toPublisher(p).toZIOStream().mapConcatChunk { list =>
       val a = Chunk.fromJavaIterable(list).flatMap(_.safeRead()).toArray
       ByteArray(a, 0, a.length)
     }
+
+  override protected def cancelLowLevelBody(p: Publisher[ju.List[ByteBuffer]]): Unit = cancelPublisher(p)
+
+  override protected def ensureOnAbnormal[T](effect: Task[T])(finalizer: => Task[Unit]): Task[T] = effect.onExit {
+    exit =>
+      if (exit.isSuccess) ZIO.unit else finalizer.orDie
+  }.resurrect
 
   override protected val bodyToHttpClient: BodyToHttpClient[Task, ZioStreams, R] =
     new BodyToHttpClient[Task, ZioStreams, R] {
@@ -77,72 +96,6 @@ class HttpClientZioBackend private (
 
   override def send[T](request: GenericRequest[T, R]): Task[Response[T]] =
     super.send(request).resurrect
-
-  override def sendRegular[T](request: GenericRequest[T, R]): Task[Response[T]] = {
-    monad
-      .flatMap(convertRequest(request)) { convertedRequest =>
-        val jRequest = customizeRequest(convertedRequest)
-
-        val publisher = new AtomicReference[Publisher[ju.List[ByteBuffer]]]()
-        val hcResponse = ZIO.acquireReleaseInterruptibleExit {
-          monad.async[HttpResponse[Publisher[ju.List[ByteBuffer]]]] { cb =>
-            def success(r: HttpResponse[Publisher[ju.List[ByteBuffer]]]): Unit = cb(Right(r))
-            def error(t: Throwable): Unit = cb(Left(t))
-            val cf = client.sendAsync(jRequest, createBodyHandler)
-
-            cf.whenComplete(toJavaBiConsumer { (t: HttpResponse[Publisher[ju.List[ByteBuffer]]], u: Throwable) =>
-              if (t != null) {
-                publisher.set(t.body())
-                success(t)
-              }
-              if (u != null) {
-                error(u)
-              }
-            })
-
-            // contrary to what the JavaDoc says, this actually cancels the request, even if it's in progress
-            // however, the request will be cancelled asynchronously, and there's no way of waiting for cancellation to
-            // complete; that's not ideal (we're breaking ZIO's contract here), but it's the best we can do
-            // see: https://bugs.openjdk.org/browse/JDK-8245462
-            Canceler(() => cf.cancel(true))
-          }
-        } { exit =>
-          // we only ensure that the publisher is consumed on non-successful results (failure or interruption); in case
-          // of success, the body is either fully consumed as specified in the response description, or when an
-          // `...Unsafe` response description is used, it's up to the user to consume it
-          if (!exit.isSuccess) {
-            // the request might have been interrupted during acquisition (no publisher is available then), or any time
-            // after that, including right after the acquisition effect completed, but before the response was read
-            val p = publisher.get()
-            if (p != null) {
-              ZIO.attempt {
-                // if there already was a subscriber, we'll receive an onError callback immediately
-                p.subscribe(new java.util.concurrent.Flow.Subscriber[ju.List[ByteBuffer]] {
-                  override def onSubscribe(s: java.util.concurrent.Flow.Subscription): Unit = s.cancel()
-                  override def onNext(t: ju.List[ByteBuffer]): Unit = ()
-                  override def onError(t: Throwable): Unit = ()
-                  override def onComplete(): Unit = ()
-                })
-              }.orDie
-            } else ZIO.unit
-          } else ZIO.unit
-        }
-
-        ZIO.scoped {
-          hcResponse.flatMap { t =>
-            // sometimes body returned by HttpClient can be null, we handle this by returning empty body to prevent NPE
-            val body = Option(t.body())
-              .map(bodyHandlerBodyToBody)
-              .getOrElse(emptyBody())
-
-            val limitedBody = request.options.maxResponseBodyLength.fold(body)(bodyToLimitedBody(body, _))
-
-            readResponse(t, Left(limitedBody), request)
-          }
-        }
-      }
-      .resurrect
-  }
 
   override protected val bodyFromHttpClient: BodyFromHttpClient[Task, ZioStreams, ZioStreams.BinaryStream] =
     new ZioBodyFromHttpClient
