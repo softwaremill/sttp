@@ -77,7 +77,7 @@ class HttpClientZioBackend private (
 
   override protected def ensureOnAbnormal[T](effect: Task[T])(finalizer: => Task[Unit]): Task[T] = effect.onExit {
     exit =>
-      if (exit.isSuccess) ZIO.unit else finalizer.orDie
+      if (exit.isSuccess) ZIO.unit else finalizer.catchAll(t => ZIO.logErrorCause("Error in finalizer", Cause.fail(t)))
   }.resurrect
 
   override protected val bodyToHttpClient: BodyToHttpClient[Task, ZioStreams, R] =
