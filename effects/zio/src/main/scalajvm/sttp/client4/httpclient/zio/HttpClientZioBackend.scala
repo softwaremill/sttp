@@ -27,6 +27,7 @@ import sttp.client4.impl.zio.{DeflateZioCompressor, DeflateZioDecompressor, GZip
 import sttp.client4.compression.CompressionHandlers
 import sttp.monad.Canceler
 import sttp.client4.internal.SttpToJavaConverters.toJavaBiConsumer
+import java.util.concurrent.atomic.AtomicReference
 
 class HttpClientZioBackend private (
     client: HttpClient,
@@ -82,7 +83,8 @@ class HttpClientZioBackend private (
       .flatMap(convertRequest(request)) { convertedRequest =>
         val jRequest = customizeRequest(convertedRequest)
 
-        val hcResponse = ZIO.acquireReleaseExit {
+        val publisher = new AtomicReference[Publisher[ju.List[ByteBuffer]]]()
+        val hcResponse = ZIO.acquireReleaseInterruptibleExit {
           monad.async[HttpResponse[Publisher[ju.List[ByteBuffer]]]] { cb =>
             def success(r: HttpResponse[Publisher[ju.List[ByteBuffer]]]): Unit = cb(Right(r))
             def error(t: Throwable): Unit = cb(Left(t))
@@ -90,6 +92,7 @@ class HttpClientZioBackend private (
 
             cf.whenComplete(toJavaBiConsumer { (t: HttpResponse[Publisher[ju.List[ByteBuffer]]], u: Throwable) =>
               if (t != null) {
+                publisher.set(t.body())
                 success(t)
               }
               if (u != null) {
@@ -97,23 +100,31 @@ class HttpClientZioBackend private (
               }
             })
 
+            // contrary to what the JavaDoc says, this actually cancels the request, even if it's in progress
+            // however, the request will be cancelled asynchronously, and there's no way of waiting for cancellation to
+            // complete; that's not ideal (we're breaking ZIO's contract here), but it's the best we can do
+            // see: https://bugs.openjdk.org/browse/JDK-8245462
             Canceler(() => cf.cancel(true))
           }
-        } { case (r, exit) =>
+        } { exit =>
           // we only ensure that the publisher is consumed on non-successful results (failure or interruption); in case
           // of success, the body is either fully consumed as specified in the response description, or when an
           // `...Unsafe` response description is used, it's up to the user to consume it
           if (!exit.isSuccess) {
-            ZIO.attempt {
-              // if there already was a subscriber, we'll receive an onError callback immediately
-              r.body()
-                .subscribe(new java.util.concurrent.Flow.Subscriber[ju.List[ByteBuffer]] {
+            // the request might have been interrupted during acquisition (no publisher is available then), or any time
+            // after that, including right after the acquisition effect completed, but before the response was read
+            val p = publisher.get()
+            if (p != null) {
+              ZIO.attempt {
+                // if there already was a subscriber, we'll receive an onError callback immediately
+                p.subscribe(new java.util.concurrent.Flow.Subscriber[ju.List[ByteBuffer]] {
                   override def onSubscribe(s: java.util.concurrent.Flow.Subscription): Unit = s.cancel()
                   override def onNext(t: ju.List[ByteBuffer]): Unit = ()
                   override def onError(t: Throwable): Unit = ()
                   override def onComplete(): Unit = ()
                 })
-            }.orDie
+              }.orDie
+            } else ZIO.unit
           } else ZIO.unit
         }
 
