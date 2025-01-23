@@ -138,49 +138,57 @@ abstract class HttpClientAsyncBackend[F[_], S <: Streams[S], BH, B](
       sequencer: Sequencer[F]
   ): F[Response[T]] = {
     val isOpen: AtomicBoolean = new AtomicBoolean(false)
-    monad.flatten(monad.async[F[Response[T]]] { cb =>
-      def success(r: F[Response[T]]): Unit = cb(Right(r))
-      def error(t: Throwable): Unit = cb(Left(t))
 
-      val listener = new DelegatingWebSocketListener(
-        new AddToQueueListener(queue, isOpen),
-        ws => {
-          val webSocket = new WebSocketImpl[F](
-            ws,
-            queue,
-            isOpen,
-            sequencer,
-            monad,
-            cf =>
-              monad.async { cb =>
-                cf.whenComplete(new BiConsumer[WebSocket, Throwable] {
-                  override def accept(t: WebSocket, error: Throwable): Unit =
-                    if (error != null) {
-                      cb(Left(error))
-                    } else {
-                      cb(Right(()))
-                    }
-                })
-                Canceler { () =>
-                  cf.cancel(true)
-                  ()
+    // see sendRegular for explanation
+    val lowLevelWS = new AtomicReference[WebSocket]()
+    ensureOnAbnormal {
+      monad.flatten(monad.async[F[Response[T]]] { cb =>
+        def success(r: F[Response[T]]): Unit = cb(Right(r))
+        def error(t: Throwable): Unit = cb(Left(t))
+
+        val listener = new DelegatingWebSocketListener(
+          new AddToQueueListener(queue, isOpen),
+          ws => {
+            lowLevelWS.set(ws)
+            val webSocket = new WebSocketImpl[F](
+              ws,
+              queue,
+              isOpen,
+              sequencer,
+              monad,
+              cf =>
+                monad.async { cb =>
+                  cf.whenComplete(new BiConsumer[WebSocket, Throwable] {
+                    override def accept(t: WebSocket, error: Throwable): Unit =
+                      if (error != null) {
+                        cb(Left(error))
+                      } else {
+                        cb(Right(()))
+                      }
+                  })
+                  Canceler { () =>
+                    val _ = cf.cancel(true)
+                  }
                 }
-              }
-          )
-          val baseResponse = Response((), StatusCode.SwitchingProtocols, "", Nil, Nil, request.onlyMetadata)
-          val body = bodyFromHttpClient(Right(webSocket), request.response, baseResponse)
-          success(body.map(b => baseResponse.copy(body = b)))
-        },
-        error
-      )
+            )
+            val baseResponse = Response((), StatusCode.SwitchingProtocols, "", Nil, Nil, request.onlyMetadata)
+            val body = bodyFromHttpClient(Right(webSocket), request.response, baseResponse)
+            success(body.map(b => baseResponse.copy(body = b)))
+          },
+          error
+        )
 
-      val cf = prepareWebSocketBuilder(request, client)
-        .buildAsync(request.uri.toJavaUri, listener)
-        .thenApply[Unit](toJavaFunction((_: WebSocket) => ()))
-        .exceptionally(toJavaFunction((t: Throwable) => cb(Left(t))))
-      Canceler { () =>
-        val _ = cf.cancel(true)
-      }
-    })
+        val cf = prepareWebSocketBuilder(request, client)
+          .buildAsync(request.uri.toJavaUri, listener)
+          .thenApply[Unit](toJavaFunction((_: WebSocket) => ()))
+          .exceptionally(toJavaFunction((t: Throwable) => cb(Left(t))))
+        Canceler { () =>
+          val _ = cf.cancel(true)
+        }
+      })
+    } {
+      val llws = lowLevelWS.get()
+      if (llws != null) monad.eval(llws.abort()) else monad.unit(())
+    }
   }
 }
