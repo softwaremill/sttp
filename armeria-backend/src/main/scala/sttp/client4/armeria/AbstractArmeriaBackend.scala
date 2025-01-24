@@ -58,6 +58,9 @@ abstract class AbstractArmeriaBackend[F[_], S <: Streams[S]](
 
   protected def compressors: List[Compressor[R]] = Compressor.default[R]
 
+  // #1987: see the comments in HttpClientAsyncBackend
+  protected def ensureOnAbnormal[T](effect: F[T])(finalizer: => F[Unit]): F[T]
+
   override def send[T](request: GenericRequest[T, R]): F[Response[T]] =
     monad.suspend(adjustExceptions(request)(execute(request)))
 
@@ -84,7 +87,8 @@ abstract class AbstractArmeriaBackend[F[_], S <: Streams[S]](
             noopCanceler
           }
         case Success(ctx) =>
-          fromArmeriaResponse(request, armeriaRes, ctx)
+          // #1987: see the comments in HttpClientAsyncBackend
+          ensureOnAbnormal(fromArmeriaResponse(request, armeriaRes, ctx))(monad.eval(ctx.cancel()))
       }
     } catch {
       case NonFatal(ex) => monad.error(ex)
