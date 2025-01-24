@@ -36,7 +36,7 @@ private final class ArmeriaCatsBackend[F[_]: Concurrent](client: WebClient, clos
   override protected def ensureOnAbnormal[T](effect: F[T])(finalizer: => F[Unit]): F[T] =
     Concurrent[F].guaranteeCase(effect) { exit =>
       if (exit == ExitCase.Completed) Concurrent[F].unit
-      else Concurrent[F].recoverWith(finalizer)(t => Concurrent[F].delay(t.printStackTrace()))
+      else Concurrent[F].recoverWith(finalizer) { case t => Concurrent[F].delay(t.printStackTrace()) }
     }
 }
 
