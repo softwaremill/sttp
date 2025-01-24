@@ -94,7 +94,7 @@ class HttpClientFs2Backend[F[_]: ConcurrentEffect: ContextShift] private (
   override protected def ensureOnAbnormal[T](effect: F[T])(finalizer: => F[Unit]): F[T] =
     ConcurrentEffect[F].guaranteeCase(effect) { exitCase =>
       if (exitCase == ExitCase.Completed) ConcurrentEffect[F].unit
-      else ConcurrentEffect[F].onError(finalizer)(t => ConcurrentEffect[F].delay(t.printStackTrace()))
+      else ConcurrentEffect[F].onError(finalizer) { case t => ConcurrentEffect[F].delay(t.printStackTrace()) }
     }
 
   override protected def emptyBody(): Stream[F, Byte] = Stream.empty
