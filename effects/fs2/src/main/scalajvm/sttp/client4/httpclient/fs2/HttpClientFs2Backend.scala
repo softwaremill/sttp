@@ -97,7 +97,7 @@ class HttpClientFs2Backend[F[_]: Async] private (
 
   override protected def ensureOnAbnormal[T](effect: F[T])(finalizer: => F[Unit]): F[T] =
     Async[F].guaranteeCase(effect) { outcome =>
-      if (outcome.isSuccess) Async[F].unit else finalizer
+      if (outcome.isSuccess) Async[F].unit else Async[F].onError(finalizer)(t => Async[F].delay(t.printStackTrace()))
     }
 
   override protected def emptyBody(): Stream[F, Byte] = Stream.empty

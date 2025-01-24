@@ -87,7 +87,9 @@ class HttpClientMonixBackend private (
   override protected def cancelLowLevelBody(p: Publisher[ju.List[ByteBuffer]]): Unit = cancelPublisher(p)
 
   override protected def ensureOnAbnormal[T](effect: Task[T])(finalizer: => Task[Unit]): Task[T] =
-    effect.guaranteeCase { exit => if (exit == ExitCase.Completed) Task.unit else finalizer }
+    effect.guaranteeCase { exit =>
+      if (exit == ExitCase.Completed) Task.unit else finalizer.onErrorHandleWith(t => Task.eval(t.printStackTrace()))
+    }
 
   override protected def emptyBody(): Observable[Array[Byte]] = Observable.empty
 
