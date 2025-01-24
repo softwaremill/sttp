@@ -1,4 +1,4 @@
-addSbtPlugin("org.scala-js" % "sbt-scalajs" % "1.18.1")
+addSbtPlugin("org.scala-js" % "sbt-scalajs" % "1.18.2")
 addSbtPlugin("org.scala-js" % "sbt-jsdependencies" % "1.0.2")
 addSbtPlugin("org.scala-native" % "sbt-scala-native" % "0.5.6")
 addSbtPlugin("io.spray" % "sbt-revolver" % "0.10.0")
