@@ -58,6 +58,9 @@ abstract class HttpClientAsyncBackend[F[_], S <: Streams[S], BH, B](
     * is consumed. This is done only in case of failure, as in case of success the body is either fully consumed as
     * specified in the response description, or when an `...Unsafe` response description is used, it's up to the user to
     * consume it.
+    *
+    * Any exceptions that occur while running `finalizer` should be added as suppressed or logged, not impacting the
+    * outcome of `effect`. If possible, `finalizer` should not be run in a cancellable way.
     */
   protected def ensureOnAbnormal[T](effect: F[T])(finalizer: => F[Unit]): F[T]
 
