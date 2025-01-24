@@ -14,6 +14,7 @@ import sttp.client4.impl.monix.TaskMonadAsyncError
 import sttp.client4.wrappers.FollowRedirectsBackend
 import sttp.client4.{wrappers, BackendOptions, StreamBackend}
 import sttp.monad.MonadAsyncError
+import cats.effect.ExitCase
 
 private final class ArmeriaMonixBackend(client: WebClient, closeFactory: Boolean)(implicit scheduler: Scheduler)
     extends AbstractArmeriaBackend[Task, MonixStreams](client, closeFactory, TaskMonadAsyncError) {
@@ -33,6 +34,11 @@ private final class ArmeriaMonixBackend(client: WebClient, closeFactory: Boolean
 
   override protected def streamToPublisher(stream: Observable[Array[Byte]]): Publisher[HttpData] =
     stream.map(HttpData.wrap).toReactivePublisher
+
+  override protected def ensureOnAbnormal[T](effect: Task[T])(finalizer: => Task[Unit]): Task[T] =
+    effect.guaranteeCase { exit =>
+      if (exit == ExitCase.Completed) Task.unit else finalizer.onErrorHandleWith(t => Task.eval(t.printStackTrace()))
+    }
 }
 
 object ArmeriaMonixBackend {

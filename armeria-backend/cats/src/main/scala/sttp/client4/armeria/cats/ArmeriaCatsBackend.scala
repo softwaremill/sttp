@@ -31,6 +31,12 @@ private final class ArmeriaCatsBackend[F[_]: Async](client: WebClient, closeFact
 
   override protected def streamToPublisher(stream: Nothing): Publisher[HttpData] =
     throw new UnsupportedOperationException("This backend does not support streaming")
+
+  override protected def ensureOnAbnormal[T](effect: F[T])(finalizer: => F[Unit]): F[T] =
+    Async[F].guaranteeCase(effect) { outcome =>
+      if (outcome.isSuccess) Async[F].unit
+      else Async[F].onError(finalizer) { case t => Async[F].delay(t.printStackTrace()) }
+    }
 }
 
 object ArmeriaCatsBackend {

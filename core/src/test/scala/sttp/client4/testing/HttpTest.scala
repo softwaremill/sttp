@@ -716,7 +716,7 @@ trait HttpTest[F[_]]
 
   if (supportsCancellation) {
     "cancel" - {
-      "a request in progress" in {
+      "a request before any response is received" in {
         implicit val monad: MonadError[F] = backend.monad
         import sttp.monad.syntax._
 
@@ -735,6 +735,27 @@ trait HttpTest[F[_]]
                   r shouldBe None
                 }
             }
+        )
+      }
+
+      "a request when the response is produced slowly" in {
+        implicit val monad: MonadError[F] = backend.monad
+        import sttp.monad.syntax._
+
+        val req = basicRequest
+          .get(uri"$endpoint/streaming/slow")
+          .response(asString)
+
+        val now = monad.eval(System.currentTimeMillis())
+
+        convertToFuture.toFuture(
+          now.flatMap { start =>
+            timeoutToNone(req.send(backend), 100)
+              .map { r =>
+                (System.currentTimeMillis() - start) should be < 2000L
+                r shouldBe None
+              }
+          }
         )
       }
     }

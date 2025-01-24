@@ -46,6 +46,12 @@ private final class ArmeriaFs2Backend[F[_]: Async](client: WebClient, closeFacto
 
   override protected def compressors: List[Compressor[R]] =
     List(new GZipFs2Compressor[F, R](), new DeflateFs2Compressor[F, R]())
+
+  override protected def ensureOnAbnormal[T](effect: F[T])(finalizer: => F[Unit]): F[T] =
+    Async[F].guaranteeCase(effect) { outcome =>
+      if (outcome.isSuccess) Async[F].unit
+      else Async[F].onError(finalizer) { case t => Async[F].delay(t.printStackTrace()) }
+    }
 }
 
 object ArmeriaFs2Backend {

@@ -2,30 +2,42 @@ package sttp.client4.httpclient.zio
 
 import _root_.zio.interop.reactivestreams._
 import org.reactivestreams.FlowAdapters
+import sttp.capabilities.StreamMaxLengthExceededException
 import sttp.capabilities.zio.ZioStreams
-import sttp.client4.httpclient.{HttpClientAsyncBackend, HttpClientBackend}
-import sttp.client4.impl.zio.{RIOMonadAsyncError, ZioSimpleQueue}
-import sttp.client4.internal._
-import sttp.client4.internal.httpclient.{BodyFromHttpClient, BodyToHttpClient, Sequencer}
-import sttp.client4.internal.ws.SimpleQueue
-import sttp.client4.testing.WebSocketStreamBackendStub
-import sttp.client4.{wrappers, BackendOptions, GenericRequest, Response, WebSocketStreamBackend}
-import sttp.monad.MonadError
-import zio.Chunk.ByteArray
-import zio._
-import zio.stream.ZStream
-
-import java.net.http.HttpRequest.{BodyPublisher, BodyPublishers}
-import java.net.http.HttpResponse.BodyHandlers
-import java.net.http.{HttpClient, HttpRequest, HttpResponse}
-import java.nio.ByteBuffer
-import java.util
-import java.util.concurrent.Flow.Publisher
-import java.{util => ju}
-import scala.collection.JavaConverters._
+import sttp.client4.BackendOptions
+import sttp.client4.GenericRequest
+import sttp.client4.Response
+import sttp.client4.WebSocketStreamBackend
 import sttp.client4.compression.CompressionHandlers
 import sttp.client4.compression.Compressor
-import sttp.capabilities.StreamMaxLengthExceededException
+import sttp.client4.httpclient.HttpClientAsyncBackend
+import sttp.client4.httpclient.HttpClientBackend
+import sttp.client4.impl.zio.RIOMonadAsyncError
+import sttp.client4.impl.zio.ZioSimpleQueue
+import sttp.client4.internal._
+import sttp.client4.internal.httpclient.BodyFromHttpClient
+import sttp.client4.internal.httpclient.BodyToHttpClient
+import sttp.client4.internal.httpclient.Sequencer
+import sttp.client4.internal.httpclient.cancelPublisher
+import sttp.client4.internal.ws.SimpleQueue
+import sttp.client4.testing.WebSocketStreamBackendStub
+import sttp.client4.wrappers
+import sttp.monad.MonadError
+import zio._
+import zio.Chunk.ByteArray
+import zio.stream.ZStream
+
+import java.net.http.HttpClient
+import java.net.http.HttpRequest
+import java.net.http.HttpRequest.BodyPublisher
+import java.net.http.HttpRequest.BodyPublishers
+import java.net.http.HttpResponse
+import java.net.http.HttpResponse.BodyHandlers
+import java.nio.ByteBuffer
+import java.util
+import java.{util => ju}
+import java.util.concurrent.Flow.Publisher
+import scala.collection.JavaConverters._
 
 class HttpClientZioBackend private (
     client: HttpClient,
@@ -53,11 +65,18 @@ class HttpClientZioBackend private (
 
   override protected def emptyBody(): ZStream[Any, Throwable, Byte] = ZStream.empty
 
-  override protected def bodyHandlerBodyToBody(p: Publisher[util.List[ByteBuffer]]): ZStream[Any, Throwable, Byte] =
+  override protected def lowLevelBodyToBody(p: Publisher[util.List[ByteBuffer]]): ZStream[Any, Throwable, Byte] =
     FlowAdapters
       .toPublisher(p)
       .toStream()
       .mapConcatChunk(list => ByteArray(list.asScala.toList.flatMap(_.safeRead()).toArray))
+
+  override protected def cancelLowLevelBody(p: Publisher[ju.List[ByteBuffer]]): Unit = cancelPublisher(p)
+
+  override protected def ensureOnAbnormal[T](effect: Task[T])(finalizer: => Task[Unit]): Task[T] = effect.onExit {
+    exit =>
+      if (exit.succeeded) ZIO.unit else finalizer.catchAll(t => ZIO.effect(t.printStackTrace()).orDie)
+  }.resurrect
 
   override protected val bodyToHttpClient: BodyToHttpClient[Task, ZioStreams, R] =
     new BodyToHttpClient[Task, ZioStreams, R] {

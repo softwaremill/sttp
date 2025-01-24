@@ -58,10 +58,26 @@ abstract class AbstractArmeriaBackend[F[_], S <: Streams[S]](
 
   protected def compressors: List[Compressor[R]] = Compressor.default[R]
 
-  override def send[T](request: GenericRequest[T, R]): F[Response[T]] =
-    monad.suspend(adjustExceptions(request)(execute(request)))
+  // #1987: see the comments in HttpClientAsyncBackend
+  protected def ensureOnAbnormal[T](effect: F[T])(finalizer: => F[Unit]): F[T]
 
-  private def execute[T](request: GenericRequest[T, R]): F[Response[T]] = {
+  override def send[T](request: GenericRequest[T, R]): F[Response[T]] = {
+    // #1987: see the comments in HttpClientAsyncBackend
+    val armeriaCtx = new AtomicReference[ClientRequestContext]()
+    ensureOnAbnormal {
+      monad.suspend(adjustExceptions(request)(execute(request, armeriaCtx)))
+    } {
+      monad.eval {
+        val ctx = armeriaCtx.get()
+        if (ctx != null) ctx.cancel()
+      }
+    }
+  }
+
+  private def execute[T](
+      request: GenericRequest[T, R],
+      armeriaCtx: AtomicReference[ClientRequestContext]
+  ): F[Response[T]] = {
     val captor = Clients.newContextCaptor()
     try {
       val armeriaRes = requestToArmeria(request).execute()
@@ -84,6 +100,7 @@ abstract class AbstractArmeriaBackend[F[_], S <: Streams[S]](
             noopCanceler
           }
         case Success(ctx) =>
+          armeriaCtx.set(ctx)
           fromArmeriaResponse(request, armeriaRes, ctx)
       }
     } catch {

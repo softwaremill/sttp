@@ -42,6 +42,11 @@ class OkHttpFutureBackend private (
     override val streams: NoStreams = NoStreams
     override def streamToRequestBody(stream: Nothing, mt: MediaType, cl: Option[Long]): OkHttpRequestBody = stream
   }
+
+  override protected def ensureOnAbnormal[T](effect: Future[T])(finalizer: => Future[Unit]): Future[T] =
+    effect.recoverWith { case e =>
+      finalizer.recoverWith { case e2 => e.addSuppressed(e2); Future.failed(e) }.flatMap(_ => Future.failed(e))
+    }
 }
 
 object OkHttpFutureBackend {

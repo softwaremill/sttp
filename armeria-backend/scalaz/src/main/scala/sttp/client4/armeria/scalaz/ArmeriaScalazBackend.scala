@@ -31,6 +31,11 @@ private final class ArmeriaScalazBackend(client: WebClient, closeFactory: Boolea
 
   override protected def streamToPublisher(stream: Nothing): Publisher[HttpData] =
     throw new UnsupportedOperationException("This backend does not support streaming")
+
+  override protected def ensureOnAbnormal[T](effect: Task[T])(finalizer: => Task[Unit]): Task[T] =
+    effect.handleWith { case e =>
+      finalizer.handleWith { case e2 => Task(e.addSuppressed(e2)) }.flatMap(_ => Task.fail(e))
+    }
 }
 
 object ArmeriaScalazBackend {

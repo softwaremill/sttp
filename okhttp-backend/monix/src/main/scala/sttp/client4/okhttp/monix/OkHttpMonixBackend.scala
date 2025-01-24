@@ -25,6 +25,7 @@ import scala.concurrent.Future
 import sttp.client4.compression.CompressionHandlers
 import sttp.client4.compression.Compressor
 import sttp.client4.compression.Decompressor
+import cats.effect.ExitCase
 
 class OkHttpMonixBackend private (
     client: OkHttpClient,
@@ -112,6 +113,11 @@ class OkHttpMonixBackend private (
 
   override protected def createSimpleQueue[T]: Task[SimpleQueue[Task, T]] =
     Task.eval(new MonixSimpleQueue[T](webSocketBufferCapacity))
+
+  override protected def ensureOnAbnormal[T](effect: Task[T])(finalizer: => Task[Unit]): Task[T] =
+    effect.guaranteeCase { exit =>
+      if (exit == ExitCase.Completed) Task.unit else finalizer.onErrorHandleWith(t => Task.eval(t.printStackTrace()))
+    }
 }
 
 object OkHttpMonixBackend {

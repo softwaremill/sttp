@@ -131,6 +131,23 @@ private class HttpServer(port: Int, info: String => Unit) extends AutoCloseable 
               discardEntity(complete(isChunked))
             }
           }
+        } ~
+        path("slow") {
+          get {
+            complete {
+              val source = akka.stream.scaladsl.Source
+                .repeat("a")
+                .throttle(1, 100.millis)
+                .take(20) // producing the entire response will take 2s
+
+              HttpResponse(
+                entity = HttpEntity.Chunked.fromData(
+                  ContentTypes.`text/plain(UTF-8)`,
+                  source.map(str => ByteString(str))
+                )
+              )
+            }
+          }
         }
     } ~ pathPrefix("sse") {
       path("echo3") {

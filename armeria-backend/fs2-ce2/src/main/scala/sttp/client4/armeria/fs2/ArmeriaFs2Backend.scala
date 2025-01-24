@@ -11,9 +11,9 @@ import sttp.capabilities.fs2.Fs2Streams
 import sttp.client4.armeria.ArmeriaWebClient.newClient
 import sttp.client4.armeria.{AbstractArmeriaBackend, BodyFromStreamMessage}
 import sttp.client4.impl.cats.CatsMonadAsyncError
-import sttp.client4.wrappers.FollowRedirectsBackend
 import sttp.client4.{wrappers, BackendOptions, StreamBackend}
 import sttp.monad.MonadAsyncError
+import cats.effect.ExitCase
 
 private final class ArmeriaFs2Backend[F[_]: ConcurrentEffect](client: WebClient, closeFactory: Boolean)
     extends AbstractArmeriaBackend[F, Fs2Streams[F]](client, closeFactory, new CatsMonadAsyncError) {
@@ -36,6 +36,12 @@ private final class ArmeriaFs2Backend[F[_]: ConcurrentEffect](client: WebClient,
       val bytes = chunk.toBytes
       HttpData.wrap(bytes.values, bytes.offset, bytes.length)
     }.toUnicastPublisher
+
+  override protected def ensureOnAbnormal[T](effect: F[T])(finalizer: => F[Unit]): F[T] =
+    ConcurrentEffect[F].guaranteeCase(effect) { exitCase =>
+      if (exitCase == ExitCase.Completed) ConcurrentEffect[F].unit
+      else ConcurrentEffect[F].onError(finalizer) { case t => ConcurrentEffect[F].delay(t.printStackTrace()) }
+    }
 }
 
 object ArmeriaFs2Backend {

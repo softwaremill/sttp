@@ -44,6 +44,11 @@ private final class ArmeriaZioBackend(runtime: Runtime[Any], client: WebClient, 
     }
 
   override protected def compressors: List[Compressor[R]] = List(GZipZioCompressor, DeflateZioCompressor)
+
+  override protected def ensureOnAbnormal[T](effect: Task[T])(finalizer: => Task[Unit]): Task[T] = effect.onExit {
+    exit =>
+      if (exit.isSuccess) ZIO.unit else finalizer.catchAll(t => ZIO.logErrorCause("Error in finalizer", Cause.fail(t)))
+  }.resurrect
 }
 
 object ArmeriaZioBackend {
