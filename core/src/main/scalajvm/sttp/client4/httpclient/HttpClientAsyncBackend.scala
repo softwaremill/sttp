@@ -110,10 +110,12 @@ abstract class HttpClientAsyncBackend[F[_], S <: Streams[S], BH, B](
               readResponse(jResponse, Left(limitedBody), request)
             }
         } {
-          // the request might have been interrupted during sending (no publisher is available then), or any time
-          // after that, including right after the sending effect completed, but before the response was read
-          val llb = lowLevelBody.get()
-          if (llb != null) monad.eval(cancelLowLevelBody(llb)) else monad.unit(())
+          monad.eval {
+            // the request might have been interrupted during sending (no publisher is available then), or any time
+            // after that, including right after the sending effect completed, but before the response was read
+            val llb = lowLevelBody.get()
+            if (llb != null) cancelLowLevelBody(llb)
+          }
         }
       }
   }
