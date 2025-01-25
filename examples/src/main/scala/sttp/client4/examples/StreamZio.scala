@@ -1,6 +1,6 @@
 // {cat=Streaming; effects=ZIO; backend=HttpClient}: Stream request & response bodies using ZIO-Streams
 
-//> using dep com.softwaremill.sttp.client4::zio:4.0.0-M24
+//> using dep com.softwaremill.sttp.client4::zio:4.0.0-M25
 
 package sttp.client4.examples
 
