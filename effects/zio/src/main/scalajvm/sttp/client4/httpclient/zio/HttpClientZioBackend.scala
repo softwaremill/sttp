@@ -110,6 +110,12 @@ class HttpClientZioBackend private (
 
   override protected def bodyToLimitedBody(b: ZioStreams.BinaryStream, limit: Long): ZioStreams.BinaryStream =
     ZioStreams.limitBytes(b, limit)
+
+  override protected def addOnEndCallbackToBody(
+      b: ZioStreams.BinaryStream,
+      callback: () => Unit
+  ): ZioStreams.BinaryStream =
+    b.ensuring(ZIO.attempt(callback()).orDie)
 }
 
 object HttpClientZioBackend {

@@ -84,12 +84,12 @@ private class OpenTelemetryMetricsListener(config: OpenTelemetryMetricsConfig)
   private val histograms = new ConcurrentHashMap[String, DoubleHistogram]()
   private val upAndDownCounter = new ConcurrentHashMap[String, LongUpDownCounter]()
 
-  override def beforeRequest(request: GenericRequest[_, _]): Option[Long] = {
+  override def beforeRequest[T, R](request: GenericRequest[T, R]): (GenericRequest[T, R], Option[Long]) = {
     val attributes = config.requestAttributes(request)
 
     updateInProgressCounter(request, 1, attributes)
     recordHistogram(config.requestToSizeHistogramMapper(request), request.contentLength, attributes)
-    config.requestToLatencyHistogramMapper(request).map { _ => config.clock.millis() }
+    (request, config.requestToLatencyHistogramMapper(request).map { _ => config.clock.millis() })
   }
 
   override def requestSuccessful(request: GenericRequest[_, _], response: Response[_], tag: Option[Long]): Unit = {

@@ -6,19 +6,18 @@ import sttp.capabilities.Effect
 import sttp.client4.wrappers.DelegateBackend
 import sttp.shared.Identity
 
-/** A backend wrapper which notifies the given [[RequestListener]] when a request starts and completes.
-  */
+/** A backend wrapper which notifies the given [[RequestListener]] when a request starts and completes. */
 abstract class ListenerBackend[F[_], P, L](
     delegate: GenericBackend[F, P],
     listener: RequestListener[F, L]
 ) extends DelegateBackend(delegate) {
   override def send[T](request: GenericRequest[T, P with Effect[F]]): F[Response[T]] =
-    listener.beforeRequest(request).flatMap { t =>
+    listener.beforeRequest(request).flatMap { case (requestToSend, tag) =>
       monad
-        .handleError(delegate.send(request)) { case e: Exception =>
-          listener.requestException(request, t, e).flatMap(_ => monad.error(e))
+        .handleError(delegate.send(requestToSend)) { case e: Exception =>
+          listener.requestException(requestToSend, tag, e).flatMap(_ => monad.error(e))
         }
-        .flatMap(response => listener.requestSuccessful(request, response, t).map(_ => response))
+        .flatMap(response => listener.requestSuccessful(requestToSend, response, tag).map(_ => response))
     }
 }
 

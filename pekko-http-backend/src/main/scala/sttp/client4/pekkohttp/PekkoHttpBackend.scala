@@ -1,28 +1,42 @@
 package sttp.client4.pekkohttp
 
-import java.io.UnsupportedEncodingException
-import org.apache.pekko.{Done, NotUsed}
-import org.apache.pekko.actor.{ActorSystem, CoordinatedShutdown}
+import org.apache.pekko.Done
+import org.apache.pekko.NotUsed
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.actor.CoordinatedShutdown
 import org.apache.pekko.event.LoggingAdapter
-import org.apache.pekko.http.scaladsl.coding.Coders
-import org.apache.pekko.http.scaladsl.model.headers.{BasicHttpCredentials, HttpEncoding, HttpEncodings}
-import org.apache.pekko.http.scaladsl.model.ws.{InvalidUpgradeResponse, Message, ValidUpgrade, WebSocketRequest}
+import org.apache.pekko.http.scaladsl.ClientTransport
+import org.apache.pekko.http.scaladsl.Http
+import org.apache.pekko.http.scaladsl.HttpsConnectionContext
+import org.apache.pekko.http.scaladsl.model.headers.BasicHttpCredentials
+import org.apache.pekko.http.scaladsl.model.headers.HttpEncoding
+import org.apache.pekko.http.scaladsl.model.headers.HttpEncodings
+import org.apache.pekko.http.scaladsl.model.ws.InvalidUpgradeResponse
+import org.apache.pekko.http.scaladsl.model.ws.Message
+import org.apache.pekko.http.scaladsl.model.ws.ValidUpgrade
+import org.apache.pekko.http.scaladsl.model.ws.WebSocketRequest
 import org.apache.pekko.http.scaladsl.model.{StatusCode => _, _}
 import org.apache.pekko.http.scaladsl.settings.ConnectionPoolSettings
-import org.apache.pekko.http.scaladsl.{ClientTransport, Http, HttpsConnectionContext}
 import org.apache.pekko.stream.Materializer
-import org.apache.pekko.stream.scaladsl.{Flow, Sink}
+import org.apache.pekko.stream.scaladsl.Flow
+import org.apache.pekko.stream.scaladsl.Sink
+import org.apache.pekko.util.ByteString
+import sttp.capabilities.Effect
+import sttp.capabilities.WebSockets
 import sttp.capabilities.pekko.PekkoStreams
-import sttp.capabilities.{Effect, WebSockets}
-import sttp.client4.testing.WebSocketStreamBackendStub
 import sttp.client4._
-import sttp.client4.wrappers.FollowRedirectsBackend
-import sttp.model.{ResponseMetadata, StatusCode}
-import sttp.monad.{FutureMonad, MonadError}
-
-import scala.concurrent.{ExecutionContext, Future, Promise}
 import sttp.client4.compression.CompressionHandlers
 import sttp.client4.compression.Decompressor
+import sttp.client4.testing.WebSocketStreamBackendStub
+import sttp.client4.wrappers.FollowRedirectsBackend
+import sttp.model.ResponseMetadata
+import sttp.model.StatusCode
+import sttp.monad.FutureMonad
+import sttp.monad.MonadError
+
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+import scala.concurrent.Promise
 
 class PekkoHttpBackend private (
     actorSystem: ActorSystem,
@@ -136,11 +150,28 @@ class PekkoHttpBackend private (
       wsFlow
         .map(Right(_))
         .getOrElse(
-          Left(decodePekkoResponse(limitPekkoResponseIfNeeded(hr, r.maxResponseBodyLength), r.autoDecompressionEnabled))
+          Left(
+            decodePekkoResponse(
+              limitPekkoResponseIfNeeded(addOnEndCallback(hr, r.options.onBodyReceived), r.maxResponseBodyLength),
+              r.autoDecompressionEnabled
+            )
+          )
         )
     )
 
     body.map(sttp.client4.Response(_, code, statusText, headers, Nil, r.onlyMetadata))
+  }
+
+  private def addOnEndCallback(response: HttpResponse, callback: () => Unit): HttpResponse = {
+    if (response.entity.isKnownEmpty) {
+      callback()
+      response
+    } else {
+      response.transformEntityDataBytes(Flow[ByteString].watchTermination() { case (mat, doneFuture) =>
+        doneFuture.onComplete(_ => callback())
+        mat
+      })
+    }
   }
 
   private def limitPekkoResponseIfNeeded(response: HttpResponse, limit: Option[Long]): HttpResponse =

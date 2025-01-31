@@ -23,8 +23,11 @@ case class LogConfig(
     logResponseBody: Boolean = false,
     /** Should the time it takes to complete the request be included in the log message that is logged after receiving a
       * response, or when an exception occurs.
+      *
+      * Two durations are included: one from the start of the request until the response body is fully received, and
+      * another one when the response body is fully processed (e.g. including parsing).
       */
-    includeTiming: Boolean = true,
+    includeTimings: Boolean = true,
     /** The sensitive headers that are filtered out, when logging request & response headers. */
     sensitiveHeaders: Set[String] = HeaderNames.SensitiveHeaders,
     /** The log level that is used for the log message, that is being logged before sending a request. */

@@ -7,6 +7,7 @@ import sttp.model.{Header, HeaderNames, StatusCode}
 
 import scala.collection.immutable.Seq
 import scala.concurrent.duration.DurationInt
+import sttp.client4.logging.ResponseTimings
 
 class LogContextTests extends AnyFlatSpec with Matchers {
 
@@ -42,7 +43,11 @@ class LogContextTests extends AnyFlatSpec with Matchers {
       request = basicRequest.get(uri"http://example.org").auth.bearer("token")
     )
 
-    defaultLogContext.forResponse(response.request, response, Some(1234.millis)) should be(
+    defaultLogContext.forResponse(
+      response.request,
+      response,
+      Some(ResponseTimings(1234.millis, 2345.millis))
+    ) should be(
       Map(
         "http.request.uri" -> "http://example.org",
         "http.request.method" -> "GET",
@@ -65,7 +70,11 @@ class LogContextTests extends AnyFlatSpec with Matchers {
       request = basicRequest.get(uri"http://example.org").auth.bearer("token")
     )
 
-    defaultLogContext.forResponse(response.request, response, Some(1234.millis)) should be(
+    defaultLogContext.forResponse(
+      response.request,
+      response,
+      Some(ResponseTimings(1234.millis, 2345.millis))
+    ) should be(
       Map(
         "http.request.uri" -> "http://example.org",
         "http.request.method" -> "GET",

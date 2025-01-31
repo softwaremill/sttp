@@ -35,7 +35,8 @@ trait SttpApi extends SttpExtensions with UriInterpolator {
         compressRequestBody = None,
         httpVersion = None,
         loggingOptions = LoggingOptions(),
-        maxResponseBodyLength = None
+        maxResponseBodyLength = None,
+        onBodyReceived = () => ()
       ),
       AttributeMap.Empty
     )

@@ -383,6 +383,19 @@ trait PartialRequestBuilder[+PR <: PartialRequestBuilder[PR, R], +R]
   /** The maximum response body length, if any. */
   def maxResponseBodyLength: Option[Long] = options.maxResponseBodyLength
 
+  /** Add a callback to be invoked when the entire response body has been received (but not yet processed, e.g. by
+    * parsing the received data). This is used by logging & metrics backends to properly capture timing information.
+    *
+    * The callback is not called when there's an exception while reading the response body, or for WebSocket requests.
+    */
+  def onBodyReceived(callback: () => Unit): PR = {
+    val oldCallback = options.onBodyReceived
+    withOptions(options.copy(onBodyReceived = () => {
+      oldCallback()
+      callback()
+    }))
+  }
+
   /** Reads a per-request attribute for the given key, if present. */
   def attribute[T](k: AttributeKey[T]): Option[T] = attributes.get(k)
 

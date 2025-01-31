@@ -22,7 +22,6 @@ import sttp.client4.internal.ws.SimpleQueue
 import sttp.client4.testing.WebSocketBackendStub
 import sttp.client4.wrappers
 import sttp.monad.MonadError
-import sttp.tapir.server.jdkhttp.internal.FailingLimitedInputStream
 import sttp.ws.WebSocket
 import sttp.ws.WebSocketFrame
 
@@ -32,6 +31,8 @@ import java.net.http.HttpRequest
 import java.net.http.HttpRequest.BodyPublisher
 import java.net.http.HttpResponse
 import java.net.http.HttpResponse.BodyHandlers
+import sttp.client4.internal.FailingLimitedInputStream
+import sttp.client4.internal.OnEndInputStream
 
 class HttpClientCatsBackend[F[_]: Async] private (
     client: HttpClient,
@@ -91,6 +92,9 @@ class HttpClientCatsBackend[F[_]: Async] private (
 
   override protected def bodyToLimitedBody(b: InputStream, limit: Long): InputStream =
     new FailingLimitedInputStream(b, limit)
+
+  override protected def addOnEndCallbackToBody(b: InputStream, callback: () => Unit): InputStream =
+    new OnEndInputStream(b, callback)
 }
 
 object HttpClientCatsBackend {

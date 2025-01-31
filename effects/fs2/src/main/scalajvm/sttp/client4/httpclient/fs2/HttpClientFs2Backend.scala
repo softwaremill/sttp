@@ -105,6 +105,9 @@ class HttpClientFs2Backend[F[_]: Async] private (
 
   override protected def bodyToLimitedBody(b: Stream[F, Byte], limit: Long): Stream[F, Byte] =
     Fs2Streams.limitBytes(b, limit)
+
+  override protected def addOnEndCallbackToBody(b: Stream[F, Byte], callback: () => Unit): Stream[F, Byte] =
+    b.onFinalize(Async[F].delay(callback()))
 }
 
 object HttpClientFs2Backend {

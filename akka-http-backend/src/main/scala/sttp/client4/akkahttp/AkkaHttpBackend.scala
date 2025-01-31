@@ -10,6 +10,7 @@ import akka.http.scaladsl.settings.ConnectionPoolSettings
 import akka.http.scaladsl.{ClientTransport, Http, HttpsConnectionContext}
 import akka.stream.Materializer
 import akka.stream.scaladsl.{Flow, Sink}
+import akka.util.ByteString
 import sttp.capabilities.akka.AkkaStreams
 import sttp.capabilities.{Effect, WebSockets}
 import sttp.client4.testing.WebSocketStreamBackendStub
@@ -134,14 +135,31 @@ class AkkaHttpBackend private (
       wsFlow
         .map(Right(_))
         .getOrElse(
-          Left(decodeAkkaResponse(limitPekkoResponseIfNeeded(hr, r.maxResponseBodyLength), r.autoDecompressionEnabled))
+          Left(
+            decodeAkkaResponse(
+              limitAkkaResponseIfNeeded(addOnEndCallback(hr, r.options.onBodyReceived), r.maxResponseBodyLength),
+              r.autoDecompressionEnabled
+            )
+          )
         )
     )
 
     body.map(sttp.client4.Response(_, code, statusText, headers, Nil, r.onlyMetadata))
   }
 
-  private def limitPekkoResponseIfNeeded(response: HttpResponse, limit: Option[Long]): HttpResponse =
+  private def addOnEndCallback(response: HttpResponse, callback: () => Unit): HttpResponse = {
+    if (response.entity.isKnownEmpty) {
+      callback()
+      response
+    } else {
+      response.transformEntityDataBytes(Flow[ByteString].watchTermination() { case (mat, doneFuture) =>
+        doneFuture.onComplete(_ => callback())
+        mat
+      })
+    }
+  }
+
+  private def limitAkkaResponseIfNeeded(response: HttpResponse, limit: Option[Long]): HttpResponse =
     limit.fold(response)(l => response.withEntity(response.entity.withSizeLimit(l)))
 
   // http://doc.akka.io/docs/akka-http/10.0.7/scala/http/common/de-coding.html

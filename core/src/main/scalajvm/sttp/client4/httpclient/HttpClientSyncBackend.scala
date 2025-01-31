@@ -20,8 +20,8 @@ import java.util.concurrent.{ArrayBlockingQueue, CompletionException}
 import sttp.client4.compression.Compressor
 import sttp.client4.compression.CompressionHandlers
 import sttp.client4.compression.Decompressor
-import sttp.tapir.server.jdkhttp.internal.FailingLimitedInputStream
 import java.util.concurrent.atomic.AtomicReference
+import sttp.client4.internal.{FailingLimitedInputStream, OnEndInputStream}
 
 class HttpClientSyncBackend private (
     client: HttpClient,
@@ -41,8 +41,9 @@ class HttpClientSyncBackend private (
     val jRequest = customizeRequest(convertRequest(request))
     val response = client.send(jRequest, BodyHandlers.ofInputStream())
     try {
-      val body = response.body()
-      val limitedBody = request.options.maxResponseBodyLength.fold(body)(new FailingLimitedInputStream(body, _))
+      val body = new OnEndInputStream(response.body(), request.options.onBodyReceived)
+      val limitedBody =
+        request.options.maxResponseBodyLength.fold[InputStream](body)(new FailingLimitedInputStream(body, _))
       readResponse(response, Left(limitedBody), request)
     } catch {
       case e: Throwable =>

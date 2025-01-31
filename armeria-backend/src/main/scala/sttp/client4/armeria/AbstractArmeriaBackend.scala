@@ -101,6 +101,7 @@ abstract class AbstractArmeriaBackend[F[_], S <: Streams[S]](
           }
         case Success(ctx) =>
           armeriaCtx.set(ctx)
+          armeriaRes.whenComplete().whenComplete((_, e) => if (e == null) { request.options.onBodyReceived() })
           fromArmeriaResponse(request, armeriaRes, ctx)
       }
     } catch {

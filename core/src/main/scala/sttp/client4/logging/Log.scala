@@ -15,11 +15,11 @@ trait Log[F[_]] {
       request: GenericRequest[_, _],
       response: Response[_],
       responseBody: Option[String],
-      elapsed: Option[Duration]
+      timings: Option[ResponseTimings]
   ): F[Unit]
   def requestException(
       request: GenericRequest[_, _],
-      elapsed: Option[Duration],
+      timings: Option[ResponseTimings],
       e: Exception
   ): F[Unit]
 }
@@ -79,14 +79,14 @@ class DefaultLog[F[_]](
       request: GenericRequest[_, _],
       response: Response[_],
       responseBody: Option[String],
-      elapsed: Option[Duration]
-  ): F[Unit] = handleResponse(request, response, responseBody, elapsed, None)
+      timings: Option[ResponseTimings]
+  ): F[Unit] = handleResponse(request, response, responseBody, timings, None)
 
   private def handleResponse(
       request: GenericRequest[_, _],
       response: ResponseMetadata,
       responseBody: Option[String],
-      elapsed: Option[Duration],
+      timings: Option[ResponseTimings],
       e: Option[Throwable]
   ): F[Unit] = {
     val responseWithBody = Response(
@@ -106,25 +106,33 @@ class DefaultLog[F[_]](
           request.loggingOptions.logResponseHeaders.getOrElse(logResponseHeaders),
           sensitiveHeaders
         )
-        s"Request: ${request.showBasic}${took(elapsed)}, response: $responseAsString"
+        s"Request: ${request.showBasic}${took(timings)}, response: $responseAsString"
       },
       throwable = e,
-      context = logContext.forResponse(request, response, elapsed)
+      context = logContext.forResponse(request, response, timings)
     )
   }
 
-  override def requestException(request: GenericRequest[_, _], elapsed: Option[Duration], e: Exception): F[Unit] =
+  override def requestException(
+      request: GenericRequest[_, _],
+      timings: Option[ResponseTimings],
+      e: Exception
+  ): F[Unit] =
     ResponseException.find(e) match {
       case Some(re) =>
-        handleResponse(request, re.response, None, elapsed, Some(e))
+        handleResponse(request, re.response, None, timings, Some(e))
       case None =>
         logger(
           level = responseExceptionLogLevel,
-          message = s"Exception when sending request: ${request.showBasic}${took(elapsed)}",
+          message =
+            s"Exception when sending request: ${request.showBasic}${tookFromDuration(timings.map(_.bodyProcessed))}",
           throwable = Some(e),
           context = logContext.forRequest(request)
         )
     }
 
-  private def took(elapsed: Option[Duration]): String = elapsed.fold("")(e => f", took: ${e.toMillis / 1000.0}%.3fs")
+  private def elapsed(d: Duration): String = f"${d.toMillis / 1000.0}%.3fs"
+  private def tookFromDuration(timing: Option[Duration]): String = timing.fold("")(t => f", took: ${elapsed(t)}")
+  private def took(timings: Option[ResponseTimings]): String =
+    timings.fold("")(t => s", took: body=${elapsed(t.bodyReceived)}, full=${elapsed(t.bodyProcessed)}")
 }

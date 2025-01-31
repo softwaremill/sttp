@@ -105,6 +105,11 @@ class HttpClientMonixBackend private (
         case (_, None)        => Observable.raiseError(new StreamMaxLengthExceededException(limit))
       }
   }
+
+  override protected def addOnEndCallbackToBody(
+      b: Observable[Array[Byte]],
+      callback: () => Unit
+  ): Observable[Array[Byte]] = b.doOnComplete(Task(callback()))
 }
 
 object HttpClientMonixBackend {

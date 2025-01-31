@@ -23,7 +23,8 @@ import scala.collection.JavaConverters._
 import sttp.client4.compression.Compressor
 import sttp.client4.compression.CompressionHandlers
 import sttp.client4.compression.Decompressor
-import sttp.tapir.server.jdkhttp.internal.FailingLimitedInputStream
+import sttp.client4.internal.FailingLimitedInputStream
+import sttp.client4.internal.OnEndInputStream
 
 abstract class OkHttpBackend[F[_], S <: Streams[S], P](
     client: OkHttpClient,
@@ -90,9 +91,9 @@ abstract class OkHttpBackend[F[_], S <: Streams[S], P](
     val responseMetadata = ResponseMetadata(StatusCode(res.code()), res.message(), headers)
     val encoding = headers.collectFirst { case h if h.is(HeaderNames.ContentEncoding) => h.value }
     val method = Method(res.request().method())
-    val inputStream = res.body().byteStream()
+    val inputStream = new OnEndInputStream(res.body().byteStream(), request.options.onBodyReceived)
     val limitedInputStream =
-      request.maxResponseBodyLength.fold(inputStream)(l => new FailingLimitedInputStream(inputStream, l))
+      request.maxResponseBodyLength.fold[InputStream](inputStream)(l => new FailingLimitedInputStream(inputStream, l))
     val byteBody =
       if (
         method != Method.HEAD && !res
