@@ -253,7 +253,7 @@ abstract class AbstractArmeriaBackend[F[_], S <: Streams[S]](
         Canceler(() => response.abort())
       }
       meta <- headersToResponseMeta(headers, ctx)
-      body <- bodyFromStreamMessage(ctx.eventLoop(), aggregatorRef)(
+      body <- bodyFromStreamMessage(ctx.eventLoop(), aggregatorRef, request.options.onBodyReceived)(
         request.response,
         meta,
         Left(splitHttpResponse.body())
