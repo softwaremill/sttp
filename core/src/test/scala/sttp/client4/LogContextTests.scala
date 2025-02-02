@@ -46,7 +46,7 @@ class LogContextTests extends AnyFlatSpec with Matchers {
     defaultLogContext.forResponse(
       response.request,
       response,
-      Some(ResponseTimings(1234.millis, 2345.millis))
+      Some(ResponseTimings(Some(1234.millis), 2345.millis))
     ) should be(
       Map(
         "http.request.uri" -> "http://example.org",
@@ -73,7 +73,7 @@ class LogContextTests extends AnyFlatSpec with Matchers {
     defaultLogContext.forResponse(
       response.request,
       response,
-      Some(ResponseTimings(1234.millis, 2345.millis))
+      Some(ResponseTimings(Some(1234.millis), 2345.millis))
     ) should be(
       Map(
         "http.request.uri" -> "http://example.org",

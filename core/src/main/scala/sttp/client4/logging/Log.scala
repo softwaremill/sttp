@@ -133,6 +133,12 @@ class DefaultLog[F[_]](
 
   private def elapsed(d: Duration): String = f"${d.toMillis / 1000.0}%.3fs"
   private def tookFromDuration(timing: Option[Duration]): String = timing.fold("")(t => f", took: ${elapsed(t)}")
-  private def took(timings: Option[ResponseTimings]): String =
-    timings.fold("")(t => s", took: body=${elapsed(t.bodyReceived)}, full=${elapsed(t.bodyProcessed)}")
+  private def took(timings: Option[ResponseTimings]): String = {
+    timings.fold("") { t =>
+      t.bodyReceived match {
+        case None     => s", took: ${elapsed(t.bodyProcessed)}"
+        case Some(br) => s", took: (body=${elapsed(br)}, full=${elapsed(t.bodyProcessed)})"
+      }
+    }
+  }
 }

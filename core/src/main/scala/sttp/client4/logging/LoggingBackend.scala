@@ -78,8 +78,10 @@ class LoggingBackend[F[_], P](
 
   private def now(): Long = System.currentTimeMillis()
   private def elapsed(from: Long): Duration = Duration(now() - from, TimeUnit.MILLISECONDS)
-  private def toResponseTimings(tag: LoggingTag): ResponseTimings =
-    ResponseTimings(elapsed(tag.start), elapsed(tag.bodyReceived.get()))
+  private def toResponseTimings(tag: LoggingTag): ResponseTimings = {
+    val br = tag.bodyReceived.get()
+    ResponseTimings(if (br == 0) None else Some(elapsed(br)), elapsed(tag.start))
+  }
 }
 
 /** The logging backend uses the given [[Logger]] instance (which provides integration with an underlying logging
