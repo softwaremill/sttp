@@ -171,7 +171,7 @@ class PekkoHttpBackend private (
       response
     } else {
       response.transformEntityDataBytes(Flow[ByteString].watchTermination() { case (mat, doneFuture) =>
-        doneFuture.onComplete(_ => callback())
+        doneFuture.onComplete(t => if (t.isSuccess) callback())
         mat
       })
     }
