@@ -151,9 +151,12 @@ class PekkoHttpBackend private (
         .map(Right(_))
         .getOrElse(
           Left(
-            decodePekkoResponse(
-              limitPekkoResponseIfNeeded(addOnEndCallback(hr, r.options.onBodyReceived), r.maxResponseBodyLength),
-              r.autoDecompressionEnabled
+            addOnEndCallback(
+              decodePekkoResponse(
+                limitPekkoResponseIfNeeded(hr, r.maxResponseBodyLength),
+                r.autoDecompressionEnabled
+              ),
+              () => r.options.onBodyReceived(responseMetadata)
             )
           )
         )

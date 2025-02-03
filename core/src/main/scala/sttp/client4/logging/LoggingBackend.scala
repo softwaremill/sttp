@@ -25,7 +25,7 @@ class LoggingBackend[F[_], P](
         val _includeTimings = request.loggingOptions.includeTimings.getOrElse(includeTimings)
         val (requestWithTimings, tag) = if (_includeTimings) {
           val t = LoggingTag(now(), new AtomicLong(0L))
-          (request.onBodyReceived(() => t.bodyReceived.set(now())), Some(t))
+          (request.onBodyReceived(_ => t.bodyReceived.set(now())), Some(t))
         } else (request, None)
 
         monad.handleError {
@@ -36,7 +36,7 @@ class LoggingBackend[F[_], P](
           monad.flatMap {
             ResponseException.find(e) match {
               case Some(re) => log.response(request, re.response, None, tag.map(toResponseTimings), Some(e))
-              case None     => log.requestException(request, tag.map(toResponseTimings).map(_.bodyProcessed), e)
+              case None     => log.requestException(request, tag.map(toResponseTimings).map(_.bodyHandled), e)
             }
           } { _ => monad.error(e) }
         }

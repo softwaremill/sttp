@@ -80,7 +80,7 @@ class HttpURLConnectionBackend private (
       }
 
       try {
-        val is = new OnEndInputStream(c.getInputStream, r.options.onBodyReceived)
+        val is = c.getInputStream()
         val limitedIs = r.options.maxResponseBodyLength.fold[InputStream](is)(new FailingLimitedInputStream(is, _))
         readResponse(c, limitedIs, r)
       } catch {
@@ -266,7 +266,9 @@ class HttpURLConnectionBackend private (
         wrapInput(contentEncoding, handleNullInput(is))
       } else handleNullInput(is)
     val responseMetadata = ResponseMetadata(code, c.getResponseMessage, headers)
-    val body = bodyFromResponseAs(request.response, responseMetadata, Left(wrappedIs))
+
+    val isWithCallback = new OnEndInputStream(wrappedIs, () => request.options.onBodyReceived(responseMetadata))
+    val body = bodyFromResponseAs(request.response, responseMetadata, Left(isWithCallback))
 
     Response(body, code, c.getResponseMessage, headers, Nil, request.onlyMetadata)
   }

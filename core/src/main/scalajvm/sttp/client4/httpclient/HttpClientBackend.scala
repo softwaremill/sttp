@@ -64,6 +64,7 @@ abstract class HttpClientBackend[F[_], S <: Streams[S], P, B](
 
   protected def bodyToHttpClient: BodyToHttpClient[F, S, R]
   protected def bodyFromHttpClient: BodyFromHttpClient[F, S, B]
+  protected def addOnEndCallbackToBody(b: B, callback: () => Unit): B
 
   private[client4] def convertRequest[T](request: GenericRequest[T, R]): F[HttpRequest] =
     monad.suspend {
@@ -130,7 +131,12 @@ abstract class HttpClientBackend[F[_], S <: Streams[S], P, B](
     } else {
       resBody
     }
-    val body = bodyFromHttpClient(decodedResBody, request.response, responseMetadata)
+
+    val decodedResBodyWithCallback = decodedResBody.left.map(body =>
+      addOnEndCallbackToBody(body, () => request.options.onBodyReceived(responseMetadata))
+    )
+
+    val body = bodyFromHttpClient(decodedResBodyWithCallback, request.response, responseMetadata)
     monad.map(body)(Response(_, code, "", headers, Nil, request.onlyMetadata))
   }
 

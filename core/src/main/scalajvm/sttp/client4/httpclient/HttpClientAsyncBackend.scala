@@ -24,6 +24,7 @@ import java.util.concurrent.CompletionException
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
 import java.util.function.BiConsumer
+import sttp.model.ResponseMetadata
 
 /** @tparam F
   *   The effect type
@@ -49,7 +50,6 @@ abstract class HttpClientAsyncBackend[F[_], S <: Streams[S], BH, B](
   protected def lowLevelBodyToBody(p: BH): B
   protected def cancelLowLevelBody(p: BH): Unit
   protected def bodyToLimitedBody(b: B, limit: Long): B
-  protected def addOnEndCallbackToBody(b: B, callback: () => Unit): B
   protected def emptyBody(): B
 
   /** A variant of [[MonadAsyncError.ensure]] which runs the finalizer only when the effect finished abnormally
@@ -109,9 +109,7 @@ abstract class HttpClientAsyncBackend[F[_], S <: Streams[S], BH, B](
                 .map(lowLevelBodyToBody)
                 .getOrElse(emptyBody())
 
-              val bodyWithCallback = addOnEndCallbackToBody(body, request.options.onBodyReceived)
-              val limitedBody =
-                request.options.maxResponseBodyLength.fold(bodyWithCallback)(bodyToLimitedBody(bodyWithCallback, _))
+              val limitedBody = request.options.maxResponseBodyLength.fold(body)(bodyToLimitedBody(body, _))
 
               readResponse(jResponse, Left(limitedBody), request)
             }

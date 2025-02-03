@@ -789,7 +789,7 @@ trait HttpTest[F[_]]
   "onBodyReceived" - {
     "should be called when sending a request" in {
       val called = new AtomicBoolean(false)
-      val req = postEcho.onBodyReceived(() => called.set(true)).body(testBody)
+      val req = postEcho.onBodyReceived(_ => called.set(true)).body(testBody)
 
       req.send(backend).toFuture().map { response =>
         response.body shouldBe Right(expectedPostEchoResponse)
@@ -800,7 +800,7 @@ trait HttpTest[F[_]]
     "should be called when parsing the request fails" in {
       val called = new AtomicBoolean(false)
       val req = postEcho
-        .onBodyReceived(() => called.set(true))
+        .onBodyReceived(_ => called.set(true))
         .body(testBody)
         .response(asString.map(_ => throw new RuntimeException))
 
@@ -812,7 +812,7 @@ trait HttpTest[F[_]]
     "should be called when the response body is ignored" in {
       val called = new AtomicBoolean(false)
       val req = postEcho
-        .onBodyReceived(() => called.set(true))
+        .onBodyReceived(_ => called.set(true))
         .body(testBody)
         .response(ignore)
 
@@ -823,7 +823,7 @@ trait HttpTest[F[_]]
 
     "should not be called when there's an exception during receiving the data" in {
       val called = new AtomicBoolean(false)
-      val req = basicRequest.onBodyReceived(() => called.set(true)).get(uri"$endpoint/error")
+      val req = basicRequest.onBodyReceived(_ => called.set(true)).get(uri"$endpoint/error")
 
       Future(req.send(backend)).flatMap(_.toFuture()).failed.map { _ =>
         called.get() shouldBe false

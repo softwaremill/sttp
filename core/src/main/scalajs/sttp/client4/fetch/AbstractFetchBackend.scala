@@ -150,11 +150,11 @@ abstract class AbstractFetchBackend[F[_], S <: Streams[S]](
         }
       }
       .flatMap { resp =>
-        // the response is read into memory
-        request.options.onBodyReceived()
-
         val headers = convertResponseHeaders(resp.headers)
         val metadata = ResponseMetadata(StatusCode(resp.status), resp.statusText, headers)
+
+        // the response is read into memory
+        request.options.onBodyReceived(metadata)
 
         val body: F[T] = bodyFromResponseAs(request.response, metadata, Left(resp))
 

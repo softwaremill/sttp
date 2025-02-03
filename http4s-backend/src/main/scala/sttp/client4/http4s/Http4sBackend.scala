@@ -83,11 +83,9 @@ class Http4sBackend[F[_]: Async](
               val statusText = response.status.reason
               val responseMetadata = ResponseMetadata(code, statusText, headers)
 
-              val callbackResponse =
-                response.copy(body = response.body.onFinalize(Async[F].delay(r.options.onBodyReceived())))
               val limitedResponse: org.http4s.Response[F] =
-                r.options.maxResponseBodyLength.fold(callbackResponse)(limit =>
-                  response.copy(body = Fs2Streams.limitBytes(callbackResponse.body, limit))
+                r.options.maxResponseBodyLength.fold(response)(limit =>
+                  response.copy(body = Fs2Streams.limitBytes(response.body, limit))
                 )
 
               val signalBodyComplete = responseBodyCompleteVar.complete(()).map(_ => ())
@@ -97,7 +95,10 @@ class Http4sBackend[F[_]: Async](
                   responseMetadata,
                   Left(
                     onFinalizeSignal(
-                      decompressResponseBodyIfNotHead(r.method, limitedResponse, r.autoDecompressionEnabled),
+                      addOnBodyReceivedCallback(
+                        decompressResponseBodyIfNotHead(r.method, limitedResponse, r.autoDecompressionEnabled),
+                        () => r.options.onBodyReceived(responseMetadata)
+                      ),
                       signalBodyComplete
                     )
                   )
@@ -201,6 +202,9 @@ class Http4sBackend[F[_]: Async](
       enableAutoDecompression: Boolean
   ): http4s.Response[F] =
     if (m == Method.HEAD || !enableAutoDecompression) hr else decompressResponseBody(hr)
+
+  private def addOnBodyReceivedCallback[T](hr: http4s.Response[F], callback: () => Unit): http4s.Response[F] =
+    hr.copy(body = hr.body.onFinalize(Async[F].delay(callback())))
 
   private def decompressResponseBody(hr: http4s.Response[F]): http4s.Response[F] = {
     val body = hr.headers

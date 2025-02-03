@@ -25,6 +25,7 @@ import sttp.client4.compression.CompressionHandlers
 import sttp.client4.compression.Decompressor
 import sttp.client4.internal.FailingLimitedInputStream
 import sttp.client4.internal.OnEndInputStream
+import sttp.client4.GenericResponseAs.isWebSocket
 
 abstract class OkHttpBackend[F[_], S <: Streams[S], P](
     client: OkHttpClient,
@@ -85,16 +86,17 @@ abstract class OkHttpBackend[F[_], S <: Streams[S], P](
   private[okhttp] def readResponse[T](
       res: OkHttpResponse,
       request: GenericRequest[_, R],
-      responseAs: ResponseAsDelegate[T, R]
+      responseAs: ResponseAsDelegate[T, R],
+      isWebSocket: Boolean
   ): F[Response[T]] = {
     val headers = readHeaders(res)
     val responseMetadata = ResponseMetadata(StatusCode(res.code()), res.message(), headers)
     val encoding = headers.collectFirst { case h if h.is(HeaderNames.ContentEncoding) => h.value }
     val method = Method(res.request().method())
-    val inputStream = new OnEndInputStream(res.body().byteStream(), request.options.onBodyReceived)
+    val inputStream = res.body().byteStream()
     val limitedInputStream =
-      request.maxResponseBodyLength.fold[InputStream](inputStream)(l => new FailingLimitedInputStream(inputStream, l))
-    val byteBody =
+      request.maxResponseBodyLength.fold(inputStream)(l => new FailingLimitedInputStream(inputStream, l))
+    val decompressedInputStream =
       if (
         method != Method.HEAD && !res
           .code()
@@ -108,7 +110,12 @@ abstract class OkHttpBackend[F[_], S <: Streams[S], P](
         limitedInputStream
       }
 
-    val body = bodyFromOkHttp(byteBody, responseAs, responseMetadata, None)
+    val inputStreamWithCallback =
+      if (isWebSocket) decompressedInputStream
+      else
+        new OnEndInputStream(decompressedInputStream, () => request.options.onBodyReceived(responseMetadata))
+
+    val body = bodyFromOkHttp(inputStreamWithCallback, responseAs, responseMetadata, None)
     monad.map(body)(Response(_, StatusCode(res.code()), res.message(), headers, Nil, request.onlyMetadata))
   }
 

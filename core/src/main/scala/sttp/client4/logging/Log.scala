@@ -98,8 +98,8 @@ class DefaultLog[F[_]](logger: Logger[F], config: LogConfig, logContext: LogCont
   private def took(timings: Option[ResponseTimings]): String = {
     timings.fold("") { t =>
       t.bodyReceived match {
-        case None     => s", took: ${elapsed(t.bodyProcessed)}"
-        case Some(br) => s", took: (body=${elapsed(br)}, full=${elapsed(t.bodyProcessed)})"
+        case None     => s", took: ${elapsed(t.bodyHandled)}"
+        case Some(br) => s", took: (body=${elapsed(br)}, full=${elapsed(t.bodyHandled)})"
       }
     }
   }

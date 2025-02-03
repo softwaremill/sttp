@@ -136,9 +136,12 @@ class AkkaHttpBackend private (
         .map(Right(_))
         .getOrElse(
           Left(
-            decodeAkkaResponse(
-              limitAkkaResponseIfNeeded(addOnEndCallback(hr, r.options.onBodyReceived), r.maxResponseBodyLength),
-              r.autoDecompressionEnabled
+            addOnEndCallback(
+              decodeAkkaResponse(
+                limitAkkaResponseIfNeeded(hr, r.maxResponseBodyLength),
+                r.autoDecompressionEnabled
+              ),
+              () => r.options.onBodyReceived(responseMetadata)
             )
           )
         )

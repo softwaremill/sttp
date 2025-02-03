@@ -64,7 +64,7 @@ object LogContext {
       if (logResponseHeaders)
         context += "http.response.headers" -> response.headers.map(_.toStringSafe(sensitiveHeaders)).mkString(" | ")
       timings.foreach { t =>
-        context += "http.duration" -> t.bodyReceived.getOrElse(t.bodyProcessed).toNanos
+        context += "http.duration" -> t.bodyReceived.getOrElse(t.bodyHandled).toNanos
       }
 
       context.toMap

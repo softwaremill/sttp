@@ -42,7 +42,7 @@ abstract class OkHttpAsyncBackend[F[_], S <: Streams[S], P](
 
           override def onResponse(call: Call, response: OkHttpResponse): Unit = {
             okHttpResponse.set(response)
-            try success(readResponse(response, request, request.response))
+            try success(readResponse(response, request, request.response, isWebSocket = false))
             catch {
               case e: Exception =>
                 try response.close()
@@ -98,7 +98,7 @@ abstract class OkHttpAsyncBackend[F[_], S <: Streams[S], P](
 
     def onOpen(nativeWs: OkHttpWebSocket, response: OkHttpResponse) = {
       val webSocket = new WebSocketImpl(nativeWs, queue, isOpen, response.headers())
-      val wsResponse = readResponse(response, request, ignore)
+      val wsResponse = readResponse(response, request, ignore, isWebSocket = true)
         .flatMap { baseResponse =>
           bodyFromOkHttp(
             response.body().byteStream(),

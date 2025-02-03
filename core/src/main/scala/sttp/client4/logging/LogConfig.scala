@@ -28,7 +28,7 @@ case class LogConfig(
       * response, or when an exception occurs.
       *
       * Two durations are included: one from the start of the request until the response body is fully received, and
-      * another one when the response body is fully processed (e.g. including parsing).
+      * another one when the response body is fully handled (e.g. including parsing).
       */
     includeTimings: Boolean = true,
     /** The sensitive headers that are filtered out, when logging request & response headers. */

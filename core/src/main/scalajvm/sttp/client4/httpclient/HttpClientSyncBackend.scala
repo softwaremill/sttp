@@ -41,9 +41,8 @@ class HttpClientSyncBackend private (
     val jRequest = customizeRequest(convertRequest(request))
     val response = client.send(jRequest, BodyHandlers.ofInputStream())
     try {
-      val body = new OnEndInputStream(response.body(), request.options.onBodyReceived)
-      val limitedBody =
-        request.options.maxResponseBodyLength.fold[InputStream](body)(new FailingLimitedInputStream(body, _))
+      val body = response.body()
+      val limitedBody = request.options.maxResponseBodyLength.fold(body)(new FailingLimitedInputStream(body, _))
       readResponse(response, Left(limitedBody), request)
     } catch {
       case e: Throwable =>
@@ -130,6 +129,9 @@ class HttpClientSyncBackend private (
           pipe: streams.Pipe[WebSocketFrame.Data[_], WebSocketFrame]
       ): Identity[Unit] = pipe
     }
+
+  override def addOnEndCallbackToBody(b: InputStream, callback: () => Unit): InputStream =
+    new OnEndInputStream(b, callback)
 }
 
 object HttpClientSyncBackend {
