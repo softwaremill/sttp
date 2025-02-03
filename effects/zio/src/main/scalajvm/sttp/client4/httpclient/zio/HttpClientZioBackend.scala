@@ -115,7 +115,7 @@ class HttpClientZioBackend private (
       b: ZioStreams.BinaryStream,
       callback: () => Unit
   ): ZioStreams.BinaryStream =
-    b.ensuring(ZIO.attempt(callback()).orDie)
+    b.ensuringWith(exit => if (exit.isSuccess) ZIO.attempt(callback()).orDie else ZIO.unit)
 }
 
 object HttpClientZioBackend {

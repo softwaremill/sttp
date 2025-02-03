@@ -122,8 +122,7 @@ class HttpClientZioBackend private (
   override protected def addOnEndCallbackToBody(
       b: ZioStreams.BinaryStream,
       callback: () => Unit
-  ): ZioStreams.BinaryStream =
-    b.ensuring(ZIO.effect(callback()).orDie)
+  ): ZioStreams.BinaryStream = b.++(ZStream.execute(ZIO.effect(callback())))
 }
 
 object HttpClientZioBackend {
