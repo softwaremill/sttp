@@ -51,7 +51,12 @@ abstract class AbstractBackendStub[F[_], P](
   override def send[T](request: GenericRequest[T, P with Effect[F]]): F[Response[T]] = monad.suspend {
     Try(matchers.lift(request)) match {
       case Success(Some(response)) =>
-        adjustExceptions(request)(tryAdjustResponseType(request.response, response.asInstanceOf[F[Response[T]]])(monad))
+        adjustExceptions(request) {
+          monad.flatMap(response) { r =>
+            request.options.onBodyReceived(r)
+            tryAdjustResponseType(request.response, r.asInstanceOf[Response[T]])(monad)
+          }
+        }
       case Success(None) =>
         fallback match {
           case None     => monad.error(new IllegalArgumentException(s"No behavior stubbed for request: $request"))
@@ -109,12 +114,10 @@ object AbstractBackendStub {
 
   private[client4] def tryAdjustResponseType[DesiredRType, RType, F[_]](
       ra: ResponseAsDelegate[DesiredRType, _],
-      m: F[Response[RType]]
+      m: Response[RType]
   )(implicit monad: MonadError[F]): F[Response[DesiredRType]] =
-    monad.flatMap[Response[RType], Response[DesiredRType]](m) { r =>
-      tryAdjustResponseBody(ra.delegate, r.body, r).getOrElse(monad.unit(r.body)).map { nb =>
-        r.copy(body = nb.asInstanceOf[DesiredRType])
-      }
+    tryAdjustResponseBody(ra.delegate, m.body, m).getOrElse(monad.unit(m.body)).map { nb =>
+      m.copy(body = nb.asInstanceOf[DesiredRType])
     }
 
   private[client4] def tryAdjustResponseBody[F[_], T, U](
