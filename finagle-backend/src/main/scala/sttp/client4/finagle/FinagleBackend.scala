@@ -49,7 +49,11 @@ class FinagleBackend(client: Option[Client] = None) extends Backend[TFuture] {
           val statusText = fResponse.status.reason
           val responseMetadata = ResponseMetadata(code, statusText, headers)
           val body =
-            bodyFromResponseAs(request.options.onBodyReceived)(request.response, responseMetadata, Left(fResponse))
+            bodyFromResponseAs(() => request.options.onBodyReceived(responseMetadata))(
+              request.response,
+              responseMetadata,
+              Left(fResponse)
+            )
           service
             .close()
             .flatMap(_ => body.map(sttp.client4.Response(_, code, statusText, headers, Nil, request.onlyMetadata)))

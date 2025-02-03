@@ -85,11 +85,9 @@ class Http4sBackend[F[_]: ConcurrentEffect: ContextShift](
               val statusText = response.status.reason
               val responseMetadata = ResponseMetadata(code, statusText, headers)
 
-              val callbackResponse =
-                response.copy(body = response.body.onFinalize(ConcurrentEffect[F].delay(r.options.onBodyReceived())))
               val limitedResponse: org.http4s.Response[F] =
                 r.options.maxResponseBodyLength
-                  .fold(callbackResponse)(limit => response.copy(body = limitBytes(callbackResponse.body, limit)))
+                  .fold(response)(limit => response.copy(body = limitBytes(response.body, limit)))
 
               val signalBodyComplete = responseBodyCompleteVar.tryPut(()).map(_ => ())
               val body =
@@ -98,7 +96,10 @@ class Http4sBackend[F[_]: ConcurrentEffect: ContextShift](
                   responseMetadata,
                   Left(
                     onFinalizeSignal(
-                      decompressResponseBodyIfNotHead(r.method, limitedResponse, r.autoDecompressionEnabled),
+                      addOnBodyReceivedCallback(
+                        decompressResponseBodyIfNotHead(r.method, limitedResponse, r.autoDecompressionEnabled),
+                        () => r.options.onBodyReceived(responseMetadata)
+                      ),
                       signalBodyComplete
                     )
                   )
@@ -194,6 +195,9 @@ class Http4sBackend[F[_]: ConcurrentEffect: ContextShift](
 
   private def onFinalizeSignal(hr: http4s.Response[F], signal: F[Unit]): http4s.Response[F] =
     hr.copy(body = hr.body.onFinalize(signal))
+
+  private def addOnBodyReceivedCallback[T](hr: http4s.Response[F], callback: () => Unit): http4s.Response[F] =
+    hr.copy(body = hr.body.onFinalize(ConcurrentEffect[F].delay(callback())))
 
   private def decompressResponseBodyIfNotHead[T](
       m: Method,
