@@ -45,3 +45,4 @@ Any `Either`-based response description can be converted to a failing one using 
 * when a `ResponseException` is thrown in the response handling specification, this will be logged as a successful response (as the response was received correctly), and counted as a success in the metrics as well
 * `HttpError` is renamed to `UnexpectedStatusCode`, and along with `DeserializationException`, both types are nested within `ResponseException`
 * the `opentelemetry-metrics-backend` module is renamed to `opentelemetry-backend`
+* `ListenerBackend` has been refactored, with improvements in naming, and additional callback methods
