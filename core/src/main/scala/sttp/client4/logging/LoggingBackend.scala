@@ -33,9 +33,12 @@ class LoggingBackend[F[_], P](
           if (_logResponseBody) sendLogResponseBody(requestWithTimings, tag)
           else sendDoNotLogResponseBody(requestWithTimings, tag)
         } { case e: Exception =>
-          log
-            .requestException(request, tag.map(toResponseTimings), e)
-            .flatMap(_ => monad.error(e))
+          monad.flatMap {
+            ResponseException.find(e) match {
+              case Some(re) => log.response(request, re.response, None, tag.map(toResponseTimings), Some(e))
+              case None     => log.requestException(request, tag.map(toResponseTimings).map(_.bodyProcessed), e)
+            }
+          } { _ => monad.error(e) }
         }
       }
     } else {
@@ -49,7 +52,7 @@ class LoggingBackend[F[_], P](
   ): F[Response[T]] = {
     for {
       r <- delegate.send(request)
-      _ <- log.response(request, r, None, tag.map(toResponseTimings))
+      _ <- log.response(request, r, None, tag.map(toResponseTimings), None)
     } yield r
   }
 
@@ -60,7 +63,7 @@ class LoggingBackend[F[_], P](
     def sendAndLog(request: GenericRequest[(T, Option[String]), P with Effect[F]]): F[Response[T]] =
       for {
         r <- delegate.send(request)
-        _ <- log.response(request, r, r.body._2, tag.map(toResponseTimings))
+        _ <- log.response(request, r, r.body._2, tag.map(toResponseTimings), None)
       } yield r.copy(body = r.body._1)
 
     request match {
@@ -71,7 +74,7 @@ class LoggingBackend[F[_], P](
       case request =>
         for {
           r <- delegate.send(request)
-          _ <- log.response(request, r, None, tag.map(toResponseTimings))
+          _ <- log.response(request, r, None, tag.map(toResponseTimings), None)
         } yield r
     }
   }

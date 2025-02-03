@@ -18,7 +18,10 @@ case class LogConfig(
       * response.
       */
     logResponseHeaders: Boolean = true,
-    /** Should the response body be included in the log message that is logged after receiving a response (if possible).
+    /** Should the response body be included in the log message that is logged after receiving a response. The response
+      * body will only be logged if the response description for the request allows it (e.g. `asString` allows logging
+      * the response body, `asInputStream` does not). Moreover, the response body will not be logged if processing the
+      * response (even if it's parsing of a successfully received body) throws an exception.
       */
     logResponseBody: Boolean = false,
     /** Should the time it takes to complete the request be included in the log message that is logged after receiving a

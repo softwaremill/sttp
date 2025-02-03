@@ -61,7 +61,8 @@ class LogTests extends AnyFlatSpec with Matchers with BeforeAndAfter {
         request = request
       ),
       responseBody = None,
-      timings = None
+      timings = None,
+      exception = None
     )
     spyLogger.probe should be(
       List(
@@ -75,12 +76,14 @@ class LogTests extends AnyFlatSpec with Matchers with BeforeAndAfter {
   }
 
   it should "log a DeserializationException as a response" in {
-    val exception =
-      new DeserializationException("response body", new RuntimeException("boom!"), ResponseStub.ok("response body"))
-    defaultLog.requestException(
+    val response = ResponseStub.ok("response body")
+    val exception = new DeserializationException("response body", new RuntimeException("boom!"), response)
+    defaultLog.response(
       request = basicRequest.get(uri"http://example.org"),
+      response = response,
+      responseBody = None,
       timings = None,
-      e = exception
+      exception = Some(exception)
     )
 
     spyLogger.probe should be(
@@ -98,8 +101,8 @@ class LogTests extends AnyFlatSpec with Matchers with BeforeAndAfter {
     val exception = new RuntimeException("test exception")
     defaultLog.requestException(
       request = basicRequest.get(uri"http://example.org"),
-      timings = None,
-      e = exception
+      timing = None,
+      exception = exception
     )
     spyLogger.probe should be(
       List(
