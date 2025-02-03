@@ -9,6 +9,7 @@ import sttp.client4._
 import sttp.client4.listener.ListenerBackend
 import sttp.client4.listener.RequestListener
 import sttp.client4.wrappers.FollowRedirectsBackend
+import sttp.model.ResponseMetadata
 import sttp.shared.Identity
 
 import java.util.concurrent.ConcurrentHashMap
@@ -92,7 +93,12 @@ private class OpenTelemetryMetricsListener(config: OpenTelemetryMetricsConfig)
     (request, config.requestToLatencyHistogramMapper(request).map { _ => config.clock.millis() })
   }
 
-  override def requestSuccessful(request: GenericRequest[_, _], response: Response[_], tag: Option[Long]): Unit = {
+  override def requestSuccessful(
+      request: GenericRequest[_, _],
+      response: ResponseMetadata,
+      tag: Option[Long],
+      e: Option[ResponseException[_]]
+  ): Unit = {
     val requestAttributes = config.requestAttributes(request)
     val responseAttributes = config.responseAttributes(request, response)
 
@@ -113,22 +119,17 @@ private class OpenTelemetryMetricsListener(config: OpenTelemetryMetricsConfig)
     updateInProgressCounter(request, -1, requestAttributes)
   }
 
-  override def requestException(request: GenericRequest[_, _], tag: Option[Long], e: Exception): Unit = {
+  override def requestException(request: GenericRequest[_, _], tag: Option[Long], e: Throwable): Unit = {
     val requestAttributes = config.requestAttributes(request)
     val errorAttributes = config.errorAttributes(e)
 
-    ResponseException.find(e) match {
-      case Some(re) =>
-        requestSuccessful(request, Response((), re.response.code, request.onlyMetadata), tag)
-      case _ =>
-        incrementCounter(config.requestToFailureCounterMapper(request, e), errorAttributes)
-        recordHistogram(
-          config.requestToLatencyHistogramMapper(request),
-          tag.map(config.clock.millis() - _),
-          errorAttributes
-        )
-        updateInProgressCounter(request, -1, requestAttributes)
-    }
+    incrementCounter(config.requestToFailureCounterMapper(request, e), errorAttributes)
+    recordHistogram(
+      config.requestToLatencyHistogramMapper(request),
+      tag.map(config.clock.millis() - _),
+      errorAttributes
+    )
+    updateInProgressCounter(request, -1, requestAttributes)
   }
 
   private def updateInProgressCounter[R, T](request: GenericRequest[T, R], delta: Long, attributes: Attributes): Unit =

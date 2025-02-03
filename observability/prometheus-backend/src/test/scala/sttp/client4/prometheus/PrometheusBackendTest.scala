@@ -19,6 +19,7 @@ import java.util.stream.Collectors
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{blocking, Future}
 import scala.collection.immutable.Seq
+import sttp.model.ResponseMetadata
 
 class PrometheusBackendTest
     extends AnyFlatSpec
@@ -429,10 +430,14 @@ class PrometheusBackendTest
     import sttp.client4.prometheus.PrometheusBackend.{DefaultFailureCounterName, addMethodLabel}
 
     val HostLabel = "Host"
-    def addHostLabel[T <: BaseCollectorConfig](config: T, resp: Response[_]): config.T = {
+    def addHostLabel[T <: BaseCollectorConfig](
+        config: T,
+        req: GenericRequest[_, _],
+        resp: ResponseMetadata
+    ): config.T = {
       val hostLabel: Option[(String, String)] =
         if (config.labels.map(_._1.toLowerCase).contains(HostLabel)) None
-        else Some((HostLabel, resp.request.uri.host.getOrElse("-")))
+        else Some((HostLabel, req.uri.host.getOrElse("-")))
 
       config.addLabels(hostLabel.toList)
     }
@@ -440,8 +445,8 @@ class PrometheusBackendTest
     val backend = PrometheusBackend(
       backendStub,
       PrometheusConfig.Default.copy(
-        responseToErrorCounterMapper = (req: GenericRequest[_, _], resp: Response[_]) =>
-          Some(addHostLabel(addMethodLabel(CollectorConfig(DefaultFailureCounterName), req), resp))
+        responseToErrorCounterMapper = (req: GenericRequest[_, _], resp: ResponseMetadata) =>
+          Some(addHostLabel(addMethodLabel(CollectorConfig(DefaultFailureCounterName), req), req, resp))
       )
     )
 

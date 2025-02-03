@@ -12,6 +12,7 @@ import sttp.model.StatusCode
 import sttp.shared.Identity
 
 import java.util.concurrent.ConcurrentHashMap
+import sttp.model.ResponseMetadata
 
 object PrometheusBackend {
   // Metrics names and model for Prometheus is based on these two specifications:
@@ -66,11 +67,11 @@ object PrometheusBackend {
     new PrometheusListener(
       (req: GenericRequest[_, _]) => config.requestToHistogramNameMapper(req),
       (req: GenericRequest[_, _]) => config.requestToInProgressGaugeNameMapper(req),
-      (rr: (GenericRequest[_, _], Response[_])) => config.responseToSuccessCounterMapper(rr._1, rr._2),
-      (rr: (GenericRequest[_, _], Response[_])) => config.responseToErrorCounterMapper(rr._1, rr._2),
+      (rr: (GenericRequest[_, _], ResponseMetadata)) => config.responseToSuccessCounterMapper(rr._1, rr._2),
+      (rr: (GenericRequest[_, _], ResponseMetadata)) => config.responseToErrorCounterMapper(rr._1, rr._2),
       (r: (GenericRequest[_, _], Throwable)) => config.requestToFailureCounterMapper(r._1, r._2),
       (req: GenericRequest[_, _]) => config.requestToSizeSummaryMapper(req),
-      (rr: (GenericRequest[_, _], Response[_])) => config.responseToSizeSummaryMapper(rr._1, rr._2),
+      (rr: (GenericRequest[_, _], ResponseMetadata)) => config.responseToSizeSummaryMapper(rr._1, rr._2),
       config.prometheusRegistry,
       cacheFor(histograms, config.prometheusRegistry),
       cacheFor(gauges, config.prometheusRegistry),
@@ -103,7 +104,7 @@ object PrometheusBackend {
     * @return
     *   The modified collector config. The config can be used when configuring the backend using [[apply]].
     */
-  def addStatusLabel[T <: BaseCollectorConfig](config: T, resp: Response[_]): config.T = {
+  def addStatusLabel[T <: BaseCollectorConfig](config: T, resp: ResponseMetadata): config.T = {
     val statusLabel: Option[(String, String)] =
       if (config.labels.map(_._1.toLowerCase).contains(DefaultStatusLabel)) {
         None
@@ -169,11 +170,11 @@ object PrometheusBackend {
 class PrometheusListener(
     requestToHistogramNameMapper: GenericRequest[_, _] => Option[HistogramCollectorConfig],
     requestToInProgressGaugeNameMapper: GenericRequest[_, _] => Option[CollectorConfig],
-    requestToSuccessCounterMapper: ((GenericRequest[_, _], Response[_])) => Option[CollectorConfig],
-    requestToErrorCounterMapper: ((GenericRequest[_, _], Response[_])) => Option[CollectorConfig],
-    requestToFailureCounterMapper: ((GenericRequest[_, _], Exception)) => Option[CollectorConfig],
+    requestToSuccessCounterMapper: ((GenericRequest[_, _], ResponseMetadata)) => Option[CollectorConfig],
+    requestToErrorCounterMapper: ((GenericRequest[_, _], ResponseMetadata)) => Option[CollectorConfig],
+    requestToFailureCounterMapper: ((GenericRequest[_, _], Throwable)) => Option[CollectorConfig],
     requestToSizeSummaryMapper: GenericRequest[_, _] => Option[CollectorConfig],
-    responseToSizeSummaryMapper: ((GenericRequest[_, _], Response[_])) => Option[CollectorConfig],
+    responseToSizeSummaryMapper: ((GenericRequest[_, _], ResponseMetadata)) => Option[CollectorConfig],
     prometheusRegistry: PrometheusRegistry,
     histogramsCache: ConcurrentHashMap[String, Histogram],
     gaugesCache: ConcurrentHashMap[String, Gauge],
@@ -201,21 +202,18 @@ class PrometheusListener(
   override def requestException(
       request: GenericRequest[_, _],
       requestCollectors: RequestCollectors,
-      e: Exception
-  ): Unit =
-    ResponseException.find(e) match {
-      case Some(re) =>
-        requestSuccessful(request, Response((), re.response.code, request.onlyMetadata), requestCollectors)
-      case _ =>
-        requestCollectors.maybeTimer.foreach(_.observeDuration())
-        requestCollectors.maybeGauge.foreach(_.dec())
-        incCounterIfMapped((request, e), requestToFailureCounterMapper)
-    }
+      e: Throwable
+  ): Unit = {
+    requestCollectors.maybeTimer.foreach(_.observeDuration())
+    requestCollectors.maybeGauge.foreach(_.dec())
+    incCounterIfMapped((request, e), requestToFailureCounterMapper)
+  }
 
   override def requestSuccessful(
       request: GenericRequest[_, _],
-      response: Response[_],
-      requestCollectors: RequestCollectors
+      response: ResponseMetadata,
+      requestCollectors: RequestCollectors,
+      e: Option[ResponseException[_]]
   ): Unit = {
     requestCollectors.maybeTimer.foreach(_.observeDuration())
     requestCollectors.maybeGauge.foreach(_.dec())
@@ -238,8 +236,8 @@ class PrometheusListener(
 
   private def observeResponseContentLengthSummaryIfMapped(
       request: GenericRequest[_, _],
-      response: Response[_],
-      mapper: ((GenericRequest[_, _], Response[_])) => Option[BaseCollectorConfig]
+      response: ResponseMetadata,
+      mapper: ((GenericRequest[_, _], ResponseMetadata)) => Option[BaseCollectorConfig]
   ): Unit =
     mapper((request, response)).foreach { data =>
       response.contentLength.map(_.toDouble).foreach { size =>

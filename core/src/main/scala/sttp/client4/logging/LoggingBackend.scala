@@ -35,7 +35,7 @@ class LoggingBackend[F[_], P](
         } { case e: Exception =>
           monad.flatMap {
             ResponseException.find(e) match {
-              case Some(re) => log.response(request, re.response, None, tag.map(toResponseTimings), Some(e))
+              case Some(re) => log.response(request, re.response, None, tag.map(toResponseTimings), Some(re))
               case None     => log.requestException(request, tag.map(toResponseTimings).map(_.bodyHandled), e)
             }
           } { _ => monad.error(e) }

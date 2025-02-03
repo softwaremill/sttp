@@ -15,9 +15,14 @@ abstract class ListenerBackend[F[_], P, L](
     listener.beforeRequest(request).flatMap { case (requestToSend, tag) =>
       monad
         .handleError(delegate.send(requestToSend)) { case e: Exception =>
-          listener.requestException(requestToSend, tag, e).flatMap(_ => monad.error(e))
+          monad.flatMap {
+            ResponseException.find(e) match {
+              case Some(re) => listener.requestSuccessful(requestToSend, re.response, tag, Some(re))
+              case None     => listener.requestException(requestToSend, tag, e)
+            }
+          } { _ => monad.error(e) }
         }
-        .flatMap(response => listener.requestSuccessful(requestToSend, response, tag).map(_ => response))
+        .flatMap(response => listener.requestSuccessful(requestToSend, response, tag, None).map(_ => response))
     }
 }
 

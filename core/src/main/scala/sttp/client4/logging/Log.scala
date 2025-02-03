@@ -5,20 +5,21 @@ import sttp.client4.Response
 import sttp.model.ResponseMetadata
 
 import scala.concurrent.duration.Duration
+import sttp.client4.ResponseException
 
 /** Performs logging before requests are sent and after requests complete successfully or with an exception. */
 trait Log[F[_]] {
   def beforeRequestSend(request: GenericRequest[_, _]): F[Unit]
 
   /** @param exception
-    *   An exception that might occur when processing the response (e.g. parsing).
+    *   A [[ResponseException]] that might occur when handling the response (e.g. parsing).
     */
   def response(
       request: GenericRequest[_, _],
       response: ResponseMetadata,
       responseBody: Option[String],
       timings: Option[ResponseTimings],
-      exception: Option[Throwable]
+      exception: Option[ResponseException[_]]
   ): F[Unit]
 
   def requestException(request: GenericRequest[_, _], timing: Option[Duration], exception: Throwable): F[Unit]
@@ -55,7 +56,7 @@ class DefaultLog[F[_]](logger: Logger[F], config: LogConfig, logContext: LogCont
       response: ResponseMetadata,
       responseBody: Option[String],
       timings: Option[ResponseTimings],
-      exception: Option[Throwable]
+      exception: Option[ResponseException[_]]
   ): F[Unit] = {
     val responseWithBody = Response(
       responseBody.getOrElse(""),
