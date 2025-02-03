@@ -3,7 +3,7 @@ package sttp.client4.http4s
 import java.io.InputStream
 import java.nio.charset.Charset
 import cats.effect.concurrent.MVar
-import cats.effect.{Blocker, Concurrent, ConcurrentEffect, ContextShift, Resource, Sync}
+import cats.effect._
 import cats.implicits._
 import cats.effect.implicits._
 import fs2.{Chunk, Stream, Pull}
