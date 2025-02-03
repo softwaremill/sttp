@@ -45,7 +45,7 @@ class PrometheusBackendTest
 
     // then
     getMetricValue[HistogramDataPointSnapshot](
-      s"${PrometheusBackend.DefaultHistogramName}",
+      PrometheusBackend.DefaultHistogramName,
       List("method" -> "GET")
     ).map(_.getCount).value shouldBe requestsNumber
   }
@@ -370,16 +370,13 @@ class PrometheusBackendTest
 
   it should "use failure counter when other exception is thrown" in {
     // given
-    val backendStub = SyncBackendStub.whenAnyRequest.thenRespondOk()
+    val backendStub = SyncBackendStub.whenAnyRequest.thenRespond(throw new IllegalStateException())
     val backend = PrometheusBackend(backendStub)
 
     // when
     assertThrows[IllegalStateException] {
       basicRequest
         .get(uri"http://127.0.0.1/foo")
-        .response(
-          asString.map(_ => throw new IllegalStateException())
-        )
         .send(backend)
     }
 
@@ -446,7 +443,7 @@ class PrometheusBackendTest
       backendStub,
       PrometheusConfig.Default.copy(
         responseToErrorCounterMapper = (req: GenericRequest[_, _], resp: ResponseMetadata) =>
-          Some(addHostLabel(addMethodLabel(CollectorConfig(DefaultFailureCounterName), req), req, resp))
+          Some(addHostLabel(addMethodLabel(CollectorConfig(PrometheusBackend.DefaultErrorCounterName), req), req, resp))
       )
     )
 
@@ -455,7 +452,7 @@ class PrometheusBackendTest
 
     // then
     getMetricValue[CounterDataPointSnapshot](
-      PrometheusBackend.DefaultFailureCounterName,
+      PrometheusBackend.DefaultErrorCounterName,
       List("method" -> "GET", HostLabel -> "127.0.0.1")
     ).map(_.getValue) shouldBe Some(1)
   }

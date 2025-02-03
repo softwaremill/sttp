@@ -62,7 +62,13 @@ abstract class AbstractBackendStub[F[_], P](
           case None     => monad.error(new IllegalArgumentException(s"No behavior stubbed for request: $request"))
           case Some(fb) => fb.send(request)
         }
-      case Failure(e) => adjustExceptions(request)(monad.error(e))
+      case Failure(e) =>
+        monad.flatMap {
+          ResponseException.find(e) match {
+            case Some(re) => monad.eval(request.options.onBodyReceived(re.response))
+            case None     => monad.unit(())
+          }
+        } { _ => adjustExceptions(request)(monad.error(e)) }
     }
   }
 

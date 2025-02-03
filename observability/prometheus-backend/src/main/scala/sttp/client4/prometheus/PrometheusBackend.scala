@@ -7,7 +7,7 @@ import io.prometheus.metrics.model.snapshots.Unit.SECONDS
 import sttp.client4.listener.{ListenerBackend, RequestListener}
 import sttp.client4.prometheus.PrometheusBackend.RequestCollectors
 import sttp.client4.wrappers.FollowRedirectsBackend
-import sttp.client4.{wrappers, _}
+import sttp.client4._
 import sttp.model.StatusCode
 import sttp.shared.Identity
 
@@ -50,18 +50,18 @@ object PrometheusBackend {
     FollowRedirectsBackend(ListenerBackend(delegate, RequestListener.lift(listener(config), delegate.monad)))
 
   def apply[F[_]](delegate: Backend[F], config: PrometheusConfig): Backend[F] =
-    wrappers.FollowRedirectsBackend[F](
+    FollowRedirectsBackend[F](
       ListenerBackend(delegate, RequestListener.lift(listener(config), delegate.monad))
     )
 
   def apply[F[_]](delegate: WebSocketBackend[F], config: PrometheusConfig): WebSocketBackend[F] =
-    wrappers.FollowRedirectsBackend(ListenerBackend(delegate, RequestListener.lift(listener(config), delegate.monad)))
+    FollowRedirectsBackend(ListenerBackend(delegate, RequestListener.lift(listener(config), delegate.monad)))
 
   def apply[F[_], S](delegate: StreamBackend[F, S], config: PrometheusConfig): StreamBackend[F, S] =
-    wrappers.FollowRedirectsBackend(ListenerBackend(delegate, RequestListener.lift(listener(config), delegate.monad)))
+    FollowRedirectsBackend(ListenerBackend(delegate, RequestListener.lift(listener(config), delegate.monad)))
 
   def apply[F[_], S](delegate: WebSocketStreamBackend[F, S], config: PrometheusConfig): WebSocketStreamBackend[F, S] =
-    wrappers.FollowRedirectsBackend(ListenerBackend(delegate, RequestListener.lift(listener(config), delegate.monad)))
+    FollowRedirectsBackend(ListenerBackend(delegate, RequestListener.lift(listener(config), delegate.monad)))
 
   private def listener(config: PrometheusConfig): PrometheusListener =
     new PrometheusListener(
@@ -145,7 +145,7 @@ object PrometheusBackend {
       .getOrDefault(prometheusRegistry, new ConcurrentHashMap[String, T]())
       .values
       .forEach(c => prometheusRegistry.unregister(c))
-    collectors.remove(prometheusRegistry)
+    val _ = collectors.remove(prometheusRegistry)
   }
 
   private val histograms = new ConcurrentHashMap[PrometheusRegistry, ConcurrentHashMap[String, Histogram]]
@@ -168,11 +168,11 @@ object PrometheusBackend {
 }
 
 class PrometheusListener(
-    requestToHistogramNameMapper: GenericRequest[_, _] => Option[HistogramCollectorConfig],
-    requestToInProgressGaugeNameMapper: GenericRequest[_, _] => Option[CollectorConfig],
-    requestToSuccessCounterMapper: ((GenericRequest[_, _], ResponseMetadata)) => Option[CollectorConfig],
-    requestToErrorCounterMapper: ((GenericRequest[_, _], ResponseMetadata)) => Option[CollectorConfig],
-    requestToFailureCounterMapper: ((GenericRequest[_, _], Throwable)) => Option[CollectorConfig],
+    histogramNameMapper: GenericRequest[_, _] => Option[HistogramCollectorConfig],
+    inProgressGaugeNameMapper: GenericRequest[_, _] => Option[CollectorConfig],
+    successCounterMapper: ((GenericRequest[_, _], ResponseMetadata)) => Option[CollectorConfig],
+    errorCounterMapper: ((GenericRequest[_, _], ResponseMetadata)) => Option[CollectorConfig],
+    failureCounterMapper: ((GenericRequest[_, _], Throwable)) => Option[CollectorConfig],
     requestToSizeSummaryMapper: GenericRequest[_, _] => Option[CollectorConfig],
     responseToSizeSummaryMapper: ((GenericRequest[_, _], ResponseMetadata)) => Option[CollectorConfig],
     prometheusRegistry: PrometheusRegistry,
@@ -182,47 +182,66 @@ class PrometheusListener(
     summariesCache: ConcurrentHashMap[String, Summary]
 ) extends RequestListener[Identity, RequestCollectors] {
 
-  override def beforeRequest[T, R](request: GenericRequest[T, R]): (GenericRequest[T, R], RequestCollectors) = {
+  override def before[T, R](request: GenericRequest[T, R]): RequestCollectors = {
     val requestTimer: Option[Timer] = for {
-      histogramData <- requestToHistogramNameMapper(request)
+      histogramData <- histogramNameMapper(request)
       histogram: Histogram = getOrCreateMetric(histogramsCache, histogramData, createNewHistogram)
     } yield histogram.labelValues(histogramData.labelValues: _*).startTimer()
 
     val gauge: Option[GaugeDataPoint] = for {
-      gaugeData <- requestToInProgressGaugeNameMapper(request)
+      gaugeData <- inProgressGaugeNameMapper(request)
     } yield getOrCreateMetric(gaugesCache, gaugeData, createNewGauge).labelValues(gaugeData.labelValues: _*)
 
     observeRequestContentLengthSummaryIfMapped(request, requestToSizeSummaryMapper)
 
     gauge.foreach(_.inc())
 
-    (request, RequestCollectors(requestTimer, gauge))
+    RequestCollectors(requestTimer, gauge)
   }
 
-  override def requestException(
-      request: GenericRequest[_, _],
-      requestCollectors: RequestCollectors,
-      e: Throwable
-  ): Unit = {
-    requestCollectors.maybeTimer.foreach(_.observeDuration())
-    requestCollectors.maybeGauge.foreach(_.dec())
-    incCounterIfMapped((request, e), requestToFailureCounterMapper)
-  }
-
-  override def requestSuccessful(
+  private def captureResponseMetrics(
       request: GenericRequest[_, _],
       response: ResponseMetadata,
-      requestCollectors: RequestCollectors,
-      e: Option[ResponseException[_]]
+      requestCollectors: RequestCollectors
   ): Unit = {
     requestCollectors.maybeTimer.foreach(_.observeDuration())
     requestCollectors.maybeGauge.foreach(_.dec())
     observeResponseContentLengthSummaryIfMapped(request, response, responseToSizeSummaryMapper)
 
     if (response.isSuccess) {
-      incCounterIfMapped((request, response), requestToSuccessCounterMapper)
+      incCounterIfMapped((request, response), successCounterMapper)
     } else {
-      incCounterIfMapped((request, response), requestToErrorCounterMapper)
+      incCounterIfMapped((request, response), errorCounterMapper)
+    }
+  }
+
+  override def responseBodyReceived(
+      request: GenericRequest[_, _],
+      response: ResponseMetadata,
+      requestCollectors: RequestCollectors
+  ): Unit = captureResponseMetrics(request, response, requestCollectors)
+
+  override def responseHandled(
+      request: GenericRequest[_, _],
+      response: ResponseMetadata,
+      requestCollectors: RequestCollectors,
+      e: Option[ResponseException[_]]
+  ): Unit = {
+    // responseBodyReceived is not called for WebSocket requests
+    // ignoring the timer as there's no point in capturing timing information for WebSockets
+    if (request.isWebSocket) captureResponseMetrics(request, response, requestCollectors.copy(maybeTimer = None))
+  }
+
+  override def exception(
+      request: GenericRequest[_, _],
+      requestCollectors: RequestCollectors,
+      e: Throwable,
+      responseBodyReceivedCalled: Boolean
+  ): Unit = {
+    if (!responseBodyReceivedCalled) {
+      requestCollectors.maybeTimer.foreach(_.observeDuration())
+      requestCollectors.maybeGauge.foreach(_.dec())
+      incCounterIfMapped((request, e), failureCounterMapper)
     }
   }
 

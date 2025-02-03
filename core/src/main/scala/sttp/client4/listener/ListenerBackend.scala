@@ -5,6 +5,7 @@ import sttp.monad.syntax._
 import sttp.capabilities.Effect
 import sttp.client4.wrappers.DelegateBackend
 import sttp.shared.Identity
+import java.util.concurrent.atomic.AtomicBoolean
 
 /** A backend wrapper which notifies the given [[RequestListener]] when a request starts and completes. */
 abstract class ListenerBackend[F[_], P, L](
@@ -12,17 +13,22 @@ abstract class ListenerBackend[F[_], P, L](
     listener: RequestListener[F, L]
 ) extends DelegateBackend(delegate) {
   override def send[T](request: GenericRequest[T, P with Effect[F]]): F[Response[T]] =
-    listener.beforeRequest(request).flatMap { case (requestToSend, tag) =>
+    listener.before(request).flatMap { case tag =>
+      val onBodyReceivedCalled = new AtomicBoolean
+      val requestToSend = request.onBodyReceived { meta =>
+        onBodyReceivedCalled.set(true)
+        listener.responseBodyReceived(request, meta, tag)
+      }
       monad
         .handleError(delegate.send(requestToSend)) { case e: Exception =>
           monad.flatMap {
             ResponseException.find(e) match {
-              case Some(re) => listener.requestSuccessful(requestToSend, re.response, tag, Some(re))
-              case None     => listener.requestException(requestToSend, tag, e)
+              case Some(re) => listener.responseHandled(requestToSend, re.response, tag, Some(re))
+              case None     => listener.exception(requestToSend, tag, e, onBodyReceivedCalled.get())
             }
           } { _ => monad.error(e) }
         }
-        .flatMap(response => listener.requestSuccessful(requestToSend, response, tag, None).map(_ => response))
+        .flatMap(response => listener.responseHandled(requestToSend, response, tag, None).map(_ => response))
     }
 }
 

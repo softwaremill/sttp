@@ -385,8 +385,9 @@ trait PartialRequestBuilder[+PR <: PartialRequestBuilder[PR, R], +R]
   def maxResponseBodyLength: Option[Long] = options.maxResponseBodyLength
 
   /** Add a callback to be invoked when the entire response body has been received & decompressed (but not yet fully
-    * handled, e.g. by parsing the received data). This is used by logging & metrics backends to properly capture timing
-    * information.
+    * handled, e.g. by parsing the received data).
+    *
+    * This might be used e.g. by logging & metrics backends to properly capture timing information.
     *
     * The callback is not called when there's an exception while reading the response body, decompressing, or for
     * WebSocket requests.

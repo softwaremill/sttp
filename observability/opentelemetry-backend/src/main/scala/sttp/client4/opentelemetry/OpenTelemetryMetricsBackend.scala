@@ -54,17 +54,17 @@ object OpenTelemetryMetricsBackend {
   def apply[F[_]](delegate: Backend[F], config: OpenTelemetryMetricsConfig): Backend[F] = {
     val listener = new OpenTelemetryMetricsListener(config)
     // redirects should be handled before metrics
-    wrappers.FollowRedirectsBackend(ListenerBackend(delegate, RequestListener.lift(listener, delegate.monad)))
+    FollowRedirectsBackend(ListenerBackend(delegate, RequestListener.lift(listener, delegate.monad)))
   }
 
   def apply[F[_]](delegate: WebSocketBackend[F], config: OpenTelemetryMetricsConfig): WebSocketBackend[F] = {
     val listener = new OpenTelemetryMetricsListener(config)
-    wrappers.FollowRedirectsBackend(ListenerBackend(delegate, RequestListener.lift(listener, delegate.monad)))
+    FollowRedirectsBackend(ListenerBackend(delegate, RequestListener.lift(listener, delegate.monad)))
   }
 
   def apply[F[_], S](delegate: StreamBackend[F, S], config: OpenTelemetryMetricsConfig): StreamBackend[F, S] = {
     val listener = new OpenTelemetryMetricsListener(config)
-    wrappers.FollowRedirectsBackend(
+    FollowRedirectsBackend(
       ListenerBackend(delegate, RequestListener.lift(listener, delegate.monad))
     )
   }
@@ -74,7 +74,7 @@ object OpenTelemetryMetricsBackend {
       config: OpenTelemetryMetricsConfig
   ): WebSocketStreamBackend[F, S] = {
     val listener = new OpenTelemetryMetricsListener(config)
-    wrappers.FollowRedirectsBackend(ListenerBackend(delegate, RequestListener.lift(listener, delegate.monad)))
+    FollowRedirectsBackend(ListenerBackend(delegate, RequestListener.lift(listener, delegate.monad)))
   }
 }
 
@@ -85,19 +85,35 @@ private class OpenTelemetryMetricsListener(config: OpenTelemetryMetricsConfig)
   private val histograms = new ConcurrentHashMap[String, DoubleHistogram]()
   private val upAndDownCounter = new ConcurrentHashMap[String, LongUpDownCounter]()
 
-  override def beforeRequest[T, R](request: GenericRequest[T, R]): (GenericRequest[T, R], Option[Long]) = {
+  override def before[T, R](request: GenericRequest[T, R]): Option[Long] = {
     val attributes = config.requestAttributes(request)
 
     updateInProgressCounter(request, 1, attributes)
     recordHistogram(config.requestToSizeHistogramMapper(request), request.contentLength, attributes)
-    (request, config.requestToLatencyHistogramMapper(request).map { _ => config.clock.millis() })
+    config.requestToLatencyHistogramMapper(request).map { _ => config.clock.millis() }
   }
 
-  override def requestSuccessful(
+  override def responseBodyReceived(
+      request: GenericRequest[_, _],
+      response: ResponseMetadata,
+      tag: Option[Long]
+  ): Unit = captureResponseMetrics(request, response, tag)
+
+  override def responseHandled(
       request: GenericRequest[_, _],
       response: ResponseMetadata,
       tag: Option[Long],
       e: Option[ResponseException[_]]
+  ): Unit = {
+    // responseBodyReceived is not called for WebSocket requests
+    // ignoring the tag as there's no point in capturing timing information for WebSockets
+    if (request.isWebSocket) captureResponseMetrics(request, response, None)
+  }
+
+  private def captureResponseMetrics(
+      request: GenericRequest[_, _],
+      response: ResponseMetadata,
+      tag: Option[Long]
   ): Unit = {
     val requestAttributes = config.requestAttributes(request)
     val responseAttributes = config.responseAttributes(request, response)
@@ -119,17 +135,24 @@ private class OpenTelemetryMetricsListener(config: OpenTelemetryMetricsConfig)
     updateInProgressCounter(request, -1, requestAttributes)
   }
 
-  override def requestException(request: GenericRequest[_, _], tag: Option[Long], e: Throwable): Unit = {
-    val requestAttributes = config.requestAttributes(request)
-    val errorAttributes = config.errorAttributes(e)
+  override def exception(
+      request: GenericRequest[_, _],
+      tag: Option[Long],
+      e: Throwable,
+      responseBodyReceivedCalled: Boolean
+  ): Unit = {
+    if (!responseBodyReceivedCalled) {
+      val requestAttributes = config.requestAttributes(request)
+      val errorAttributes = config.errorAttributes(e)
 
-    incrementCounter(config.requestToFailureCounterMapper(request, e), errorAttributes)
-    recordHistogram(
-      config.requestToLatencyHistogramMapper(request),
-      tag.map(config.clock.millis() - _),
-      errorAttributes
-    )
-    updateInProgressCounter(request, -1, requestAttributes)
+      incrementCounter(config.requestToFailureCounterMapper(request, e), errorAttributes)
+      recordHistogram(
+        config.requestToLatencyHistogramMapper(request),
+        tag.map(config.clock.millis() - _),
+        errorAttributes
+      )
+      updateInProgressCounter(request, -1, requestAttributes)
+    }
   }
 
   private def updateInProgressCounter[R, T](request: GenericRequest[T, R], delta: Long, attributes: Attributes): Unit =
