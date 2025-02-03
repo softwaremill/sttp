@@ -120,7 +120,9 @@ class HttpClientFs2Backend[F[_]: ConcurrentEffect: ContextShift] private (
   }
 
   override protected def addOnEndCallbackToBody(b: Stream[F, Byte], callback: () => Unit): Stream[F, Byte] =
-    b.onFinalize(ConcurrentEffect[F].delay(callback()))
+    b.onFinalizeCase(exitCase =>
+      if (exitCase == ExitCase.Completed) ConcurrentEffect[F].delay(callback()) else ConcurrentEffect[F].unit
+    )
 }
 
 object HttpClientFs2Backend {

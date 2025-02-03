@@ -29,6 +29,7 @@ import sttp.client4.compression.CompressionHandlers
 import sttp.client4.impl.fs2.GZipFs2Decompressor
 import sttp.client4.impl.fs2.DeflateFs2Decompressor
 import sttp.client4.compression.Decompressor
+import cats.effect.kernel.Resource.ExitCase
 
 // needs http4s using cats-effect
 class Http4sBackend[F[_]: Async](
@@ -204,7 +205,11 @@ class Http4sBackend[F[_]: Async](
     if (m == Method.HEAD || !enableAutoDecompression) hr else decompressResponseBody(hr)
 
   private def addOnBodyReceivedCallback[T](hr: http4s.Response[F], callback: () => Unit): http4s.Response[F] =
-    hr.copy(body = hr.body.onFinalize(Async[F].delay(callback())))
+    hr.copy(body =
+      hr.body.onFinalizeCase(exitCase =>
+        if (exitCase == ExitCase.Succeeded) Async[F].delay(callback()) else Async[F].unit
+      )
+    )
 
   private def decompressResponseBody(hr: http4s.Response[F]): http4s.Response[F] = {
     val body = hr.headers

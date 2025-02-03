@@ -197,7 +197,11 @@ class Http4sBackend[F[_]: ConcurrentEffect: ContextShift](
     hr.copy(body = hr.body.onFinalize(signal))
 
   private def addOnBodyReceivedCallback[T](hr: http4s.Response[F], callback: () => Unit): http4s.Response[F] =
-    hr.copy(body = hr.body.onFinalize(ConcurrentEffect[F].delay(callback())))
+    hr.copy(body =
+      hr.body.onFinalizeCase(exitCase =>
+        if (exitCase == ExitCase.Completed) ConcurrentEffect[F].delay(callback()) else ConcurrentEffect[F].unit
+      )
+    )
 
   private def decompressResponseBodyIfNotHead[T](
       m: Method,
