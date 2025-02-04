@@ -153,7 +153,7 @@ val scalaTest = libraryDependencies ++= Seq("freespec", "funsuite", "flatspec", 
 )
 
 val zio1Version = "1.0.18"
-val zio2Version = "2.1.9"
+val zio2Version = "2.1.14"
 val zio1InteropRsVersion = "1.3.12"
 val zio2InteropRsVersion = "2.0.2"
 
@@ -845,7 +845,7 @@ lazy val zioJson = (projectMatrix in file("json/zio-json"))
   .settings(
     name := "zio-json",
     libraryDependencies ++= Seq(
-      "dev.zio" %%% "zio-json" % "0.5.0",
+      "dev.zio" %%% "zio-json" % "0.7.14",
       "com.softwaremill.sttp.shared" %%% "zio" % sttpSharedVersion
     ),
     scalaTest
