@@ -14,7 +14,6 @@ import sttp.client4.testing.WebSocketBackendStub
 import sttp.client4.wrappers
 import sttp.monad.FutureMonad
 import sttp.monad.MonadError
-import sttp.tapir.server.jdkhttp.internal.FailingLimitedInputStream
 import sttp.ws.WebSocket
 import sttp.ws.WebSocketFrame
 
@@ -27,6 +26,8 @@ import java.net.http.HttpResponse.BodyHandlers
 import java.util.concurrent.Executor
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+import sttp.client4.internal.FailingLimitedInputStream
+import sttp.client4.internal.OnEndInputStream
 
 class HttpClientFutureBackend private (
     client: HttpClient,
@@ -78,6 +79,9 @@ class HttpClientFutureBackend private (
 
   override protected def bodyToLimitedBody(b: InputStream, limit: Long): InputStream =
     new FailingLimitedInputStream(b, limit)
+
+  override protected def addOnEndCallbackToBody(b: InputStream, callback: () => Unit): InputStream =
+    new OnEndInputStream(b, callback)
 
   override protected def ensureOnAbnormal[T](effect: Future[T])(finalizer: => Future[Unit]): Future[T] =
     effect.recoverWith { case e =>

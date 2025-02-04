@@ -204,7 +204,7 @@ class OpenTelemetryMetricsBackendTest extends AnyFlatSpec with Matchers with Opt
 
   it should "use failure counter when other exception is thrown" in {
     // given
-    val backendStub = SyncBackendStub.whenAnyRequest.thenRespondOk()
+    val backendStub = SyncBackendStub.whenAnyRequest.thenRespond(throw new IllegalStateException())
     val reader = InMemoryMetricReader.create()
     val backend = OpenTelemetryMetricsBackend(backendStub, spawnNewOpenTelemetry(reader))
 
@@ -212,9 +212,6 @@ class OpenTelemetryMetricsBackendTest extends AnyFlatSpec with Matchers with Opt
     assertThrows[IllegalStateException] {
       basicRequest
         .get(uri"http://127.0.0.1/foo")
-        .response(
-          asString.mapWithMetadata((_, meta) => throw new IllegalStateException())
-        )
         .send(backend)
     }
 

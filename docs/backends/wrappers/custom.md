@@ -20,7 +20,7 @@ Backends, or backend wrappers can use attributes e.g. for logging, passing a met
 
 ## Listener backend
 
-The `sttp.client4.listener.ListenerBackend` can make it easier to create backend wrappers which need to be notified about request lifecycle events: when a request is started, and when it completes either successfully or with an exception. This is possible by implementing a `sttp.client4.listener.RequestListener`. This is how e.g. the [slf4j backend](logging.md) is implemented. 
+The `sttp.client4.listener.ListenerBackend` can make it easier to create backend wrappers which need to be notified about request lifecycle events: when a request is started, and when it completes either successfully or with an exception. This is possible by implementing a `sttp.client4.listener.RequestListener`.
 
 A request listener can associate a value with a request, which will then be passed to the request completion notification methods.
 

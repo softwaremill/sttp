@@ -14,6 +14,7 @@ import java.io.{ByteArrayInputStream, UnsupportedEncodingException}
 import java.nio.ByteBuffer
 import scala.concurrent.Future
 import scala.concurrent.duration._
+import java.util.concurrent.atomic.AtomicBoolean
 
 trait HttpTest[F[_]]
     extends AsyncFreeSpec
@@ -781,6 +782,51 @@ trait HttpTest[F[_]]
         Future(req.send(backend)).flatMap(_.toFuture()).map { r =>
           r.body shouldBe Right("0123456789")
         }
+      }
+    }
+  }
+
+  "onBodyReceived" - {
+    "should be called when sending a request" in {
+      val called = new AtomicBoolean(false)
+      val req = postEcho.onBodyReceived(_ => called.set(true)).body(testBody)
+
+      req.send(backend).toFuture().map { response =>
+        response.body shouldBe Right(expectedPostEchoResponse)
+        called.get() shouldBe true
+      }
+    }
+
+    "should be called when parsing the request fails" in {
+      val called = new AtomicBoolean(false)
+      val req = postEcho
+        .onBodyReceived(_ => called.set(true))
+        .body(testBody)
+        .response(asString.map(_ => throw new RuntimeException))
+
+      Future(req.send(backend)).flatMap(_.toFuture()).failed.map { _ =>
+        called.get() shouldBe true
+      }
+    }
+
+    "should be called when the response body is ignored" in {
+      val called = new AtomicBoolean(false)
+      val req = postEcho
+        .onBodyReceived(_ => called.set(true))
+        .body(testBody)
+        .response(ignore)
+
+      req.send(backend).toFuture().map { _ =>
+        called.get() shouldBe true
+      }
+    }
+
+    "should not be called when there's an exception during receiving the data" in {
+      val called = new AtomicBoolean(false)
+      val req = basicRequest.onBodyReceived(_ => called.set(true)).get(uri"$endpoint/error")
+
+      Future(req.send(backend)).flatMap(_.toFuture()).failed.map { _ =>
+        called.get() shouldBe false
       }
     }
   }

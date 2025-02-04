@@ -102,7 +102,7 @@ class HttpClientFs2Backend[F[_]: ConcurrentEffect: ContextShift] private (
   override protected def bodyToLimitedBody(b: Stream[F, Byte], limit: Long): Stream[F, Byte] = limitBytes(b, limit)
 
   // based on Fs2Streams.limitBytes (for ce3)
-  private def limitBytes[F[_]](stream: Stream[F, Byte], maxBytes: Long): Stream[F, Byte] = {
+  private def limitBytes(stream: Stream[F, Byte], maxBytes: Long): Stream[F, Byte] = {
     def go(s: Stream[F, Byte], remaining: Long): Pull[F, Byte, Unit] = {
       if (remaining < 0) throw new StreamMaxLengthExceededException(maxBytes)
       else
@@ -118,6 +118,11 @@ class HttpClientFs2Backend[F[_]: ConcurrentEffect: ContextShift] private (
     }
     go(stream, maxBytes).stream
   }
+
+  override protected def addOnEndCallbackToBody(b: Stream[F, Byte], callback: () => Unit): Stream[F, Byte] =
+    b.onFinalizeCase(exitCase =>
+      if (exitCase == ExitCase.Completed) ConcurrentEffect[F].delay(callback()) else ConcurrentEffect[F].unit
+    )
 }
 
 object HttpClientFs2Backend {

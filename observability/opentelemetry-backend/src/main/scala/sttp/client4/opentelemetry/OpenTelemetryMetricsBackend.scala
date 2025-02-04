@@ -9,6 +9,7 @@ import sttp.client4._
 import sttp.client4.listener.ListenerBackend
 import sttp.client4.listener.RequestListener
 import sttp.client4.wrappers.FollowRedirectsBackend
+import sttp.model.ResponseMetadata
 import sttp.shared.Identity
 
 import java.util.concurrent.ConcurrentHashMap
@@ -53,17 +54,17 @@ object OpenTelemetryMetricsBackend {
   def apply[F[_]](delegate: Backend[F], config: OpenTelemetryMetricsConfig): Backend[F] = {
     val listener = new OpenTelemetryMetricsListener(config)
     // redirects should be handled before metrics
-    wrappers.FollowRedirectsBackend(ListenerBackend(delegate, RequestListener.lift(listener, delegate.monad)))
+    FollowRedirectsBackend(ListenerBackend(delegate, RequestListener.lift(listener, delegate.monad)))
   }
 
   def apply[F[_]](delegate: WebSocketBackend[F], config: OpenTelemetryMetricsConfig): WebSocketBackend[F] = {
     val listener = new OpenTelemetryMetricsListener(config)
-    wrappers.FollowRedirectsBackend(ListenerBackend(delegate, RequestListener.lift(listener, delegate.monad)))
+    FollowRedirectsBackend(ListenerBackend(delegate, RequestListener.lift(listener, delegate.monad)))
   }
 
   def apply[F[_], S](delegate: StreamBackend[F, S], config: OpenTelemetryMetricsConfig): StreamBackend[F, S] = {
     val listener = new OpenTelemetryMetricsListener(config)
-    wrappers.FollowRedirectsBackend(
+    FollowRedirectsBackend(
       ListenerBackend(delegate, RequestListener.lift(listener, delegate.monad))
     )
   }
@@ -73,7 +74,7 @@ object OpenTelemetryMetricsBackend {
       config: OpenTelemetryMetricsConfig
   ): WebSocketStreamBackend[F, S] = {
     val listener = new OpenTelemetryMetricsListener(config)
-    wrappers.FollowRedirectsBackend(ListenerBackend(delegate, RequestListener.lift(listener, delegate.monad)))
+    FollowRedirectsBackend(ListenerBackend(delegate, RequestListener.lift(listener, delegate.monad)))
   }
 }
 
@@ -84,7 +85,7 @@ private class OpenTelemetryMetricsListener(config: OpenTelemetryMetricsConfig)
   private val histograms = new ConcurrentHashMap[String, DoubleHistogram]()
   private val upAndDownCounter = new ConcurrentHashMap[String, LongUpDownCounter]()
 
-  override def beforeRequest(request: GenericRequest[_, _]): Option[Long] = {
+  override def before(request: GenericRequest[_, _]): Option[Long] = {
     val attributes = config.requestAttributes(request)
 
     updateInProgressCounter(request, 1, attributes)
@@ -92,7 +93,28 @@ private class OpenTelemetryMetricsListener(config: OpenTelemetryMetricsConfig)
     config.requestToLatencyHistogramMapper(request).map { _ => config.clock.millis() }
   }
 
-  override def requestSuccessful(request: GenericRequest[_, _], response: Response[_], tag: Option[Long]): Unit = {
+  override def responseBodyReceived(
+      request: GenericRequest[_, _],
+      response: ResponseMetadata,
+      tag: Option[Long]
+  ): Unit = captureResponseMetrics(request, response, tag)
+
+  override def responseHandled(
+      request: GenericRequest[_, _],
+      response: ResponseMetadata,
+      tag: Option[Long],
+      e: Option[ResponseException[_]]
+  ): Unit = {
+    // responseBodyReceived is not called for WebSocket requests
+    // ignoring the tag as there's no point in capturing timing information for WebSockets
+    if (request.isWebSocket) captureResponseMetrics(request, response, None)
+  }
+
+  private def captureResponseMetrics(
+      request: GenericRequest[_, _],
+      response: ResponseMetadata,
+      tag: Option[Long]
+  ): Unit = {
     val requestAttributes = config.requestAttributes(request)
     val responseAttributes = config.responseAttributes(request, response)
 
@@ -113,21 +135,23 @@ private class OpenTelemetryMetricsListener(config: OpenTelemetryMetricsConfig)
     updateInProgressCounter(request, -1, requestAttributes)
   }
 
-  override def requestException(request: GenericRequest[_, _], tag: Option[Long], e: Exception): Unit = {
-    val requestAttributes = config.requestAttributes(request)
-    val errorAttributes = config.errorAttributes(e)
+  override def exception(
+      request: GenericRequest[_, _],
+      tag: Option[Long],
+      e: Throwable,
+      responseBodyReceivedCalled: Boolean
+  ): Unit = {
+    if (!responseBodyReceivedCalled) {
+      val requestAttributes = config.requestAttributes(request)
+      val errorAttributes = config.errorAttributes(e)
 
-    ResponseException.find(e) match {
-      case Some(re) =>
-        requestSuccessful(request, Response((), re.response.code, request.onlyMetadata), tag)
-      case _ =>
-        incrementCounter(config.requestToFailureCounterMapper(request, e), errorAttributes)
-        recordHistogram(
-          config.requestToLatencyHistogramMapper(request),
-          tag.map(config.clock.millis() - _),
-          errorAttributes
-        )
-        updateInProgressCounter(request, -1, requestAttributes)
+      incrementCounter(config.requestToFailureCounterMapper(request, e), errorAttributes)
+      recordHistogram(
+        config.requestToLatencyHistogramMapper(request),
+        tag.map(config.clock.millis() - _),
+        errorAttributes
+      )
+      updateInProgressCounter(request, -1, requestAttributes)
     }
   }
 

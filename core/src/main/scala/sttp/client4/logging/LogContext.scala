@@ -3,12 +3,15 @@ package sttp.client4.logging
 import sttp.model.{HeaderNames, RequestMetadata}
 
 import scala.collection.mutable
-import scala.concurrent.duration.Duration
 import sttp.model.ResponseMetadata
 
 trait LogContext {
   def forRequest(request: RequestMetadata): Map[String, Any]
-  def forResponse(request: RequestMetadata, response: ResponseMetadata, duration: Option[Duration]): Map[String, Any]
+  def forResponse(
+      request: RequestMetadata,
+      response: ResponseMetadata,
+      timings: Option[ResponseTimings]
+  ): Map[String, Any]
 }
 
 object LogContext {
@@ -20,7 +23,7 @@ object LogContext {
     def forResponse(
         request: RequestMetadata,
         response: ResponseMetadata,
-        duration: Option[Duration]
+        timings: Option[ResponseTimings]
     ): Map[String, Any] = Map.empty
   }
 
@@ -51,7 +54,7 @@ object LogContext {
     def forResponse(
         request: RequestMetadata,
         response: ResponseMetadata,
-        duration: Option[Duration]
+        timings: Option[ResponseTimings]
     ): Map[String, Any] = {
       val context = mutable.Map.empty[String, Any]
 
@@ -60,8 +63,8 @@ object LogContext {
 
       if (logResponseHeaders)
         context += "http.response.headers" -> response.headers.map(_.toStringSafe(sensitiveHeaders)).mkString(" | ")
-      duration.foreach {
-        context += "http.duration" -> _.toNanos
+      timings.foreach { t =>
+        context += "http.duration" -> t.bodyReceived.getOrElse(t.bodyHandled).toNanos
       }
 
       context.toMap

@@ -19,6 +19,7 @@ import java.util.stream.Collectors
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{blocking, Future}
 import scala.collection.immutable.Seq
+import sttp.model.ResponseMetadata
 
 class PrometheusBackendTest
     extends AnyFlatSpec
@@ -44,7 +45,7 @@ class PrometheusBackendTest
 
     // then
     getMetricValue[HistogramDataPointSnapshot](
-      s"${PrometheusBackend.DefaultHistogramName}",
+      PrometheusBackend.DefaultHistogramName,
       List("method" -> "GET")
     ).map(_.getCount).value shouldBe requestsNumber
   }
@@ -369,16 +370,13 @@ class PrometheusBackendTest
 
   it should "use failure counter when other exception is thrown" in {
     // given
-    val backendStub = SyncBackendStub.whenAnyRequest.thenRespondOk()
+    val backendStub = SyncBackendStub.whenAnyRequest.thenRespond(throw new IllegalStateException())
     val backend = PrometheusBackend(backendStub)
 
     // when
     assertThrows[IllegalStateException] {
       basicRequest
         .get(uri"http://127.0.0.1/foo")
-        .response(
-          asString.map(_ => throw new IllegalStateException())
-        )
         .send(backend)
     }
 
@@ -429,10 +427,14 @@ class PrometheusBackendTest
     import sttp.client4.prometheus.PrometheusBackend.{DefaultFailureCounterName, addMethodLabel}
 
     val HostLabel = "Host"
-    def addHostLabel[T <: BaseCollectorConfig](config: T, resp: Response[_]): config.T = {
+    def addHostLabel[T <: BaseCollectorConfig](
+        config: T,
+        req: GenericRequest[_, _],
+        resp: ResponseMetadata
+    ): config.T = {
       val hostLabel: Option[(String, String)] =
         if (config.labels.map(_._1.toLowerCase).contains(HostLabel)) None
-        else Some((HostLabel, resp.request.uri.host.getOrElse("-")))
+        else Some((HostLabel, req.uri.host.getOrElse("-")))
 
       config.addLabels(hostLabel.toList)
     }
@@ -440,8 +442,8 @@ class PrometheusBackendTest
     val backend = PrometheusBackend(
       backendStub,
       PrometheusConfig.Default.copy(
-        responseToErrorCounterMapper = (req: GenericRequest[_, _], resp: Response[_]) =>
-          Some(addHostLabel(addMethodLabel(CollectorConfig(DefaultFailureCounterName), req), resp))
+        responseToErrorCounterMapper = (req: GenericRequest[_, _], resp: ResponseMetadata) =>
+          Some(addHostLabel(addMethodLabel(CollectorConfig(PrometheusBackend.DefaultErrorCounterName), req), req, resp))
       )
     )
 
@@ -450,7 +452,7 @@ class PrometheusBackendTest
 
     // then
     getMetricValue[CounterDataPointSnapshot](
-      PrometheusBackend.DefaultFailureCounterName,
+      PrometheusBackend.DefaultErrorCounterName,
       List("method" -> "GET", HostLabel -> "127.0.0.1")
     ).map(_.getValue) shouldBe Some(1)
   }

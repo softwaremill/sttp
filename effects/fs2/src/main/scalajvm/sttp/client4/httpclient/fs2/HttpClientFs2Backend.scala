@@ -41,6 +41,7 @@ import java.util
 import java.{util => ju}
 import java.util.concurrent.Flow.Publisher
 import scala.collection.JavaConverters._
+import cats.effect.kernel.Resource.ExitCase
 
 class HttpClientFs2Backend[F[_]: Async] private (
     client: HttpClient,
@@ -105,6 +106,9 @@ class HttpClientFs2Backend[F[_]: Async] private (
 
   override protected def bodyToLimitedBody(b: Stream[F, Byte], limit: Long): Stream[F, Byte] =
     Fs2Streams.limitBytes(b, limit)
+
+  override protected def addOnEndCallbackToBody(b: Stream[F, Byte], callback: () => Unit): Stream[F, Byte] =
+    b.onFinalizeCase(exitCase => if (exitCase == ExitCase.Succeeded) Async[F].delay(callback()) else Async[F].unit)
 }
 
 object HttpClientFs2Backend {

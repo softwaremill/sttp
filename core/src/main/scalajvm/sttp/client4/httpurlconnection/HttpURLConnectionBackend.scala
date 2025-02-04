@@ -34,13 +34,12 @@ import java.nio.channels.Channels
 import java.nio.charset.CharacterCodingException
 import java.nio.file.Files
 import java.util.concurrent.ThreadLocalRandom
-import java.util.zip.{GZIPInputStream, InflaterInputStream}
 import scala.collection.JavaConverters._
 import scala.concurrent.duration.Duration
 import sttp.client4.GenericRequestBody
 import sttp.client4.compression.CompressionHandlers
 import sttp.client4.compression.Decompressor
-import sttp.tapir.server.jdkhttp.internal.FailingLimitedInputStream
+import sttp.client4.internal.FailingLimitedInputStream
 
 class HttpURLConnectionBackend private (
     opts: BackendOptions,
@@ -81,8 +80,8 @@ class HttpURLConnectionBackend private (
       }
 
       try {
-        val is = c.getInputStream
-        val limitedIs = r.options.maxResponseBodyLength.fold(is)(new FailingLimitedInputStream(is, _))
+        val is = c.getInputStream()
+        val limitedIs = r.options.maxResponseBodyLength.fold[InputStream](is)(new FailingLimitedInputStream(is, _))
         readResponse(c, limitedIs, r)
       } catch {
         case e: CharacterCodingException     => throw e
@@ -267,7 +266,9 @@ class HttpURLConnectionBackend private (
         wrapInput(contentEncoding, handleNullInput(is))
       } else handleNullInput(is)
     val responseMetadata = ResponseMetadata(code, c.getResponseMessage, headers)
-    val body = bodyFromResponseAs(request.response, responseMetadata, Left(wrappedIs))
+
+    val isWithCallback = new OnEndInputStream(wrappedIs, () => request.options.onBodyReceived(responseMetadata))
+    val body = bodyFromResponseAs(request.response, responseMetadata, Left(isWithCallback))
 
     Response(body, code, c.getResponseMessage, headers, Nil, request.onlyMetadata)
   }

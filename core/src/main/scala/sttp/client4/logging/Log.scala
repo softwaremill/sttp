@@ -3,7 +3,6 @@ package sttp.client4.logging
 import sttp.client4.GenericRequest
 import sttp.client4.Response
 import sttp.model.ResponseMetadata
-import sttp.model.StatusCode
 
 import scala.concurrent.duration.Duration
 import sttp.client4.ResponseException
@@ -11,83 +10,53 @@ import sttp.client4.ResponseException
 /** Performs logging before requests are sent and after requests complete successfully or with an exception. */
 trait Log[F[_]] {
   def beforeRequestSend(request: GenericRequest[_, _]): F[Unit]
+
+  /** @param exception
+    *   A [[ResponseException]] that might occur when handling the response (e.g. parsing).
+    */
   def response(
       request: GenericRequest[_, _],
-      response: Response[_],
+      response: ResponseMetadata,
       responseBody: Option[String],
-      elapsed: Option[Duration]
+      timings: Option[ResponseTimings],
+      exception: Option[ResponseException[_]]
   ): F[Unit]
-  def requestException(
-      request: GenericRequest[_, _],
-      elapsed: Option[Duration],
-      e: Exception
-  ): F[Unit]
+
+  def requestException(request: GenericRequest[_, _], timing: Option[Duration], exception: Throwable): F[Unit]
 }
 
 object Log {
-  def default[F[_]](
-      logger: Logger[F],
-      config: LogConfig
-  ): Log[F] = new DefaultLog(
-    logger,
-    config.beforeCurlInsteadOfShow,
-    config.logRequestBody,
-    config.logRequestHeaders,
-    config.logResponseHeaders,
-    config.sensitiveHeaders,
-    config.beforeRequestSendLogLevel,
-    config.responseLogLevel,
-    config.responseExceptionLogLevel,
-    LogContext.default(config.logRequestHeaders, config.logResponseHeaders, config.sensitiveHeaders)
-  )
+  def default[F[_]](logger: Logger[F], config: LogConfig): Log[F] =
+    new DefaultLog(
+      logger,
+      config,
+      LogContext.default(config.logRequestHeaders, config.logResponseHeaders, config.sensitiveHeaders)
+    )
 }
 
 /** Default implementation of [[Log]] to be used by the [[LoggingBackend]]. Creates default log messages and delegates
   * them to the given [[Logger]].
   */
-class DefaultLog[F[_]](
-    logger: Logger[F],
-    beforeCurlInsteadOfShow: Boolean,
-    logRequestBody: Boolean,
-    logRequestHeaders: Boolean,
-    logResponseHeaders: Boolean,
-    sensitiveHeaders: Set[String],
-    beforeRequestSendLogLevel: LogLevel,
-    responseLogLevel: StatusCode => LogLevel,
-    responseExceptionLogLevel: LogLevel,
-    logContext: LogContext
-) extends Log[F] {
+class DefaultLog[F[_]](logger: Logger[F], config: LogConfig, logContext: LogContext) extends Log[F] {
 
-  def beforeRequestSend(request: GenericRequest[_, _]): F[Unit] =
-    before(
-      request,
-      request.loggingOptions.logRequestBody.getOrElse(logRequestBody),
-      request.loggingOptions.logRequestHeaders.getOrElse(logRequestHeaders)
-    )
-
-  private def before(request: GenericRequest[_, _], _logRequestBody: Boolean, _logRequestHeaders: Boolean): F[Unit] =
+  def beforeRequestSend(request: GenericRequest[_, _]): F[Unit] = {
+    val _logRequestBody = request.loggingOptions.logRequestBody.getOrElse(config.logRequestBody)
+    val _logRequestHeaders = request.loggingOptions.logRequestHeaders.getOrElse(config.logRequestHeaders)
     logger(
-      level = beforeRequestSendLogLevel,
-      message =
-        s"Sending request: ${if (beforeCurlInsteadOfShow && _logRequestBody && _logRequestHeaders) request.toCurl(sensitiveHeaders)
-          else request.show(includeBody = _logRequestBody, _logRequestHeaders, sensitiveHeaders)}",
-      throwable = None,
+      level = config.beforeRequestSendLogLevel,
+      message = s"Sending request: ${if (config.beforeCurlInsteadOfShow && _logRequestBody && _logRequestHeaders) request.toCurl(config.sensitiveHeaders)
+        else request.show(includeBody = _logRequestBody, includeHeaders = _logRequestHeaders, config.sensitiveHeaders)}",
+      exception = None,
       context = logContext.forRequest(request)
     )
+  }
 
   override def response(
       request: GenericRequest[_, _],
-      response: Response[_],
-      responseBody: Option[String],
-      elapsed: Option[Duration]
-  ): F[Unit] = handleResponse(request, response, responseBody, elapsed, None)
-
-  private def handleResponse(
-      request: GenericRequest[_, _],
       response: ResponseMetadata,
       responseBody: Option[String],
-      elapsed: Option[Duration],
-      e: Option[Throwable]
+      timings: Option[ResponseTimings],
+      exception: Option[ResponseException[_]]
   ): F[Unit] = {
     val responseWithBody = Response(
       responseBody.getOrElse(""),
@@ -99,32 +68,40 @@ class DefaultLog[F[_]](
     )
 
     logger(
-      level = responseLogLevel(response.code),
+      level = config.responseLogLevel(response.code),
       message = {
         val responseAsString = responseWithBody.show(
-          request.loggingOptions.logResponseBody.getOrElse(responseBody.isDefined),
-          request.loggingOptions.logResponseHeaders.getOrElse(logResponseHeaders),
-          sensitiveHeaders
+          responseBody.isDefined && request.loggingOptions.logResponseBody.getOrElse(config.logResponseBody),
+          request.loggingOptions.logResponseHeaders.getOrElse(config.logResponseHeaders),
+          config.sensitiveHeaders
         )
-        s"Request: ${request.showBasic}${took(elapsed)}, response: $responseAsString"
+        s"Request: ${request.showBasic}${took(timings)}, response: $responseAsString"
       },
-      throwable = e,
-      context = logContext.forResponse(request, response, elapsed)
+      exception = exception,
+      context = logContext.forResponse(request, response, timings)
     )
   }
 
-  override def requestException(request: GenericRequest[_, _], elapsed: Option[Duration], e: Exception): F[Unit] =
-    ResponseException.find(e) match {
-      case Some(re) =>
-        handleResponse(request, re.response, None, elapsed, Some(e))
-      case None =>
-        logger(
-          level = responseExceptionLogLevel,
-          message = s"Exception when sending request: ${request.showBasic}${took(elapsed)}",
-          throwable = Some(e),
-          context = logContext.forRequest(request)
-        )
-    }
+  override def requestException(
+      request: GenericRequest[_, _],
+      timing: Option[Duration],
+      exception: Throwable
+  ): F[Unit] =
+    logger(
+      level = config.responseExceptionLogLevel,
+      message = s"Exception when sending request: ${request.showBasic}${tookFromDuration(timing)}",
+      exception = Some(exception),
+      context = logContext.forRequest(request)
+    )
 
-  private def took(elapsed: Option[Duration]): String = elapsed.fold("")(e => f", took: ${e.toMillis / 1000.0}%.3fs")
+  private def elapsed(d: Duration): String = f"${d.toMillis / 1000.0}%.3fs"
+  private def tookFromDuration(timing: Option[Duration]): String = timing.fold("")(t => f", took: ${elapsed(t)}")
+  private def took(timings: Option[ResponseTimings]): String = {
+    timings.fold("") { t =>
+      t.bodyReceived match {
+        case None     => s", took: ${elapsed(t.bodyHandled)}"
+        case Some(br) => s", took: (body=${elapsed(br)}, full=${elapsed(t.bodyHandled)})"
+      }
+    }
+  }
 }

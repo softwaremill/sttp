@@ -29,6 +29,8 @@ import sttp.client4.compression.DeflateDefaultCompressor
 import sttp.client4.compression.GZipDefaultCompressor
 
 import scala.io.Source
+import sttp.client4.internal.OnEndInputStream
+import java.io.InputStream
 
 class FinagleBackend(client: Option[Client] = None) extends Backend[TFuture] {
   type R = Any with Effect[TFuture]
@@ -46,7 +48,12 @@ class FinagleBackend(client: Option[Client] = None) extends Backend[TFuture] {
           val headers = fResponse.headerMap.map(h => Header(h._1, h._2)).toList
           val statusText = fResponse.status.reason
           val responseMetadata = ResponseMetadata(code, statusText, headers)
-          val body = bodyFromResponseAs(request.response, responseMetadata, Left(fResponse))
+          val body =
+            bodyFromResponseAs(() => request.options.onBodyReceived(responseMetadata))(
+              request.response,
+              responseMetadata,
+              Left(fResponse)
+            )
           service
             .close()
             .flatMap(_ => body.map(sttp.client4.Response(_, code, statusText, headers, Nil, request.onlyMetadata)))
@@ -155,7 +162,7 @@ class FinagleBackend(client: Option[Client] = None) extends Backend[TFuture] {
     updatedHostHeader.addHeaders(headers).build(method, content)
   }
 
-  private lazy val bodyFromResponseAs =
+  private def bodyFromResponseAs(onBodyReceived: () => Unit) =
     new BodyFromResponseAs[TFuture, FResponse, Nothing, Nothing] {
       override protected def withReplayableBody(
           response: FResponse,
@@ -168,18 +175,30 @@ class FinagleBackend(client: Option[Client] = None) extends Backend[TFuture] {
           })
           .unit
 
-      override protected def regularIgnore(response: FResponse): TFuture[Unit] = TFuture(response.clearContent())
+      override protected def regularIgnore(response: FResponse): TFuture[Unit] = TFuture {
+        response.clearContent()
+        onBodyReceived()
+      }
 
       override protected def regularAsByteArray(response: FResponse): TFuture[Array[Byte]] =
         TFuture.const(util.Try {
           val bb = ByteBuffer.Owned.extract(response.content)
           val b = new Array[Byte](bb.remaining)
           bb.get(b)
+          onBodyReceived()
           b
         })
 
       override protected def regularAsFile(response: FResponse, file: SttpFile): TFuture[SttpFile] =
-        TFuture.const(util.Try(FileHelpers.saveFile(file.toFile, response.getInputStream()))).map(_ => file)
+        TFuture
+          .const(
+            util.Try(FileHelpers.saveFile(file.toFile, new OnEndInputStream(response.getInputStream(), onBodyReceived)))
+          )
+          .map(_ => file)
+
+      override protected def regularAsInputStream(response: FResponse): TFuture[InputStream] = TFuture.const(
+        util.Try(new OnEndInputStream(response.getInputStream(), onBodyReceived))
+      )
 
       override protected def regularAsStream(response: FResponse): TFuture[Nothing] =
         TFuture.exception(new IllegalStateException("Streaming isn't supported"))

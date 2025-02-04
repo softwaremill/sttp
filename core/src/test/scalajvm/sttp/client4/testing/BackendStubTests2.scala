@@ -5,7 +5,6 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import sttp.client4.SttpClientException.ReadException
 import sttp.client4.{basicRequest, UriContext}
-import sttp.monad.FutureMonad
 
 import java.util.concurrent.TimeoutException
 import scala.concurrent.ExecutionContext.Implicits.global

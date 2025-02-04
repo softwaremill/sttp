@@ -16,6 +16,7 @@ import sttp.monad.syntax._
 import sttp.ws.{WebSocket, WebSocketFrame}
 
 import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicBoolean
 
 abstract class WebSocketTest[F[_]]
     extends AsyncFlatSpec
@@ -219,6 +220,19 @@ abstract class WebSocketTest[F[_]]
         }
         .toFuture()
     }
+  }
+
+  it should "not call onBodyReceived callback for WebSocket requests" in {
+    val called = new AtomicBoolean(false)
+    basicRequest
+      .get(uri"$wsEndpoint/ws/header")
+      .response(asWebSocketAlways((ws: WebSocket[F]) => ws.close()))
+      .onBodyReceived(_ => called.set(true))
+      .send(backend)
+      .map { _ =>
+        called.get() shouldBe false
+      }
+      .toFuture()
   }
 
   def sendText(ws: WebSocket[F], count: Int): F[Unit] =

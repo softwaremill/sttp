@@ -24,6 +24,7 @@ import java.util.concurrent.CompletionException
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
 import java.util.function.BiConsumer
+import sttp.model.ResponseMetadata
 
 /** @tparam F
   *   The effect type

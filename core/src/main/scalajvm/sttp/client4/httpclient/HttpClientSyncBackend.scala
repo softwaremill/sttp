@@ -20,8 +20,8 @@ import java.util.concurrent.{ArrayBlockingQueue, CompletionException}
 import sttp.client4.compression.Compressor
 import sttp.client4.compression.CompressionHandlers
 import sttp.client4.compression.Decompressor
-import sttp.tapir.server.jdkhttp.internal.FailingLimitedInputStream
 import java.util.concurrent.atomic.AtomicReference
+import sttp.client4.internal.{FailingLimitedInputStream, OnEndInputStream}
 
 class HttpClientSyncBackend private (
     client: HttpClient,
@@ -129,6 +129,9 @@ class HttpClientSyncBackend private (
           pipe: streams.Pipe[WebSocketFrame.Data[_], WebSocketFrame]
       ): Identity[Unit] = pipe
     }
+
+  override def addOnEndCallbackToBody(b: InputStream, callback: () => Unit): InputStream =
+    new OnEndInputStream(b, callback)
 }
 
 object HttpClientSyncBackend {

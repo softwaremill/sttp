@@ -4,7 +4,7 @@ import com.linecorp.armeria.common.{CommonPools, HttpData}
 import com.linecorp.armeria.common.stream.{StreamMessage, StreamMessages}
 import io.netty.util.concurrent.EventExecutor
 
-import java.io.{File, InputStream}
+import java.io.File
 import java.nio.file.Path
 import java.util.concurrent.atomic.AtomicReference
 import sttp.capabilities.Streams
@@ -77,7 +77,8 @@ private[armeria] trait BodyFromStreamMessage[F[_], S] {
 
   def apply(
       executor: EventExecutor,
-      aggregatorRef: AtomicReference[StreamMessageAggregator]
+      aggregatorRef: AtomicReference[StreamMessageAggregator],
+      onBodyReceivedCallback: () => Unit
   ): BodyFromResponseAs[F, StreamMessage[HttpData], Nothing, streams.BinaryStream] =
     new BodyFromResponseAs[F, StreamMessage[HttpData], Nothing, streams.BinaryStream] {
       override protected def withReplayableBody(
@@ -90,7 +91,11 @@ private[armeria] trait BodyFromStreamMessage[F[_], S] {
         }
 
       override protected def regularIgnore(response: StreamMessage[HttpData]): F[Unit] =
-        monad.eval(response.abort())
+        monad.eval {
+          response.abort()
+          // when aborting, the .whenComplete future is never completed (in AbstractArmeriaBackend)
+          onBodyReceivedCallback()
+        }
 
       override protected def regularAsByteArray(response: StreamMessage[HttpData]): F[Array[Byte]] =
         publisherToBytes(response, executor, aggregatorRef)

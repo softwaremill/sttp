@@ -3,7 +3,7 @@ package sttp.client4.http4s
 import java.io.InputStream
 import java.nio.charset.Charset
 import cats.effect.concurrent.MVar
-import cats.effect.{Blocker, Concurrent, ConcurrentEffect, ContextShift, Resource, Sync}
+import cats.effect._
 import cats.implicits._
 import cats.effect.implicits._
 import fs2.{Chunk, Stream, Pull}
@@ -96,7 +96,10 @@ class Http4sBackend[F[_]: ConcurrentEffect: ContextShift](
                   responseMetadata,
                   Left(
                     onFinalizeSignal(
-                      decompressResponseBodyIfNotHead(r.method, limitedResponse, r.autoDecompressionEnabled),
+                      addOnBodyReceivedCallback(
+                        decompressResponseBodyIfNotHead(r.method, limitedResponse, r.autoDecompressionEnabled),
+                        () => r.options.onBodyReceived(responseMetadata)
+                      ),
                       signalBodyComplete
                     )
                   )
@@ -192,6 +195,13 @@ class Http4sBackend[F[_]: ConcurrentEffect: ContextShift](
 
   private def onFinalizeSignal(hr: http4s.Response[F], signal: F[Unit]): http4s.Response[F] =
     hr.copy(body = hr.body.onFinalize(signal))
+
+  private def addOnBodyReceivedCallback[T](hr: http4s.Response[F], callback: () => Unit): http4s.Response[F] =
+    hr.copy(body =
+      hr.body.onFinalizeCase(exitCase =>
+        if (exitCase == ExitCase.Completed) ConcurrentEffect[F].delay(callback()) else ConcurrentEffect[F].unit
+      )
+    )
 
   private def decompressResponseBodyIfNotHead[T](
       m: Method,

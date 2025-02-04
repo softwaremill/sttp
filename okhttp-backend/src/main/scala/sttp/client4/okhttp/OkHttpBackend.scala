@@ -23,7 +23,9 @@ import scala.collection.JavaConverters._
 import sttp.client4.compression.Compressor
 import sttp.client4.compression.CompressionHandlers
 import sttp.client4.compression.Decompressor
-import sttp.tapir.server.jdkhttp.internal.FailingLimitedInputStream
+import sttp.client4.internal.FailingLimitedInputStream
+import sttp.client4.internal.OnEndInputStream
+import sttp.client4.GenericResponseAs.isWebSocket
 
 abstract class OkHttpBackend[F[_], S <: Streams[S], P](
     client: OkHttpClient,
@@ -84,7 +86,8 @@ abstract class OkHttpBackend[F[_], S <: Streams[S], P](
   private[okhttp] def readResponse[T](
       res: OkHttpResponse,
       request: GenericRequest[_, R],
-      responseAs: ResponseAsDelegate[T, R]
+      responseAs: ResponseAsDelegate[T, R],
+      isWebSocket: Boolean
   ): F[Response[T]] = {
     val headers = readHeaders(res)
     val responseMetadata = ResponseMetadata(StatusCode(res.code()), res.message(), headers)
@@ -93,7 +96,7 @@ abstract class OkHttpBackend[F[_], S <: Streams[S], P](
     val inputStream = res.body().byteStream()
     val limitedInputStream =
       request.maxResponseBodyLength.fold(inputStream)(l => new FailingLimitedInputStream(inputStream, l))
-    val byteBody =
+    val decompressedInputStream =
       if (
         method != Method.HEAD && !res
           .code()
@@ -107,7 +110,12 @@ abstract class OkHttpBackend[F[_], S <: Streams[S], P](
         limitedInputStream
       }
 
-    val body = bodyFromOkHttp(byteBody, responseAs, responseMetadata, None)
+    val inputStreamWithCallback =
+      if (isWebSocket) decompressedInputStream
+      else
+        new OnEndInputStream(decompressedInputStream, () => request.options.onBodyReceived(responseMetadata))
+
+    val body = bodyFromOkHttp(inputStreamWithCallback, responseAs, responseMetadata, None)
     monad.map(body)(Response(_, StatusCode(res.code()), res.message(), headers, Nil, request.onlyMetadata))
   }
 

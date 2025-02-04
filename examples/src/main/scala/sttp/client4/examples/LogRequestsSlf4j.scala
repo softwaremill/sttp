@@ -24,9 +24,8 @@ import sttp.client4.logging.slf4j.Slf4jLoggingBackend
     Slf4jLoggingBackend(
       DefaultSyncBackend(),
       LogConfig(
-        includeTiming = true,
-        logRequestBody = false,
-        logResponseBody = false
+        logRequestBody = true,
+        logResponseBody = true
       )
     )
 

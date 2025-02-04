@@ -118,6 +118,11 @@ class HttpClientZioBackend private (
         }
       }
       .mapChunks(chunk => chunk.flatten)
+
+  override protected def addOnEndCallbackToBody(
+      b: ZioStreams.BinaryStream,
+      callback: () => Unit
+  ): ZioStreams.BinaryStream = b.++(ZStream.execute(ZIO.effect(callback())))
 }
 
 object HttpClientZioBackend {

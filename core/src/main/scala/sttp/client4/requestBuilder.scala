@@ -21,6 +21,7 @@ import scala.concurrent.duration.Duration
 import scala.collection.immutable.Seq
 import sttp.attributes.AttributeKey
 import sttp.attributes.AttributeMap
+import sttp.model.ResponseMetadata
 
 /** The builder methods of requests or partial requests of type `PR`.
   *
@@ -382,6 +383,22 @@ trait PartialRequestBuilder[+PR <: PartialRequestBuilder[PR, R], +R]
 
   /** The maximum response body length, if any. */
   def maxResponseBodyLength: Option[Long] = options.maxResponseBodyLength
+
+  /** Add a callback to be invoked when the entire response body has been received & decompressed (but not yet fully
+    * handled, e.g. by parsing the received data).
+    *
+    * This might be used e.g. by logging & metrics backends to properly capture timing information.
+    *
+    * The callback is not called when there's an exception while reading the response body, decompressing, or for
+    * WebSocket requests.
+    */
+  def onBodyReceived(callback: ResponseMetadata => Unit): PR = {
+    val oldCallback = options.onBodyReceived
+    withOptions(options.copy(onBodyReceived = meta => {
+      oldCallback(meta)
+      callback(meta)
+    }))
+  }
 
   /** Reads a per-request attribute for the given key, if present. */
   def attribute[T](k: AttributeKey[T]): Option[T] = attributes.get(k)

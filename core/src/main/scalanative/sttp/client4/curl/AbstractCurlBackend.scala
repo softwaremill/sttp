@@ -134,6 +134,9 @@ abstract class AbstractCurlBackend[F[_]](_monad: MonadError[F], verbose: Boolean
       val responseHeaders = responseHeaders_.tail
       val responseMetadata = ResponseMetadata(httpCode, statusText, responseHeaders)
 
+      // the response is read into memory
+      request.options.onBodyReceived(responseMetadata)
+
       val body: F[T] = bodyFromResponseAs(request.response, responseMetadata, Left(responseBody))
       monad.map(body) { b =>
         Response[T](

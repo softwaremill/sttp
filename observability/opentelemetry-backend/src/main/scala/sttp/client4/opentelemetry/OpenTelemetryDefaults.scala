@@ -8,6 +8,7 @@ import io.opentelemetry.semconv.UrlAttributes
 import io.opentelemetry.semconv.ErrorAttributes
 import io.opentelemetry.semconv.ServerAttributes
 import io.opentelemetry.api.common.AttributesBuilder
+import sttp.model.ResponseMetadata
 
 object OpenTelemetryDefaults {
 
@@ -32,7 +33,7 @@ object OpenTelemetryDefaults {
       .put(ServerAttributes.SERVER_PORT, request.uri.port.getOrElse(80))
 
   /** @see https://opentelemetry.io/docs/specs/semconv/http/http-metrics/#http-client */
-  def responseAttributes(request: GenericRequest[_, _], response: Response[_]): Attributes =
+  def responseAttributes(request: GenericRequest[_, _], response: ResponseMetadata): Attributes =
     Attributes.builder
       .put(HttpAttributes.HTTP_RESPONSE_STATUS_CODE, response.code.code.toLong: java.lang.Long)
       .build()

@@ -1,4 +1,4 @@
-package sttp.tapir.server.jdkhttp.internal
+package sttp.client4.internal
 
 import sttp.capabilities.StreamMaxLengthExceededException
 import java.io.FilterInputStream
