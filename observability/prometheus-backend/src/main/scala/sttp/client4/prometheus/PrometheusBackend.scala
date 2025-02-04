@@ -182,7 +182,7 @@ class PrometheusListener(
     summariesCache: ConcurrentHashMap[String, Summary]
 ) extends RequestListener[Identity, RequestCollectors] {
 
-  override def before[T, R](request: GenericRequest[T, R]): RequestCollectors = {
+  override def before(request: GenericRequest[_, _]): RequestCollectors = {
     val requestTimer: Option[Timer] = for {
       histogramData <- histogramNameMapper(request)
       histogram: Histogram = getOrCreateMetric(histogramsCache, histogramData, createNewHistogram)

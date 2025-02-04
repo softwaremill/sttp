@@ -85,7 +85,7 @@ private class OpenTelemetryMetricsListener(config: OpenTelemetryMetricsConfig)
   private val histograms = new ConcurrentHashMap[String, DoubleHistogram]()
   private val upAndDownCounter = new ConcurrentHashMap[String, LongUpDownCounter]()
 
-  override def before[T, R](request: GenericRequest[T, R]): Option[Long] = {
+  override def before(request: GenericRequest[_, _]): Option[Long] = {
     val attributes = config.requestAttributes(request)
 
     updateInProgressCounter(request, 1, attributes)
