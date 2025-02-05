@@ -4,7 +4,7 @@ import java.util.concurrent.{ArrayBlockingQueue, BlockingQueue, LinkedBlockingQu
 import sttp.shared.Identity
 import sttp.ws.WebSocketBufferFull
 
-class SyncQueue[T](capacity: Option[Int]) extends SimpleQueue[Identity, T] {
+private[client4] class SyncQueue[T](capacity: Option[Int]) extends SimpleQueue[Identity, T] {
 
   private val queue: BlockingQueue[T] = capacity match {
     case Some(value) => new ArrayBlockingQueue[T](value)

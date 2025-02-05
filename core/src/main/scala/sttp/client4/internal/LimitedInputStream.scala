@@ -5,14 +5,14 @@ import java.io.FilterInputStream
 import java.io.InputStream
 import java.io.IOException
 
-class FailingLimitedInputStream(in: InputStream, limit: Long) extends LimitedInputStream(in, limit) {
+private[client4] class FailingLimitedInputStream(in: InputStream, limit: Long) extends LimitedInputStream(in, limit) {
   override def onLimit: Int = {
     throw new StreamMaxLengthExceededException(limit)
   }
 }
 
 /** Based on Guava's https://github.com/google/guava/blob/master/guava/src/com/google/common/io/ByteStreams.java */
-class LimitedInputStream(in: InputStream, limit: Long) extends FilterInputStream(in) {
+private[client4] class LimitedInputStream(in: InputStream, limit: Long) extends FilterInputStream(in) {
   protected var left: Long = limit
   private var mark: Long = -1L
 

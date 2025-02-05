@@ -5,7 +5,7 @@ import sttp.model._
 
 import scala.util.Random
 
-object ToRfc2616Converter {
+private[client4] object ToRfc2616Converter {
 
   def requestToRfc2616(request: GenericRequest[_, _]): String = apply(request, HeaderNames.SensitiveHeaders)
 

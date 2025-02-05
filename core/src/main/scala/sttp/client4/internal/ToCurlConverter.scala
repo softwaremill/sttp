@@ -3,7 +3,7 @@ package sttp.client4.internal
 import sttp.client4._
 import sttp.model._
 
-object ToCurlConverter {
+private[client4] object ToCurlConverter {
 
   def apply(request: GenericRequest[_, _]): String =
     apply(request, HeaderNames.SensitiveHeaders, omitAcceptEncoding = false)

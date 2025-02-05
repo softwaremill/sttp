@@ -1,6 +1,6 @@
 package sttp.client4.internal
 
-object WwwAuthHeaderParser {
+private[client4] object WwwAuthHeaderParser {
   def parse(text: String): WwwAuthHeaderValue =
     WwwAuthHeaderValue(
       text
@@ -9,7 +9,7 @@ object WwwAuthHeaderParser {
     )
 }
 
-case class WwwAuthHeaderValue(values: Map[String, String]) {
+private[client4] case class WwwAuthHeaderValue(values: Map[String, String]) {
   val qop = values.get("qop")
   val realm = values.get("realm")
   val nonce = values.get("nonce")

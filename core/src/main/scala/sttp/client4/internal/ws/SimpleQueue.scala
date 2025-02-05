@@ -1,6 +1,6 @@
 package sttp.client4.internal.ws
 
-trait SimpleQueue[F[_], T] {
+private[client4] trait SimpleQueue[F[_], T] {
 
   /** Eagerly adds the given item to the queue.
     */
