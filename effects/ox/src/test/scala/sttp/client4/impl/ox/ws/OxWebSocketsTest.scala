@@ -73,7 +73,7 @@ class OxWebSocketTest extends AnyFlatSpec with BeforeAndAfterAll with Matchers w
     val stubBackend: WebSocketSyncBackend =
       DefaultSyncBackend.stub
         .whenRequestMatches(_.uri.toString().contains("echo.websocket.org"))
-        .thenRespond(
+        .thenRespondAdjust(
           WebSocketStub
             .initialReceiveWith(List(Success(WebSocketFrame.text("first response")), Failure(expectedException))),
           StatusCode.SwitchingProtocols
@@ -92,7 +92,7 @@ class OxWebSocketTest extends AnyFlatSpec with BeforeAndAfterAll with Matchers w
     val stubBackend: WebSocketSyncBackend =
       DefaultSyncBackend.stub
         .whenRequestMatches(_.uri.toString().contains("echo.websocket.org"))
-        .thenRespond(
+        .thenRespondAdjust(
           WebSocketStub
             .initialReceive(List.fill(50)(WebSocketFrame.Ping("test-ping".getBytes)))
             .thenRespond {

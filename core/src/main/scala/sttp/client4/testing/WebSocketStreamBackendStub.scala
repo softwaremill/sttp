@@ -10,32 +10,35 @@ import sttp.shared.Identity
 
 /** A stub backend to use in tests.
   *
-  * The stub can be configured to respond with a given response if the request matches a predicate (see the
-  * [[whenRequestMatches()]] method).
+  * The stub can be configured to respond with a given response if the request matches a predicate (see the `when...`
+  * methods).
   *
-  * Note however, that this is not type-safe with respect to the type of the response body - the stub doesn't have a way
-  * to check if the type of the body in the configured response is the same as the one specified by the request. Some
-  * conversions will be attempted (e.g. from a `String` to a custom mapped type, as specified in the request, see the
-  * documentation for more details).
+  * The response bodies can be adjusted to what's described in the request description, or returned exactly as provided.
+  * See [[StubBody]] for details on how the body is adjusted, and [[ResponseStub]] for convenience methods to create
+  * responses to be used in tests. The `.thenRespondAdjust` and `.thenRespondExact` methods cover the common use-cases.
+  *
+  * For requests which use the response as a stream, if the stub should return a raw stream value (which should then be
+  * passed to the stream-consuming function, or mapped to another value), it should do so by adjusting a
+  * [[sttp.capabilities.Streams.BinaryStream]] value, for the appropriate capability.
   *
   * For web socket requests, the stub can be configured to returned both custom [[sttp.ws.WebSocket]] implementations,
   * as well as [[sttp.ws.testing.WebSocketStub]] instances.
   *
-  * For requests which return the response as a stream, if the stub should return a raw stream value (which should then
-  * be passed to the stream-consuming function, or mapped to another value), it should be wrapped with [[RawStream]].
+  * Note that providing the stub body is not type-safe: the stub doesn't have a way to check if the type of the body in
+  * the configured response is the same as, or can be converted to, the one specified by the request; hence, a
+  * [[ClassCastException]] or [[IllegalArgumentException]] might occur, while sending requests using the stub backend.
   *
-  * Predicates can match requests basing on the URI or headers. A [[ClassCastException]] might occur if for a given
-  * request, a response is specified with the incorrect or inconvertible body type.
+  * Predicates can match requests basing on the URI or headers.
   */
 class WebSocketStreamBackendStub[F[_], S](
     monad: MonadError[F],
-    matchers: PartialFunction[GenericRequest[_, _], F[Response[_]]],
+    matchers: PartialFunction[GenericRequest[_, _], F[Response[StubBody]]],
     fallback: Option[WebSocketStreamBackend[F, S]]
 ) extends AbstractBackendStub[F, S with WebSockets](monad, matchers, fallback)
     with WebSocketStreamBackend[F, S] {
   type Self = WebSocketStreamBackendStub[F, S]
   override protected def withMatchers(
-      matchers: PartialFunction[GenericRequest[_, _], F[Response[_]]]
+      matchers: PartialFunction[GenericRequest[_, _], F[Response[StubBody]]]
   ): WebSocketStreamBackendStub[F, S] =
     new WebSocketStreamBackendStub(monad, matchers, fallback)
 }

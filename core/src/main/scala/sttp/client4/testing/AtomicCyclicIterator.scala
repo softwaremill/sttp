@@ -3,7 +3,7 @@ package sttp.client4.testing
 import java.util.concurrent.atomic.AtomicInteger
 import scala.util.{Failure, Success, Try}
 
-final class AtomicCyclicIterator[+T] private (val elements: Seq[T]) {
+private[testing] final class AtomicCyclicIterator[+T] private (val elements: Seq[T]) {
   private val vector = elements.toVector
   private val length = elements.length
   private val currentIndex = new AtomicInteger(0)
@@ -14,7 +14,7 @@ final class AtomicCyclicIterator[+T] private (val elements: Seq[T]) {
   }
 }
 
-object AtomicCyclicIterator {
+private[testing] object AtomicCyclicIterator {
 
   def tryFrom[T](elements: Seq[T]): Try[AtomicCyclicIterator[T]] =
     if (elements.nonEmpty)

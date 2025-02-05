@@ -34,8 +34,8 @@ class FollowRedirectsBackendTest extends AnyFunSuite with Matchers with EitherVa
     val url0 = uri"https://server.com/download"
     val url1Source = "https://elsewhere.com/A%2C%20File%20With%20Spaces%20.txt"
 
-    val response0 = ResponseStub("", StatusCode.Found, "", Vector(Header.location(url1Source)))
-    val response1 = ResponseStub.ok("All good!")
+    val response0 = ResponseStub.adjust("", StatusCode.Found, Vector(Header.location(url1Source)))
+    val response1 = ResponseStub.adjust("All good!")
 
     val stub0 = BackendStub.synchronous
       .whenRequestMatches(_.uri == url0)

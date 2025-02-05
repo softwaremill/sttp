@@ -12,17 +12,15 @@ import sttp.ws.WebSocket
 import sttp.ws.testing.WebSocketStub
 
 import scala.util.{Failure, Success, Try}
+import sttp.model.StatusText
 
 abstract class AbstractBackendStub[F[_], P](
     _monad: MonadError[F],
-    matchers: PartialFunction[GenericRequest[_, _], F[Response[_]]],
+    matchers: PartialFunction[GenericRequest[_, _], F[Response[StubBody]]],
     fallback: Option[GenericBackend[F, P]]
 ) extends GenericBackend[F, P] {
-
   type Self
-
-  protected def withMatchers(matchers: PartialFunction[GenericRequest[_, _], F[Response[_]]]): Self
-
+  protected def withMatchers(matchers: PartialFunction[GenericRequest[_, _], F[Response[StubBody]]]): Self
   override def monad: MonadError[F] = _monad
 
   /** Specify how the stub backend should respond to requests matching the given predicate.
@@ -42,9 +40,9 @@ abstract class AbstractBackendStub[F[_], P](
     *
     * Note that the stubs are immutable, and each new specification that is added yields a new stub instance.
     */
-  def whenRequestMatchesPartial(partial: PartialFunction[GenericRequest[_, _], Response[_]]): Self = {
-    val wrappedPartial: PartialFunction[GenericRequest[_, _], F[Response[_]]] =
-      partial.andThen((r: Response[_]) => monad.unit(r))
+  def whenRequestMatchesPartial(partial: PartialFunction[GenericRequest[_, _], Response[StubBody]]): Self = {
+    val wrappedPartial: PartialFunction[GenericRequest[_, _], F[Response[StubBody]]] =
+      partial.andThen((r: Response[StubBody]) => monad.unit(r))
     withMatchers(matchers.orElse(wrappedPartial))
   }
 
@@ -54,7 +52,14 @@ abstract class AbstractBackendStub[F[_], P](
         adjustExceptions(request) {
           monad.flatMap(response) { r =>
             request.options.onBodyReceived(r)
-            tryAdjustResponseType(request.response, r.asInstanceOf[Response[T]])(monad)
+
+            r.body match {
+              case StubBody.Exact(v) => monad.unit(r.copy(body = v.asInstanceOf[T]))
+              case StubBody.Adjust(v) =>
+                monad.map(adjustResponseBody(request.response.delegate, v, r.asInstanceOf[Response[T]])(monad))(b =>
+                  r.copy(body = b)
+                )
+            }
           }
         }
       case Success(None) =>
@@ -80,35 +85,70 @@ abstract class AbstractBackendStub[F[_], P](
   override def close(): F[Unit] = monad.unit(())
 
   class WhenRequest(p: GenericRequest[_, _] => Boolean) {
-    def thenRespondOk(): Self = thenRespondWithCode(StatusCode.Ok, "OK")
-    def thenRespondNotFound(): Self = thenRespondWithCode(StatusCode.NotFound, "Not found")
-    def thenRespondServerError(): Self = thenRespondWithCode(StatusCode.InternalServerError, "Internal server error")
-    def thenRespondWithCode(status: StatusCode, msg: String = ""): Self = thenRespond(ResponseStub(msg, status, msg))
-    def thenRespond[T](body: T): Self = thenRespond(ResponseStub[T](body, StatusCode.Ok, "OK"))
-    def thenRespond[T](body: T, statusCode: StatusCode): Self = thenRespond(ResponseStub[T](body, statusCode))
-    def thenRespond[T](resp: => Response[T]): Self = {
-      val m: PartialFunction[GenericRequest[_, _], F[Response[_]]] = {
+
+    /** Respond with an empty body and the 200 status code */
+    def thenRespondOk(): Self = thenRespondWithCode(StatusCode.Ok)
+    def thenRespondBadRequest(): Self = thenRespondWithCode(StatusCode.BadRequest)
+    def thenRespondNotFound(): Self = thenRespondWithCode(StatusCode.NotFound)
+    def thenRespondServerError(): Self = thenRespondWithCode(StatusCode.InternalServerError)
+    def thenRespondUnauthorized(): Self = thenRespondWithCode(StatusCode.Unauthorized)
+    def thenRespondForbidden(): Self = thenRespondWithCode(StatusCode.Forbidden)
+
+    /** Respond with an empty body (for 1xx/2xx responses), or a body with an error message (for 4xx/5xx responses) and
+      * the given status code.
+      */
+    def thenRespondWithCode(code: StatusCode): Self =
+      thenRespondAdjust(
+        if (code.isClientError || code.isServerError) StatusText.default(code).getOrElse("") else "",
+        code
+      )
+
+    /** Adjust the given body, as specified in the request's response handling description. */
+    def thenRespondAdjust(body: Any): Self = thenRespond(ResponseStub.adjust(body))
+
+    /** Adjust the given body, as specified in the request's response handling description. */
+    def thenRespondAdjust(body: Any, code: StatusCode): Self = thenRespond(ResponseStub.adjust(body, code))
+
+    /** Respond with the given body, regardless of what's specified in the request's response handling description. */
+    def thenRespondExact(body: Any): Self = thenRespond(ResponseStub.exact(body))
+
+    /** Respond with the given body, regardless of what's specified in the request's response handling description. */
+    def thenRespondExact(body: Any, code: StatusCode): Self = thenRespond(ResponseStub.exact(body, code))
+
+    def thenThrow(e: Throwable): Self = {
+      val m: PartialFunction[GenericRequest[_, _], F[Response[StubBody]]] = {
+        case r if p(r) => monad.error(e)
+      }
+      withMatchers(matchers.orElse(m))
+    }
+
+    /** Response with the given response (lazily evaluated). To create responses, use [[ResponseStub]]. */
+    def thenRespond[T](resp: => Response[StubBody]): Self = {
+      val m: PartialFunction[GenericRequest[_, _], F[Response[StubBody]]] = {
         case r if p(r) => monad.eval(resp.copy(request = r.onlyMetadata))
       }
       withMatchers(matchers.orElse(m))
     }
 
-    def thenRespondCyclic[T](bodies: T*): Self =
-      thenRespondCyclicResponses(bodies.map(body => ResponseStub[T](body, StatusCode.Ok, "OK")): _*)
-
-    def thenRespondCyclicResponses[T](responses: Response[T]*): Self = {
+    /** Response with the given responses, in a loop. To create responses, use [[ResponseStub]]. */
+    def thenRespondCyclic(responses: Response[StubBody]*): Self = {
       val iterator = AtomicCyclicIterator.unsafeFrom(responses)
       thenRespond(iterator.next())
     }
 
-    def thenRespondF(resp: => F[Response[_]]): Self = {
-      val m: PartialFunction[GenericRequest[_, _], F[Response[_]]] = {
+    /** Response with the given response, given as an F-effect. To create responses, use [[ResponseStub]]. */
+    def thenRespondF(resp: => F[Response[StubBody]]): Self = {
+      val m: PartialFunction[GenericRequest[_, _], F[Response[StubBody]]] = {
         case r if p(r) => resp
       }
       withMatchers(matchers.orElse(m))
     }
-    def thenRespondF(resp: GenericRequest[_, _] => F[Response[_]]): Self = {
-      val m: PartialFunction[GenericRequest[_, _], F[Response[_]]] = {
+
+    /** Response with the given response, given as an F-effect, created basing on the received request. To create
+      * responses, use [[ResponseStub]].
+      */
+    def thenRespondF(resp: GenericRequest[_, _] => F[Response[StubBody]]): Self = {
+      val m: PartialFunction[GenericRequest[_, _], F[Response[StubBody]]] = {
         case r if p(r) => resp(r)
       }
       withMatchers(matchers.orElse(m))
@@ -117,79 +157,81 @@ abstract class AbstractBackendStub[F[_], P](
 }
 
 object AbstractBackendStub {
-
-  private[client4] def tryAdjustResponseType[DesiredRType, RType, F[_]](
-      ra: ResponseAsDelegate[DesiredRType, _],
-      m: Response[RType]
-  )(implicit monad: MonadError[F]): F[Response[DesiredRType]] =
-    tryAdjustResponseBody(ra.delegate, m.body, m).getOrElse(monad.unit(m.body)).map { nb =>
-      m.copy(body = nb.asInstanceOf[DesiredRType])
-    }
-
-  private[client4] def tryAdjustResponseBody[F[_], T, U](
+  private def adjustResponseBody[F[_], T, U](
       ra: GenericResponseAs[T, _],
       b: U,
       meta: ResponseMetadata
-  )(implicit monad: MonadError[F]): Option[F[T]] = {
+  )(implicit monad: MonadError[F]): F[T] = {
     def bAsInputStream = b match {
-      case s: String       => Some(new ByteArrayInputStream(s.getBytes(Utf8)))
-      case a: Array[Byte]  => Some(new ByteArrayInputStream(a))
-      case is: InputStream => Some(is)
-      case ()              => Some(new ByteArrayInputStream(new Array[Byte](0)))
-      case _               => None
+      case s: String       => (new ByteArrayInputStream(s.getBytes(Utf8))).unit
+      case a: Array[Byte]  => (new ByteArrayInputStream(a)).unit
+      case is: InputStream => is.unit
+      case ()              => (new ByteArrayInputStream(new Array[Byte](0))).unit
+      case _ =>
+        monad.error(throw new IllegalArgumentException(s"Provided body: $b, cannot be adjusted to an input stream"))
     }
 
     ra match {
-      case IgnoreResponse => Some(().unit.asInstanceOf[F[T]])
+      case IgnoreResponse => ().unit.asInstanceOf[F[T]]
       case ResponseAsByteArray =>
         b match {
-          case s: String       => Some(s.getBytes(Utf8).unit.asInstanceOf[F[T]])
-          case a: Array[Byte]  => Some(a.unit.asInstanceOf[F[T]])
-          case is: InputStream => Some(toByteArray(is).unit.asInstanceOf[F[T]])
-          case ()              => Some(Array[Byte]().unit.asInstanceOf[F[T]])
-          case _               => None
+          case s: String       => s.getBytes(Utf8).unit.asInstanceOf[F[T]]
+          case a: Array[Byte]  => a.unit.asInstanceOf[F[T]]
+          case is: InputStream => toByteArray(is).unit.asInstanceOf[F[T]]
+          case ()              => Array[Byte]().unit.asInstanceOf[F[T]]
+          case _ => monad.error(new IllegalArgumentException(s"Provided body: $b, cannot be adjusted to a byte array"))
         }
-      case ResponseAsStream(_, f) =>
-        b match {
-          case RawStream(s) => Some(monad.suspend(f.asInstanceOf[(Any, ResponseMetadata) => F[T]](s, meta)))
-          case _            => None
-        }
-      case ResponseAsStreamUnsafe(_) =>
-        b match {
-          case RawStream(s) => Some(s.unit.asInstanceOf[F[T]])
-          case _            => None
-        }
-      case ResponseAsInputStream(f)    => bAsInputStream.map(f).map(_.unit.asInstanceOf[F[T]])
-      case ResponseAsInputStreamUnsafe => bAsInputStream.map(_.unit.asInstanceOf[F[T]])
+      case ResponseAsStream(_, f)      => monad.suspend(f.asInstanceOf[(Any, ResponseMetadata) => F[T]](b, meta))
+      case ResponseAsStreamUnsafe(_)   => b.unit.asInstanceOf[F[T]]
+      case ResponseAsInputStream(f)    => bAsInputStream.map(f).asInstanceOf[F[T]]
+      case ResponseAsInputStreamUnsafe => bAsInputStream.asInstanceOf[F[T]]
       case ResponseAsFile(_) =>
         b match {
-          case f: SttpFile => Some(f.unit.asInstanceOf[F[T]])
-          case _           => None
+          case f: SttpFile => f.unit.asInstanceOf[F[T]]
+          case _ => monad.error(new IllegalArgumentException(s"Provided body: $b, cannot be adjusted to a file"))
         }
       case ResponseAsWebSocket(f) =>
         b match {
           case wss: WebSocketStub[_] =>
-            Some(f.asInstanceOf[(WebSocket[F], ResponseMetadata) => F[T]](wss.build[F](monad), meta))
+            f.asInstanceOf[(WebSocket[F], ResponseMetadata) => F[T]](wss.build[F](monad), meta)
           case ws: WebSocket[_] =>
-            Some(f.asInstanceOf[(WebSocket[F], ResponseMetadata) => F[T]](ws.asInstanceOf[WebSocket[F]], meta))
-          case _ => None
+            f.asInstanceOf[(WebSocket[F], ResponseMetadata) => F[T]](ws.asInstanceOf[WebSocket[F]], meta)
+          case _ =>
+            monad.error(
+              new IllegalArgumentException(
+                s"Provided body: $b is neither a WebSocket, nor a WebSocketStub instance"
+              )
+            )
         }
       case ResponseAsWebSocketUnsafe() =>
         b match {
-          case wss: WebSocketStub[_] => Some(wss.build[F](monad).unit.asInstanceOf[F[T]])
-          case _                     => None
+          case wss: WebSocketStub[_] => wss.build[F](monad).unit.asInstanceOf[F[T]]
+          case ws: WebSocket[_]      => ws.asInstanceOf[WebSocket[F]].unit.asInstanceOf[F[T]]
+          case _ =>
+            monad.error(
+              new IllegalArgumentException(
+                s"Provided body: $b is neither a WebSocket, nor a WebSocketStub instance"
+              )
+            )
         }
-      case ResponseAsWebSocketStream(_, _) => None
+      case ResponseAsWebSocketStream(_, pipe) =>
+        b match {
+          case WebSocketStreamConsumer(consume) => consume.asInstanceOf[Any => F[T]].apply(pipe)
+          case _ => monad.error(new IllegalArgumentException(s"Provided body: $b is not a WebSocketStreamConsumer"))
+        }
       case MappedResponseAs(raw, g, _) =>
-        tryAdjustResponseBody(raw, b, meta).map(_.flatMap(result => monad.eval(g(result, meta))))
-      case rfm: ResponseAsFromMetadata[_, _] => tryAdjustResponseBody(rfm(meta), b, meta)
+        adjustResponseBody(raw, b, meta).flatMap(result => monad.eval(g(result, meta)))
+      case rfm: ResponseAsFromMetadata[_, _] => adjustResponseBody(rfm(meta), b, meta)
       case ResponseAsBoth(l, r) =>
-        tryAdjustResponseBody(l, b, meta).map { lAdjusted =>
-          tryAdjustResponseBody(r, b, meta) match {
-            case None            => lAdjusted.map((_, None))
-            case Some(rAdjusted) => lAdjusted.flatMap(lResult => rAdjusted.map(rResult => (lResult, Some(rResult))))
+        adjustResponseBody(l, b, meta)
+          .flatMap { lAdjusted =>
+            adjustResponseBody(r, b, meta)
+              .map(rAdjusted => (lAdjusted, Option(rAdjusted)))
+              .handleError { case _: IllegalArgumentException =>
+                monad.unit((lAdjusted, Option.empty))
+              }
           }
-        }
+          .asInstanceOf[F[T]] // needed by Scala2
     }
   }
 }

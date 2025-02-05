@@ -149,7 +149,7 @@ class OpenTelemetryMetricsBackendTest extends AnyFlatSpec with Matchers with Opt
 
   it should "use histogram for request and response sizes" in {
     // given
-    val response = ResponseStub("Ok", StatusCode.Ok, "Ok", Seq(Header.contentLength(10)))
+    val response = ResponseStub.adjust("Ok", StatusCode.Ok, Seq(Header.contentLength(10)))
     val backendStub = SyncBackendStub.whenAnyRequest.thenRespond(response)
     val reader = InMemoryMetricReader.create()
     val backend = OpenTelemetryMetricsBackend(backendStub, spawnNewOpenTelemetry(reader))
@@ -169,7 +169,7 @@ class OpenTelemetryMetricsBackendTest extends AnyFlatSpec with Matchers with Opt
 
   it should "use histogram for request latencies and validate attributes" in {
     // given
-    val response = ResponseStub("Ok", StatusCode.Ok, "Ok", Seq(Header.contentLength(10)))
+    val response = ResponseStub.adjust("Ok", StatusCode.Ok, Seq(Header.contentLength(10)))
     val backendStub = SyncBackendStub.whenAnyRequest.thenRespond(response)
     val reader = InMemoryMetricReader.create()
     val backend = OpenTelemetryMetricsBackend(backendStub, spawnNewOpenTelemetry(reader))

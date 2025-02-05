@@ -11,6 +11,7 @@ import sttp.client4._
 import scala.concurrent.Await
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
+import sttp.client4.testing.ResponseStub
 
 class BackendStubPekkoTests extends AnyFlatSpec with Matchers with ScalaFutures with BeforeAndAfterAll {
 
@@ -23,7 +24,7 @@ class BackendStubPekkoTests extends AnyFlatSpec with Matchers with ScalaFutures 
     // given
     val backend = PekkoHttpBackend.stub
       .whenRequestMatches(_ => true)
-      .thenRespondCyclic("a", "b", "c")
+      .thenRespondCyclic(ResponseStub.adjust("a"), ResponseStub.adjust("b"), ResponseStub.adjust("c"))
 
     // when
     def r = basicRequest.get(uri"http://example.org/a/b/c").send(backend).futureValue

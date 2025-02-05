@@ -38,7 +38,7 @@ class OpenTelemetryTracingZioBackendTest extends AnyFlatSpec with Matchers with 
                 BackendStub(new RIOMonadAsyncError[Any]).whenRequestMatchesPartial {
                   case r if r.uri.toString.contains("echo") =>
                     recordedRequests += r
-                    ResponseStub.ok("")
+                    ResponseStub.adjust("")
                   case r if r.uri.toString.contains("error") =>
                     throw new RuntimeException("something went wrong")
                 },
