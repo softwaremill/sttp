@@ -52,13 +52,13 @@ class CachingBackendTest extends AnyFlatSpec with Matchers {
       .thenRespond {
         invocationCounter += 1
         ResponseStub
-          .ok("response body 1")
+          .adjust("response body 1")
           .copy(headers = List(Header(HeaderNames.CacheControl, CacheDirective.MaxAge(5.seconds).toString)))
       }
       .whenRequestMatches(_.uri.toString == "http://example2.org")
       .thenRespond {
         invocationCounter += 1
-        ResponseStub.ok("response body 2") // no cache-control header
+        ResponseStub.adjust("response body 2") // no cache-control header
       }
     val cachingBackend = CachingBackend(delegate, cache)
 
@@ -102,7 +102,7 @@ class CachingBackendTest extends AnyFlatSpec with Matchers {
       .thenRespond {
         invocationCounter += 1
         ResponseStub
-          .ok("""{"v1": 42, "v2": "foo", "v3": true}""")
+          .adjust("""{"v1": 42, "v2": "foo", "v3": true}""")
           .copy(headers = List(Header(HeaderNames.CacheControl, CacheDirective.MaxAge(5.seconds).toString)))
       }
     val cachingBackend = CachingBackend(delegate, cache)
@@ -129,7 +129,7 @@ class CachingBackendTest extends AnyFlatSpec with Matchers {
       .thenRespondF { request =>
         invocationCounter += 1
         ResponseStub
-          .ok(s"response body: ${request.header("X-Test").getOrElse("no-x-test")}")
+          .adjust(s"response body: ${request.header("X-Test").getOrElse("no-x-test")}")
           .copy(headers = List(Header(HeaderNames.CacheControl, CacheDirective.MaxAge(5.seconds).toString)))
       }
     val cachingBackend = CachingBackend(delegate, cache)

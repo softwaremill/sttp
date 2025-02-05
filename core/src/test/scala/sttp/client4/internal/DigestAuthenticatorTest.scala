@@ -192,10 +192,5 @@ class DigestAuthenticatorTest extends AnyFreeSpec with Matchers with OptionValue
     )
 
   private def response(headers: List[Header], statusCode: StatusCode): Response[Either[String, String]] =
-    ResponseStub[Either[String, String]](
-      Right(""),
-      statusCode,
-      "Unauthorized",
-      headers
-    )
+    ResponseStub[Either[String, String]](Right(""), statusCode, headers)
 }

@@ -175,7 +175,7 @@ class PrometheusBackendTest
     val backendStub = BackendStub.asynchronousFuture.whenAnyRequest.thenRespondF {
       Future {
         blocking(countDownLatch.await())
-        ResponseStub.ok(Right(""))
+        ResponseStub.exact(Right(""))
       }
     }
     val backend = PrometheusBackend(backendStub)
@@ -207,7 +207,7 @@ class PrometheusBackendTest
     val backendStub = BackendStub.asynchronousFuture.whenAnyRequest.thenRespondF {
       Future {
         blocking(countDownLatch.await())
-        ResponseStub.ok(Right(""))
+        ResponseStub.exact(Right(""))
       }
     }
     val backend =
@@ -241,7 +241,7 @@ class PrometheusBackendTest
     val backendStub = BackendStub.asynchronousFuture.whenAnyRequest.thenRespondF {
       Future {
         blocking(countDownLatch.await())
-        ResponseStub.ok(Right(""))
+        ResponseStub.exact(Right(""))
       }
     }
     val backend =
@@ -313,7 +313,7 @@ class PrometheusBackendTest
 
   it should "use default summary name" in {
     // given
-    val response = ResponseStub("Ok", StatusCode.Ok, "Ok", Seq(Header.contentLength(10)))
+    val response = ResponseStub.adjust("Ok", StatusCode.Ok, Seq(Header.contentLength(10)))
     val backendStub = SyncBackendStub.whenAnyRequest.thenRespond(response)
     val backend = PrometheusBackend(backendStub)
 

@@ -10,7 +10,7 @@ class ResolveRelativeUrisBackendTest extends AnyFlatSpec with Matchers {
   it should "not resolve absolute URIs" in {
     // given
     val delegate = BackendStub.synchronous.whenRequestMatchesPartial { case r =>
-      ResponseStub(r.uri.toString, StatusCode.Ok)
+      ResponseStub.adjust(r.uri.toString, StatusCode.Ok)
     }
     val backend = ResolveRelativeUrisBackend(delegate, uri"http://example.org")
 
@@ -24,7 +24,7 @@ class ResolveRelativeUrisBackendTest extends AnyFlatSpec with Matchers {
   it should "resolve relative URIs" in {
     // given
     val delegate = BackendStub.synchronous.whenRequestMatchesPartial { case r =>
-      ResponseStub(r.uri.toString, StatusCode.Ok)
+      ResponseStub.adjust(r.uri.toString, StatusCode.Ok)
     }
     val backend = wrappers.ResolveRelativeUrisBackend(delegate, uri"http://example.org")
 

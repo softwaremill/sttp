@@ -38,7 +38,7 @@ object WebSocketTesting extends IOApp:
     HttpClientFs2Backend
       .stub[IO]
       .whenRequestMatches(_.uri.toString().contains("echo.websocket.org"))
-      .thenRespond(
+      .thenRespondAdjust(
         WebSocketStub.noInitialReceive.thenRespond {
           case WebSocketFrame.Text(payload, _, _) =>
             List(WebSocketFrame.text(s"response to: $payload"))

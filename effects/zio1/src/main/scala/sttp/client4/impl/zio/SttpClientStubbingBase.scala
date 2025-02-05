@@ -23,7 +23,7 @@ trait AbstractClientStubbing[R, P] {
 
   trait Service {
     def whenRequestMatchesPartial(
-        partial: PartialFunction[GenericRequest[_, _], Response[_]]
+        partial: PartialFunction[GenericRequest[_, _], Response[StubBody]]
     ): URIO[SttpClientStubbing, Unit]
 
     private[zio] def update(f: BackendStub => BackendStub): UIO[Unit]
@@ -31,7 +31,7 @@ trait AbstractClientStubbing[R, P] {
 
   private[sttp] class StubWrapper(stub: Ref[BackendStub]) extends Service {
     override def whenRequestMatchesPartial(
-        partial: PartialFunction[GenericRequest[_, _], Response[_]]
+        partial: PartialFunction[GenericRequest[_, _], Response[StubBody]]
     ): URIO[SttpClientStubbing, Unit] =
       update(_.whenRequestMatchesPartial(partial))
 
@@ -49,25 +49,25 @@ trait AbstractClientStubbing[R, P] {
     def thenRespondServerError(): URIO[SttpClientStubbing, Unit] =
       whenRequest(_.whenRequestMatches(p).thenRespondServerError())
 
-    def thenRespondWithCode(status: StatusCode, msg: String = ""): URIO[SttpClientStubbing, Unit] =
-      whenRequest(_.whenRequestMatches(p).thenRespondWithCode(status, msg))
+    def thenRespondWithCode(status: StatusCode): URIO[SttpClientStubbing, Unit] =
+      whenRequest(_.whenRequestMatches(p).thenRespondWithCode(status))
 
-    def thenRespond[T](body: T): URIO[SttpClientStubbing, Unit] =
-      whenRequest(_.whenRequestMatches(p).thenRespond(body))
+    def thenRespondAdjust[T](body: T): URIO[SttpClientStubbing, Unit] =
+      whenRequest(_.whenRequestMatches(p).thenRespondAdjust(body))
 
-    def thenRespond[T](resp: => Response[T]): URIO[SttpClientStubbing, Unit] =
+    def thenRespondExact[T](body: T): URIO[SttpClientStubbing, Unit] =
+      whenRequest(_.whenRequestMatches(p).thenRespondExact(body))
+
+    def thenRespond[T](resp: => Response[StubBody]): URIO[SttpClientStubbing, Unit] =
       whenRequest(_.whenRequestMatches(p).thenRespond(resp))
 
-    def thenRespondCyclic[T](bodies: T*): URIO[SttpClientStubbing, Unit] =
-      whenRequest(_.whenRequestMatches(p).thenRespondCyclic(bodies: _*))
+    def thenRespondCyclic[T](responses: Response[StubBody]*): URIO[SttpClientStubbing, Unit] =
+      whenRequest(_.whenRequestMatches(p).thenRespondCyclic(responses: _*))
 
-    def thenRespondCyclicResponses[T](responses: Response[T]*): URIO[SttpClientStubbing, Unit] =
-      whenRequest(_.whenRequestMatches(p).thenRespondCyclicResponses(responses: _*))
-
-    def thenRespondF(resp: => RIO[R, Response[_]]): URIO[SttpClientStubbing, Unit] =
+    def thenRespondF(resp: => RIO[R, Response[StubBody]]): URIO[SttpClientStubbing, Unit] =
       whenRequest(_.whenRequestMatches(p).thenRespondF(resp))
 
-    def thenRespondF(resp: GenericRequest[_, _] => RIO[R, Response[_]]): URIO[SttpClientStubbing, Unit] =
+    def thenRespondF(resp: GenericRequest[_, _] => RIO[R, Response[StubBody]]): URIO[SttpClientStubbing, Unit] =
       whenRequest(_.whenRequestMatches(p).thenRespondF(resp))
 
     private def whenRequest(f: BackendStub => BackendStub): URIO[SttpClientStubbing, Unit] =

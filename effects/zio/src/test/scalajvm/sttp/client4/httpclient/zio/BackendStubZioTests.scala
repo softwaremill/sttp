@@ -14,7 +14,7 @@ class BackendStubZioTests extends AnyFlatSpec with Matchers with ScalaFutures wi
     // given
     val backend = HttpClientZioBackend.stub
       .whenRequestMatches(_ => true)
-      .thenRespondCyclic("a", "b", "c")
+      .thenRespondCyclic(ResponseStub.adjust("a"), ResponseStub.adjust("b"), ResponseStub.adjust("c"))
 
     // when
     val r = basicRequest.get(uri"http://example.org/a/b/c").send(backend)
@@ -30,7 +30,7 @@ class BackendStubZioTests extends AnyFlatSpec with Matchers with ScalaFutures wi
     // given
     val backend = HttpClientZioBackend.stub
       .whenRequestMatches(_ => true)
-      .thenRespondCyclic("a", "b", "c")
+      .thenRespondCyclic(ResponseStub.adjust("a"), ResponseStub.adjust("b"), ResponseStub.adjust("c"))
 
     // when
     val r = basicRequest.get(uri"http://example.org/a/b/c").send(backend)
@@ -65,7 +65,7 @@ class BackendStubZioTests extends AnyFlatSpec with Matchers with ScalaFutures wi
 
   it should "lift errors due to mapping stream with impure functions into the response monad" in {
     val backend = StreamBackendStub[Task, TestStreams](new RIOMonadAsyncError[Any]).whenAnyRequest
-      .thenRespond(RawStream(List(1: Byte)))
+      .thenRespondAdjust(List(1: Byte))
 
     val error = new IllegalStateException("boom")
 

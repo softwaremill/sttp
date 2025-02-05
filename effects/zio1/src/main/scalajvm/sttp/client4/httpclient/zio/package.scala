@@ -5,6 +5,7 @@ import sttp.capabilities.zio.ZioStreams
 import sttp.capabilities.{Effect, WebSockets}
 import sttp.client4._
 import sttp.client4.impl.zio._
+import sttp.client4.testing.StubBody
 
 package object zio {
 
@@ -57,7 +58,7 @@ package object zio {
       StubbingWhenRequest(_ => true)
 
     def whenRequestMatchesPartial(
-        partial: PartialFunction[GenericRequest[_, _], Response[_]]
+        partial: PartialFunction[GenericRequest[_, _], Response[StubBody]]
     ): URIO[SttpClientStubbing, Unit] =
       ZIO.accessM(_.get.whenRequestMatchesPartial(partial))
   }

@@ -19,7 +19,7 @@ class BackendStubJsoniterTests extends AnyFlatSpec with Matchers with ScalaFutur
   import sttp.client4.basicRequest
 
   it should "deserialize to json using a string stub" in {
-    val backend = SyncBackendStub.whenAnyRequest.thenRespond("""{"name": "John"}""")
+    val backend = SyncBackendStub.whenAnyRequest.thenRespondAdjust("""{"name": "John"}""")
     val r = basicRequest.get(Uri("http://example.org")).response(asJson[Person]).send(backend)
 
     r.is200 should be(true)
