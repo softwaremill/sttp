@@ -4,7 +4,7 @@
 [![CI](https://github.com/softwaremill/sttp/workflows/CI/badge.svg)](https://github.com/softwaremill/sttp/actions?query=workflow%3ACI+branch%3Amaster)
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.softwaremill.sttp.client4/core_2.12/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.softwaremill.sttp.client4/core_2.12)
 
-# The Scala HTTP client that you always wanted!
+# The Scala HTTP client you always wanted!
 
 > This is the development version of the upcoming sttp client 4. For the current stable version, see [sttp 3 on GitHub](https://github.com/softwaremill/sttp/tree/v3) and its [documentation](https://sttp.softwaremill.com/en/stable).
 
