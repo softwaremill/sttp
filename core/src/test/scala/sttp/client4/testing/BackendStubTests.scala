@@ -144,6 +144,16 @@ class BackendStubTests extends AnyFlatSpec with Matchers with ScalaFutures {
     }
   }
 
+  it should "handle exceptions thrown using .thenThrow" in {
+    val backend = SyncBackendStub
+      .whenRequestMatches(_ => true)
+      .thenThrow(new TimeoutException())
+
+    a[ReadException] should be thrownBy {
+      basicRequest.get(uri"http://example.org").send(backend)
+    }
+  }
+
   it should "try to convert a basic response to a mapped one" in {
     val backend = SyncBackendStub
       .whenRequestMatches(_ => true)
