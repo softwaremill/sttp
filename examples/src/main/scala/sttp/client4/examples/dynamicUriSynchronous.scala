@@ -1,6 +1,6 @@
 // {cat=Hello, World!; effects=Direct; backend=HttpClient}: Dynamic URI components
 
-//> using dep com.softwaremill.sttp.client4::core:4.0.0-M25
+//> using dep com.softwaremill.sttp.client4::core:4.0.0-M26
 
 package sttp.client4.examples
 
