@@ -30,6 +30,14 @@ New response handling descriptions are added, which fail (throw an exception / r
 
 Any `Either`-based response description can be converted to a failing one using `.orFail` and `.orFailDeserialization`. This replaces the `.getRight` / `.getEither` extension methods.
 
+## Backend stub changes
+
+When defining responses in a backend stub, it's now possible to describe more precisely, if the given body should be adjusted to what's defined in the request's response description, or returned as-is. Instead of `.thenRespond` methods, there are now `.thenRespondAdjust` and `.thenRespondExact` methods.
+
+In most use-cases adjustments are used, hence when migrating any `.thenRespond` invocations should be updated to `.thenRespondAdjust`. If more control over the returned body is needed, `Response[StubBody]` instances can be created using `ResponseStub.adjust` or `ResponseStub.exact` methods.
+
+Note that in most cases `ResponseStub.ok` and `ResponseStub.apply` methods should **not** be used when defining the behavior of the backend stub. However, they might be used in other scenarios.
+
 ## Other changes
 
 * `BackendOptions` replaces `SttpBackendOptions`
@@ -45,3 +53,4 @@ Any `Either`-based response description can be converted to a failing one using 
 * when a `ResponseException` is thrown in the response handling specification, this will be logged as a successful response (as the response was received correctly), and counted as a success in the metrics as well
 * `HttpError` is renamed to `UnexpectedStatusCode`, and along with `DeserializationException`, both types are nested within `ResponseException`
 * the `opentelemetry-metrics-backend` module is renamed to `opentelemetry-backend`
+* `ListenerBackend` has been refactored, with improvements in naming, and additional callback methods

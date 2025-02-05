@@ -8,7 +8,7 @@ The [pekko-http](../backends/pekko.md) or [akka-http](../backends/akka.md) backe
 
 An empty backend stub can be created using the following ways:
 
-* by calling `.stub` on the "real" base backend's companion object, e.g. `HttpClientZioBackend.stub` or `HttpClientMonixBackend.stub`
+* by calling `.stub` on the "real" base backend's companion object, e.g. `DefaultSyncBackend.stub`, `HttpClientZioBackend.stub`, `HttpClientMonixBackend.stub`
 * by using one of the factory methods `BackendStub.synchronous` or `BackendStub.asynchronousFuture`, which return stubs which use the `Identity` or standard Scala's `Future` effects without streaming support
 * by explicitly specifying the effect and supported capabilities:
   * for cats-effect `BackendStub[IO](implicitly[MonadAsyncError[IO]])`
@@ -21,7 +21,7 @@ An empty backend stub can be created using the following ways:
   * `WebSocketSyncBackendStub`
 * by specifying a fallback/delegate backend, see below
 
-Responses used in the stubbing can be created either by directly instantiating the `Response` class, or by using factory methods from `ResponseStub`.
+Responses used in the stubbing are most conveniently created using factory methods from `ResponseStub`.
 
 Some code which will be reused among following examples:
 
@@ -38,12 +38,12 @@ case class User(id: String)
 
 ## Specifying behavior
 
-Behavior of the stub can be specified using a series of invocations of the `whenRequestMatches` and `thenRespond` methods:
+Behavior of the stub can be specified using a series of invocations of the `whenRequestMatches` and `thenRespond...` methods:
 
 ```scala
 val testingBackend = SyncBackendStub
   .whenRequestMatches(_.uri.path.startsWith(List("a", "b")))
-  .thenRespond("Hello there!")
+  .thenRespondAdjust("Hello there!")
   .whenRequestMatches(_.method == Method.POST)
   .thenRespondServerError()
 
@@ -60,12 +60,12 @@ It is also possible to match requests by partial function, returning a response.
 val testingBackend = SyncBackendStub
   .whenRequestMatchesPartial({
     case r if r.uri.path.endsWith(List("partial10")) =>
-      ResponseStub("Not found", StatusCode.NotFound)
+      ResponseStub.adjust("Not found", StatusCode.NotFound)
 
     case r if r.uri.path.endsWith(List("partialAda")) =>
       // additional verification of the request is possible
       assert(r.body == StringBody("z", "utf-8"))
-      ResponseStub.ok("Ada")
+      ResponseStub.adjust("Ada")
   })
 
 val response1 = basicRequest.get(uri"http://example.org/partial10").send(testingBackend)
@@ -76,7 +76,7 @@ val response2 = basicRequest.post(uri"http://example.org/partialAda").send(testi
 ```
 
 ```{note}
-This approach to testing has one caveat: the responses are not type-safe. That is, the stub backend cannot match on or verify that the type of the response body matches the response body type, as it was requested. However, when a "raw" response is provided (a `String`, `Array[Byte]`, `InputStream`, or a non-blocking stream wrapped in `RawStream`), it will be handled as specified by the response specification - see below for details.
+This approach to testing has one caveat: the responses are not type-safe. That is, the stub backend cannot match on or verify that the type of the response body matches the response body type, as it was requested. However, the response bodies can be adjusted, and attempted to be handled as specified by the response description. Hence, you can provide bodies as a `String`, `Array[Byte]`, `InputStream`, `File`, `WebSocket`, `WebSocketStub`, or a non-blocking binary stream, and the conversions to the desired type will happen as part of the test.
 ```
 
 Another way to specify the behavior is passing response wrapped in the effect to the stub. It is useful if you need to test a scenario with a slow server, when the response should be not returned immediately, but after some time. Example with Futures:
@@ -86,7 +86,7 @@ val testingBackend = BackendStub.asynchronousFuture
   .whenAnyRequest
   .thenRespondF(Future {
     Thread.sleep(5000)
-    ResponseStub.ok(Right("OK"))
+    ResponseStub.adjust("OK")
   })
 
 val responseFuture = basicRequest.get(uri"http://example.org").send(testingBackend)
@@ -99,7 +99,7 @@ The returned response may also depend on the request:
 val testingBackend = SyncBackendStub
   .whenAnyRequest
   .thenRespondF(req =>
-    ResponseStub.ok(Right(s"OK, got request sent to ${req.uri.host}"))
+    ResponseStub.adjust(s"OK, got request sent to ${req.uri.host}")
   )
 
 val response = basicRequest.get(uri"http://example.org").send(testingBackend)
@@ -111,22 +111,9 @@ You can define consecutive raw responses that will be served:
 ```scala
 val testingBackend: SyncBackendStub = SyncBackendStub
   .whenAnyRequest
-  .thenRespondCyclic("first", "second", "third")
-
-basicRequest.get(uri"http://example.org").send(testingBackend)       // Right("OK, first")
-basicRequest.get(uri"http://example.org").send(testingBackend)       // Right("OK, second")
-basicRequest.get(uri"http://example.org").send(testingBackend)       // Right("OK, third")
-basicRequest.get(uri"http://example.org").send(testingBackend)       // Right("OK, first")
-```
-
-Or multiple `Response` instances, created using `ResponseStub`:
-
-```scala
-val testingBackend: SyncBackendStub = SyncBackendStub
-  .whenAnyRequest
-  .thenRespondCyclicResponses(
-    ResponseStub.ok[String]("first"),
-    ResponseStub("error", StatusCode.InternalServerError, "Something went wrong")
+  .thenRespondCyclic(
+    ResponseStub.adjust("first"),
+    ResponseStub.adjust("error", StatusCode.InternalServerError)
   )
 
 basicRequest.get(uri"http://example.org").send(testingBackend)       // code will be 200
@@ -139,27 +126,27 @@ The `sttp.client4.testing` package also contains a utility method to force the b
 ```scala
 val testingBackend = SyncBackendStub
   .whenRequestMatches(_.forceBodyAsString.contains("Hello, world!"))
-  .thenRespond("Hello back!")
+  .thenRespondAdjust("Hello back!")
 ```
 
 If the stub is given a request, for which no behavior is stubbed, it will return a failed effect with an `IllegalArgumentException`.
 
 ## Simulating exceptions
 
-If you want to simulate an exception being thrown by a backend, e.g. a socket timeout exception, you can do so by throwing the appropriate exception instead of the response, e.g.:
+If you want to simulate an exception being thrown by a backend, e.g. a socket timeout exception, you can do so by using the `thenThrow` method:
 
 ```scala
 val testingBackend = SyncBackendStub
   .whenRequestMatches(_ => true)
-  .thenRespond(throw new SttpClientException.ConnectException(
+  .thenThrow(new SttpClientException.ConnectException(
     basicRequest.get(uri"http://example.com"), new RuntimeException))
 ```
 
 ## Adjusting the response body type
 
-The stub will attempt to convert the body returned by the stub (as specified using the `.whenXxx` methods) to the desired type. If the given body isn't in one of the supported "raw" types, no conversions are done and the value is returned as-is. This might be useful when:
+When using `.thenRespondAdjust` or `ResponseStub.adjust` methods, the stub will attempt to convert the body returned by the stub to the desired type. If the given body isn't in one of the supported "raw" types, an `IllegalArgumentException` will be thrown. This is to:
 
-* testing code which maps a basic response body to a custom type, e.g. mapping a raw json string using a decoder to a domain type
+* test code which maps a basic response body to a custom type, e.g. mapping a raw json string using a decoder to a domain type
 * reading a classpath resource (which results in an `InputStream`) and requesting a response of e.g. type `String`
 * using resource-safe response specifications for streaming and websockets
 
@@ -170,7 +157,7 @@ The following conversions are supported:
 * `InputStream` and `String` to `Array[Byte]`
 * `WebSocketStub` to `WebSocket`
 * `WebSocketStub` and `WebSocket` are supplied to the websocket-consuming functions, if the response specification describes such interactions
-* `BackendStub.RawStream` is always treated as a raw stream value, and returned when the response should be returned as a stream or consumed using the provided function
+* for non-blocking, asynchronous streaming responses, any provided value is treated as a raw stream value; the value should be of type `sttp.capabilities.Streams.BinaryStream`, and if that's not the case, a `ClassCastException` might be thrown
 * any of the above to custom types through mapped response specifications
 
 ## Example: returning JSON
@@ -180,7 +167,7 @@ For example, if you want to return a JSON response, simply use `.withResponse(St
 ```scala
 val testingBackend = SyncBackendStub
   .whenRequestMatches(_ => true)
-  .thenRespond(""" {"username": "john", "age": 65 } """)
+  .thenRespondAdjust(""" {"username": "john", "age": 65 } """)
 
 def parseUserJson(a: Array[Byte]): User = ???
 
@@ -206,7 +193,7 @@ With the stub created as follows:
 val fileResponseHandle = new File("path/to/file.ext")
 SyncBackendStub
   .whenRequestMatches(_ => true)
-  .thenRespond(fileResponseHandle)
+  .thenRespondAdjust(fileResponseHandle)
 ```
 
 the `File` set up in the stub will be returned as though it was the `File` set up as `destination` in the response handler above. This means that the file from `fileResponseHandle` is not written to `destination`.
@@ -225,7 +212,27 @@ BackendStub(implicitly[MonadAsyncError[IO]])
   .whenRequestMatches(_ => true)
   .thenRespondF: _ =>
     FileUtils.copyFile(sourceFile, destinationFile)
-    IO(ResponseStub(Right(destinationFile), StatusCode.Ok, ""))
+    IO(ResponseStub.adjust(destinationFile, StatusCode.Ok))
+```
+
+## Responding with bodies as-is
+
+Alternatively, response bodies can be provided as-is, without any adjustment attempts, regardless of the request's response description. To do that, use `.thenRespondExact` or `ResponseStub.exact`. If the desired response's type is not the same as the provided one, a `ClassCastException` will be thrown. For example:
+
+```scala
+case class User(name: String)
+val someUser: User = ???
+
+// coming from a JSON integration
+def asJson[T]: ResponseAs[Either[String, T]] = ???
+
+val testingBackend = SyncBackendStub
+  .whenRequestMatches(_ => true)
+  .thenRespondExact(Right(someUser))
+
+val response = basicRequest.get(uri"http://example.com")
+  .response(asJson[User])
+  .send(testingBackend)
 ```
 
 ## Delegating to another backend
@@ -236,7 +243,7 @@ It is also possible to create a stub backend which delegates calls to another (p
 val testingBackend =
   SyncBackendStub.withFallback(DefaultSyncBackend())
     .whenRequestMatches(_.uri.path.startsWith(List("a")))
-    .thenRespond("I'm a STUB!")
+    .thenRespondAdjust("I'm a STUB!")
 
 val response1 = basicRequest.get(uri"http://api.internal/a").send(testingBackend)
 // response1.body will be Right("I'm a STUB")
@@ -247,11 +254,7 @@ val response2 = basicRequest.post(uri"http://api.internal/b").send(testingBacken
 
 ## Testing streams
 
-Streaming responses can be stubbed the same as ordinary values, with one difference. If the stubbed response contains the raw stream, which should be then transformed as described by the response specification, the stub must know that it handles a raw stream. This can be achieved by wrapping the stubbed stream using `BackendStub.RawStream`.
-
-If the response specification is a resource-safe consumer of the stream, the function will only be invoked if the body is a `RawStream` (with the contained value).
-
-Otherwise, the stub can be also configured to return the high-level (already mapped/transformed) response body.
+Streaming responses can be stubbed the same as ordinary values. The body of the response should contain the raw byte stream value, of type `sttp.capabilities.Streams.BinaryStream`.
 
 ## Testing web sockets
 
@@ -282,11 +285,43 @@ val webSocketStub = WebSocketStub
     case (counter, tf: WebSocketFrame.Text) => (counter + 1, List(WebSocketFrame.text(s"echo: ${tf.payload}")))
     case (counter, _)                       => (counter, List.empty)
 
-backend.whenAnyRequest.thenRespond(webSocketStub)
+backend.whenAnyRequest.thenRespondAdjust(webSocketStub)
 ```
 
-There is a possiblity to add error responses as well. If this is not enough, using a custom implementation of
+There is a possibility to add error responses as well. If this is not enough, using a custom implementation of
 the `WebSocket` trait is recommended.
+
+### WebSocket streams
+
+When using the `asWebSocketStream` response description, you can provide the behavior to be run when this request is sent,
+using `WebSocketStreamConsumer` as the body. For example:
+
+```scala
+import cats.effect.IO
+import sttp.capabilities.fs2.Fs2Streams
+import sttp.client4.WebSocketStreamBackend
+import sttp.client4.httpclient.fs2.HttpClientFs2Backend
+import sttp.client4.testing.WebSocketStreamConsumer
+import sttp.client4.ws.stream._
+
+val backend: WebSocketStreamBackend[IO, Fs2Streams[IO]] =
+  HttpClientFs2Backend
+    .stub[IO]
+    .whenAnyRequest
+    .thenRespondAdjust(
+      WebSocketStreamConsumer[IO](Fs2Streams[IO]) { pipe =>
+        // somehow consume the pipe: fs2.Pipe[IO, WebSocketFrame.Data, WebSocketFrame] to produce an IO[Unit]
+        ???
+      })
+
+basicRequest
+  .get(uri"http://example.org")
+  .response(asWebSocketStream(Fs2Streams[IO]) {
+    // the client-side behavior, a fs2.Pipe[IO, WebSocketFrame.Data, WebSocketFrame]
+    ???
+  })
+.send(backend)
+```
 
 ## Verifying that a request was sent
 
@@ -303,7 +338,7 @@ import scala.util.Try
 val testingBackend = RecordingBackend(
   SyncBackendStub
     .whenRequestMatches(_.uri.path.startsWith(List("a", "b")))
-    .thenRespond("Hello there!")
+    .thenRespondAdjust("Hello there!")
 )
 
 val response1 = basicRequest.get(uri"http://example.org/a/b/c").send(testingBackend)

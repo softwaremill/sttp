@@ -20,7 +20,7 @@ Backends, or backend wrappers can use attributes e.g. for logging, passing a met
 
 ## Listener backend
 
-The `sttp.client4.listener.ListenerBackend` can make it easier to create backend wrappers which need to be notified about request lifecycle events: when a request is started, and when it completes either successfully or with an exception. This is possible by implementing a `sttp.client4.listener.RequestListener`. This is how e.g. the [slf4j backend](logging.md) is implemented. 
+The `sttp.client4.listener.ListenerBackend` can make it easier to create backend wrappers which need to be notified about request lifecycle events: when a request is started, and when it completes either successfully or with an exception. This is possible by implementing a `sttp.client4.listener.RequestListener`.
 
 A request listener can associate a value with a request, which will then be passed to the request completion notification methods.
 
@@ -45,7 +45,7 @@ A number of example backend wrappers can be found in [examples](../../examples.m
 Implementing a new backend is made easy as the tests are published in the `core` jar file under the `tests` classifier. Simply add the follow dependencies to your `build.sbt`:
 
 ```
-"com.softwaremill.sttp.client4" %% "core" % "4.0.0-M25" % Test classifier "tests"
+"com.softwaremill.sttp.client4" %% "core" % "4.0.0-M26" % Test classifier "tests"
 ```
 
 Implement your backend and extend the `HttpTest` class:
@@ -72,9 +72,9 @@ import sttp.client4.impl.cats.implicits.*
 from the cats integration module. The module should be available on the classpath after adding following dependency:
 
 ```scala
-"com.softwaremill.sttp.client4" %% "cats" % "4.0.0-M25" // for cats-effect 3.x
+"com.softwaremill.sttp.client4" %% "cats" % "4.0.0-M26" // for cats-effect 3.x
 // or
-"com.softwaremill.sttp.client4" %% "catsce2" % "4.0.0-M25" // for cats-effect 2.x
+"com.softwaremill.sttp.client4" %% "catsce2" % "4.0.0-M26" // for cats-effect 2.x
 ```
 
 The object contains implicits to convert a cats `MonadError` into the sttp `MonadError`, 
