@@ -214,12 +214,11 @@ object AbstractBackendStub {
               )
             )
         }
-      case ResponseAsWebSocketStream(_, _) =>
-        monad.error(
-          new IllegalArgumentException(
-            "Stubbing responses for asWebSocketStream response descriptions is not supported"
-          )
-        )
+      case ResponseAsWebSocketStream(_, pipe) =>
+        b match {
+          case WebSocketStreamConsumer(consume) => consume.asInstanceOf[Any => F[T]].apply(pipe)
+          case _ => monad.error(new IllegalArgumentException(s"Provided body: $b is not a WebSocketStreamConsumer"))
+        }
       case MappedResponseAs(raw, g, _) =>
         adjustResponseBody(raw, b, meta).flatMap(result => monad.eval(g(result, meta)))
       case rfm: ResponseAsFromMetadata[_, _] => adjustResponseBody(rfm(meta), b, meta)

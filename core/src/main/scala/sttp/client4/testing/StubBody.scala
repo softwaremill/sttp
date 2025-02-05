@@ -10,6 +10,7 @@ package sttp.client4.testing
   *   - [[sttp.ws.WebSocket]] and [[sttp.ws.testing.WebSocketStub]]
   *   - asynchronous, non-blocking byte streams, of type [[sttp.capabilities.Streams.BinaryStream]] (depending on the
   *     streams type used)
+  *   - [[WebSocketStreamConsumer]]
   *
   * Note that providing the stub body is not type-safe: the stub doesn't have a way to check if the type of the body in
   * the configured response is the same as, or can be converted to, the one specified by the request; hence, a

@@ -8,6 +8,7 @@ import sttp.client4.ResponseException.DeserializationException
 import sttp.client4.SttpClientException.ReadException
 import sttp.client4.internal._
 import sttp.client4.ws.async._
+import sttp.client4.ws.stream._
 import sttp.model._
 import sttp.monad.FutureMonad
 import sttp.monad.IdentityMonad
@@ -374,6 +375,32 @@ class BackendStubTests extends AnyFlatSpec with Matchers with ScalaFutures {
       .map(_.body)
 
     result shouldBe Success(Right(1: Byte))
+  }
+
+  it should "run the web socket pipe, for a web socket stream request" in {
+    var capturedFrame: WebSocketFrame = null
+
+    val backend: WebSocketStreamBackend[Identity, TestStreams] =
+      WebSocketStreamBackendStub
+        .synchronous[TestStreams]
+        .whenAnyRequest
+        .thenRespondAdjust(
+          WebSocketStreamConsumer[Identity](TestStreams) { pipe =>
+            capturedFrame = pipe(WebSocketFrame.text("hello"))
+          },
+          if (TestPlatform.Current == TestPlatform.JS) StatusCode.Ok else StatusCode.SwitchingProtocols
+        )
+
+    // running for side-effects
+    val _ = basicRequest
+      .get(uri"http://example.org")
+      .response(asWebSocketStream(TestStreams) {
+        case WebSocketFrame.Text(p, _, _) => WebSocketFrame.text(s"echo: $p")
+        case f                            => f
+      })
+      .send(backend)
+
+    capturedFrame shouldBe WebSocketFrame.text("echo: hello")
   }
 
   it should "evaluate side effects on each request" in {

@@ -288,8 +288,40 @@ val webSocketStub = WebSocketStub
 backend.whenAnyRequest.thenRespondAdjust(webSocketStub)
 ```
 
-There is a possiblity to add error responses as well. If this is not enough, using a custom implementation of
+There is a possibility to add error responses as well. If this is not enough, using a custom implementation of
 the `WebSocket` trait is recommended.
+
+### WebSocket streams
+
+When using the `asWebSocketStream` response description, you can provide the behavior to be run when this request is sent,
+using `WebSocketStreamConsumer` as the body. For example:
+
+```scala mdoc:compile-only
+import cats.effect.IO
+import sttp.capabilities.fs2.Fs2Streams
+import sttp.client4.WebSocketStreamBackend
+import sttp.client4.httpclient.fs2.HttpClientFs2Backend
+import sttp.client4.testing.WebSocketStreamConsumer
+import sttp.client4.ws.stream._
+
+val backend: WebSocketStreamBackend[IO, Fs2Streams[IO]] =
+  HttpClientFs2Backend
+    .stub[IO]
+    .whenAnyRequest
+    .thenRespondAdjust(
+      WebSocketStreamConsumer[IO](Fs2Streams[IO]) { pipe =>
+        // somehow consume the pipe: fs2.Pipe[IO, WebSocketFrame.Data, WebSocketFrame] to produce an IO[Unit]
+        ???
+      })
+
+basicRequest
+  .get(uri"http://example.org")
+  .response(asWebSocketStream(Fs2Streams[IO]) {
+    // the client-side behavior, a fs2.Pipe[IO, WebSocketFrame.Data, WebSocketFrame]
+    ???
+  })
+.send(backend)
+```
 
 ## Verifying that a request was sent
 
