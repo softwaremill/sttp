@@ -12,7 +12,7 @@ private val path: os.Path = os.Path("/tmp/example-file.txt")
 private val backend: SyncBackend = DefaultSyncBackend()
 
 @main def uploadFileWithOsLib(): Unit = {
-  os.remove(path)
+  val _ = os.remove(path)
   os.write(path, "THIS IS CONTENT OF TEST FILE")
   val request = basicRequest
     .post(uri"http://httpbin.org/post")

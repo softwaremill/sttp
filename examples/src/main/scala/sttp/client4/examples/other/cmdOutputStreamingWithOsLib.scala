@@ -12,7 +12,7 @@ private val backend: SyncBackend = DefaultSyncBackend()
 private val path: os.Path = os.Path("/tmp/example-file.txt")
 
 @main def cmdOutputStreamingWithOsLib(): Unit = {
-  os.remove(path)
+  val _ = os.remove(path)
   os.write(path, "CONTENT OF THE SIMPLE FILE USED IN THIS EXAMPLE")
   val process = os.proc("cat", path.toString).spawn()
   val request = basicRequest

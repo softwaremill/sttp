@@ -13,7 +13,7 @@ private val dest: os.Path = os.Path(s"/tmp/file-example-$fileSize-bytes")
 private val backend: SyncBackend = DefaultSyncBackend()
 
 @main def downloadFileWithOsLib(): Unit = {
-  os.remove(dest)
+  val _ = os.remove(dest)
   val request = basicRequest
     .get(uri"https://httpbin.org/bytes/$fileSize")
     .response(asInputStream(i => os.write(dest, i)))
