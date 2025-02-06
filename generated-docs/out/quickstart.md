@@ -12,7 +12,7 @@ sttp client is available for Scala 2.12, 2.13 and 3, on the JVM (Java 11+), Scal
 The basic dependency which provides the API, together with a synchronous and `Future`-based backends, is:
 
 ```scala
-"com.softwaremill.sttp.client4" %% "core" % "4.0.0-M26"
+"com.softwaremill.sttp.client4" %% "core" % "4.0.0-RC1"
 ```
 
 ## Using scala-cli
@@ -20,7 +20,7 @@ The basic dependency which provides the API, together with a synchronous and `Fu
 Add the following directive to the top of your scala file to add the core sttp dependency:
 
 ```
-//> using dep com.softwaremill.sttp.client4::core:4.0.0-M26
+//> using dep com.softwaremill.sttp.client4::core:4.0.0-RC1
 ```
 
 ## Using Ammonite
@@ -28,7 +28,7 @@ Add the following directive to the top of your scala file to add the core sttp d
 If you are an [Ammonite](https://ammonite.io) user, you can quickly start experimenting with sttp by copy-pasting the following:
 
 ```scala
-import $ivy.`com.softwaremill.sttp.client4::core:4.0.0-M26`
+import $ivy.`com.softwaremill.sttp.client4::core:4.0.0-RC1`
 ```
 
 ## Imports
@@ -60,7 +60,12 @@ println(response.body)
 Creating a backend allocates resources (such as selector threads / connection pools), so when it's no longer needed, it
 should be closed using `.close()`. Typically, you should have one backend instance for your entire application.
 
-## Serialising and parsing JSON
+In the example above, the `response.body` is an `Either[String, String]`. A left value indicates HTTP error (4xx or 5xx) 
+response, while a right value indicates HTTP success (2xx). In case of connection errors, an exception is thrown.
+
+You can customize how the response body is handled using [response body handling descriptions](responses/body.md).
+
+## Serializing and parsing JSON
 
 To serialize a custom type to a JSON body, or to deserialize the response body that is in the JSON format, you'll need
 to add an integration with a JSON library. See [json](other/json.md) for a list of available libraries.
@@ -69,14 +74,14 @@ As an example, to integrate with the [uPickle](https://github.com/com-lihaoyi/up
 dependency:
 
 ```scala
-"com.softwaremill.sttp.client4" %% "upickle" % "4.0.0-M26"
+"com.softwaremill.sttp.client4" %% "upickle" % "4.0.0-RC1"
 ```
 
 Your code might then look as follows:
 
 ```scala
-//> using dep com.softwaremill.sttp.client4::core:4.0.0-M26
-//> using dep com.softwaremill.sttp.client4::upickle:4.0.0-M26
+//> using dep com.softwaremill.sttp.client4::core:4.0.0-RC1
+//> using dep com.softwaremill.sttp.client4::upickle:4.0.0-RC1
 
 import sttp.client4.*
 import sttp.client4.upicklejson.default.*
@@ -104,16 +109,23 @@ import upickle.default.*
   }
 ```
 
+Similarly as above, since we've used the `asJson[HttpBinResponse]` response description, `response.body` is an 
+`Either`. However here the left-side can indicate both an HTTP error, or a deserialization error. This is 
+reflected in the type of the `response.body` value.
+
+Alternatively, you can use the `asJsonOrFail` response description, so that in case of any error, an exception is
+thrown.
+
 ## Adding logging
 
 Logging can be added using the [logging backend wrapper](backends/wrappers/logging.md). For example, if you'd like to
 use slf4j, you'll need the following dependency:
 
 ```
-"com.softwaremill.sttp.client4" %% "slf4j-backend" % "4.0.0-M26"
+"com.softwaremill.sttp.client4" %% "slf4j-backend" % "4.0.0-RC1"
 ```
 
-Then, you'll need to configure your client:
+Then, you'll need to configure your backend:
 
 ```scala
 import sttp.client4.*
@@ -122,11 +134,13 @@ import sttp.client4.logging.slf4j.Slf4jLoggingBackend
 val backend = Slf4jLoggingBackend(DefaultSyncBackend())
 ```
 
+Any requests sent using the backend will now be logged using slf4j!
+
 ## Even quicker
 
 You can skip the step of creating a backend instance, by using `import sttp.client4.quick.*` instead of the usual `import sttp.client4.*`.
-This brings into scope the same sttp API, and additionally a synchronous backend instance, which can be used to send requests. 
-This backend instance is global (created on first access), can't be customised and shouldn't be closed.
+This brings into scope the same sttp API, and additionally a pre-configured synchronous backend instance, which can be used to send requests. 
+This backend instance is global (created on first access), can't be customized and shouldn't be closed.
 
 The `send()` extension method allows sending requests using that `backend` instance:
 
@@ -134,6 +148,10 @@ The `send()` extension method allows sending requests using that `backend` insta
 import sttp.client4.quick.*
 quickRequest.get(uri"http://httpbin.org/ip").send()
 ```
+
+Additionally, above we're using `quickRequest`, instead of `basicRequest`, to build the request description. 
+`quickRequest` is pre-configured to read successful HTTP responses as a `String`, and to throw an exception 
+otherwise. You can read more about the initial request definitions [here](requests/basics.md).
 
 ## Next steps
 

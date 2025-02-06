@@ -15,6 +15,12 @@
 * [Simple retrying backend wrapper](https://github.com/softwaremill/sttp/tree/master/examples/src/main/scala/sttp/client4/examples/wrapper/retryingBackend.scala) <span class="example-tag example-backend">HttpClient</span> <span class="example-tag example-effects">Synchronous</span>
 * [Use the caching backend wrapper with Redis](https://github.com/softwaremill/sttp/tree/master/examples/src/main/scala/sttp/client4/examples/wrapper/redisCachingBackend.scala) <span class="example-tag example-backend">HttpClient</span> <span class="example-tag example-effects">Synchronous</span>
 
+## Error handling
+
+* [HTTP error handling using basicRequest](https://github.com/softwaremill/sttp/tree/master/examples/src/main/scala/sttp/client4/examples/errors/httpErrorHandlingUsingBasicRequest.scala) <span class="example-tag example-backend">HttpClient</span> <span class="example-tag example-effects">Direct</span>
+* [HTTP error handling, adjusting the response description](https://github.com/softwaremill/sttp/tree/master/examples/src/main/scala/sttp/client4/examples/errors/httpErrorHandlingAdjustResponse.scala) <span class="example-tag example-backend">HttpClient</span> <span class="example-tag example-effects">Direct</span>
+* [Parsing the response as JSON, with parsing failures and HTTP errors](https://github.com/softwaremill/sttp/tree/master/examples/src/main/scala/sttp/client4/examples/errors/httpErrorHandlingJson.scala) <span class="example-tag example-backend">HttpClient</span> <span class="example-tag example-effects">Direct</span>
+
 ## JSON
 
 * [Receive & parse JSON using ZIO Json](https://github.com/softwaremill/sttp/tree/master/examples/src/main/scala/sttp/client4/examples/json/GetAndParseJsonZioJson.scala) <span class="example-tag example-backend">HttpClient</span> <span class="example-tag example-effects">ZIO</span>
@@ -25,14 +31,14 @@
 
 ## Logging
 
-* [Add a logging backend wrapper, which uses slf4j](https://github.com/softwaremill/sttp/tree/master/examples/src/main/scala/sttp/client4/examples/LogRequestsSlf4j.scala) <span class="example-tag example-backend">HttpClient</span> <span class="example-tag example-effects">Direct</span>
+* [Add a logging backend wrapper, which uses slf4j](https://github.com/softwaremill/sttp/tree/master/examples/src/main/scala/sttp/client4/examples/logging/logRequestsSlf4j.scala) <span class="example-tag example-backend">HttpClient</span> <span class="example-tag example-effects">Direct</span>
 
 ## Other
 
-* [Command output streaming with os-lib support](https://github.com/softwaremill/sttp/tree/master/examples/src/main/scala/sttp/client4/examples/cmdOutputStreamingWithOsLib.scala) <span class="example-tag example-backend">HttpClient</span> <span class="example-tag example-effects">Direct</span>
-* [Download file with os-lib support](https://github.com/softwaremill/sttp/tree/master/examples/src/main/scala/sttp/client4/examples/uploadFileWithOsLib.scala) <span class="example-tag example-backend">HttpClient</span> <span class="example-tag example-effects">Direct</span>
-* [Download file with os-lib support](https://github.com/softwaremill/sttp/tree/master/examples/src/main/scala/sttp/client4/examples/downloadFileWitOsLib.scala) <span class="example-tag example-backend">HttpClient</span> <span class="example-tag example-effects">Direct</span>
-* [Handle the body by both parsing it to JSON and returning the raw string](https://github.com/softwaremill/sttp/tree/master/examples/src/main/scala/sttp/client4/examples/GetRawResponseBodySynchronous.scala) <span class="example-tag example-backend">HttpClient</span> <span class="example-tag example-effects">Direct</span>
+* [Command output streaming with os-lib support](https://github.com/softwaremill/sttp/tree/master/examples/src/main/scala/sttp/client4/examples/other/cmdOutputStreamingWithOsLib.scala) <span class="example-tag example-backend">HttpClient</span> <span class="example-tag example-effects">Direct</span>
+* [Download file with os-lib support](https://github.com/softwaremill/sttp/tree/master/examples/src/main/scala/sttp/client4/examples/other/uploadFileWithOsLib.scala) <span class="example-tag example-backend">HttpClient</span> <span class="example-tag example-effects">Direct</span>
+* [Download file with os-lib support](https://github.com/softwaremill/sttp/tree/master/examples/src/main/scala/sttp/client4/examples/other/downloadFileWitOsLib.scala) <span class="example-tag example-backend">HttpClient</span> <span class="example-tag example-effects">Direct</span>
+* [Handle the body by both parsing it to JSON and returning the raw string](https://github.com/softwaremill/sttp/tree/master/examples/src/main/scala/sttp/client4/examples/other/GetRawResponseBodySynchronous.scala) <span class="example-tag example-backend">HttpClient</span> <span class="example-tag example-effects">Direct</span>
 
 ## Resilience
 
@@ -42,8 +48,8 @@
 
 ## Streaming
 
-* [Stream request & response bodies using ZIO-Streams](https://github.com/softwaremill/sttp/tree/master/examples/src/main/scala/sttp/client4/examples/StreamZio.scala) <span class="example-tag example-backend">HttpClient</span> <span class="example-tag example-effects">ZIO</span>
-* [Stream request & response bodies using fs2](https://github.com/softwaremill/sttp/tree/master/examples/src/main/scala/sttp/client4/examples/StreamFs2.scala) <span class="example-tag example-backend">HttpClient</span> <span class="example-tag example-effects">cats-effect</span>
+* [Stream request & response bodies using ZIO-Streams](https://github.com/softwaremill/sttp/tree/master/examples/src/main/scala/sttp/client4/examples/streaming/StreamZio.scala) <span class="example-tag example-backend">HttpClient</span> <span class="example-tag example-effects">ZIO</span>
+* [Stream request & response bodies using fs2](https://github.com/softwaremill/sttp/tree/master/examples/src/main/scala/sttp/client4/examples/streaming/StreamFs2.scala) <span class="example-tag example-backend">HttpClient</span> <span class="example-tag example-effects">cats-effect</span>
 
 ## Testing
 
