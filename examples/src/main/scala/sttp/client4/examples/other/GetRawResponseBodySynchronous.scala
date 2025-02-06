@@ -3,7 +3,7 @@
 //> using dep com.softwaremill.sttp.client4::circe:4.0.0-M26
 //> using dep io.circe::circe-generic:0.14.10
 
-package sttp.client4.examples
+package sttp.client4.examples.other
 
 import io.circe
 import io.circe.generic.auto.*

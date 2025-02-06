@@ -2,7 +2,7 @@
 
 //> using dep com.softwaremill.sttp.client4::fs2:4.0.0-M26
 
-package sttp.client4.examples
+package sttp.client4.examples.streaming
 
 import cats.effect.ExitCode
 import cats.effect.IO

@@ -5,7 +5,7 @@
 //> using dep io.circe::circe-generic:0.14.10
 //> using dep ch.qos.logback:logback-classic:1.5.16
 
-package sttp.client4.examples
+package sttp.client4.examples.logging
 
 import io.circe.generic.auto.*
 import sttp.client4.*

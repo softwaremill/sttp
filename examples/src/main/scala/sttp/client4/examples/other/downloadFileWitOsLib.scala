@@ -3,7 +3,7 @@
 //> using dep com.lihaoyi::os-lib:0.11.3
 //> using dep com.softwaremill.sttp.client4::core:4.0.0-M26
 
-package sttp.client4.examples
+package sttp.client4.examples.other
 
 import sttp.client4.*
 import os.*
