@@ -49,7 +49,8 @@ import sttp.client4.*
   // response.header(...): Option[String]
   println(response.header("Content-Length")) 
 
-  // response.body: read into an Either[String, String] to indicate failure or success 
+  // since we're using basicRequest, the response.body is read into an 
+  // Either[String, String] to indicate failure or success 
   println(response.body)
 ```
 

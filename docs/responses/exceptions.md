@@ -33,7 +33,7 @@ import sttp.client4.*
 def asJson[T]: ResponseAs[Either[ResponseException[String], T]] = ???
 ``` 
 
-There are also the `.orFail` and `.orFailDeserialization` methods on eligible response specifications, which convert http errors or deserialization exceptions as failed effects.
+There are also the `asJsonOrFail`, `asStringOrFail` etc. response descriptions, which handle http errors or deserialization exceptions by throwing an exception / returning a failed effect. Alternatively, you can use the `.orFail` and `.orFailDeserialization` methods on any response description that is an `Either`.
 
 ## Possible outcomes
 
@@ -43,4 +43,4 @@ Summing up, when the response is deserialized (e.g. to json), sending a request 
   * http error (4xx, 5xx), successfully parsed (**a value wrapped in `Left`, or a failed effect**)
   * http success (2xx), successfully parsed (**a value possibly wrapped in `Right`**)
   * deserialization error (**a value wrapped in `Left`, or a failed effect**)
-* network-level failure (invalid host, broken socket): failed effect
+* network-level failure (invalid host, broken socket): **failed effect**
