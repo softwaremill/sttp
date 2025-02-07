@@ -1,6 +1,6 @@
 // {cat=Hello, World!; effects=Direct; backend=HttpClient}: Upload file
 
-//> using dep com.softwaremill.sttp.client4::core:4.0.0-M26
+//> using dep com.softwaremill.sttp.client4::core:4.0.0-RC1
 
 package sttp.client4.examples
 

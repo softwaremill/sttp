@@ -1,6 +1,6 @@
 // {cat=Resilience; effects=Direct; backend=HttpClient}: Rate limit sending requests using Ox
 
-//> using dep com.softwaremill.sttp.client4::ox:4.0.0-M26
+//> using dep com.softwaremill.sttp.client4::ox:4.0.0-RC1
 
 package sttp.client4.examples.resilience
 
