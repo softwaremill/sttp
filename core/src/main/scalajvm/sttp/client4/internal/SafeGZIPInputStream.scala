@@ -19,7 +19,7 @@ object SafeGZIPInputStream {
     */
   def apply(in: InputStream, bufferSize: Int = 512): SafeGZIPInputStream = new SafeGZIPInputStream(in, bufferSize)
 
-  /** Used as a fallback when the input stream is empty or invalid.
+  /** Used as a fallback when the input stream is empty.
     */
   private lazy val noOpStream: InputStream = new InputStream {
     val endOfStream: Int = -1
