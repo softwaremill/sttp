@@ -29,7 +29,7 @@ object SafeGZIPInputStream {
 }
 
 /** A safe wrapper for GZIPInputStream that handles empty streams gracefully. This class prevents EOFException when
-  * reading empty or invalid GZIP streams by falling back to a no-op stream.
+  * reading empty GZIP streams by falling back to a no-op stream.
   *
   * @param in
   *   The input stream to wrap
