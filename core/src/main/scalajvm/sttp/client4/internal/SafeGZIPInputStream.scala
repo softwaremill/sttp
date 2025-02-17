@@ -28,8 +28,8 @@ object SafeGZIPInputStream {
   }
 }
 
-/** A safe wrapper for GZIPInputStream that handles empty streams gracefully. This class prevents EOFException when
-  * reading empty GZIP streams by falling back to a no-op stream.
+/** A safe wrapper for GZIPInputStream that handles empty streams gracefully. Prevents EOFException when reading empty
+  * GZIP streams by falling back to a no-op stream. All other exceptions are propagated as-is.
   *
   * @param in
   *   The input stream to wrap
@@ -42,7 +42,6 @@ class SafeGZIPInputStream(in: InputStream, bufferSize: Int) extends FilterInputS
       new GZIPInputStream(in, bufferSize)
     } catch {
       case _: EOFException => SafeGZIPInputStream.noOpStream
-      case e               => throw e // we do not suppress other exceptions
     }
 
   override def read(): Int = stream.read()

@@ -4,14 +4,14 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream, EOFException}
-import java.util.zip.GZIPOutputStream
+import java.util.zip.{GZIPInputStream, GZIPOutputStream}
 
 class SafeGZIPInputStreamTest extends AnyFlatSpec with Matchers {
 
   "A safe GZIP stream" should "handle empty stream without throwing EOFException" in {
     val emptyStream = new ByteArrayInputStream(Array.empty[Byte])
 
-    val _ = assertThrows[EOFException] { // regular GZIPInputStream fails and we have a working problem reproducer
+    val _ = assertThrows[EOFException] { // a working problem reproducer for a regular GZIPInputStream failure
       new java.util.zip.GZIPInputStream(emptyStream)
     }
 
@@ -19,6 +19,23 @@ class SafeGZIPInputStreamTest extends AnyFlatSpec with Matchers {
     val result = safeStream.read()
 
     result shouldBe -1
+  }
+
+  it should "propagate EOFException during read operations" in {
+    val content = "Some content"
+    val baos = new ByteArrayOutputStream()
+    val incompleteOutStream = new GZIPOutputStream(baos)
+    incompleteOutStream.write(content.getBytes("UTF-8"))
+    incompleteOutStream.flush() // don't close properly to simulate failure scenario
+
+    val invalidGzipData = baos.toByteArray
+    val corruptedStream = new ByteArrayInputStream(invalidGzipData)
+    val safeStream = SafeGZIPInputStream.apply(corruptedStream)
+
+    val error = intercept[EOFException] {
+      safeStream.read()
+    }
+    error.getMessage shouldBe "Unexpected end of ZLIB input stream"
   }
 
   it should "handle non-empty gzipped content correctly" in {
