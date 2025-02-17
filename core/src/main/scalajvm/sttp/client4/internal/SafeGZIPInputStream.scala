@@ -42,6 +42,7 @@ class SafeGZIPInputStream(in: InputStream, bufferSize: Int) extends FilterInputS
       new GZIPInputStream(in, bufferSize)
     } catch {
       case _: EOFException => SafeGZIPInputStream.noOpStream
+      case e               => throw e // we do not suppress other exceptions
     }
 
   override def read(): Int = stream.read()
