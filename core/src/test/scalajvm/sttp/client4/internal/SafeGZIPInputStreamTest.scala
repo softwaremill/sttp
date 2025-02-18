@@ -9,7 +9,7 @@ import java.util.zip.{GZIPInputStream, GZIPOutputStream}
 class SafeGZIPInputStreamTest extends AnyFlatSpec with Matchers {
 
   "A safe GZIP stream" should "handle empty stream without throwing EOFException" in {
-    val emptyStream = new ByteArrayInputStream(Array.empty[Byte])
+    val emptyStream = new ByteArrayInputStream(Array.emptyByteArray)
 
     val _ = assertThrows[EOFException] { // a working problem reproducer for a regular GZIPInputStream failure
       new java.util.zip.GZIPInputStream(emptyStream)
@@ -39,7 +39,7 @@ class SafeGZIPInputStreamTest extends AnyFlatSpec with Matchers {
   }
 
   it should "propagate end of the compressed data" in {
-    val testMessage = "Hello, world!"
+    val testMessage = "Hello!"
     val data = createGzippedContent(testMessage)
     val gzippedContent = new ByteArrayInputStream(data)
     val safeStream = SafeGZIPInputStream.apply(gzippedContent)
@@ -49,7 +49,9 @@ class SafeGZIPInputStreamTest extends AnyFlatSpec with Matchers {
     val secondRead = safeStream.read(buffer)
 
     val decompressedContent = new String(buffer, 0, firstRead, "UTF-8")
-    (firstRead, decompressedContent, secondRead) shouldBe (13, testMessage, -1)
+    firstRead shouldBe testMessage.size
+    decompressedContent shouldBe testMessage
+    secondRead shouldBe -1
   }
 
   it should "handle non-empty gzipped content correctly" in {
