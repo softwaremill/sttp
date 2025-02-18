@@ -159,11 +159,11 @@ val logback = "ch.qos.logback" % "logback-classic" % "1.5.14"
 
 val jaegerClientVersion = "1.8.1"
 val braveOpentracingVersion = "1.0.1"
-val zipkinSenderOkHttpVersion = "3.4.3"
+val zipkinSenderOkHttpVersion = "3.5.0"
 val resilience4jVersion = "2.3.0"
 val http4s_ce2_version = "0.22.15"
 val http4s_ce3_version = "0.23.30"
-val osLibVersion = "0.11.3"
+val osLibVersion = "0.11.4"
 val tethysVersion = "0.29.3"
 val openTelemetryVersion = "1.47.0"
 val openTelemetrySemconvVersion = "1.26.0-alpha"
@@ -770,7 +770,7 @@ lazy val zioJson = (projectMatrix in file("json/zio-json"))
   .settings(
     name := "zio-json",
     libraryDependencies ++= Seq(
-      "dev.zio" %%% "zio-json" % "0.7.17",
+      "dev.zio" %%% "zio-json" % "0.7.21",
       "com.softwaremill.sttp.shared" %%% "zio" % sttpSharedVersion
     ),
     scalaTest
@@ -896,7 +896,7 @@ lazy val prometheusBackend = (projectMatrix in file("observability/prometheus-ba
   .settings(
     name := "prometheus-backend",
     libraryDependencies ++= Seq(
-      "io.prometheus" % "prometheus-metrics-core" % "1.3.5"
+      "io.prometheus" % "prometheus-metrics-core" % "1.3.6"
     ),
     scalaTest
   )
