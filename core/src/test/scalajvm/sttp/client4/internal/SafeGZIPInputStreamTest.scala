@@ -26,7 +26,7 @@ class SafeGZIPInputStreamTest extends AnyFlatSpec with Matchers {
     val baos = new ByteArrayOutputStream()
     val incompleteOutStream = new GZIPOutputStream(baos)
     incompleteOutStream.write(content.getBytes("UTF-8"))
-    incompleteOutStream.flush() // don't close properly to simulate failure scenario
+    incompleteOutStream.flush() // don't close properly to skip the GZIP trailer and simulate a corrupted stream
 
     val invalidGzipData = baos.toByteArray
     val corruptedStream = new ByteArrayInputStream(invalidGzipData)
@@ -38,13 +38,26 @@ class SafeGZIPInputStreamTest extends AnyFlatSpec with Matchers {
     error.getMessage shouldBe "Unexpected end of ZLIB input stream"
   }
 
-  it should "handle non-empty gzipped content correctly" in {
+  it should "propagate end of the compressed data" in {
     val testMessage = "Hello, world!"
     val data = createGzippedContent(testMessage)
     val gzippedContent = new ByteArrayInputStream(data)
     val safeStream = SafeGZIPInputStream.apply(gzippedContent)
 
-    // Read the entire content
+    val buffer = new Array[Byte](1024)
+    val firstRead = safeStream.read(buffer) // read the entire content
+    val secondRead = safeStream.read(buffer)
+
+    val decompressedContent = new String(buffer, 0, firstRead, "UTF-8")
+    (firstRead, decompressedContent, secondRead) shouldBe (13, testMessage, -1)
+  }
+
+  it should "handle non-empty gzipped content correctly" in {
+    val testMessage = "Hello!"
+    val data = createGzippedContent(testMessage)
+    val gzippedContent = new ByteArrayInputStream(data)
+    val safeStream = SafeGZIPInputStream.apply(gzippedContent)
+
     val buffer = new Array[Byte](1024)
     val bytesRead = safeStream.read(buffer)
 
