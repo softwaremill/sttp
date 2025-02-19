@@ -2,6 +2,7 @@ package sttp.client4.internal
 
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
+import sttp.client4.compression.GZipInputStreamDecompressor
 
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream, EOFException}
 import java.util.zip.{GZIPInputStream, GZIPOutputStream}
@@ -15,7 +16,7 @@ class SafeGZIPInputStreamTest extends AnyFlatSpec with Matchers {
       new java.util.zip.GZIPInputStream(emptyStream)
     }
 
-    val safeStream = SafeGZIPInputStream.apply(emptyStream)
+    val safeStream = GZipInputStreamDecompressor.apply(emptyStream)
     val result = safeStream.read()
 
     result shouldBe -1
@@ -30,7 +31,7 @@ class SafeGZIPInputStreamTest extends AnyFlatSpec with Matchers {
 
     val invalidGzipData = baos.toByteArray
     val corruptedStream = new ByteArrayInputStream(invalidGzipData)
-    val safeStream = SafeGZIPInputStream.apply(corruptedStream)
+    val safeStream = GZipInputStreamDecompressor.apply(corruptedStream)
 
     val error = intercept[EOFException] {
       safeStream.read()
@@ -42,7 +43,7 @@ class SafeGZIPInputStreamTest extends AnyFlatSpec with Matchers {
     val testMessage = "Hello!"
     val data = createGzippedContent(testMessage)
     val gzippedContent = new ByteArrayInputStream(data)
-    val safeStream = SafeGZIPInputStream.apply(gzippedContent)
+    val safeStream = GZipInputStreamDecompressor.apply(gzippedContent)
 
     val buffer = new Array[Byte](1024)
     val firstRead = safeStream.read(buffer) // read the entire content
@@ -58,7 +59,7 @@ class SafeGZIPInputStreamTest extends AnyFlatSpec with Matchers {
     val testMessage = "Hello!"
     val data = createGzippedContent(testMessage)
     val gzippedContent = new ByteArrayInputStream(data)
-    val safeStream = SafeGZIPInputStream.apply(gzippedContent)
+    val safeStream = GZipInputStreamDecompressor.apply(gzippedContent)
 
     val buffer = new Array[Byte](1024)
     val bytesRead = safeStream.read(buffer)
@@ -78,7 +79,7 @@ class SafeGZIPInputStreamTest extends AnyFlatSpec with Matchers {
   it should "let callers handle other failures" in {
     val invalidData = Array[Byte](1, 2, 3, 4)
     val invalidStream = new ByteArrayInputStream(invalidData)
-    val safeStream = SafeGZIPInputStream.apply(invalidStream)
+    val safeStream = GZipInputStreamDecompressor.apply(invalidStream)
 
     val error = intercept[java.util.zip.ZipException] {
       safeStream.read()
@@ -90,7 +91,7 @@ class SafeGZIPInputStreamTest extends AnyFlatSpec with Matchers {
     val content = "Test content"
     val data = createGzippedContent(content)
     val gzippedContent = new ByteArrayInputStream(data)
-    val safeStream = SafeGZIPInputStream.apply(gzippedContent)
+    val safeStream = GZipInputStreamDecompressor.apply(gzippedContent)
 
     safeStream.close()
 
