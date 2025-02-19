@@ -5,6 +5,9 @@ import java.util.zip.GZIPInputStream
 
 /** Creates GZIPInputStream instances that handle empty streams gracefully, replacing exception-based control flow
   * regarding EOFException with a more principled approach.
+  *
+  * It addresses a scenario where some HTTP servers may omit the Content-Length header for empty responses with status
+  * code 202 (Accepted), preventing issues when content length cannot be determined in advance.
   */
 object SafeGZIPInputStream {
 
