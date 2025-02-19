@@ -314,6 +314,7 @@ private class HttpServer(port: Int, info: String => Unit) extends AutoCloseable 
         respondWithHeader(RawHeader("Content-Encoding", "gzip")) {
           complete(202, HttpEntity.Empty)
         }
+      }
     } ~ path("compress-empty-deflate") {
       encodeResponseWith(Deflate) {
         respondWithHeader(RawHeader("Content-Encoding", "deflate")) {
