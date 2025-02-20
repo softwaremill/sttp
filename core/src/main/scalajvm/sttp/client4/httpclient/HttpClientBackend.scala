@@ -119,12 +119,15 @@ abstract class HttpClientBackend[F[_], S <: Streams[S], P, B](
     val responseMetadata = ResponseMetadata(code, "", headers)
 
     val encoding = headers.collectFirst { case h if h.is(HeaderNames.ContentEncoding) => h.value }
+    val isBodyEmpty = headers.collectFirst { case h if h.is(HeaderNames.ContentLength) => h.value }.contains("0")
     val method = Method(res.request().method())
     val decodedResBody = if (method != Method.HEAD) {
       resBody.left
         .map { is =>
           encoding
-            .filterNot(e => code.equals(StatusCode.NoContent) || !request.autoDecompressionEnabled || e.isEmpty)
+            .filterNot { e =>
+              code.equals(StatusCode.NoContent) || isBodyEmpty || !request.autoDecompressionEnabled || e.isEmpty
+            }
             .map(e => Decompressor.decompressIfPossible(is, e, compressionHandlers.decompressors))
             .getOrElse(is)
         }

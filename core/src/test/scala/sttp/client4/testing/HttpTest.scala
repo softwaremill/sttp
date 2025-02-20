@@ -337,6 +337,20 @@ trait HttpTest[F[_]]
       }
     }
 
+    "should gracefully handle empty GZipped 202 response without Content-Length header" in {
+      // A scenario for https://github.com/softwaremill/sttp/issues/1802
+      basicRequest
+        .get(uri"${HttpTest.endpoint}/compress-empty-gzip-accepted-no-content")
+        .response(asStringAlways)
+        .acceptEncoding("gzip")
+        .send(backend)
+        .toFuture()
+        .map { response =>
+          response.code shouldBe StatusCode.Accepted
+          response.body shouldBe ""
+        }
+    }
+
     if (supportsHostHeaderOverride) {
       "should not send the URL's hostname as the host header" in {
         basicRequest
