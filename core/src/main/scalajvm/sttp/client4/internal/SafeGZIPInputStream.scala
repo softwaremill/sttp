@@ -40,7 +40,7 @@ object SafeGZIPInputStream {
   *   The buffer size to use for the GZIP stream
   */
 class SafeGZIPInputStream(in: InputStream, bufferSize: Int) extends FilterInputStream(in) {
-  private lazy val stream: InputStream =
+  private val stream: InputStream =
     try {
       new GZIPInputStream(in, bufferSize)
     } catch {
