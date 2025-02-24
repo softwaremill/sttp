@@ -79,10 +79,9 @@ class SafeGZIPInputStreamTest extends AnyFlatSpec with Matchers {
   it should "let callers handle other failures" in {
     val invalidData = Array[Byte](1, 2, 3, 4)
     val invalidStream = new ByteArrayInputStream(invalidData)
-    val safeStream = GZipInputStreamDecompressor.apply(invalidStream)
 
     val error = intercept[java.util.zip.ZipException] {
-      safeStream.read()
+      GZipInputStreamDecompressor.apply(invalidStream)
     }
     error.getMessage shouldBe "Not in GZIP format"
   }
