@@ -63,6 +63,9 @@ class HttpClientFs2Backend[F[_]: ConcurrentEffect: ContextShift] private (
     new BodyToHttpClient[F, Fs2Streams[F], R] {
       override val streams: Fs2Streams[F] = Fs2Streams[F]
       override implicit def monad: MonadError[F] = self.monad
+      override def concatStreams(stream1: Stream[F, Byte], stream2: Stream[F, Byte]): Stream[F, Byte] =
+        stream1 ++ stream2
+      override def byteArrayToStream(array: Array[Byte]): Stream[F, Byte] = Stream.emits(array)
       override def streamToPublisher(stream: Stream[F, Byte]): F[HttpRequest.BodyPublisher] =
         monad.eval(
           BodyPublishers.fromPublisher(
@@ -104,7 +107,7 @@ class HttpClientFs2Backend[F[_]: ConcurrentEffect: ContextShift] private (
   // based on Fs2Streams.limitBytes (for ce3)
   private def limitBytes(stream: Stream[F, Byte], maxBytes: Long): Stream[F, Byte] = {
     def go(s: Stream[F, Byte], remaining: Long): Pull[F, Byte, Unit] = {
-      if (remaining < 0) throw new StreamMaxLengthExceededException(maxBytes)
+      if (remaining < 0) throw StreamMaxLengthExceededException(maxBytes)
       else
         s.pull.uncons.flatMap {
           case Some((chunk, tail)) =>
@@ -112,7 +115,7 @@ class HttpClientFs2Backend[F[_]: ConcurrentEffect: ContextShift] private (
             if (chunkSize <= remaining)
               Pull.output(chunk) >> go(tail, remaining - chunkSize)
             else
-              throw new StreamMaxLengthExceededException(maxBytes)
+              throw StreamMaxLengthExceededException(maxBytes)
           case None => Pull.done
         }
     }

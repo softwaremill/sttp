@@ -5,8 +5,7 @@ import sttp.client4._
 import sttp.client4.compression.Compressor
 import sttp.client4.httpclient.BodyProgressCallback
 import sttp.client4.internal.SttpToJavaConverters.toJavaSupplier
-import sttp.client4.internal.Utf8
-import sttp.client4.internal.throwNestedMultipartNotAllowed
+import sttp.client4.internal.{NoStreams, Utf8, throwNestedMultipartNotAllowed}
 import sttp.model.Header
 import sttp.model.HeaderNames
 import sttp.model.Part
@@ -46,10 +45,17 @@ private[client4] trait BodyToHttpClient[F[_], S, R] {
       case FileBody(f, _)        => BodyPublishers.ofFile(f.toFile.toPath).unit
       case StreamBody(s)         => streamToPublisher(s.asInstanceOf[streams.BinaryStream])
       case m: MultipartBody[_] =>
-        val multipartBodyPublisher = multipartBody(m.parts)
         val baseContentType = contentType.getOrElse("multipart/form-data")
-        builder.header(HeaderNames.ContentType, s"$baseContentType; boundary=${multipartBodyPublisher.getBoundary}")
-        multipartBodyPublisher.build().unit
+        if (streams == NoStreams) {
+          val multipartBodyPublisher = multipartBody(m.parts)
+          builder.header(HeaderNames.ContentType, s"$baseContentType; boundary=${multipartBodyPublisher.getBoundary}")
+          multipartBodyPublisher.build().unit
+        } else {
+          val bodyBuilder = MultipartStreamingBodyBuilder()
+          builder.header(HeaderNames.ContentType, s"$baseContentType; boundary=${bodyBuilder.getBoundary}")
+          multipartStreamBody(m.parts, bodyBuilder)
+        }
+
     }
 
     val bodyWithContentLength = contentLength match {
@@ -63,10 +69,48 @@ private[client4] trait BodyToHttpClient[F[_], S, R] {
     }
   }
 
+  def byteArrayToStream(array: Array[Byte]): streams.BinaryStream
+  def concatStreams(stream1: streams.BinaryStream, stream2: streams.BinaryStream): streams.BinaryStream
+
   def streamToPublisher(stream: streams.BinaryStream): F[BodyPublisher]
   def compressors: List[Compressor[R]]
 
-  private def multipartBody[T](parts: Seq[Part[GenericRequestBody[_]]]) = {
+  private def multipartStreamBody(
+      parts: Seq[Part[GenericRequestBody[_]]],
+      bodybuilder: MultipartStreamingBodyBuilder
+  ): F[HttpRequest.BodyPublisher] = {
+    val resultStream = parts.foldLeft(byteArrayToStream(Array.empty[Byte])) { (accumulatedStream, part) =>
+      val allHeaders = Header(HeaderNames.ContentDisposition, part.contentDispositionHeaderValue) +: part.headers
+      val partHeaders = allHeaders.map(h => h.name -> h.value).toMap
+      part.body match {
+        case NoBody => accumulatedStream
+        case FileBody(f, _) =>
+          concatBytesToStream(accumulatedStream, bodybuilder.encodeFile(f.toFile.toPath, partHeaders))
+        case StringBody(b, e, _) if e.equalsIgnoreCase(Utf8) =>
+          concatBytesToStream(accumulatedStream, bodybuilder.encodeString(b, partHeaders))
+        case StringBody(b, e, _) =>
+          concatBytesToStream(accumulatedStream, bodybuilder.encodeBytes(b.getBytes(e), partHeaders))
+        case ByteArrayBody(b, _) =>
+          concatBytesToStream(accumulatedStream, bodybuilder.encodeBytes(b, partHeaders))
+        case ByteBufferBody(b, _) =>
+          if ((b: Buffer).isReadOnly) {
+            val buffer = new ByteBufferBackedInputStream(b)
+            concatBytesToStream(accumulatedStream, bodybuilder.encodeBytes(buffer.readAllBytes(), partHeaders))
+          } else
+            concatBytesToStream(accumulatedStream, bodybuilder.encodeBytes(b.array(), partHeaders))
+        case InputStreamBody(b, _) =>
+          concatBytesToStream(accumulatedStream, bodybuilder.encodeBytes(b.readAllBytes(), partHeaders))
+        case StreamBody(s)       => concatStreams(accumulatedStream, s.asInstanceOf[streams.BinaryStream])
+        case _: MultipartBody[_] => throwNestedMultipartNotAllowed
+      }
+    }
+    streamToPublisher(concatBytesToStream(resultStream, bodybuilder.lastBoundary))
+  }
+
+  private def concatBytesToStream(stream: streams.BinaryStream, array: Array[Byte]): streams.BinaryStream =
+    concatStreams(stream, byteArrayToStream(array))
+
+  private def multipartBody(parts: Seq[Part[GenericRequestBody[_]]]) = {
     val multipartBuilder = new MultiPartBodyPublisher()
     parts.foreach { p =>
       val allHeaders = Header(HeaderNames.ContentDisposition, p.contentDispositionHeaderValue) +: p.headers
@@ -80,13 +124,14 @@ private[client4] trait BodyToHttpClient[F[_], S, R] {
         case ByteArrayBody(b, _) =>
           multipartBuilder.addPart(p.name, supplier(new ByteArrayInputStream(b)), partHeaders)
         case ByteBufferBody(b, _) =>
-          if ((b: Buffer).isReadOnly())
+          if ((b: Buffer).isReadOnly)
             multipartBuilder.addPart(p.name, supplier(new ByteBufferBackedInputStream(b)), partHeaders)
           else
             multipartBuilder.addPart(p.name, supplier(new ByteArrayInputStream(b.array())), partHeaders)
         case InputStreamBody(b, _) => multipartBuilder.addPart(p.name, supplier(b), partHeaders)
-        case StreamBody(_)         => throw new IllegalArgumentException("Streaming multipart bodies are not supported")
-        case m: MultipartBody[_]   => throwNestedMultipartNotAllowed
+        case StreamBody(_) =>
+          throw new IllegalArgumentException("Multipart streaming bodies are not supported with this backend")
+        case m: MultipartBody[_] => throwNestedMultipartNotAllowed
       }
     }
     multipartBuilder
@@ -137,7 +182,7 @@ private[client4] trait BodyToHttpClient[F[_], S, R] {
             try f
             catch {
               case e: Exception =>
-                System.getLogger(this.getClass().getName()).log(System.Logger.Level.ERROR, "Error in callback", e)
+                System.getLogger(this.getClass.getName).log(System.Logger.Level.ERROR, "Error in callback", e)
             }
         })
       }

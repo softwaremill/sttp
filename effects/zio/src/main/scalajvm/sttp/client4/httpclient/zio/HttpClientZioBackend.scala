@@ -84,6 +84,11 @@ class HttpClientZioBackend private (
     new BodyToHttpClient[Task, ZioStreams, R] {
       override val streams: ZioStreams = ZioStreams
       override implicit def monad: MonadError[Task] = self.monad
+      override def byteArrayToStream(array: Array[Byte]): ZStream[Any, Throwable, Byte] = ZStream.fromIterable(array)
+      override def concatStreams(
+          stream1: ZStream[Any, Throwable, Byte],
+          stream2: ZStream[Any, Throwable, Byte]
+      ): ZStream[Any, Throwable, Byte] = stream1.concat(stream2)
       override def streamToPublisher(stream: ZStream[Any, Throwable, Byte]): Task[BodyPublisher] = {
         import _root_.zio.interop.reactivestreams.{streamToPublisher => zioStreamToPublisher}
         val publisher = stream.mapChunks(byteChunk => Chunk(ByteBuffer.wrap(byteChunk.toArray))).toPublisher

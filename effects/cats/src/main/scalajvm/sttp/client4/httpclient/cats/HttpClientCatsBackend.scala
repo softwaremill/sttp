@@ -57,6 +57,11 @@ class HttpClientCatsBackend[F[_]: Async] private (
     override val streams: NoStreams = NoStreams
     override implicit val monad: MonadError[F] = self.monad
 
+    override def byteArrayToStream(array: Array[Byte]): Nothing = throw new IllegalStateException(
+      "Streaming is not supported"
+    )
+    override def concatStreams(stream1: Nothing, stream2: Nothing): Nothing = stream1
+
     override def streamToPublisher(stream: Nothing): F[BodyPublisher] = stream // nothing is everything
     override def compressors: List[Compressor[R]] = compressionHandlers.compressors
   }

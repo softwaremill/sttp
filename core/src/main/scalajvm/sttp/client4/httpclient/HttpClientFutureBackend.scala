@@ -45,12 +45,17 @@ class HttpClientFutureBackend private (
 
   override val streams: NoStreams = NoStreams
 
-  override protected val bodyToHttpClient = new BodyToHttpClient[Future, Nothing, R] {
-    override val streams: NoStreams = NoStreams
-    override implicit val monad: MonadError[Future] = new FutureMonad
-    override def streamToPublisher(stream: Nothing): Future[BodyPublisher] = stream // nothing is everything
-    override def compressors: List[Compressor[Nothing]] = compressionHandlers.compressors
-  }
+  override protected val bodyToHttpClient: BodyToHttpClient[Future, Nothing, R] =
+    new BodyToHttpClient[Future, Nothing, R] {
+      override val streams: NoStreams = NoStreams
+      override implicit val monad: MonadError[Future] = new FutureMonad
+      override def byteArrayToStream(array: Array[Byte]): Nothing = throw new IllegalStateException(
+        "Streaming is not supported"
+      )
+      override def concatStreams(stream1: Nothing, stream2: Nothing): Nothing = stream1
+      override def streamToPublisher(stream: Nothing): Future[BodyPublisher] = stream // nothing is everything
+      override def compressors: List[Compressor[Nothing]] = compressionHandlers.compressors
+    }
 
   override protected val bodyFromHttpClient: BodyFromHttpClient[Future, Nothing, InputStream] =
     new InputStreamBodyFromHttpClient[Future, Nothing] {
