@@ -51,7 +51,7 @@ private[client4] trait BodyToHttpClient[F[_], S, R] {
           builder.header(HeaderNames.ContentType, s"$baseContentType; boundary=${multipartBodyPublisher.getBoundary}")
           multipartBodyPublisher.build().unit
         } else {
-          val bodyBuilder = MultipartStreamingBodyBuilder()
+          val bodyBuilder = new MultipartStreamingBodyBuilder()
           builder.header(HeaderNames.ContentType, s"$baseContentType; boundary=${bodyBuilder.getBoundary}")
           multipartStreamBody(m.parts, bodyBuilder)
         }
