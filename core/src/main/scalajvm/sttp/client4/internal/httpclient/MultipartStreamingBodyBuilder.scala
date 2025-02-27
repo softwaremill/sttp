@@ -13,7 +13,7 @@ class MultipartStreamingBodyBuilder {
   private def encodeHeaders(headers: Map[String, String]): Array[Byte] =
     ("--" + boundary + "\r\n" + headersToString(headers) + "\r\n\r\n").getBytes(StandardCharsets.UTF_8)
 
-  private val CRLFBytes: Array[Byte] = "\r\n".getBytes(StandardCharsets.UTF_8)
+  val CRLFBytes: Array[Byte] = "\r\n".getBytes(StandardCharsets.UTF_8)
 
   def getBoundary: String = boundary
 

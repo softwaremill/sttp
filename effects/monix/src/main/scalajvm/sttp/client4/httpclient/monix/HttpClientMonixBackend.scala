@@ -60,7 +60,7 @@ class HttpClientMonixBackend private (
       override def concatStreams(
           stream1: Observable[Array[Byte]],
           stream2: Observable[Array[Byte]]
-      ): Observable[Array[Byte]] = Observable(stream1, stream2).concat
+      ): Observable[Array[Byte]] = stream1 ++ stream2
       override def byteArrayToStream(array: Array[Byte]): Observable[Array[Byte]] = Observable(array)
       override def streamToPublisher(stream: Observable[Array[Byte]]): Task[HttpRequest.BodyPublisher] =
         monad.eval(

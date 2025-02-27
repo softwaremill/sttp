@@ -100,7 +100,7 @@ private[client4] trait BodyToHttpClient[F[_], S, R] {
             concatBytesToStream(accumulatedStream, bodybuilder.encodeBytes(b.array(), partHeaders))
         case InputStreamBody(b, _) =>
           concatBytesToStream(accumulatedStream, bodybuilder.encodeBytes(b.readAllBytes(), partHeaders))
-        case StreamBody(s)       => concatStreams(accumulatedStream, s.asInstanceOf[streams.BinaryStream])
+        case StreamBody(s)       => concatStreams(accumulatedStream, concatBytesToStream(s.asInstanceOf[streams.BinaryStream], bodybuilder.CRLFBytes))
         case _: MultipartBody[_] => throwNestedMultipartNotAllowed
       }
     }
