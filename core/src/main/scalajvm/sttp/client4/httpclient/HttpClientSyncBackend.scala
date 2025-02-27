@@ -22,6 +22,7 @@ import sttp.client4.compression.CompressionHandlers
 import sttp.client4.compression.Decompressor
 import java.util.concurrent.atomic.AtomicReference
 import sttp.client4.internal.{FailingLimitedInputStream, OnEndInputStream}
+import java.io.File
 
 class HttpClientSyncBackend private (
     client: HttpClient,
@@ -115,6 +116,9 @@ class HttpClientSyncBackend private (
     new BodyToHttpClient[Identity, Nothing, R] {
       override val streams: NoStreams = NoStreams
       override implicit val monad: MonadError[Identity] = IdentityMonad
+      override def fileToStream(file: File): Nothing = throw new IllegalStateException(
+        "Streaming is not supported"
+      )
       override def byteArrayToStream(array: Array[Byte]): Nothing = throw new IllegalStateException(
         "Streaming is not supported"
       )

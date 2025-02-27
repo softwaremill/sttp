@@ -5,6 +5,7 @@ import cats.effect.Resource
 import monix.eval.Task
 import monix.execution.Scheduler
 import monix.reactive.Observable
+import monix.nio.file.readAsync
 import org.reactivestreams.FlowAdapters
 import sttp.capabilities.StreamMaxLengthExceededException
 import sttp.capabilities.monix.MonixStreams
@@ -32,6 +33,7 @@ import java.net.http.HttpRequest.BodyPublishers
 import java.net.http.HttpResponse
 import java.net.http.HttpResponse.BodyHandlers
 import java.nio.ByteBuffer
+import java.io.File
 import java.{util => ju}
 import java.util.concurrent.Flow.Publisher
 import scala.collection.JavaConverters._
@@ -57,11 +59,13 @@ class HttpClientMonixBackend private (
     new BodyToHttpClient[Task, MonixStreams, R] {
       override val streams: MonixStreams = MonixStreams
       override implicit def monad: MonadError[Task] = self.monad
+
+      override def fileToStream(file: File): Observable[Array[Byte]] = readAsync(file.toPath, 8192)
       override def concatStreams(
           stream1: Observable[Array[Byte]],
           stream2: Observable[Array[Byte]]
       ): Observable[Array[Byte]] = stream1 ++ stream2
-      override def byteArrayToStream(array: Array[Byte]): Observable[Array[Byte]] = Observable(array)
+      override def byteArrayToStream(array: Array[Byte]): Observable[Array[Byte]] = Observable.now(array)
       override def streamToPublisher(stream: Observable[Array[Byte]]): Task[HttpRequest.BodyPublisher] =
         monad.eval(
           BodyPublishers.fromPublisher(FlowAdapters.toFlowPublisher(stream.map(ByteBuffer.wrap).toReactivePublisher))

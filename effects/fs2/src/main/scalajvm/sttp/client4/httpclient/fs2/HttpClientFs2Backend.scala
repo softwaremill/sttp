@@ -6,6 +6,8 @@ import cats.effect.std.Queue
 import cats.implicits._
 import fs2.Chunk
 import fs2.Stream
+import fs2.io.file.Files
+import fs2.io.file.Path
 import fs2.compression.Compression
 import fs2.interop.reactivestreams.PublisherOps
 import fs2.interop.reactivestreams.StreamUnicastPublisher
@@ -37,6 +39,7 @@ import java.net.http.HttpRequest.BodyPublishers
 import java.net.http.HttpResponse
 import java.net.http.HttpResponse.BodyHandlers
 import java.nio.ByteBuffer
+import java.io.File
 import java.util
 import java.{util => ju}
 import java.util.concurrent.Flow.Publisher
@@ -64,6 +67,7 @@ class HttpClientFs2Backend[F[_]: Async] private (
     new BodyToHttpClient[F, Fs2Streams[F], R] {
       override val streams: Fs2Streams[F] = Fs2Streams[F]
       override implicit def monad: MonadError[F] = self.monad
+      override def fileToStream(file: File): Stream[F, Byte] = Files.forAsync[F].readAll(Path.fromNioPath(file.toPath))
       override def concatStreams(stream1: Stream[F, Byte], stream2: Stream[F, Byte]): Stream[F, Byte] =
         stream1 ++ stream2
       override def byteArrayToStream(array: Array[Byte]): Stream[F, Byte] = Stream.emits(array)

@@ -37,6 +37,7 @@ import java.net.http.HttpRequest.BodyPublishers
 import java.net.http.HttpResponse
 import java.net.http.HttpResponse.BodyHandlers
 import java.nio.ByteBuffer
+import java.io.File
 import java.util
 import java.{util => ju}
 import java.util.concurrent.Flow.Publisher
@@ -84,6 +85,7 @@ class HttpClientZioBackend private (
     new BodyToHttpClient[Task, ZioStreams, R] {
       override val streams: ZioStreams = ZioStreams
       override implicit def monad: MonadError[Task] = self.monad
+      override def fileToStream(file: File): ZStream[Any, Throwable, Byte] = ZStream.fromFile(file, 8192)
       override def byteArrayToStream(array: Array[Byte]): ZStream[Any, Throwable, Byte] = ZStream.fromIterable(array)
       override def concatStreams(
           stream1: ZStream[Any, Throwable, Byte],

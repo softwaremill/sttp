@@ -33,6 +33,7 @@ import java.net.http.HttpResponse
 import java.net.http.HttpResponse.BodyHandlers
 import sttp.client4.internal.FailingLimitedInputStream
 import sttp.client4.internal.OnEndInputStream
+import java.io.File
 
 class HttpClientCatsBackend[F[_]: Async] private (
     client: HttpClient,
@@ -57,6 +58,9 @@ class HttpClientCatsBackend[F[_]: Async] private (
     override val streams: NoStreams = NoStreams
     override implicit val monad: MonadError[F] = self.monad
 
+    override def fileToStream(file: File): Nothing = throw new IllegalStateException(
+      "Streaming is not supported"
+    )
     override def byteArrayToStream(array: Array[Byte]): Nothing = throw new IllegalStateException(
       "Streaming is not supported"
     )

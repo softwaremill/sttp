@@ -14,6 +14,7 @@ import sttp.monad.syntax._
 
 import java.io.ByteArrayInputStream
 import java.io.InputStream
+import java.io.File
 import java.net.http.HttpRequest
 import java.net.http.HttpRequest.BodyPublisher
 import java.net.http.HttpRequest.BodyPublishers
@@ -69,6 +70,7 @@ private[client4] trait BodyToHttpClient[F[_], S, R] {
     }
   }
 
+  def fileToStream(file: File): streams.BinaryStream
   def byteArrayToStream(array: Array[Byte]): streams.BinaryStream
   def concatStreams(stream1: streams.BinaryStream, stream2: streams.BinaryStream): streams.BinaryStream
 
@@ -84,8 +86,12 @@ private[client4] trait BodyToHttpClient[F[_], S, R] {
       val partHeaders = allHeaders.map(h => h.name -> h.value).toMap
       part.body match {
         case NoBody => accumulatedStream
-        case FileBody(f, _) =>
-          concatBytesToStream(accumulatedStream, bodybuilder.encodeFile(f.toFile.toPath, partHeaders))
+        case FileBody(f, _) => {
+          val encodedHeaders = byteArrayToStream(bodybuilder.encodeHeaders(partHeaders))
+          val endPartBytes = byteArrayToStream(bodybuilder.CRLFBytes)
+          val headersWithContent = concatStreams(encodedHeaders, fileToStream(f.toFile))
+          concatStreams(headersWithContent, endPartBytes)
+        }
         case StringBody(b, e, _) if e.equalsIgnoreCase(Utf8) =>
           concatBytesToStream(accumulatedStream, bodybuilder.encodeString(b, partHeaders))
         case StringBody(b, e, _) =>
@@ -100,7 +106,11 @@ private[client4] trait BodyToHttpClient[F[_], S, R] {
             concatBytesToStream(accumulatedStream, bodybuilder.encodeBytes(b.array(), partHeaders))
         case InputStreamBody(b, _) =>
           concatBytesToStream(accumulatedStream, bodybuilder.encodeBytes(b.readAllBytes(), partHeaders))
-        case StreamBody(s)       => concatStreams(accumulatedStream, concatBytesToStream(s.asInstanceOf[streams.BinaryStream], bodybuilder.CRLFBytes))
+        case StreamBody(s) =>
+          concatStreams(
+            accumulatedStream,
+            concatBytesToStream(s.asInstanceOf[streams.BinaryStream], bodybuilder.CRLFBytes)
+          )
         case _: MultipartBody[_] => throwNestedMultipartNotAllowed
       }
     }

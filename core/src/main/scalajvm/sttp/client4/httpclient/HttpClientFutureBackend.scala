@@ -28,6 +28,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import sttp.client4.internal.FailingLimitedInputStream
 import sttp.client4.internal.OnEndInputStream
+import java.io.File
 
 class HttpClientFutureBackend private (
     client: HttpClient,
@@ -49,6 +50,9 @@ class HttpClientFutureBackend private (
     new BodyToHttpClient[Future, Nothing, R] {
       override val streams: NoStreams = NoStreams
       override implicit val monad: MonadError[Future] = new FutureMonad
+      override def fileToStream(file: File): Nothing = throw new IllegalStateException(
+        "Streaming is not supported"
+      )
       override def byteArrayToStream(array: Array[Byte]): Nothing = throw new IllegalStateException(
         "Streaming is not supported"
       )
