@@ -22,6 +22,8 @@ import sttp.client4.internal.httpclient.BodyFromHttpClient
 import sttp.client4.internal.httpclient.BodyToHttpClient
 import sttp.client4.internal.httpclient.Sequencer
 import sttp.client4.internal.httpclient.cancelPublisher
+import sttp.client4.internal.httpclient.MultipartBodyBuilder
+import sttp.client4.internal.httpclient.StreamMultipartBodyBuilder
 import sttp.client4.internal.ws.SimpleQueue
 import sttp.client4.testing.WebSocketStreamBackendStub
 import sttp.client4.wrappers
@@ -59,13 +61,18 @@ class HttpClientMonixBackend private (
     new BodyToHttpClient[Task, MonixStreams, R] {
       override val streams: MonixStreams = MonixStreams
       override implicit def monad: MonadError[Task] = self.monad
-
-      override def fileToStream(file: File): Observable[Array[Byte]] = readAsync(file.toPath, 8192)
-      override def concatStreams(
-          stream1: Observable[Array[Byte]],
-          stream2: Observable[Array[Byte]]
-      ): Observable[Array[Byte]] = stream1 ++ stream2
-      override def byteArrayToStream(array: Array[Byte]): Observable[Array[Byte]] = Observable.now(array)
+      override val multiPartBodyBuilder: MultipartBodyBuilder[streams.BinaryStream, Task] =
+        new StreamMultipartBodyBuilder[streams.BinaryStream, Task] {
+          override def fileToStream(file: File): streams.BinaryStream = readAsync(file.toPath, 8192)
+          override def byteArrayToStream(array: Array[Byte]): streams.BinaryStream = Observable.now(array)
+          override def concatStreams(
+              stream1: streams.BinaryStream,
+              stream2: streams.BinaryStream
+          ): streams.BinaryStream = stream1 ++ stream2
+          override def toPublisher(stream: streams.BinaryStream): Task[HttpRequest.BodyPublisher] = streamToPublisher(
+            stream
+          )
+        }
       override def streamToPublisher(stream: Observable[Array[Byte]]): Task[HttpRequest.BodyPublisher] =
         monad.eval(
           BodyPublishers.fromPublisher(FlowAdapters.toFlowPublisher(stream.map(ByteBuffer.wrap).toReactivePublisher))

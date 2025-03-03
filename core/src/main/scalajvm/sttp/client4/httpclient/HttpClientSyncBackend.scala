@@ -116,13 +116,8 @@ class HttpClientSyncBackend private (
     new BodyToHttpClient[Identity, Nothing, R] {
       override val streams: NoStreams = NoStreams
       override implicit val monad: MonadError[Identity] = IdentityMonad
-      override def fileToStream(file: File): Nothing = throw new IllegalStateException(
-        "Streaming is not supported"
-      )
-      override def byteArrayToStream(array: Array[Byte]): Nothing = throw new IllegalStateException(
-        "Streaming is not supported"
-      )
-      override def concatStreams(stream1: Nothing, stream2: Nothing): Nothing = stream1
+      override val multiPartBodyBuilder: MultipartBodyBuilder[Nothing, Identity] =
+        new NonStreamMultipartBodyBuilder[NoStreams.BinaryStream, Identity] {}
       override def streamToPublisher(stream: Nothing): Identity[BodyPublisher] = stream // nothing is everything
       override def compressors: List[Compressor[R]] = compression.compressors
     }

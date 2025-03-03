@@ -22,6 +22,8 @@ import sttp.client4.internal.httpclient.BodyFromHttpClient
 import sttp.client4.internal.httpclient.BodyToHttpClient
 import sttp.client4.internal.httpclient.Sequencer
 import sttp.client4.internal.httpclient.cancelPublisher
+import sttp.client4.internal.httpclient.MultipartBodyBuilder
+import sttp.client4.internal.httpclient.StreamMultipartBodyBuilder
 import sttp.client4.internal.ws.SimpleQueue
 import sttp.client4.testing.WebSocketStreamBackendStub
 import sttp.client4.wrappers
@@ -85,12 +87,16 @@ class HttpClientZioBackend private (
     new BodyToHttpClient[Task, ZioStreams, R] {
       override val streams: ZioStreams = ZioStreams
       override implicit def monad: MonadError[Task] = self.monad
-      override def fileToStream(file: File): ZStream[Any, Throwable, Byte] = ZStream.fromFile(file, 8192)
-      override def byteArrayToStream(array: Array[Byte]): ZStream[Any, Throwable, Byte] = ZStream.fromIterable(array)
-      override def concatStreams(
-          stream1: ZStream[Any, Throwable, Byte],
-          stream2: ZStream[Any, Throwable, Byte]
-      ): ZStream[Any, Throwable, Byte] = stream1.concat(stream2)
+      override val multiPartBodyBuilder: MultipartBodyBuilder[streams.BinaryStream, Task] =
+        new StreamMultipartBodyBuilder[ZioStreams.BinaryStream, Task] {
+          override def fileToStream(file: File): streams.BinaryStream = ZStream.fromFile(file, 8192)
+          override def byteArrayToStream(array: Array[Byte]): streams.BinaryStream = ZStream.fromIterable(array)
+          override def concatStreams(
+              stream1: streams.BinaryStream,
+              stream2: streams.BinaryStream
+          ): streams.BinaryStream = stream1.concat(stream2)
+          override def toPublisher(stream: streams.BinaryStream): Task[BodyPublisher] = streamToPublisher(stream)
+        }
       override def streamToPublisher(stream: ZStream[Any, Throwable, Byte]): Task[BodyPublisher] = {
         import _root_.zio.interop.reactivestreams.{streamToPublisher => zioStreamToPublisher}
         val publisher = stream.mapChunks(byteChunk => Chunk(ByteBuffer.wrap(byteChunk.toArray))).toPublisher

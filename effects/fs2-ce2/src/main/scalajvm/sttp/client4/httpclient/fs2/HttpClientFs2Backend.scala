@@ -24,6 +24,8 @@ import sttp.client4.internal.httpclient.BodyFromHttpClient
 import sttp.client4.internal.httpclient.BodyToHttpClient
 import sttp.client4.internal.httpclient.Sequencer
 import sttp.client4.internal.httpclient.cancelPublisher
+import sttp.client4.internal.httpclient.MultipartBodyBuilder
+import sttp.client4.internal.httpclient.StreamMultipartBodyBuilder
 import sttp.client4.internal.ws.SimpleQueue
 import sttp.client4.testing.WebSocketStreamBackendStub
 import sttp.client4.wrappers.FollowRedirectsBackend
@@ -64,10 +66,18 @@ class HttpClientFs2Backend[F[_]: ConcurrentEffect: ContextShift] private (
     new BodyToHttpClient[F, Fs2Streams[F], R] {
       override val streams: Fs2Streams[F] = Fs2Streams[F]
       override implicit def monad: MonadError[F] = self.monad
-      override def fileToStream(file: File): Stream[F, Byte] = fs2.io.file.readAll(file.toPath, blocker, 8192)
-      override def concatStreams(stream1: Stream[F, Byte], stream2: Stream[F, Byte]): Stream[F, Byte] =
-        stream1 ++ stream2
-      override def byteArrayToStream(array: Array[Byte]): Stream[F, Byte] = Stream.emits(array)
+      override val multiPartBodyBuilder: MultipartBodyBuilder[streams.BinaryStream, F] =
+        new StreamMultipartBodyBuilder[streams.BinaryStream, F] {
+          override def fileToStream(file: File): streams.BinaryStream = fs2.io.file.readAll(file.toPath, blocker, 8192)
+          override def byteArrayToStream(array: Array[Byte]): streams.BinaryStream = Stream.emits(array)
+          override def concatStreams(
+              stream1: streams.BinaryStream,
+              stream2: streams.BinaryStream
+          ): streams.BinaryStream = stream1 ++ stream2
+          override def toPublisher(stream: streams.BinaryStream): F[HttpRequest.BodyPublisher] = streamToPublisher(
+            stream
+          )
+        }
       override def streamToPublisher(stream: Stream[F, Byte]): F[HttpRequest.BodyPublisher] =
         monad.eval(
           BodyPublishers.fromPublisher(
