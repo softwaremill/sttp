@@ -33,6 +33,7 @@ import java.net.http.HttpResponse
 import java.net.http.HttpResponse.BodyHandlers
 import sttp.client4.internal.FailingLimitedInputStream
 import sttp.client4.internal.OnEndInputStream
+import java.io.File
 
 class HttpClientCatsBackend[F[_]: Async] private (
     client: HttpClient,
@@ -56,7 +57,8 @@ class HttpClientCatsBackend[F[_]: Async] private (
   override protected val bodyToHttpClient: BodyToHttpClient[F, Nothing, R] = new BodyToHttpClient[F, Nothing, R] {
     override val streams: NoStreams = NoStreams
     override implicit val monad: MonadError[F] = self.monad
-
+    override val multiPartBodyBuilder: MultipartBodyBuilder[Nothing, F] =
+      new NonStreamMultipartBodyBuilder[NoStreams.BinaryStream, F] {}
     override def streamToPublisher(stream: Nothing): F[BodyPublisher] = stream // nothing is everything
     override def compressors: List[Compressor[R]] = compressionHandlers.compressors
   }

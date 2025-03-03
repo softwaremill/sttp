@@ -21,6 +21,8 @@ import sttp.client4.internal.httpclient.BodyFromHttpClient
 import sttp.client4.internal.httpclient.BodyToHttpClient
 import sttp.client4.internal.httpclient.Sequencer
 import sttp.client4.internal.httpclient.cancelPublisher
+import sttp.client4.internal.httpclient.MultipartBodyBuilder
+import sttp.client4.internal.httpclient.NonStreamMultipartBodyBuilder
 import sttp.client4.internal.ws.SimpleQueue
 import sttp.client4.testing.WebSocketStreamBackendStub
 import sttp.client4.wrappers
@@ -57,6 +59,7 @@ class HttpClientMonixBackend private (
     new BodyToHttpClient[Task, MonixStreams, R] {
       override val streams: MonixStreams = MonixStreams
       override implicit def monad: MonadError[Task] = self.monad
+      override val multiPartBodyBuilder: MultipartBodyBuilder[streams.BinaryStream, Task] = new NonStreamMultipartBodyBuilder[streams.BinaryStream, Task] {}
       override def streamToPublisher(stream: Observable[Array[Byte]]): Task[HttpRequest.BodyPublisher] =
         monad.eval(
           BodyPublishers.fromPublisher(FlowAdapters.toFlowPublisher(stream.map(ByteBuffer.wrap).toReactivePublisher))
@@ -102,7 +105,7 @@ class HttpClientMonixBackend private (
       }
       .flatMap {
         case (_, Some(chunk)) => Observable.now(chunk) // Pass through chunks
-        case (_, None)        => Observable.raiseError(new StreamMaxLengthExceededException(limit))
+        case (_, None)        => Observable.raiseError(StreamMaxLengthExceededException(limit))
       }
   }
 

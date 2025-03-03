@@ -22,6 +22,7 @@ import sttp.client4.compression.CompressionHandlers
 import sttp.client4.compression.Decompressor
 import java.util.concurrent.atomic.AtomicReference
 import sttp.client4.internal.{FailingLimitedInputStream, OnEndInputStream}
+import java.io.File
 
 class HttpClientSyncBackend private (
     client: HttpClient,
@@ -111,12 +112,15 @@ class HttpClientSyncBackend private (
     responseCell.take().fold(throw _, f => f())
   }
 
-  override protected val bodyToHttpClient = new BodyToHttpClient[Identity, Nothing, R] {
-    override val streams: NoStreams = NoStreams
-    override implicit val monad: MonadError[Identity] = IdentityMonad
-    override def streamToPublisher(stream: Nothing): Identity[BodyPublisher] = stream // nothing is everything
-    override def compressors: List[Compressor[R]] = compression.compressors
-  }
+  override protected val bodyToHttpClient: BodyToHttpClient[Identity, Nothing, R] =
+    new BodyToHttpClient[Identity, Nothing, R] {
+      override val streams: NoStreams = NoStreams
+      override implicit val monad: MonadError[Identity] = IdentityMonad
+      override val multiPartBodyBuilder: MultipartBodyBuilder[Nothing, Identity] =
+        new NonStreamMultipartBodyBuilder[NoStreams.BinaryStream, Identity] {}
+      override def streamToPublisher(stream: Nothing): Identity[BodyPublisher] = stream // nothing is everything
+      override def compressors: List[Compressor[R]] = compression.compressors
+    }
 
   override protected val bodyFromHttpClient: BodyFromHttpClient[Identity, Nothing, InputStream] =
     new InputStreamBodyFromHttpClient[Identity, Nothing] {
