@@ -22,39 +22,12 @@ import java.nio.charset.StandardCharsets
 import scala.collection.JavaConverters._
 
 trait MultipartBodyBuilder[BinaryStream, F[_]] {
-  def fileToStream(file: File): BinaryStream
-
-  def byteArrayToStream(array: Array[Byte]): BinaryStream
-
-  def concatStreams(stream1: BinaryStream, stream2: BinaryStream): BinaryStream
-
-  def toPublisher(stream: BinaryStream): F[HttpRequest.BodyPublisher]
-
   def multipartBodyPublisher(
       parts: Seq[Part[GenericRequestBody[_]]]
   )(implicit m: MonadError[F]): (F[HttpRequest.BodyPublisher], String)
 }
 
 class NonStreamMultipartBodyBuilder[BinaryStream, F[_]] extends MultipartBodyBuilder[BinaryStream, F] {
-  override def fileToStream(file: File): BinaryStream = throw new IllegalArgumentException(
-    "Multipart streaming bodies are not supported with this backend"
-  )
-
-  override def toPublisher(stream: BinaryStream): F[HttpRequest.BodyPublisher] =
-    throw new IllegalArgumentException(
-      "Multipart streaming bodies are not supported with this backend"
-    )
-
-  override def byteArrayToStream(array: Array[Byte]): Nothing =
-    throw new IllegalArgumentException("Multipart streaming bodies are not supported with this backend")
-
-  override def concatStreams(
-      stream1: BinaryStream,
-      stream2: BinaryStream
-  ): BinaryStream = throw new IllegalArgumentException(
-    "Multipart streaming bodies are not supported with this backend"
-  )
-
   override def multipartBodyPublisher(
       parts: Seq[Part[GenericRequestBody[_]]]
   )(implicit m: MonadError[F]): (F[HttpRequest.BodyPublisher], String) = {
@@ -91,6 +64,13 @@ class NonStreamMultipartBodyBuilder[BinaryStream, F[_]] extends MultipartBodyBui
 }
 
 trait StreamMultipartBodyBuilder[BinaryStream, F[_]] extends MultipartBodyBuilder[BinaryStream, F] {
+  def fileToStream(file: File): BinaryStream
+
+  def byteArrayToStream(array: Array[Byte]): BinaryStream
+
+  def concatStreams(stream1: BinaryStream, stream2: BinaryStream): BinaryStream
+
+  def toPublisher(stream: BinaryStream): F[HttpRequest.BodyPublisher]
 
   override def multipartBodyPublisher(
       parts: Seq[Part[GenericRequestBody[_]]]
