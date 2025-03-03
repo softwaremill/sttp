@@ -38,6 +38,7 @@ import java.net.http.HttpResponse
 import java.net.http.HttpResponse.BodyHandlers
 import java.nio.ByteBuffer
 import java.io.File
+import java.io.InputStream
 import java.{util => ju}
 import java.util.concurrent.Flow.Publisher
 import scala.collection.JavaConverters._
@@ -70,6 +71,8 @@ class HttpClientFs2Backend[F[_]: ConcurrentEffect: ContextShift] private (
         new StreamMultipartBodyBuilder[streams.BinaryStream, F] {
           override def fileToStream(file: File): streams.BinaryStream = fs2.io.file.readAll(file.toPath, blocker, 8192)
           override def byteArrayToStream(array: Array[Byte]): streams.BinaryStream = Stream.emits(array)
+          override def inputStreamToStream(stream: InputStream): streams.BinaryStream =
+            fs2.io.readInputStream(monad.unit(stream), 8192, blocker, closeAfterUse = true)
           override def concatStreams(
               stream1: streams.BinaryStream,
               stream2: streams.BinaryStream

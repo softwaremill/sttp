@@ -40,6 +40,7 @@ import java.net.http.HttpResponse
 import java.net.http.HttpResponse.BodyHandlers
 import java.nio.ByteBuffer
 import java.io.File
+import java.io.InputStream
 import java.util
 import java.{util => ju}
 import java.util.concurrent.Flow.Publisher
@@ -91,6 +92,8 @@ class HttpClientZioBackend private (
         new StreamMultipartBodyBuilder[ZioStreams.BinaryStream, Task] {
           override def fileToStream(file: File): streams.BinaryStream = ZStream.fromFile(file, 8192)
           override def byteArrayToStream(array: Array[Byte]): streams.BinaryStream = ZStream.fromIterable(array)
+          override def inputStreamToStream(stream: InputStream): streams.BinaryStream =
+            ZStream.fromInputStream(stream, 8192)
           override def concatStreams(
               stream1: streams.BinaryStream,
               stream2: streams.BinaryStream

@@ -22,13 +22,13 @@ import java.nio.charset.StandardCharsets
 import scala.collection.JavaConverters._
 
 trait MultipartBodyBuilder[BinaryStream, F[_]] {
-  def multipartBodyPublisher(
+  def apply(
       parts: Seq[Part[GenericRequestBody[_]]]
   )(implicit m: MonadError[F]): (F[HttpRequest.BodyPublisher], String)
 }
 
-class NonStreamMultipartBodyBuilder[BinaryStream, F[_]] extends MultipartBodyBuilder[BinaryStream, F] {
-  override def multipartBodyPublisher(
+trait NonStreamMultipartBodyBuilder[BinaryStream, F[_]] extends MultipartBodyBuilder[BinaryStream, F] {
+  override def apply(
       parts: Seq[Part[GenericRequestBody[_]]]
   )(implicit m: MonadError[F]): (F[HttpRequest.BodyPublisher], String) = {
     val multipartBuilder = new MultiPartBodyPublisher()
@@ -72,7 +72,9 @@ trait StreamMultipartBodyBuilder[BinaryStream, F[_]] extends MultipartBodyBuilde
 
   def toPublisher(stream: BinaryStream): F[HttpRequest.BodyPublisher]
 
-  override def multipartBodyPublisher(
+  def inputStreamToStream(stream: InputStream): BinaryStream
+
+  override def apply(
       parts: Seq[Part[GenericRequestBody[_]]]
   )(implicit m: MonadError[F]): (F[HttpRequest.BodyPublisher], String) = {
     val boundary: String = UUID.randomUUID.toString
@@ -96,21 +98,27 @@ trait StreamMultipartBodyBuilder[BinaryStream, F[_]] extends MultipartBodyBuilde
         case ByteBufferBody(b, _) =>
           if ((b: Buffer).isReadOnly) {
             val buffer = new ByteBufferBackedInputStream(b)
-            concatBytesToStream(accumulatedStream, encodeBytes(buffer.readAllBytes(), partHeaders, boundary))
+            concatStreams(accumulatedStream, encodeStream(inputStreamToStream(buffer), partHeaders, boundary))
           } else
             concatBytesToStream(accumulatedStream, encodeBytes(b.array(), partHeaders, boundary))
         case InputStreamBody(b, _) =>
-          concatBytesToStream(accumulatedStream, encodeBytes(b.readAllBytes(), partHeaders, boundary))
+          concatStreams(accumulatedStream, encodeStream(inputStreamToStream(b), partHeaders, boundary))
         case StreamBody(s) =>
-          concatStreams(
-            concatBytesToStream(accumulatedStream, encodeHeaders(partHeaders, boundary)),
-            concatBytesToStream(s.asInstanceOf[BinaryStream], CRLFBytes)
-          )
+          concatStreams(accumulatedStream, encodeStream(s.asInstanceOf[BinaryStream], partHeaders, boundary))
         case _: MultipartBody[_] => throwNestedMultipartNotAllowed
       }
     }
     (toPublisher(concatBytesToStream(resultStream, lastBoundary(boundary))), boundary)
   }
+
+  private def encodeStream(stream: BinaryStream, headers: Map[String, String], boundary: String): BinaryStream =
+    concatBytesToStream(
+      concatStreams(
+        byteArrayToStream(encodeHeaders(headers, boundary)),
+        stream
+      ),
+      CRLFBytes
+    )
 
   private def concatBytesToStream(stream: BinaryStream, array: Array[Byte]): BinaryStream =
     concatStreams(stream, byteArrayToStream(array))
