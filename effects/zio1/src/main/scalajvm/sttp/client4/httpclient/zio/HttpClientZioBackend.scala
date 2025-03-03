@@ -25,7 +25,7 @@ import sttp.client4.internal.ws.SimpleQueue
 import sttp.client4.testing.WebSocketStreamBackendStub
 import sttp.client4.wrappers
 import sttp.monad.MonadError
-import zio.*
+import zio._
 import zio.Chunk.ByteArray
 import zio.stream.ZStream
 
