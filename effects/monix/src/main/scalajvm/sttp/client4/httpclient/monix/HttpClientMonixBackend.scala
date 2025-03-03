@@ -5,7 +5,6 @@ import cats.effect.Resource
 import monix.eval.Task
 import monix.execution.Scheduler
 import monix.reactive.Observable
-import monix.nio.file.readAsync
 import org.reactivestreams.FlowAdapters
 import sttp.capabilities.StreamMaxLengthExceededException
 import sttp.capabilities.monix.MonixStreams
@@ -23,7 +22,7 @@ import sttp.client4.internal.httpclient.BodyToHttpClient
 import sttp.client4.internal.httpclient.Sequencer
 import sttp.client4.internal.httpclient.cancelPublisher
 import sttp.client4.internal.httpclient.MultipartBodyBuilder
-import sttp.client4.internal.httpclient.StreamMultipartBodyBuilder
+import sttp.client4.internal.httpclient.NonStreamMultipartBodyBuilder
 import sttp.client4.internal.ws.SimpleQueue
 import sttp.client4.testing.WebSocketStreamBackendStub
 import sttp.client4.wrappers
@@ -35,7 +34,6 @@ import java.net.http.HttpRequest.BodyPublishers
 import java.net.http.HttpResponse
 import java.net.http.HttpResponse.BodyHandlers
 import java.nio.ByteBuffer
-import java.io.File
 import java.{util => ju}
 import java.util.concurrent.Flow.Publisher
 import scala.collection.JavaConverters._
@@ -61,18 +59,7 @@ class HttpClientMonixBackend private (
     new BodyToHttpClient[Task, MonixStreams, R] {
       override val streams: MonixStreams = MonixStreams
       override implicit def monad: MonadError[Task] = self.monad
-      override val multiPartBodyBuilder: MultipartBodyBuilder[streams.BinaryStream, Task] =
-        new StreamMultipartBodyBuilder[streams.BinaryStream, Task] {
-          override def fileToStream(file: File): streams.BinaryStream = readAsync(file.toPath, 8192)
-          override def byteArrayToStream(array: Array[Byte]): streams.BinaryStream = Observable.now(array)
-          override def concatStreams(
-              stream1: streams.BinaryStream,
-              stream2: streams.BinaryStream
-          ): streams.BinaryStream = stream1 ++ stream2
-          override def toPublisher(stream: streams.BinaryStream): Task[HttpRequest.BodyPublisher] = streamToPublisher(
-            stream
-          )
-        }
+      override val multiPartBodyBuilder: MultipartBodyBuilder[streams.BinaryStream, Task] = new NonStreamMultipartBodyBuilder[streams.BinaryStream, Task] {}
       override def streamToPublisher(stream: Observable[Array[Byte]]): Task[HttpRequest.BodyPublisher] =
         monad.eval(
           BodyPublishers.fromPublisher(FlowAdapters.toFlowPublisher(stream.map(ByteBuffer.wrap).toReactivePublisher))
