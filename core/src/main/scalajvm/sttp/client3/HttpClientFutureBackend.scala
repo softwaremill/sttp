@@ -65,9 +65,16 @@ class HttpClientFutureBackend private (
 
   override protected def createBodyHandler: HttpResponse.BodyHandler[InputStream] = BodyHandlers.ofInputStream()
 
-  override protected def bodyHandlerBodyToBody(p: InputStream): InputStream = p
+  override protected def lowLevelBodyToBody(p: InputStream): InputStream = p
+
+  override protected def cancelLowLevelBody(p: InputStream): Unit = p.close()
 
   override protected def emptyBody(): InputStream = emptyInputStream()
+
+  override protected def ensureOnAbnormal[T](effect: Future[T])(finalizer: => Future[Unit]): Future[T] =
+    effect.recoverWith { case e =>
+      finalizer.recoverWith { case e2 => e.addSuppressed(e2); Future.failed(e) }.flatMap(_ => Future.failed(e))
+    }
 }
 
 object HttpClientFutureBackend {

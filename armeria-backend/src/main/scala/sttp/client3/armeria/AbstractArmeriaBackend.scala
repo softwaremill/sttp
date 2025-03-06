@@ -50,16 +50,32 @@ abstract class AbstractArmeriaBackend[F[_], S <: Streams[S]](
 
   type SE = S with Effect[F]
 
+  // #1987: see the comments in HttpClientAsyncBackend
+  protected def ensureOnAbnormal[T](effect: F[T])(finalizer: => F[Unit]): F[T]
+
   protected def bodyFromStreamMessage: BodyFromStreamMessage[F, S]
 
   protected def streamToPublisher(stream: streams.BinaryStream): Publisher[HttpData]
 
   override def responseMonad: MonadError[F] = monad
 
-  override def send[T, R >: SE](request: Request[T, R]): F[Response[T]] =
-    monad.suspend(adjustExceptions(request)(execute(request)))
+  override def send[T, R >: SE](request: Request[T, R]): F[Response[T]] = {
+    // #1987: see the comments in HttpClientAsyncBackend
+    val armeriaCtx = new AtomicReference[ClientRequestContext]()
+    ensureOnAbnormal {
+      monad.suspend(adjustExceptions(request)(execute(request, armeriaCtx)))
+    } {
+      monad.eval {
+        val ctx = armeriaCtx.get()
+        if (ctx != null) ctx.cancel()
+      }
+    }
+  }
 
-  private def execute[T, R >: SE](request: Request[T, R]): F[Response[T]] = {
+  private def execute[T, R >: SE](
+      request: Request[T, R],
+      armeriaCtx: AtomicReference[ClientRequestContext]
+  ): F[Response[T]] = {
     val captor = Clients.newContextCaptor()
     try {
       val armeriaRes = requestToArmeria(request).execute()
@@ -82,6 +98,7 @@ abstract class AbstractArmeriaBackend[F[_], S <: Streams[S]](
             noopCanceler
           }
         case Success(ctx) =>
+          armeriaCtx.set(ctx)
           fromArmeriaResponse(request, armeriaRes, ctx)
       }
     } catch {

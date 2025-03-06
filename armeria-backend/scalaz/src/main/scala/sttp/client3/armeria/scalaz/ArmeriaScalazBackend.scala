@@ -17,6 +17,11 @@ private final class ArmeriaScalazBackend(client: WebClient, closeFactory: Boolea
 
   override val streams: NoStreams = NoStreams
 
+  override protected def ensureOnAbnormal[T](effect: Task[T])(finalizer: => Task[Unit]): Task[T] =
+    effect.handleWith { case e =>
+      finalizer.handleWith { case e2 => Task(e.addSuppressed(e2)) }.flatMap(_ => Task.fail(e))
+    }
+
   override protected def bodyFromStreamMessage: BodyFromStreamMessage[Task, Nothing] =
     new BodyFromStreamMessage[Task, Nothing] {
 

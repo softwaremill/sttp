@@ -14,6 +14,7 @@ import fs2.interop.reactivestreams._
 import org.reactivestreams.FlowAdapters
 import sttp.capabilities.WebSockets
 import sttp.capabilities.fs2.Fs2Streams
+import sttp.client3.internal.httpclient.cancelPublisher
 import sttp.client3.HttpClientBackend.EncodingHandler
 import sttp.client3.httpclient.fs2.HttpClientFs2Backend.Fs2EncodingHandler
 import sttp.client3.internal.httpclient.{BodyFromHttpClient, BodyToHttpClient, Sequencer}
@@ -80,11 +81,20 @@ class HttpClientFs2Backend[F[_]: ConcurrentEffect: ContextShift] private (
 
   override protected def createSequencer: F[Sequencer[F]] = Fs2Sequencer.create
 
-  override protected def bodyHandlerBodyToBody(p: Publisher[ju.List[ByteBuffer]]): Stream[F, Byte] = {
+  override protected def lowLevelBodyToBody(p: Publisher[ju.List[ByteBuffer]]): Stream[F, Byte] = {
     FlowAdapters
       .toPublisher(p)
       .toStream[F]
       .flatMap(data => Stream.emits(data.asScala.map(Chunk.byteBuffer)).flatMap(Stream.chunk))
+  }
+
+  override protected def cancelLowLevelBody(p: Publisher[ju.List[ByteBuffer]]): Unit = cancelPublisher(p)
+
+  override protected def ensureOnAbnormal[T](effect: F[T])(finalizer: => F[Unit]): F[T] = {
+    ConcurrentEffect[F].guaranteeCase(effect) { exitCase =>
+      if (exitCase == ExitCase.Completed) ConcurrentEffect[F].unit
+      else ConcurrentEffect[F].onError(finalizer) { case t => ConcurrentEffect[F].delay(t.printStackTrace()) }
+    }
   }
 
   override protected def emptyBody(): Stream[F, Byte] = Stream.empty

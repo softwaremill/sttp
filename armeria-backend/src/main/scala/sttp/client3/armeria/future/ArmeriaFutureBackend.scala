@@ -18,6 +18,11 @@ private final class ArmeriaFutureBackend(client: WebClient, closeFactory: Boolea
 
   override val streams: NoStreams = NoStreams
 
+  override protected def ensureOnAbnormal[T](effect: Future[T])(finalizer: => Future[Unit]): Future[T] =
+    effect.recoverWith { case e =>
+      finalizer.recoverWith { case e2 => e.addSuppressed(e2); Future.failed(e) }.flatMap(_ => Future.failed(e))
+    }
+
   override protected def bodyFromStreamMessage: BodyFromStreamMessage[Future, Nothing] =
     new BodyFromStreamMessage[Future, Nothing] {
 

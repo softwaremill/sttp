@@ -1,6 +1,6 @@
 package sttp.client3.armeria.fs2
 
-import cats.effect.{ConcurrentEffect, Resource, Sync}
+import cats.effect.{ConcurrentEffect, Resource, Sync, ExitCase}
 import com.linecorp.armeria.client.WebClient
 import com.linecorp.armeria.common.HttpData
 import com.linecorp.armeria.common.stream.StreamMessage
@@ -18,6 +18,12 @@ private final class ArmeriaFs2Backend[F[_]: ConcurrentEffect](client: WebClient,
     extends AbstractArmeriaBackend[F, Fs2Streams[F]](client, closeFactory, new CatsMonadAsyncError) {
 
   override val streams: Fs2Streams[F] = Fs2Streams[F]
+
+  override protected def ensureOnAbnormal[T](effect: F[T])(finalizer: => F[Unit]): F[T] =
+    ConcurrentEffect[F].guaranteeCase(effect) { exitCase =>
+      if (exitCase == ExitCase.Completed) ConcurrentEffect[F].unit
+      else ConcurrentEffect[F].onError(finalizer) { case t => ConcurrentEffect[F].delay(t.printStackTrace()) }
+    }
 
   override protected def bodyFromStreamMessage: BodyFromStreamMessage[F, Fs2Streams[F]] =
     new BodyFromStreamMessage[F, Fs2Streams[F]] {

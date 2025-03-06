@@ -10,6 +10,7 @@ import sttp.monad.syntax._
 import sttp.client3.okhttp.OkHttpBackend.EncodingHandler
 import sttp.client3.{Request, Response, ignore}
 import sttp.monad.{Canceler, MonadAsyncError}
+import java.util.concurrent.atomic.AtomicReference
 
 abstract class OkHttpAsyncBackend[F[_], S <: Streams[S], P](
     client: OkHttpClient,
@@ -18,51 +19,72 @@ abstract class OkHttpAsyncBackend[F[_], S <: Streams[S], P](
     customEncodingHandler: EncodingHandler
 ) extends OkHttpBackend[F, S, P](client, closeClient, customEncodingHandler) {
 
+  // #1987: see the comments in HttpClientAsyncBackend
+  protected def ensureOnAbnormal[T](effect: F[T])(finalizer: => F[Unit]): F[T]
+
   override protected def sendRegular[T, R >: PE](request: Request[T, R]): F[Response[T]] = {
     val nativeRequest = convertRequest(request)
-    monad.flatten(monad.async[F[Response[T]]] { cb =>
-      def success(r: F[Response[T]]): Unit = cb(Right(r))
+    val okHttpResponse = new AtomicReference[OkHttpResponse]()
+    ensureOnAbnormal {
+      monad.flatten(monad.async[F[Response[T]]] { cb =>
+        def success(r: F[Response[T]]): Unit = cb(Right(r))
 
-      def error(t: Throwable): Unit = cb(Left(t))
+        def error(t: Throwable): Unit = cb(Left(t))
 
-      val call = OkHttpBackend
-        .updateClientIfCustomReadTimeout(request, client)
-        .newCall(nativeRequest)
+        val call = OkHttpBackend
+          .updateClientIfCustomReadTimeout(request, client)
+          .newCall(nativeRequest)
 
-      call.enqueue(new Callback {
-        override def onFailure(call: Call, e: IOException): Unit =
-          error(e)
+        call.enqueue(new Callback {
+          override def onFailure(call: Call, e: IOException): Unit =
+            error(e)
 
-        override def onResponse(call: Call, response: OkHttpResponse): Unit =
-          try success(readResponse(response, request))
-          catch {
-            case e: Exception =>
-              response.close()
-              error(e)
+          override def onResponse(call: Call, response: OkHttpResponse): Unit = {
+            okHttpResponse.set(response)
+            try success(readResponse(response, request))
+            catch {
+              case e: Exception =>
+                try response.close()
+                finally error(e)
+            }
           }
-      })
+        })
 
-      Canceler(() => call.cancel())
-    })
+        Canceler(() => call.cancel())
+      })
+    } {
+      monad.eval {
+        val response = okHttpResponse.get()
+        if (response != null) response.close()
+      }
+    }
   }
 
   override protected def sendWebSocket[T, R >: PE](
       request: Request[T, R]
   ): F[Response[T]] = {
     val nativeRequest = convertRequest(request)
-    monad.flatten(
-      createSimpleQueue[WebSocketEvent]
-        .flatMap { queue =>
-          monad.async[F[Response[T]]] { cb =>
-            val listener = createListener(queue, cb, request)
-            val ws = OkHttpBackend
-              .updateClientIfCustomReadTimeout(request, client)
-              .newWebSocket(nativeRequest, listener)
+    val okHttpWS = new AtomicReference[okhttp3.WebSocket]()
+    ensureOnAbnormal {
+      monad.flatten(
+        createSimpleQueue[WebSocketEvent]
+          .flatMap { queue =>
+            monad.async[F[Response[T]]] { cb =>
+              val listener = createListener(queue, cb, request)
+              val ws = OkHttpBackend
+                .updateClientIfCustomReadTimeout(request, client)
+                .newWebSocket(nativeRequest, listener)
 
-            Canceler(() => ws.cancel())
+              Canceler(() => ws.cancel())
+            }
           }
-        }
-    )
+      )
+    } {
+      monad.eval {
+        val ws = okHttpWS.get()
+        if (ws != null) ws.cancel()
+      }
+    }
   }
 
   private def createListener[R >: PE, T](

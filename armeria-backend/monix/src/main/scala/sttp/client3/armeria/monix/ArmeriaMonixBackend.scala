@@ -1,5 +1,6 @@
 package sttp.client3.armeria.monix
 
+import cats.effect.ExitCase
 import com.linecorp.armeria.client.WebClient
 import com.linecorp.armeria.common.HttpData
 import com.linecorp.armeria.common.stream.StreamMessage
@@ -18,6 +19,11 @@ private final class ArmeriaMonixBackend(client: WebClient, closeFactory: Boolean
     extends AbstractArmeriaBackend[Task, MonixStreams](client, closeFactory, TaskMonadAsyncError) {
 
   override val streams: MonixStreams = MonixStreams
+
+  override protected def ensureOnAbnormal[T](effect: Task[T])(finalizer: => Task[Unit]): Task[T] =
+    effect.guaranteeCase { exit =>
+      if (exit == ExitCase.Completed) Task.unit else finalizer.onErrorHandleWith(t => Task.eval(t.printStackTrace()))
+    }
 
   override protected def bodyFromStreamMessage: BodyFromStreamMessage[Task, MonixStreams] =
     new BodyFromStreamMessage[Task, MonixStreams] {

@@ -23,6 +23,11 @@ private final class ArmeriaZioBackend(runtime: Runtime[Any], client: WebClient, 
 
   override val streams: ZioStreams = ZioStreams
 
+  override protected def ensureOnAbnormal[T](effect: Task[T])(finalizer: => Task[Unit]): Task[T] = effect.onExit {
+    exit =>
+      if (exit.succeeded) ZIO.unit else finalizer.catchAll(t => ZIO.effect(t.printStackTrace()).orDie)
+  }.resurrect
+
   override protected def bodyFromStreamMessage: BodyFromStreamMessage[Task, ZioStreams] =
     new BodyFromStreamMessage[Task, ZioStreams] {
 
