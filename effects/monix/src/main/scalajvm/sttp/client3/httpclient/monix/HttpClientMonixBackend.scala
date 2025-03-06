@@ -1,5 +1,6 @@
 package sttp.client3.httpclient.monix
 
+import cats.effect.ExitCase
 import cats.effect.Resource
 import monix.eval.Task
 import monix.execution.Scheduler
@@ -8,6 +9,7 @@ import monix.reactive.compression._
 import org.reactivestreams.FlowAdapters
 import sttp.capabilities.WebSockets
 import sttp.capabilities.monix.MonixStreams
+import sttp.client3.internal.httpclient.cancelPublisher
 import sttp.client3.HttpClientBackend.EncodingHandler
 import sttp.client3.httpclient.monix.HttpClientMonixBackend.MonixEncodingHandler
 import sttp.client3.impl.monix.{MonixSimpleQueue, TaskMonadAsyncError}
@@ -69,12 +71,18 @@ class HttpClientMonixBackend private (
   override protected def createBodyHandler: HttpResponse.BodyHandler[Publisher[ju.List[ByteBuffer]]] =
     BodyHandlers.ofPublisher()
 
-  override protected def bodyHandlerBodyToBody(p: Publisher[ju.List[ByteBuffer]]): Observable[Array[Byte]] = {
+  override protected def lowLevelBodyToBody(p: Publisher[ju.List[ByteBuffer]]): Observable[Array[Byte]] =
     Observable
       .fromReactivePublisher(FlowAdapters.toPublisher(p))
       .flatMapIterable(_.asScala.toList)
       .map(_.safeRead())
-  }
+
+  override protected def cancelLowLevelBody(p: Publisher[ju.List[ByteBuffer]]): Unit = cancelPublisher(p)
+
+  override protected def ensureOnAbnormal[T](effect: Task[T])(finalizer: => Task[Unit]): Task[T] =
+    effect.guaranteeCase { exit =>
+      if (exit == ExitCase.Completed) Task.unit else finalizer.onErrorHandleWith(t => Task.eval(t.printStackTrace()))
+    }
 
   override protected def emptyBody(): Observable[Array[Byte]] = Observable.empty
 

@@ -20,6 +20,12 @@ private final class ArmeriaFs2Backend[F[_]: Async](client: WebClient, closeFacto
 
   override val streams: Fs2Streams[F] = Fs2Streams[F]
 
+  override protected def ensureOnAbnormal[T](effect: F[T])(finalizer: => F[Unit]): F[T] =
+    Async[F].guaranteeCase(effect) { outcome =>
+      if (outcome.isSuccess) Async[F].unit
+      else Async[F].onError(finalizer) { case t => Async[F].delay(t.printStackTrace()) }
+    }
+
   override protected def bodyFromStreamMessage: BodyFromStreamMessage[F, Fs2Streams[F]] =
     new BodyFromStreamMessage[F, Fs2Streams[F]] {
 

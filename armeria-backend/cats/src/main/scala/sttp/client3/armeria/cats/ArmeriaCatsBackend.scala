@@ -17,6 +17,12 @@ private final class ArmeriaCatsBackend[F[_]: Async](client: WebClient, closeFact
 
   override val streams: NoStreams = NoStreams
 
+  override protected def ensureOnAbnormal[T](effect: F[T])(finalizer: => F[Unit]): F[T] =
+    Async[F].guaranteeCase(effect) { outcome =>
+      if (outcome.isSuccess) Async[F].unit
+      else Async[F].onError(finalizer) { case t => Async[F].delay(t.printStackTrace()) }
+    }
+
   override protected def bodyFromStreamMessage: BodyFromStreamMessage[F, Nothing] =
     new BodyFromStreamMessage[F, Nothing] {
 
