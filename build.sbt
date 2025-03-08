@@ -164,7 +164,7 @@ val http4s_ce2_version = "0.22.15"
 val http4s_ce3_version = "0.23.30"
 val osLibVersion = "0.11.4"
 val tethysVersion = "0.29.4"
-val openTelemetryVersion = "1.47.0"
+val openTelemetryVersion = "1.48.0"
 val openTelemetrySemconvVersion = "1.30.0"
 val slf4jVersion = "1.7.36"
 
