@@ -70,7 +70,7 @@ class OpenTelemetryTracingBackend[F[_], P](delegate: GenericBackend[F, P], confi
                   span.setAllAttributes(config.responseAttributes(request, response))
                   response
                 }
-                .handleError { e =>
+                .handleError { case e: Throwable =>
                   ResponseException.find(e) match {
                     case Some(re) =>
                       span.setAllAttributes(
