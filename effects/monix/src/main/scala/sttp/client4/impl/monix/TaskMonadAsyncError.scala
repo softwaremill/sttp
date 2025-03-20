@@ -34,4 +34,5 @@ object TaskMonadAsyncError extends MonadAsyncError[Task] {
   override def flatten[T](ffa: Task[Task[T]]): Task[T] = ffa.flatten
 
   override def ensure[T](f: Task[T], e: => Task[Unit]): Task[T] = f.guarantee(e)
+  override def ensure2[T](f: => Task[T], e: => Task[Unit]): Task[T] = Task.defer(f).guarantee(e)
 }

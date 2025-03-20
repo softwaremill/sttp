@@ -22,5 +22,6 @@ class CatsMonadError[F[_]](implicit F: Sync[F]) extends MonadError[F] {
 
   override def flatten[T](ffa: F[F[T]]): F[T] = F.flatten(ffa)
 
-  override def ensure[T](f: F[T], e: => F[Unit]): F[T] = F.guarantee(f)(e)
+  override def ensure[T](f: F[T], e: => F[Unit]): F[T] = F.guaranteeCase(f)(_ => e)
+  override def ensure2[T](f: => F[T], e: => F[Unit]): F[T] = F.guaranteeCase(F.defer(f))(_ => e)
 }
