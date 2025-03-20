@@ -13,7 +13,7 @@ import io.opentelemetry.semconv.HttpAttributes
 import io.opentelemetry.semconv.ErrorAttributes
 import scala.collection.JavaConverters._
 
-class OpenTelemetryTracingSyncBackendTest extends AnyFlatSpec with Matchers {
+class OpenTelemetryTracingBackendTest extends AnyFlatSpec with Matchers {
   it should "capture successful spans" in {
     // given
     val testExporter = InMemorySpanExporter.create()
@@ -21,7 +21,7 @@ class OpenTelemetryTracingSyncBackendTest extends AnyFlatSpec with Matchers {
     val otel = OpenTelemetrySdk.builder().setTracerProvider(tracerProvider).build()
 
     val stubBackend = SyncBackendStub.whenAnyRequest.thenRespondOk()
-    val wrappedBackend = OpenTelemetryTracingSyncBackend(stubBackend, OpenTelemetryTracingSyncConfig(otel))
+    val wrappedBackend = OpenTelemetryTracingBackend(stubBackend, OpenTelemetryTracingConfig(otel))
 
     // when
     basicRequest.get(uri"http://test.com/foo").send(wrappedBackend)
@@ -46,7 +46,7 @@ class OpenTelemetryTracingSyncBackendTest extends AnyFlatSpec with Matchers {
     val otel = OpenTelemetrySdk.builder().setTracerProvider(tracerProvider).build()
 
     val stubBackend = SyncBackendStub.whenAnyRequest.thenRespond(throw new RuntimeException("test"))
-    val wrappedBackend = OpenTelemetryTracingSyncBackend(stubBackend, OpenTelemetryTracingSyncConfig(otel))
+    val wrappedBackend = OpenTelemetryTracingBackend(stubBackend, OpenTelemetryTracingConfig(otel))
 
     // when
     intercept[RuntimeException] {
