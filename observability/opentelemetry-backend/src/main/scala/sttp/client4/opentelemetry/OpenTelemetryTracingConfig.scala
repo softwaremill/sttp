@@ -8,7 +8,7 @@ import sttp.client4._
 
 import java.time.Clock
 
-case class OpenTelemetryTracingSyncConfig(
+case class OpenTelemetryTracingConfig(
     tracer: Tracer,
     propagators: ContextPropagators,
     clock: Clock,
@@ -18,7 +18,7 @@ case class OpenTelemetryTracingSyncConfig(
     errorAttributes: Throwable => Attributes
 )
 
-object OpenTelemetryTracingSyncConfig {
+object OpenTelemetryTracingConfig {
   def apply(
       openTelemetry: OpenTelemetry,
       clock: Clock = Clock.systemUTC(),
@@ -27,7 +27,7 @@ object OpenTelemetryTracingSyncConfig {
       responseAttributes: (GenericRequest[_, _], Response[_]) => Attributes =
         OpenTelemetryDefaults.responseAttributes _,
       errorAttributes: Throwable => Attributes = OpenTelemetryDefaults.errorAttributes _
-  ): OpenTelemetryTracingSyncConfig = usingTracer(
+  ): OpenTelemetryTracingConfig = usingTracer(
     openTelemetry
       .tracerBuilder(OpenTelemetryDefaults.instrumentationScopeName)
       .setInstrumentationVersion(OpenTelemetryDefaults.instrumentationScopeVersion)
@@ -49,8 +49,8 @@ object OpenTelemetryTracingSyncConfig {
       responseAttributes: (GenericRequest[_, _], Response[_]) => Attributes =
         OpenTelemetryDefaults.responseAttributes _,
       errorAttributes: Throwable => Attributes = OpenTelemetryDefaults.errorAttributes _
-  ): OpenTelemetryTracingSyncConfig =
-    OpenTelemetryTracingSyncConfig(
+  ): OpenTelemetryTracingConfig =
+    OpenTelemetryTracingConfig(
       tracer,
       propagators,
       clock,
