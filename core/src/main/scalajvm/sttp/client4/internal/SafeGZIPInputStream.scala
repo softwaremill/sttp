@@ -9,7 +9,7 @@ import java.util.zip.GZIPInputStream
   * It addresses a scenario where some HTTP servers may omit the Content-Length header for empty responses with status
   * code 202 (Accepted), preventing issues when content length cannot be determined in advance.
   */
-object SafeGZIPInputStream {
+private[client4] object SafeGZIPInputStream {
 
   /** Creates a new SafeGZIPInputStream instance.
     *
@@ -39,7 +39,7 @@ object SafeGZIPInputStream {
   * @param bufferSize
   *   The buffer size to use for the GZIP stream
   */
-class SafeGZIPInputStream(in: InputStream, bufferSize: Int) extends FilterInputStream(in) {
+private[client4] class SafeGZIPInputStream(in: InputStream, bufferSize: Int) extends FilterInputStream(in) {
   private val stream: InputStream =
     try {
       new GZIPInputStream(in, bufferSize)

@@ -1,6 +1,6 @@
 package sttp.client4.internal
 
-object SttpToJavaConverters {
+private[client4] object SttpToJavaConverters {
 
   def toJavaFunction[U, V](f: Function1[U, V]): java.util.function.Function[U, V] =
     new java.util.function.Function[U, V] {
