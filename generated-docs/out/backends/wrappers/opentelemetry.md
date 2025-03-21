@@ -3,7 +3,7 @@
 Currently, the following OpenTelemetry features are supported:
 
 - metrics using `OpenTelemetryMetricsBackend`, wrapping any other backend
-- tracing using `OpenTelemetryTracingSyncBackend`, wrapping a synchronous backend
+- tracing using `OpenTelemetryTracingBackend`, wrapping a synchronous backend
 - tracing using `OpenTelemetryTracingZioBackend`, wrapping any ZIO2 backend
 - tracing using [trace4cats](https://github.com/trace4cats/trace4cats), wrapping a cats-effect backend
 
@@ -13,7 +13,7 @@ The backend depends only on [opentelemetry-api](https://github.com/open-telemetr
 following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client4" %% "opentelemetry-backend" % "4.0.0-RC1"
+"com.softwaremill.sttp.client4" %% "opentelemetry-backend" % "4.0.0-RC2"
 ```
 
 Then an instance can be obtained as follows:
@@ -51,12 +51,12 @@ OpenTelemetryMetricsBackend(
 )
 ```
 
-## Tracing (synchronous)
+## Tracing 
 
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client4" %% "opentelemetry-backend" % "4.0.0-RC1"
+"com.softwaremill.sttp.client4" %% "opentelemetry-backend" % "4.0.0-RC2"
 ```
 
 The backend records traces corresponding to HTTP client calls. The default span name is the HTTP method (e.g. `POST`),
@@ -71,11 +71,10 @@ Other aspects of the backend can be configured as well:
 * how request, response, error attributes are computed
 
 ```{note}
-The backend relies on context passed using the default mechanism in OpenTelemetry SDK for Java, that is using 
-`ThreadLocal`s. This means that the backend will **not** work properly when combined with any asynchronous
-execution mechanisms, such as `Future`s.
-
-Moreover, for Java 21+, note that `ThreadLocal`s are not inherited when spawning a new virtual thread.
+Relies on the built-in OpenTelemetry Java SDK `ContextStorage` mechanism of propagating the tracing context;
+by default, this is using `ThreadLocal`s, which works with synchronous/direct-style environments. `Future`s are 
+supported through instrumentation provided by the OpenTelemetry javaagent. For functional effect systems, usually 
+a dedicated integration library is required.
 ```
 
 Example usage:
@@ -88,9 +87,9 @@ import io.opentelemetry.api.OpenTelemetry
 val sttpBackend: SyncBackend = ???
 val openTelemetry: OpenTelemetry = ???
 
-OpenTelemetryTracingSyncBackend(
+OpenTelemetryTracingBackend(
   sttpBackend,
-  OpenTelemetryTracingSyncConfig(
+  OpenTelemetryTracingConfig(
     openTelemetry,
     spanName = request => request.uri.pathSegments.segments.headOption.map(_.v).getOrElse("root")
   )
@@ -102,7 +101,7 @@ OpenTelemetryTracingSyncBackend(
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client4" %% "opentelemetry-tracing-zio-backend" % "4.0.0-RC1"  // for ZIO 2.x
+"com.softwaremill.sttp.client4" %% "opentelemetry-tracing-zio-backend" % "4.0.0-RC2"  // for ZIO 2.x
 ```
 
 This backend depends on [zio-opentelemetry](https://github.com/zio/zio-telemetry).
