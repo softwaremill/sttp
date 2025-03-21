@@ -22,7 +22,6 @@ import sttp.client4.compression.CompressionHandlers
 import sttp.client4.compression.Decompressor
 import java.util.concurrent.atomic.AtomicReference
 import sttp.client4.internal.{FailingLimitedInputStream, OnEndInputStream}
-import java.io.File
 
 class HttpClientSyncBackend private (
     client: HttpClient,

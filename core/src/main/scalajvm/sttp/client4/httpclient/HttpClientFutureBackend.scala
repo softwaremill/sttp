@@ -28,7 +28,6 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import sttp.client4.internal.FailingLimitedInputStream
 import sttp.client4.internal.OnEndInputStream
-import java.io.File
 
 class HttpClientFutureBackend private (
     client: HttpClient,
