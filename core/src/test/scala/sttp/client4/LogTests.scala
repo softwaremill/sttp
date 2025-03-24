@@ -114,4 +114,48 @@ class LogTests extends AnyFlatSpec with Matchers with BeforeAndAfter {
       )
     )
   }
+
+  "custom sensitive query params log" should "log before request send" in {
+    val spyLogger = new SpyLogger()
+    val defaultLog = Log.default(spyLogger, LogConfig(sensitiveQueryParams = Set("a")))
+    defaultLog.beforeRequestSend(basicRequest.get(uri"http://example.org/?a=b"))
+    spyLogger.probe should be(
+      List(
+        (
+          LogLevel.Debug,
+          "Sending request: GET http://example.org/?a=***, response as: either(as string, as string), headers: Accept-Encoding: gzip, deflate",
+          None
+        )
+      )
+    )
+  }
+
+  it should "log response" in {
+    val spyLogger = new SpyLogger()
+    val defaultLog = Log.default(spyLogger, LogConfig(sensitiveQueryParams = Set("a")))
+    val request = basicRequest.get(uri"http://example.org/?a=b")
+    defaultLog.response(
+      request = request,
+      response = Response(
+        body = "foo body",
+        code = StatusCode.Ok,
+        statusText = "Ok",
+        headers = Seq(Header("Server", "sttp server")),
+        history = Nil,
+        request = request
+      ),
+      responseBody = None,
+      timings = None,
+      exception = None
+    )
+    spyLogger.probe should be(
+      List(
+        (
+          LogLevel.Debug,
+          "Request: GET http://example.org/?a=***, response: 200 Ok, headers: Server: sttp server",
+          None
+        )
+      )
+    )
+  }
 }

@@ -30,7 +30,12 @@ object Log {
     new DefaultLog(
       logger,
       config,
-      LogContext.default(config.logRequestHeaders, config.logResponseHeaders, config.sensitiveHeaders)
+      LogContext.default(
+        config.logRequestHeaders,
+        config.logResponseHeaders,
+        config.sensitiveHeaders,
+        config.sensitiveQueryParams
+      )
     )
 }
 
@@ -42,10 +47,14 @@ class DefaultLog[F[_]](logger: Logger[F], config: LogConfig, logContext: LogCont
   def beforeRequestSend(request: GenericRequest[_, _]): F[Unit] = {
     val _logRequestBody = request.loggingOptions.logRequestBody.getOrElse(config.logRequestBody)
     val _logRequestHeaders = request.loggingOptions.logRequestHeaders.getOrElse(config.logRequestHeaders)
+    val _message =
+      if (config.beforeCurlInsteadOfShow && _logRequestBody && _logRequestHeaders)
+        request.toCurl(config.sensitiveHeaders, config.sensitiveQueryParams)
+      else
+        request.show(_logRequestBody, _logRequestHeaders, config.sensitiveHeaders, config.sensitiveQueryParams)
     logger(
       level = config.beforeRequestSendLogLevel,
-      message = s"Sending request: ${if (config.beforeCurlInsteadOfShow && _logRequestBody && _logRequestHeaders) request.toCurl(config.sensitiveHeaders)
-        else request.show(includeBody = _logRequestBody, includeHeaders = _logRequestHeaders, config.sensitiveHeaders)}",
+      message = s"Sending request: ${_message}",
       exception = None,
       context = logContext.forRequest(request)
     )
@@ -75,7 +84,7 @@ class DefaultLog[F[_]](logger: Logger[F], config: LogConfig, logContext: LogCont
           request.loggingOptions.logResponseHeaders.getOrElse(config.logResponseHeaders),
           config.sensitiveHeaders
         )
-        s"Request: ${request.showBasic}${took(timings)}, response: $responseAsString"
+        s"Request: ${request.showBasicSafe(config.sensitiveQueryParams)}${took(timings)}, response: $responseAsString"
       },
       exception = exception,
       context = logContext.forResponse(request, response, timings)

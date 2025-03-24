@@ -32,6 +32,16 @@ class LogContextTests extends AnyFlatSpec with Matchers {
     )
   }
 
+  it should "be provide context without sensitive query params according to settings" in {
+    val defaultLogContext = LogContext.default(logRequestHeaders = false, sensitiveQueryParams = Set("a"))
+    defaultLogContext.forRequest(basicRequest.get(uri"http://example.org/?a=b&c=d")) should be(
+      Map(
+        "http.request.uri" -> "http://example.org/?a=***&c=d",
+        "http.request.method" -> "GET"
+      )
+    )
+  }
+
   "default log context of response" should "be provide full context by default" in {
     val defaultLogContext = LogContext.default()
     val response: Response[String] = Response(
@@ -77,6 +87,32 @@ class LogContextTests extends AnyFlatSpec with Matchers {
     ) should be(
       Map(
         "http.request.uri" -> "http://example.org",
+        "http.request.method" -> "GET",
+        "http.response.status_code" -> 200,
+        "http.duration" -> 1234000000
+      )
+    )
+  }
+
+  it should "be provide context without query params according to settings" in {
+    val defaultLogContext =
+      LogContext.default(logResponseHeaders = false, logRequestHeaders = false, sensitiveQueryParams = Set("a"))
+    val response: Response[String] = Response(
+      body = "foo body",
+      code = StatusCode.Ok,
+      statusText = "Ok",
+      headers = Seq(Header(HeaderNames.Server, "sttp server")),
+      history = Nil,
+      request = basicRequest.get(uri"http://example.org/?a=b&c=d").auth.bearer("token")
+    )
+
+    defaultLogContext.forResponse(
+      response.request,
+      response,
+      Some(ResponseTimings(Some(1234.millis), 2345.millis))
+    ) should be(
+      Map(
+        "http.request.uri" -> "http://example.org/?a=***&c=d",
         "http.request.method" -> "GET",
         "http.response.status_code" -> 200,
         "http.duration" -> 1234000000

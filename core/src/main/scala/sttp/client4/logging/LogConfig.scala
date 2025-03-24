@@ -44,7 +44,9 @@ case class LogConfig(
     /** The log level that is used for the log message, that is being logged when an exception occurs during sending of
       * a request.
       */
-    responseExceptionLogLevel: LogLevel = LogLevel.Error
+    responseExceptionLogLevel: LogLevel = LogLevel.Error,
+    /** The sensitive query parameters from query string that are filtered out, when logging request & response URI. */
+    sensitiveQueryParams: Set[String] = Set.empty
 )
 
 object LogConfig {

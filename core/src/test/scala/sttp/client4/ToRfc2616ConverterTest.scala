@@ -26,6 +26,13 @@ class ToRfc2616ConverterTest extends AnyFlatSpec with Matchers {
     basicRequest.options(localhost).toRfc2616Format should startWith("OPTIONS")
   }
 
+  it should "convert request with sensitive query param" in {
+    val req = basicRequest
+      .get(uri"$localhost/?a=b")
+      .toRfc2616Format(Set.empty[String], Set("a"))
+    req shouldBe "GET http://localhost/?a=***"
+  }
+
   it should "convert request with header" in {
     basicRequest
       .header("User-Agent", "myapp")

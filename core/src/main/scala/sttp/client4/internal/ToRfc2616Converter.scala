@@ -12,15 +12,25 @@ private[client4] object ToRfc2616Converter {
   def requestToRfc2616(request: GenericRequest[_, _], sensitiveHeaders: Set[String]): String =
     apply(request, sensitiveHeaders)
 
+  def requestToRfc2616(
+      request: GenericRequest[_, _],
+      sensitiveHeaders: Set[String],
+      sensitiveQueryParams: Set[String]
+  ): String =
+    apply(request, sensitiveHeaders, sensitiveQueryParams)
+
   private val BoundaryChars =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789".toCharArray
 
   def apply(request: GenericRequest[_, _]): String = apply(request, HeaderNames.SensitiveHeaders)
 
-  def apply(request: GenericRequest[_, _], sensitiveHeaders: Set[String]): String = {
+  def apply(request: GenericRequest[_, _], sensitiveHeaders: Set[String]): String =
+    apply(request, sensitiveHeaders, Set.empty)
+
+  def apply(request: GenericRequest[_, _], sensitiveHeaders: Set[String], sensitiveQueryParams: Set[String]): String = {
     val extractMethod = request.method.method
     val extractUri = request.uri
-    val result = s"$extractMethod $extractUri"
+    val result = s"$extractMethod ${extractUri.toStringSafe(sensitiveQueryParams)}"
     val headers = extractHeaders(request, sensitiveHeaders)
     val resultWithHeaders = if (headers.isEmpty) result else result + s"\n$headers"
     val body = extractBody(request)

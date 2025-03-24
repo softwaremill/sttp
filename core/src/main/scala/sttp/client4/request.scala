@@ -34,6 +34,8 @@ sealed trait GenericRequest[+T, -R] extends RequestBuilder[GenericRequest[T, R]]
 
   def toCurl: String = ToCurlConverter(this)
   def toCurl(sensitiveHeaders: Set[String]): String = ToCurlConverter(this, sensitiveHeaders)
+  def toCurl(sensitiveHeaders: Set[String], sensitiveQueryParams: Set[String]): String =
+    ToCurlConverter(this, sensitiveHeaders, sensitiveQueryParams)
   def toCurl(omitAcceptEncoding: Boolean): String = ToCurlConverter(this, omitAcceptEncoding)
   def toCurl(sensitiveHeaders: Set[String], omitAcceptEncoding: Boolean): String =
     ToCurlConverter(this, sensitiveHeaders, omitAcceptEncoding)
@@ -41,6 +43,8 @@ sealed trait GenericRequest[+T, -R] extends RequestBuilder[GenericRequest[T, R]]
   def toRfc2616Format: String = ToRfc2616Converter.requestToRfc2616(this)
   def toRfc2616Format(sensitiveHeaders: Set[String]): String =
     ToRfc2616Converter.requestToRfc2616(this, sensitiveHeaders)
+  def toRfc2616Format(sensitiveHeaders: Set[String], sensitiveQueryParams: Set[String]): String =
+    ToRfc2616Converter.requestToRfc2616(this, sensitiveHeaders, sensitiveQueryParams)
 
   /** Metadata of the request, which doesn't retain the request body, or the response handling specification. */
   def onlyMetadata: RequestMetadata = {
@@ -60,7 +64,10 @@ sealed trait GenericRequest[+T, -R] extends RequestBuilder[GenericRequest[T, R]]
     case _                               => false
   }
 
-  override def showBasic: String = s"$method $uri"
+  override def showBasic: String = showBasicSafe()
+
+  override def showBasicSafe(sensitiveQueryParams: Set[String] = Set.empty): String =
+    s"$method ${uri.toStringSafe(sensitiveQueryParams)}"
 }
 
 //

@@ -34,17 +34,20 @@ object LogContext {
     *   Whether to log response headers.
     * @param sensitiveHeaders
     *   Headers which should not be logged.
+    * @param sensitiveQueryParams
+    *   URI query params which should not be logged.
     */
   def default(
       logRequestHeaders: Boolean = true,
       logResponseHeaders: Boolean = true,
-      sensitiveHeaders: Set[String] = HeaderNames.SensitiveHeaders
+      sensitiveHeaders: Set[String] = HeaderNames.SensitiveHeaders,
+      sensitiveQueryParams: Set[String] = Set.empty
   ): LogContext = new LogContext {
     def forRequest(request: RequestMetadata): Map[String, Any] = {
       val context = mutable.Map.empty[String, Any]
 
       context += "http.request.method" -> request.method.toString
-      context += "http.request.uri" -> request.uri.toString
+      context += "http.request.uri" -> request.uri.toStringSafe(sensitiveQueryParams)
       if (logRequestHeaders)
         context += "http.request.headers" -> request.headers.map(_.toStringSafe(sensitiveHeaders)).mkString(" | ")
 
