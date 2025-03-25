@@ -14,6 +14,7 @@ val scala3 = "3.3.5"
 
 val scala2 = List(scala2_12, scala2_13)
 val scala2And3 = scala2 ++ List(scala3)
+val scala2_13And3 = List(scala2_13, scala3)
 
 val examplesScalaVersion = scala3
 val documentationScalaVersion = scala3
@@ -166,6 +167,7 @@ val osLibVersion = "0.11.4"
 val tethysVersion = "0.29.4"
 val openTelemetryVersion = "1.48.0"
 val openTelemetrySemconvVersion = "1.30.0"
+val otel4s = "0.12.0"
 val slf4jVersion = "1.7.36"
 
 val compileAndTest = "compile->compile;test->test"
@@ -231,6 +233,8 @@ lazy val rawAllAggregates =
     prometheusBackend.projectRefs ++
     openTelemetryBackend.projectRefs ++
     openTelemetryTracingZioBackend.projectRefs ++
+    otel4sMetricsBackend.projectRefs ++
+    otel4sTracingBackend.projectRefs ++
     finagleBackend.projectRefs ++
     armeriaBackend.projectRefs ++
     armeriaScalazBackend.projectRefs ++
@@ -928,6 +932,36 @@ lazy val openTelemetryTracingZioBackend = (projectMatrix in file("observability/
   .dependsOn(zio % compileAndTest)
   .dependsOn(core)
 
+lazy val otel4sMetricsBackend = (projectMatrix in file("observability/otel4s-metrics-backend"))
+  .settings(
+    name := "opentelemetry-otel4s-metrics-backend",
+    libraryDependencies ++= Seq(
+      "org.typelevel" %%% "otel4s-core-metrics" % otel4s,
+      "org.typelevel" %%% "otel4s-semconv" % otel4s,
+      "org.typelevel" %%% "otel4s-semconv-metrics-experimental" % otel4s % Test,
+      "org.typelevel" %%% "otel4s-sdk-metrics-testkit" % otel4s % Test
+    )
+  )
+  .jvmPlatform(scalaVersions = scala2_13And3, settings = commonJvmSettings)
+  .jsPlatform(scalaVersions = scala2_13And3, settings = commonJsSettings)
+  .dependsOn(cats % Test)
+  .dependsOn(core % compileAndTest)
+
+lazy val otel4sTracingBackend = (projectMatrix in file("observability/otel4s-tracing-backend"))
+  .settings(
+    name := "opentelemetry-otel4s-tracing-backend",
+    libraryDependencies ++= Seq(
+      "org.typelevel" %%% "otel4s-core-trace" % otel4s,
+      "org.typelevel" %%% "otel4s-semconv" % otel4s,
+      "org.typelevel" %%% "otel4s-sdk-trace-testkit" % otel4s % Test,
+      "org.typelevel" %%% "cats-effect-testkit" % catsEffect_3_version % Test
+    )
+  )
+  .jvmPlatform(scalaVersions = scala2_13And3, settings = commonJvmSettings)
+  .jsPlatform(scalaVersions = scala2_13And3, settings = commonJsSettings)
+  .dependsOn(cats % Test)
+  .dependsOn(core % compileAndTest)
+
 lazy val scribeBackend = (projectMatrix in file("logging/scribe"))
   .settings(commonJvmSettings)
   .settings(
@@ -1069,6 +1103,8 @@ lazy val docs: ProjectMatrix = (projectMatrix in file("generated-docs")) // impo
     prometheusBackend,
     openTelemetryBackend,
     openTelemetryTracingZioBackend,
+    otel4sMetricsBackend,
+    otel4sTracingBackend,
     slf4jBackend
   )
   .jvmPlatform(scalaVersions = List(documentationScalaVersion))
