@@ -57,6 +57,16 @@ class RequestTests extends AnyFlatSpec with Matchers {
       "GET https://test.com, response as: (either(as string, as params), as string), headers: Accept-Encoding: gzip, deflate, Authorization: ***, Content-Type: text/plain; charset=utf-8, Content-Length: 4, body: string: 1234"
   }
 
+  it should "properly hide sensitive query params" in {
+    basicRequest
+      .get(uri"https://test.com/?a=b")
+      .header(HeaderNames.Authorization, "secret")
+      .body("1234")
+      .response(asBoth(asParams, asStringAlways))
+      .show(sensitiveQueryParams = Set("a")) shouldBe
+      "GET https://test.com/?a=***, response as: (either(as string, as params), as string), headers: Accept-Encoding: gzip, deflate, Authorization: ***, Content-Type: text/plain; charset=utf-8, Content-Length: 4, body: string: 1234"
+  }
+
   it should "give meaningful information for a partial request" in {
     basicRequest
       .header(HeaderNames.Authorization, "secret")

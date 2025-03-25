@@ -5,19 +5,15 @@ import sttp.model._
 
 private[client4] object ToCurlConverter {
 
-  def apply(request: GenericRequest[_, _]): String =
-    apply(request, HeaderNames.SensitiveHeaders, omitAcceptEncoding = false)
-
-  def apply(request: GenericRequest[_, _], omitAcceptEncoding: Boolean): String =
-    apply(request, HeaderNames.SensitiveHeaders, omitAcceptEncoding = omitAcceptEncoding)
-
-  def apply(request: GenericRequest[_, _], sensitiveHeaders: Set[String]): String =
-    apply(request, sensitiveHeaders, omitAcceptEncoding = false)
-
-  def apply(request: GenericRequest[_, _], sensitiveHeaders: Set[String], omitAcceptEncoding: Boolean): String = {
+  def apply(
+      request: GenericRequest[_, _],
+      omitAcceptEncoding: Boolean = false,
+      sensitiveHeaders: Set[String] = HeaderNames.SensitiveHeaders,
+      sensitiveQueryParams: Set[String] = Set.empty
+  ): String = {
     val params = List(
       extractMethod(_),
-      extractUrl(_),
+      extractUrl(sensitiveQueryParams)(_),
       extractHeaders(sensitiveHeaders, omitAcceptEncoding)(_),
       extractBody(_),
       extractOptions(_)
@@ -32,8 +28,8 @@ private[client4] object ToCurlConverter {
   private def extractMethod(r: GenericRequest[_, _]): String =
     s"--request ${r.method.method}"
 
-  private def extractUrl(r: GenericRequest[_, _]): String =
-    s"--url '${r.uri}'"
+  private def extractUrl(sensitiveQueryParams: Set[String])(r: GenericRequest[_, _]): String =
+    s"--url '${r.uri.toStringSafe(sensitiveQueryParams)}'"
 
   private def extractHeaders(sensitiveHeaders: Set[String], omitAcceptEncoding: Boolean)(
       r: GenericRequest[_, _]
