@@ -39,6 +39,13 @@ sealed trait GenericRequest[+T, -R] extends RequestBuilder[GenericRequest[T, R]]
   def toCurl(omitAcceptEncoding: Boolean): String = ToCurlConverter(this, omitAcceptEncoding = omitAcceptEncoding)
   def toCurl(sensitiveHeaders: Set[String], omitAcceptEncoding: Boolean): String =
     ToCurlConverter(this, sensitiveHeaders = sensitiveHeaders, omitAcceptEncoding = omitAcceptEncoding)
+  def toCurl(sensitiveHeaders: Set[String], sensitiveQueryParams: Set[String], omitAcceptEncoding: Boolean): String =
+    ToCurlConverter(
+      this,
+      sensitiveHeaders = sensitiveHeaders,
+      sensitiveQueryParams = sensitiveQueryParams,
+      omitAcceptEncoding = omitAcceptEncoding
+    )
 
   def toRfc2616Format: String = ToRfc2616Converter(this)
   def toRfc2616Format(sensitiveHeaders: Set[String]): String =
