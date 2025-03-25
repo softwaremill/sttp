@@ -5,26 +5,11 @@ import sttp.model._
 
 private[client4] object ToCurlConverter {
 
-  def apply(request: GenericRequest[_, _]): String =
-    apply(request, HeaderNames.SensitiveHeaders, omitAcceptEncoding = false)
-
-  def apply(request: GenericRequest[_, _], omitAcceptEncoding: Boolean): String =
-    apply(request, HeaderNames.SensitiveHeaders, omitAcceptEncoding = omitAcceptEncoding)
-
-  def apply(request: GenericRequest[_, _], sensitiveHeaders: Set[String]): String =
-    apply(request, sensitiveHeaders, omitAcceptEncoding = false)
-
-  def apply(request: GenericRequest[_, _], sensitiveHeaders: Set[String], sensitiveQueryParams: Set[String]): String =
-    apply(request, sensitiveHeaders, omitAcceptEncoding = false, sensitiveQueryParams)
-
-  def apply(request: GenericRequest[_, _], sensitiveHeaders: Set[String], omitAcceptEncoding: Boolean): String =
-    apply(request, sensitiveHeaders, omitAcceptEncoding, Set.empty)
-
   def apply(
       request: GenericRequest[_, _],
-      sensitiveHeaders: Set[String],
-      omitAcceptEncoding: Boolean,
-      sensitiveQueryParams: Set[String]
+      omitAcceptEncoding: Boolean = false,
+      sensitiveHeaders: Set[String] = HeaderNames.SensitiveHeaders,
+      sensitiveQueryParams: Set[String] = Set.empty
   ): String = {
     val params = List(
       extractMethod(_),
