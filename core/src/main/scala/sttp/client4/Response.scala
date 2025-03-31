@@ -13,7 +13,7 @@ case class Response[+T](
     code: StatusCode,
     statusText: String,
     headers: Seq[Header],
-    history: List[Response[Unit]],
+    history: List[ResponseMetadata],
     request: RequestMetadata
 ) extends ResponseMetadata {
   def show(

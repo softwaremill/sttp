@@ -4,6 +4,7 @@ import sttp.capabilities.Effect
 import sttp.client4._
 import sttp.model._
 import sttp.model.Uri.QuerySegmentEncoding
+import sttp.monad.syntax._
 
 abstract class FollowRedirectsBackend[F[_], P] private (
     delegate: GenericBackend[F, P],
@@ -12,20 +13,32 @@ abstract class FollowRedirectsBackend[F[_], P] private (
 
   type R = P with Effect[F]
 
-  override def send[T](request: GenericRequest[T, R]): F[Response[T]] =
-    sendWithCounter(request, 0)
+  override def send[T](request: GenericRequest[T, R]): F[Response[T]] = sendWithCounter(request, 0)
 
   protected def sendWithCounter[T](request: GenericRequest[T, R], redirects: Int): F[Response[T]] = {
     // if there are nested follow redirect backends, disabling them and handling redirects here
-    val resp = delegate.send(request.followRedirects(false))
+    // using a def instead of a val so that errors are properly caught
+    def resp = delegate.send(request.followRedirects(false))
+
     if (request.options.followRedirects) {
-      monad.flatMap(resp) { (response: Response[T]) =>
-        if (response.isRedirect) {
-          followRedirect(request, response, redirects)
-        } else {
-          monad.unit(response)
+      resp
+        .flatMap { (response: Response[T]) =>
+          if (response.isRedirect) {
+            followRedirect(request, response, redirects)
+          } else {
+            monad.unit(response)
+          }
         }
-      }
+        .handleError { e =>
+          ResponseException.find(e) match {
+            case Some(re) if re.response.isRedirect =>
+              re.response.header(HeaderNames.Location) match {
+                case None      => monad.error(e) // no location header, propagating the exception
+                case Some(loc) => followRedirect(request, re.response, redirects, loc)
+              }
+            case _ => monad.error(e)
+          }
+        }
     } else {
       resp
     }
@@ -36,17 +49,19 @@ abstract class FollowRedirectsBackend[F[_], P] private (
       response: Response[T],
       redirects: Int
   ): F[Response[T]] =
-    response.header(HeaderNames.Location).fold(monad.unit(response)) { loc =>
-      if (redirects >= request.options.maxRedirects) {
-        monad.error(new SttpClientException.TooManyRedirectsException(request, redirects))
-      } else {
-        followRedirect(request, response, redirects, loc)
-      }
+    response.header(HeaderNames.Location) match {
+      case None => monad.unit(response)
+      case Some(loc) =>
+        if (redirects >= request.options.maxRedirects) {
+          monad.error(new SttpClientException.TooManyRedirectsException(request, redirects))
+        } else {
+          followRedirect(request, response, redirects, loc)
+        }
     }
 
   private def followRedirect[T](
       request: GenericRequest[T, R],
-      response: Response[T],
+      response: ResponseMetadata,
       redirects: Int,
       loc: String
   ): F[Response[T]] = {
@@ -61,8 +76,7 @@ abstract class FollowRedirectsBackend[F[_], P] private (
         .apply(request.method(request.method, uri = uri))
 
     monad.map(redirectResponse) { rr =>
-      val responseNoBody = response.copy(body = ())
-      rr.copy(history = responseNoBody :: rr.history)
+      rr.copy(history = response :: rr.history)
     }
   }
 
