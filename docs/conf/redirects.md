@@ -102,11 +102,21 @@ import sttp.client4.wrappers.{FollowRedirectsBackend, FollowRedirectsConfig}
 import sttp.model.Uri.QuerySegmentEncoding
 
 val myBackend: SyncBackend = DefaultSyncBackend()
-val backend: SyncBackend  = FollowRedirectsBackend(
+val backend: SyncBackend = FollowRedirectsBackend(
   delegate = myBackend,
   FollowRedirectsConfig(
     // encodes all special characters in the query segment, including the allowed ones
     transformUri = _.querySegmentsEncoding(QuerySegmentEncoding.All)
   )
 )
+```
+
+Since encoding query segments more strictly is common, there's a built-in method for that:
+
+```scala mdoc:compile-only
+import sttp.client4.* 
+import sttp.client4.wrappers.FollowRedirectsBackend
+
+val myBackend: SyncBackend = DefaultSyncBackend()
+val backend: SyncBackend = FollowRedirectsBackend.encodeUriAll(myBackend)
 ```
