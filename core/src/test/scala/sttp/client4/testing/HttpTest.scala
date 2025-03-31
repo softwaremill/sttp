@@ -607,6 +607,13 @@ trait HttpTest[F[_]]
       }
     }
 
+    "redirect when redirects should be followed, and when using asStringOrFail response handling" in {
+      r2.response(asStringOrFail).send(backend).toFuture().map { resp =>
+        resp.code shouldBe StatusCode.Ok
+        resp.body shouldBe r4response
+      }
+    }
+
     "redirect twice when redirects should be followed" in {
       r1.send(backend).toFuture().map { resp =>
         resp.code shouldBe StatusCode.Ok
