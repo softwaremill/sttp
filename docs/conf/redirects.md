@@ -110,3 +110,13 @@ val backend: SyncBackend  = FollowRedirectsBackend(
   )
 )
 ```
+
+Since encoding query segments more strictly is common, there's a built-in method for that:
+
+```scala mdoc:compile-only
+import sttp.client4.* 
+import sttp.client4.wrappers.FollowRedirectsBackend
+
+val myBackend: SyncBackend = DefaultSyncBackend()
+val backend: SyncBackend  = FollowRedirectsBackend.encodeUriAll(myBackend)
+```
