@@ -102,7 +102,7 @@ import sttp.client4.wrappers.{FollowRedirectsBackend, FollowRedirectsConfig}
 import sttp.model.Uri.QuerySegmentEncoding
 
 val myBackend: SyncBackend = DefaultSyncBackend()
-val backend: SyncBackend  = FollowRedirectsBackend(
+val backend: SyncBackend = FollowRedirectsBackend(
   delegate = myBackend,
   FollowRedirectsConfig(
     // encodes all special characters in the query segment, including the allowed ones
@@ -118,5 +118,5 @@ import sttp.client4.*
 import sttp.client4.wrappers.FollowRedirectsBackend
 
 val myBackend: SyncBackend = DefaultSyncBackend()
-val backend: SyncBackend  = FollowRedirectsBackend.encodeUriAll(myBackend)
+val backend: SyncBackend = FollowRedirectsBackend.encodeUriAll(myBackend)
 ```
