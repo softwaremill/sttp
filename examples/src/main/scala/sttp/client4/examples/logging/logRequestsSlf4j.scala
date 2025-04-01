@@ -1,7 +1,7 @@
 // {cat=Logging; effects=Direct; backend=HttpClient}: Add a logging backend wrapper, which uses slf4j
 
-//> using dep com.softwaremill.sttp.client4::circe:4.0.0-RC2
-//> using dep com.softwaremill.sttp.client4::slf4j-backend:4.0.0-RC2
+//> using dep com.softwaremill.sttp.client4::circe:4.0.0-RC3
+//> using dep com.softwaremill.sttp.client4::slf4j-backend:4.0.0-RC3
 //> using dep io.circe::circe-generic:0.14.12
 //> using dep ch.qos.logback:logback-classic:1.5.18
 
