@@ -19,6 +19,8 @@ import sttp.client4.internal.httpclient.BodyFromHttpClient
 import sttp.client4.internal.httpclient.BodyToHttpClient
 import sttp.client4.internal.httpclient.Sequencer
 import sttp.client4.internal.httpclient.cancelPublisher
+import sttp.client4.internal.httpclient.NonStreamMultipartBodyBuilder
+import sttp.client4.internal.httpclient.MultipartBodyBuilder
 import sttp.client4.internal.ws.SimpleQueue
 import sttp.client4.testing.WebSocketStreamBackendStub
 import sttp.client4.wrappers
@@ -82,6 +84,8 @@ class HttpClientZioBackend private (
     new BodyToHttpClient[Task, ZioStreams, R] {
       override val streams: ZioStreams = ZioStreams
       override implicit def monad: MonadError[Task] = self.monad
+      override val multiPartBodyBuilder: MultipartBodyBuilder[streams.BinaryStream, Task] =
+        new NonStreamMultipartBodyBuilder[streams.BinaryStream, Task] {}
       override def streamToPublisher(stream: ZStream[Any, Throwable, Byte]): Task[BodyPublisher] = {
         import _root_.zio.interop.reactivestreams.{streamToPublisher => zioStreamToPublisher}
         val publisher = stream.mapChunks(byteChunk => Chunk(ByteBuffer.wrap(byteChunk.toArray))).toPublisher
@@ -112,7 +116,7 @@ class HttpClientZioBackend private (
       .mapAccumM(0L) { (totalBytesRead, chunk) =>
         val newTotal = totalBytesRead + chunk.size
         if (newTotal > limit) {
-          ZIO.fail(new StreamMaxLengthExceededException(limit))
+          ZIO.fail(StreamMaxLengthExceededException(limit))
         } else {
           ZIO.succeed((newTotal, chunk))
         }

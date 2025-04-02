@@ -6,6 +6,8 @@ import cats.effect.std.Queue
 import cats.implicits._
 import fs2.Chunk
 import fs2.Stream
+import fs2.io.file.Files
+import fs2.io.file.Path
 import fs2.compression.Compression
 import fs2.interop.reactivestreams.PublisherOps
 import fs2.interop.reactivestreams.StreamUnicastPublisher
@@ -26,6 +28,8 @@ import sttp.client4.internal.httpclient.BodyFromHttpClient
 import sttp.client4.internal.httpclient.BodyToHttpClient
 import sttp.client4.internal.httpclient.Sequencer
 import sttp.client4.internal.httpclient.cancelPublisher
+import sttp.client4.internal.httpclient.MultipartBodyBuilder
+import sttp.client4.internal.httpclient.StreamMultipartBodyBuilder
 import sttp.client4.internal.ws.SimpleQueue
 import sttp.client4.testing.WebSocketStreamBackendStub
 import sttp.client4.wrappers.FollowRedirectsBackend
@@ -37,6 +41,8 @@ import java.net.http.HttpRequest.BodyPublishers
 import java.net.http.HttpResponse
 import java.net.http.HttpResponse.BodyHandlers
 import java.nio.ByteBuffer
+import java.io.File
+import java.io.InputStream
 import java.util
 import java.{util => ju}
 import java.util.concurrent.Flow.Publisher
@@ -64,6 +70,22 @@ class HttpClientFs2Backend[F[_]: Async] private (
     new BodyToHttpClient[F, Fs2Streams[F], R] {
       override val streams: Fs2Streams[F] = Fs2Streams[F]
       override implicit def monad: MonadError[F] = self.monad
+
+      override val multiPartBodyBuilder: MultipartBodyBuilder[streams.BinaryStream, F] =
+        new StreamMultipartBodyBuilder[streams.BinaryStream, F] {
+          override def fileToStream(file: File): streams.BinaryStream =
+            Files.forAsync[F].readAll(Path.fromNioPath(file.toPath))
+          override def byteArrayToStream(array: Array[Byte]): streams.BinaryStream = Stream.emits(array)
+          override def inputStreamToStream(stream: InputStream): streams.BinaryStream =
+            fs2.io.readInputStream(monad.unit(stream), 8192, closeAfterUse = true)
+          override def concatStreams(
+              stream1: streams.BinaryStream,
+              stream2: streams.BinaryStream
+          ): streams.BinaryStream = stream1 ++ stream2
+          override def toPublisher(stream: streams.BinaryStream): F[HttpRequest.BodyPublisher] = streamToPublisher(
+            stream
+          )
+        }
       override def compressors: List[Compressor[R]] = compressionHandlers.compressors
       override def streamToPublisher(stream: Stream[F, Byte]): F[HttpRequest.BodyPublisher] =
         monad.eval(
@@ -91,7 +113,7 @@ class HttpClientFs2Backend[F[_]: Async] private (
   override protected def lowLevelBodyToBody(p: Publisher[util.List[ByteBuffer]]): Stream[F, Byte] =
     FlowAdapters
       .toPublisher(p)
-      .toStream[F]
+      .toStreamBuffered[F](1)
       .flatMap(data => Stream.emits(data.asScala.map(Chunk.byteBuffer)).flatMap(Stream.chunk))
 
   override protected def cancelLowLevelBody(p: Publisher[ju.List[ByteBuffer]]): Unit = cancelPublisher(p)

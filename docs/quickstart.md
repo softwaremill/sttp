@@ -150,8 +150,8 @@ quickRequest.get(uri"http://httpbin.org/ip").send()
 ```
 
 Additionally, above we're using `quickRequest`, instead of `basicRequest`, to build the request description. 
-`quickRequest` is pre-configured to read successful HTTP responses as a `String`, and to throw an exception 
-otherwise. You can read more about the initial request definitions [here](requests/basics.md).
+`quickRequest` is pre-configured to always read HTTP responses as a `String`, regardless of the status code. 
+You can read more about the initial request definitions [here](requests/basics.md).
 
 ## Next steps
 

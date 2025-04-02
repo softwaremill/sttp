@@ -7,20 +7,17 @@ import scala.util.Random
 
 private[client4] object ToRfc2616Converter {
 
-  def requestToRfc2616(request: GenericRequest[_, _]): String = apply(request, HeaderNames.SensitiveHeaders)
-
-  def requestToRfc2616(request: GenericRequest[_, _], sensitiveHeaders: Set[String]): String =
-    apply(request, sensitiveHeaders)
-
   private val BoundaryChars =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789".toCharArray
 
-  def apply(request: GenericRequest[_, _]): String = apply(request, HeaderNames.SensitiveHeaders)
-
-  def apply(request: GenericRequest[_, _], sensitiveHeaders: Set[String]): String = {
+  def apply(
+      request: GenericRequest[_, _],
+      sensitiveHeaders: Set[String] = HeaderNames.SensitiveHeaders,
+      sensitiveQueryParams: Set[String] = Set.empty
+  ): String = {
     val extractMethod = request.method.method
     val extractUri = request.uri
-    val result = s"$extractMethod $extractUri"
+    val result = s"$extractMethod ${extractUri.toStringSafe(sensitiveQueryParams)}"
     val headers = extractHeaders(request, sensitiveHeaders)
     val resultWithHeaders = if (headers.isEmpty) result else result + s"\n$headers"
     val body = extractBody(request)

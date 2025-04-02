@@ -14,6 +14,7 @@ val scala3 = "3.3.5"
 
 val scala2 = List(scala2_12, scala2_13)
 val scala2And3 = scala2 ++ List(scala3)
+val scala2_13And3 = List(scala2_13, scala3)
 
 val examplesScalaVersion = scala3
 val documentationScalaVersion = scala3
@@ -117,16 +118,16 @@ val testServerSettings = Seq(
   }
 )
 
-val circeVersion: String = "0.14.10"
+val circeVersion: String = "0.14.12"
 
-val jsoniterVersion = "2.33.2"
+val jsoniterVersion = "2.33.3"
 
 val play29JsonVersion = "2.10.6"
 
 val playJsonVersion = "3.0.4"
 
-val catsEffect_3_version = "3.5.7"
-val fs2_3_version = "3.11.0"
+val catsEffect_3_version = "3.6.0"
+val fs2_3_version = "3.12.0"
 
 val catsEffect_2_version = "2.5.5"
 
@@ -146,26 +147,27 @@ val scalaTest = libraryDependencies ++= Seq("freespec", "funsuite", "flatspec", 
 val scalaTestPlusScalaCheck = libraryDependencies += "org.scalatestplus" %% "scalacheck-1-18" % "3.2.19.0" % Test
 
 val zio1Version = "1.0.18"
-val zio2Version = "2.1.15"
+val zio2Version = "2.1.16"
 val zio1InteropRsVersion = "1.3.12"
 val zio2InteropRsVersion = "2.0.2"
 
 val oxVersion = "0.5.7"
-val sttpModelVersion = "1.7.11"
-val sttpSharedVersion = "1.4.2"
+val sttpModelVersion = "1.7.13"
+val sttpSharedVersion = "1.5.0"
 
 val logback = "ch.qos.logback" % "logback-classic" % "1.5.14"
 
 val jaegerClientVersion = "1.8.1"
 val braveOpentracingVersion = "1.0.1"
-val zipkinSenderOkHttpVersion = "3.4.3"
+val zipkinSenderOkHttpVersion = "3.5.0"
 val resilience4jVersion = "2.3.0"
 val http4s_ce2_version = "0.22.15"
 val http4s_ce3_version = "0.23.30"
-val osLibVersion = "0.11.3"
-val tethysVersion = "0.29.3"
-val openTelemetryVersion = "1.47.0"
-val openTelemetrySemconvVersion = "1.26.0-alpha"
+val osLibVersion = "0.11.4"
+val tethysVersion = "0.29.4"
+val openTelemetryVersion = "1.48.0"
+val openTelemetrySemconvVersion = "1.31.0"
+val otel4s = "0.12.0"
 val slf4jVersion = "1.7.36"
 
 val compileAndTest = "compile->compile;test->test"
@@ -231,6 +233,8 @@ lazy val rawAllAggregates =
     prometheusBackend.projectRefs ++
     openTelemetryBackend.projectRefs ++
     openTelemetryTracingZioBackend.projectRefs ++
+    otel4sMetricsBackend.projectRefs ++
+    otel4sTracingBackend.projectRefs ++
     finagleBackend.projectRefs ++
     armeriaBackend.projectRefs ++
     armeriaScalazBackend.projectRefs ++
@@ -651,7 +655,7 @@ lazy val armeriaBackend = (projectMatrix in file("armeria-backend"))
   .settings(testServerSettings)
   .settings(
     name := "armeria-backend",
-    libraryDependencies += "com.linecorp.armeria" % "armeria" % "1.31.3"
+    libraryDependencies += "com.linecorp.armeria" % "armeria" % "1.32.3"
   )
   .jvmPlatform(scalaVersions = scala2And3)
   .dependsOn(core % compileAndTest)
@@ -766,7 +770,7 @@ lazy val zioJson = (projectMatrix in file("json/zio-json"))
   .settings(
     name := "zio-json",
     libraryDependencies ++= Seq(
-      "dev.zio" %%% "zio-json" % "0.7.16",
+      "dev.zio" %%% "zio-json" % "0.7.39",
       "com.softwaremill.sttp.shared" %%% "zio" % sttpSharedVersion
     ),
     scalaTest
@@ -892,7 +896,7 @@ lazy val prometheusBackend = (projectMatrix in file("observability/prometheus-ba
   .settings(
     name := "prometheus-backend",
     libraryDependencies ++= Seq(
-      "io.prometheus" % "prometheus-metrics-core" % "1.3.5"
+      "io.prometheus" % "prometheus-metrics-core" % "1.3.6"
     ),
     scalaTest
   )
@@ -918,7 +922,7 @@ lazy val openTelemetryTracingZioBackend = (projectMatrix in file("observability/
   .settings(
     name := "opentelemetry-tracing-zio-backend",
     libraryDependencies ++= Seq(
-      "dev.zio" %% "zio-opentelemetry" % "3.1.1",
+      "dev.zio" %% "zio-opentelemetry" % "3.1.3",
       "io.opentelemetry.semconv" % "opentelemetry-semconv" % openTelemetrySemconvVersion,
       "io.opentelemetry" % "opentelemetry-api" % openTelemetryVersion,
       "io.opentelemetry" % "opentelemetry-sdk-testing" % openTelemetryVersion % Test
@@ -927,6 +931,36 @@ lazy val openTelemetryTracingZioBackend = (projectMatrix in file("observability/
   .jvmPlatform(scalaVersions = scala2And3)
   .dependsOn(zio % compileAndTest)
   .dependsOn(core)
+
+lazy val otel4sMetricsBackend = (projectMatrix in file("observability/otel4s-metrics-backend"))
+  .settings(
+    name := "opentelemetry-otel4s-metrics-backend",
+    libraryDependencies ++= Seq(
+      "org.typelevel" %%% "otel4s-core-metrics" % otel4s,
+      "org.typelevel" %%% "otel4s-semconv" % otel4s,
+      "org.typelevel" %%% "otel4s-semconv-metrics-experimental" % otel4s % Test,
+      "org.typelevel" %%% "otel4s-sdk-metrics-testkit" % otel4s % Test
+    )
+  )
+  .jvmPlatform(scalaVersions = scala2_13And3, settings = commonJvmSettings)
+  .jsPlatform(scalaVersions = scala2_13And3, settings = commonJsSettings)
+  .dependsOn(cats % Test)
+  .dependsOn(core % compileAndTest)
+
+lazy val otel4sTracingBackend = (projectMatrix in file("observability/otel4s-tracing-backend"))
+  .settings(
+    name := "opentelemetry-otel4s-tracing-backend",
+    libraryDependencies ++= Seq(
+      "org.typelevel" %%% "otel4s-core-trace" % otel4s,
+      "org.typelevel" %%% "otel4s-semconv" % otel4s,
+      "org.typelevel" %%% "otel4s-sdk-trace-testkit" % otel4s % Test,
+      "org.typelevel" %%% "cats-effect-testkit" % catsEffect_3_version % Test
+    )
+  )
+  .jvmPlatform(scalaVersions = scala2_13And3, settings = commonJvmSettings)
+  .jsPlatform(scalaVersions = scala2_13And3, settings = commonJsSettings)
+  .dependsOn(cats % Test)
+  .dependsOn(core % compileAndTest)
 
 lazy val scribeBackend = (projectMatrix in file("logging/scribe"))
   .settings(commonJvmSettings)
@@ -1069,6 +1103,8 @@ lazy val docs: ProjectMatrix = (projectMatrix in file("generated-docs")) // impo
     prometheusBackend,
     openTelemetryBackend,
     openTelemetryTracingZioBackend,
+    otel4sMetricsBackend,
+    otel4sTracingBackend,
     slf4jBackend
   )
   .jvmPlatform(scalaVersions = List(documentationScalaVersion))

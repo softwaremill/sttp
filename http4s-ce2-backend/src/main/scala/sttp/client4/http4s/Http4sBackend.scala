@@ -211,9 +211,11 @@ class Http4sBackend[F[_]: ConcurrentEffect: ContextShift](
     if (m == Method.HEAD || !autoDecompressionEnabled) hr else decompressResponseBody(hr)
 
   private def decompressResponseBody(hr: http4s.Response[F]): http4s.Response[F] = {
+    val isEmptyBody: Boolean =
+      hr.headers.get[http4s.headers.`Content-Length`].contains(http4s.headers.`Content-Length`.zero)
     val body = hr.headers
       .get[`Content-Encoding`]
-      .filterNot(_ => hr.status.equals(Status.NoContent))
+      .filterNot(_ => hr.status.equals(Status.NoContent) || isEmptyBody)
       .map(e => Decompressor.decompressIfPossible(hr.body, e.contentCoding.coding, compressionHandlers.decompressors))
       .getOrElse(hr.body)
     hr.copy(body = body)

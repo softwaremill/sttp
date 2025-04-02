@@ -51,6 +51,12 @@ class ToCurlConverterTest extends AnyFlatSpec with Matchers with ToCurlConverter
     )
   }
 
+  it should "convert request with sensitive query param" in {
+    basicRequest.get(uri"$localhost/?a=b").toCurl(Set.empty[String], Set("a")) should include(
+      """--url 'http://localhost/?a=***'"""
+    )
+  }
+
   it should "not hide Accept-Encoding header when converting request with custom sensitive header" in {
     basicRequest.header("X-Auth", "xyzabc").get(localhost).toCurl(Set("X-Auth")) should include(
       """--header 'Accept-Encoding: """

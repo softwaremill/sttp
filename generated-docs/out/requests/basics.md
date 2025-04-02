@@ -52,6 +52,6 @@ sttp provides three initial requests:
 
 * `basicRequest`, which is an empty request with the `Accept-Encoding: gzip, deflate` header added. That's the one that is most commonly used. By default reads the response as a `Either[String, String]` (indicating HTTP 4xx/5xx failure or 2xx success).
 * `emptyRequest`, a completely empty request, with no headers at all.
-* `quickRequest`, which by default reads the response as a `String` in case of a success, and throws an exception / returns a failed effect in case of a 4xx/5xx HTTP error response.
+* `quickRequest`, which always reads the response as a `String`, regardless of the status code
 
 How the response body is handled can be (and very often is) customized. See the section on [response body specifications](../responses/body.md) for more details.

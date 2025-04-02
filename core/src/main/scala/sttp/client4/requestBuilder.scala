@@ -36,6 +36,7 @@ trait PartialRequestBuilder[+PR <: PartialRequestBuilder[PR, R], +R]
   self: PR =>
 
   def showBasic: String
+  def showBasicSafe(sensitiveQueryParams: Set[String]): String
 
   def headers: Seq[Header]
   def body: GenericRequestBody[_]
@@ -409,12 +410,13 @@ trait PartialRequestBuilder[+PR <: PartialRequestBuilder[PR, R], +R]
   def show(
       includeBody: Boolean = true,
       includeHeaders: Boolean = true,
-      sensitiveHeaders: Set[String] = HeaderNames.SensitiveHeaders
+      sensitiveHeaders: Set[String] = HeaderNames.SensitiveHeaders,
+      sensitiveQueryParams: Set[String] = Set.empty
   ): String = {
     val headers =
       if (includeHeaders) ", headers: " + this.headers.map(_.toStringSafe(sensitiveHeaders)).mkString(", ") else ""
     val body = if (includeBody) s", body: ${this.body.show}" else ""
-    s"$showBasic, response as: ${response.show}$headers$body"
+    s"${showBasicSafe(sensitiveQueryParams)}, response as: ${response.show}$headers$body"
   }
 }
 
@@ -438,6 +440,7 @@ final case class PartialRequest[T](
 ) extends PartialRequestBuilder[PartialRequest[T], Request[T]] {
 
   override def showBasic: String = "(no method & uri set)"
+  override def showBasicSafe(sensitiveQueryParams: Set[String]): String = showBasic
 
   override def method(method: Method, uri: Uri): Request[T] =
     Request(method, uri, body, headers, response, options, attributes)

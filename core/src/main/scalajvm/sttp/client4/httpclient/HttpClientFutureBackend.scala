@@ -45,12 +45,15 @@ class HttpClientFutureBackend private (
 
   override val streams: NoStreams = NoStreams
 
-  override protected val bodyToHttpClient = new BodyToHttpClient[Future, Nothing, R] {
-    override val streams: NoStreams = NoStreams
-    override implicit val monad: MonadError[Future] = new FutureMonad
-    override def streamToPublisher(stream: Nothing): Future[BodyPublisher] = stream // nothing is everything
-    override def compressors: List[Compressor[Nothing]] = compressionHandlers.compressors
-  }
+  override protected val bodyToHttpClient: BodyToHttpClient[Future, Nothing, R] =
+    new BodyToHttpClient[Future, Nothing, R] {
+      override val streams: NoStreams = NoStreams
+      override implicit val monad: MonadError[Future] = new FutureMonad
+      override val multiPartBodyBuilder: MultipartBodyBuilder[Nothing, Future] =
+        new NonStreamMultipartBodyBuilder[NoStreams.BinaryStream, Future] {}
+      override def streamToPublisher(stream: Nothing): Future[BodyPublisher] = stream // nothing is everything
+      override def compressors: List[Compressor[Nothing]] = compressionHandlers.compressors
+    }
 
   override protected val bodyFromHttpClient: BodyFromHttpClient[Future, Nothing, InputStream] =
     new InputStreamBodyFromHttpClient[Future, Nothing] {

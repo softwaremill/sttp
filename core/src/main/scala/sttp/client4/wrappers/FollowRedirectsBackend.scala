@@ -3,6 +3,8 @@ package sttp.client4.wrappers
 import sttp.capabilities.Effect
 import sttp.client4._
 import sttp.model._
+import sttp.model.Uri.QuerySegmentEncoding
+import sttp.monad.syntax._
 
 abstract class FollowRedirectsBackend[F[_], P] private (
     delegate: GenericBackend[F, P],
@@ -11,20 +13,32 @@ abstract class FollowRedirectsBackend[F[_], P] private (
 
   type R = P with Effect[F]
 
-  override def send[T](request: GenericRequest[T, R]): F[Response[T]] =
-    sendWithCounter(request, 0)
+  override def send[T](request: GenericRequest[T, R]): F[Response[T]] = sendWithCounter(request, 0)
 
   protected def sendWithCounter[T](request: GenericRequest[T, R], redirects: Int): F[Response[T]] = {
     // if there are nested follow redirect backends, disabling them and handling redirects here
-    val resp = delegate.send(request.followRedirects(false))
+    // using a def instead of a val so that errors are properly caught
+    def resp = delegate.send(request.followRedirects(false))
+
     if (request.options.followRedirects) {
-      monad.flatMap(resp) { (response: Response[T]) =>
-        if (response.isRedirect) {
-          followRedirect(request, response, redirects)
-        } else {
-          monad.unit(response)
+      resp
+        .flatMap { (response: Response[T]) =>
+          if (response.isRedirect) {
+            followRedirect(request, response, redirects)
+          } else {
+            monad.unit(response)
+          }
         }
-      }
+        .handleError { e =>
+          ResponseException.find(e) match {
+            case Some(re) if re.response.isRedirect =>
+              re.response.header(HeaderNames.Location) match {
+                case None      => monad.error(e) // no location header, propagating the exception
+                case Some(loc) => followRedirect(request, re.response, redirects, loc)
+              }
+            case _ => monad.error(e)
+          }
+        }
     } else {
       resp
     }
@@ -35,17 +49,19 @@ abstract class FollowRedirectsBackend[F[_], P] private (
       response: Response[T],
       redirects: Int
   ): F[Response[T]] =
-    response.header(HeaderNames.Location).fold(monad.unit(response)) { loc =>
-      if (redirects >= request.options.maxRedirects) {
-        monad.error(new SttpClientException.TooManyRedirectsException(request, redirects))
-      } else {
-        followRedirect(request, response, redirects, loc)
-      }
+    response.header(HeaderNames.Location) match {
+      case None => monad.unit(response)
+      case Some(loc) =>
+        if (redirects >= request.options.maxRedirects) {
+          monad.error(new SttpClientException.TooManyRedirectsException(request, redirects))
+        } else {
+          followRedirect(request, response, redirects, loc)
+        }
     }
 
   private def followRedirect[T](
       request: GenericRequest[T, R],
-      response: Response[T],
+      response: ResponseMetadata,
       redirects: Int,
       loc: String
   ): F[Response[T]] = {
@@ -60,8 +76,7 @@ abstract class FollowRedirectsBackend[F[_], P] private (
         .apply(request.method(request.method, uri = uri))
 
     monad.map(redirectResponse) { rr =>
-      val responseNoBody = response.copy(body = ())
-      rr.copy(history = responseNoBody :: rr.history)
+      rr.copy(history = response :: rr.history)
     }
   }
 
@@ -83,6 +98,19 @@ abstract class FollowRedirectsBackend[F[_], P] private (
   }
 }
 
+/** A backend wrapper that follows redirects. By default applied to all backends, but can be applied on a backend again
+  * to provide alternate configuration, or to follow redirects later in the response processing pipeline (e.g. after
+  * metrics).
+  *
+  * The URIs to which requests are redirected are parsed and then serialized (plus optionally transformed as specified
+  * in the configuration).
+  *
+  * To always encode all characters in query segments of the target URIs, even if they don't need to be encoded
+  * according to the RFC, use the [[encodeUriAll]] method to wrap your backend.
+  *
+  * @see
+  *   [[FollowRedirectsConfig]]
+  */
 object FollowRedirectsBackend {
   def apply(delegate: SyncBackend): SyncBackend = apply(delegate, FollowRedirectsConfig.Default)
   def apply[F[_]](delegate: Backend[F]): Backend[F] = apply(delegate, FollowRedirectsConfig.Default)
@@ -92,6 +120,7 @@ object FollowRedirectsBackend {
     apply(delegate, FollowRedirectsConfig.Default)
   def apply[F[_], S](delegate: WebSocketStreamBackend[F, S]): WebSocketStreamBackend[F, S] =
     apply(delegate, FollowRedirectsConfig.Default)
+
   def apply(delegate: SyncBackend, config: FollowRedirectsConfig): SyncBackend =
     new FollowRedirectsBackend(delegate, config) with SyncBackend {}
   def apply[F[_]](delegate: Backend[F], config: FollowRedirectsConfig): Backend[F] =
@@ -108,6 +137,17 @@ object FollowRedirectsBackend {
   ): WebSocketStreamBackend[F, S] =
     new FollowRedirectsBackend(delegate, config) with WebSocketStreamBackend[F, S] {}
 
+  def encodeUriAll(delegate: SyncBackend): SyncBackend = apply(delegate, FollowRedirectsConfig.EncodeUriAll)
+  def encodeUriAll[F[_]](delegate: Backend[F]): Backend[F] = apply(delegate, FollowRedirectsConfig.EncodeUriAll)
+  def encodeUriAll[F[_]](delegate: WebSocketBackend[F]): WebSocketBackend[F] =
+    apply(delegate, FollowRedirectsConfig.EncodeUriAll)
+  def encodeUriAll(delegate: WebSocketSyncBackend): WebSocketSyncBackend =
+    apply(delegate, FollowRedirectsConfig.EncodeUriAll)
+  def encodeUriAll[F[_], S](delegate: StreamBackend[F, S]): StreamBackend[F, S] =
+    apply(delegate, FollowRedirectsConfig.EncodeUriAll)
+  def encodeUriAll[F[_], S](delegate: WebSocketStreamBackend[F, S]): WebSocketStreamBackend[F, S] =
+    apply(delegate, FollowRedirectsConfig.EncodeUriAll)
+
   private[client4] val MaxRedirects = 32
 
   private val protocol = "^[a-z]+://.*".r
@@ -121,7 +161,13 @@ object FollowRedirectsBackend {
   val DefaultUriTransform: Uri => Uri = (uri: Uri) => uri
 }
 
-/** @param transformUri
+/** @param contentHeaders
+  *   When redirecting a POST to a GET, the content is dropped. This option defines which content-related headers should
+  *   be removed from the request in that case.
+  * @param sensitiveHeaders
+  *   The headers that are always removed from the request when following a redirect. By default includes
+  *   security-related headers.
+  * @param transformUri
   *   Defines if and how [[Uri]] s from the `Location` header should be transformed. For example, this enables changing
   *   the encoding of host, path, query and fragment segments to be more strict or relaxed.
   */
@@ -133,4 +179,9 @@ case class FollowRedirectsConfig(
 
 object FollowRedirectsConfig {
   val Default: FollowRedirectsConfig = FollowRedirectsConfig()
+
+  // #2505
+  /** @see https://sttp.softwaremill.com/en/latest/model/uri.html#faq-encoding-decoding-uri-components */
+  val EncodeUriAll: FollowRedirectsConfig =
+    FollowRedirectsConfig(transformUri = _.querySegmentsEncoding(QuerySegmentEncoding.All))
 }

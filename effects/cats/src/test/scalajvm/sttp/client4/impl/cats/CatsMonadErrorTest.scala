@@ -22,7 +22,7 @@ class CatsMonadErrorTest extends AsyncFreeSpec {
   }
 
   private def createIORuntime(computePoolSize: Int): IORuntime = {
-    val (compute, _) = IORuntime.createWorkStealingComputeThreadPool(computePoolSize)
+    val (compute, _, _) = IORuntime.createWorkStealingComputeThreadPool(computePoolSize)
     val (blocking, _) = IORuntime.createDefaultBlockingExecutionContext()
 
     IORuntime(compute, blocking, compute, () => (), IORuntimeConfig())

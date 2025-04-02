@@ -24,6 +24,8 @@ import sttp.client4.internal.httpclient.BodyFromHttpClient
 import sttp.client4.internal.httpclient.BodyToHttpClient
 import sttp.client4.internal.httpclient.Sequencer
 import sttp.client4.internal.httpclient.cancelPublisher
+import sttp.client4.internal.httpclient.MultipartBodyBuilder
+import sttp.client4.internal.httpclient.StreamMultipartBodyBuilder
 import sttp.client4.internal.ws.SimpleQueue
 import sttp.client4.testing.WebSocketStreamBackendStub
 import sttp.client4.wrappers.FollowRedirectsBackend
@@ -35,6 +37,8 @@ import java.net.http.HttpRequest.BodyPublishers
 import java.net.http.HttpResponse
 import java.net.http.HttpResponse.BodyHandlers
 import java.nio.ByteBuffer
+import java.io.File
+import java.io.InputStream
 import java.{util => ju}
 import java.util.concurrent.Flow.Publisher
 import scala.collection.JavaConverters._
@@ -63,6 +67,20 @@ class HttpClientFs2Backend[F[_]: ConcurrentEffect: ContextShift] private (
     new BodyToHttpClient[F, Fs2Streams[F], R] {
       override val streams: Fs2Streams[F] = Fs2Streams[F]
       override implicit def monad: MonadError[F] = self.monad
+      override val multiPartBodyBuilder: MultipartBodyBuilder[streams.BinaryStream, F] =
+        new StreamMultipartBodyBuilder[streams.BinaryStream, F] {
+          override def fileToStream(file: File): streams.BinaryStream = fs2.io.file.readAll(file.toPath, blocker, 8192)
+          override def byteArrayToStream(array: Array[Byte]): streams.BinaryStream = Stream.emits(array)
+          override def inputStreamToStream(stream: InputStream): streams.BinaryStream =
+            fs2.io.readInputStream(monad.unit(stream), 8192, blocker, closeAfterUse = true)
+          override def concatStreams(
+              stream1: streams.BinaryStream,
+              stream2: streams.BinaryStream
+          ): streams.BinaryStream = stream1 ++ stream2
+          override def toPublisher(stream: streams.BinaryStream): F[HttpRequest.BodyPublisher] = streamToPublisher(
+            stream
+          )
+        }
       override def streamToPublisher(stream: Stream[F, Byte]): F[HttpRequest.BodyPublisher] =
         monad.eval(
           BodyPublishers.fromPublisher(
@@ -104,7 +122,7 @@ class HttpClientFs2Backend[F[_]: ConcurrentEffect: ContextShift] private (
   // based on Fs2Streams.limitBytes (for ce3)
   private def limitBytes(stream: Stream[F, Byte], maxBytes: Long): Stream[F, Byte] = {
     def go(s: Stream[F, Byte], remaining: Long): Pull[F, Byte, Unit] = {
-      if (remaining < 0) throw new StreamMaxLengthExceededException(maxBytes)
+      if (remaining < 0) throw StreamMaxLengthExceededException(maxBytes)
       else
         s.pull.uncons.flatMap {
           case Some((chunk, tail)) =>
@@ -112,7 +130,7 @@ class HttpClientFs2Backend[F[_]: ConcurrentEffect: ContextShift] private (
             if (chunkSize <= remaining)
               Pull.output(chunk) >> go(tail, remaining - chunkSize)
             else
-              throw new StreamMaxLengthExceededException(maxBytes)
+              throw StreamMaxLengthExceededException(maxBytes)
           case None => Pull.done
         }
     }
