@@ -357,6 +357,26 @@ trait HttpTestExtensions[F[_]] extends AsyncFreeSpecLike { self: HttpTest[F] =>
           req.send(backend).toFuture().map(resp => resp.body should be(Right(s"p1=$testBody (test.txt)")))
         }
       }
+
+      "send a multipart message with two files" in {
+        withTemporaryFile(Some("file1:peach mario".getBytes())) { f1 =>
+          withTemporaryFile(Some("file2:daisy luigi".getBytes())) { f2 =>
+            mp
+              .multipartBody(
+                multipartFile("file1", f1).fileName("file1.txt"),
+                multipartFile("file2", f2).fileName("file2.txt")
+              )
+              .response(asStringAlways)
+              .send(backend)
+              .toFuture()
+              .map { r =>
+                r.code shouldBe StatusCode.Ok
+                r.body should include("file1:peach mario")
+                r.body should include("file2:daisy luigi")
+              }
+          }
+        }
+      }
     }
   }
 
