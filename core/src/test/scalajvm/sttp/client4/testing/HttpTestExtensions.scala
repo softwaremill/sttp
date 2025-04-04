@@ -361,7 +361,6 @@ trait HttpTestExtensions[F[_]] extends AsyncFreeSpecLike { self: HttpTest[F] =>
       "send a multipart message with two files" in {
         withTemporaryFile(Some("file1:peach mario".getBytes())) { f1 =>
           withTemporaryFile(Some("file2:daisy luigi".getBytes())) { f2 =>
-            println("START " + f1 + " " + f2)
             mp
               .multipartBody(
                 multipartFile("file1", f1).fileName("file1.txt"),
