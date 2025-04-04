@@ -87,7 +87,7 @@ trait StreamMultipartBodyBuilder[BinaryStream, F[_]] extends MultipartBodyBuilde
           val encodedHeaders = byteArrayToStream(encodeHeaders(partHeaders, boundary))
           val endPartBytes = byteArrayToStream(CRLFBytes)
           val headersWithContent = concatStreams(encodedHeaders, fileToStream(f.toFile))
-          concatStreams(headersWithContent, endPartBytes)
+          concatStreams(accumulatedStream, concatStreams(headersWithContent, endPartBytes))
         }
         case StringBody(b, e, _) if e.equalsIgnoreCase(Utf8) =>
           concatBytesToStream(accumulatedStream, encodeString(b, partHeaders, boundary))
