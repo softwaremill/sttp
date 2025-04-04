@@ -1,6 +1,6 @@
 // {cat=Streaming; effects=cats-effect; backend=HttpClient}: Stream request & response bodies using fs2
 
-//> using dep com.softwaremill.sttp.client4::fs2:4.0.0-RC2
+//> using dep com.softwaremill.sttp.client4::fs2:4.0.0-RC3
 
 package sttp.client4.examples.streaming
 
