@@ -1,6 +1,6 @@
 package sttp.client4
 
-import sttp.model.{Header, Method, Part, RequestMetadata, Uri}
+import sttp.model.{Header, Method, Part, RequestMetadata, ResponseMetadata, Uri}
 import sttp.capabilities.{Effect, Streams, WebSockets}
 import sttp.client4.internal.{ToCurlConverter, ToRfc2616Converter}
 import sttp.shared.Identity
@@ -31,6 +31,9 @@ sealed trait GenericRequest[+T, -R] extends RequestBuilder[GenericRequest[T, R]]
 
   /** Applies the given function `f` to the deserialized value `T`. */
   def mapResponse[T2](f: T => T2): GenericRequest[T2, R]
+
+  /** Applies the given function `f` to the deserialized value `T`. */
+  def mapResponseWithMetadata[T2](f: (T, ResponseMetadata) => T2): GenericRequest[T2, R]
 
   def toCurl: String = ToCurlConverter(this)
   def toCurl(sensitiveHeaders: Set[String]): String = ToCurlConverter(this, sensitiveHeaders = sensitiveHeaders)
@@ -138,7 +141,11 @@ case class Request[T](
     */
   def response[T2](ra: ResponseAs[T2]): Request[T2] = copy[T2](response = ra)
 
-  def mapResponse[T2](f: T => T2): Request[T2] = response(response.map(f))
+  override def mapResponse[T2](f: T => T2): Request[T2] = response(response.map(f))
+
+  override def mapResponseWithMetadata[T2](f: (T, ResponseMetadata) => T2): Request[T2] = response(
+    response.mapWithMetadata(f)
+  )
 
   /** If the type to which the response body should be deserialized is an `Either[A, B]`, applies the given function `f`
     * to `Right` values.
@@ -255,7 +262,10 @@ final case class StreamRequest[T, R](
       attributes
     )
 
-  def mapResponse[T2](f: T => T2): StreamRequest[T2, R] = copy(response = response.map(f))
+  override def mapResponse[T2](f: T => T2): StreamRequest[T2, R] = copy(response = response.map(f))
+
+  override def mapResponseWithMetadata[T2](f: (T, ResponseMetadata) => T2): StreamRequest[T2, R] =
+    copy(response = response.mapWithMetadata(f))
 
   /** Sends the request, using the given backend.
     *
@@ -323,7 +333,10 @@ final case class WebSocketRequest[F[_], T](
       attributes
     )
 
-  def mapResponse[T2](f: T => T2): WebSocketRequest[F, T2] = copy(response = response.map(f))
+  override def mapResponse[T2](f: T => T2): WebSocketRequest[F, T2] = copy(response = response.map(f))
+
+  override def mapResponseWithMetadata[T2](f: (T, ResponseMetadata) => T2): WebSocketRequest[F, T2] =
+    copy(response = response.mapWithMetadata(f))
 
   /** Sends the WebSocket request, using the given backend.
     *
@@ -390,7 +403,10 @@ final case class WebSocketStreamRequest[T, S](
   override def withAttributes(attributes: AttributeMap): WebSocketStreamRequest[T, S] = copy(attributes = attributes)
   override protected def copyWithBody(body: BasicBody): WebSocketStreamRequest[T, S] = copy(body = body)
 
-  def mapResponse[T2](f: T => T2): WebSocketStreamRequest[T2, S] = copy(response = response.map(f))
+  override def mapResponse[T2](f: T => T2): WebSocketStreamRequest[T2, S] = copy(response = response.map(f))
+
+  override def mapResponseWithMetadata[T2](f: (T, ResponseMetadata) => T2): WebSocketStreamRequest[T2, S] =
+    copy(response = response.mapWithMetadata(f))
 
   /** Sends the WebSocket request, using the given backend.
     *
