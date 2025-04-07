@@ -1,10 +1,10 @@
 // {cat=Backend wrapper; effects=Synchronous; backend=HttpClient}: Use the OpenTelemetry tracing & metrics wrappers
 
-package sttp.client4.examples.wrapper
-
 //> using dep com.softwaremill.sttp.client4::opentelemetry-backend:4.0.0-RC3
 //> using dep io.opentelemetry:opentelemetry-exporter-otlp:1.49.0
 //> using dep io.opentelemetry:opentelemetry-sdk-extension-autoconfigure:1.49.0
+
+package sttp.client4.examples.wrapper
 
 import io.opentelemetry.api.OpenTelemetry
 import io.opentelemetry.sdk.autoconfigure.AutoConfiguredOpenTelemetrySdk
