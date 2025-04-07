@@ -1027,6 +1027,8 @@ lazy val examples = (projectMatrix in file("examples"))
       "io.github.resilience4j" % "resilience4j-ratelimiter" % resilience4jVersion,
       "com.lihaoyi" %% "os-lib" % osLibVersion,
       "redis.clients" % "jedis" % "5.2.0",
+      "io.opentelemetry" % "opentelemetry-exporter-otlp" % openTelemetryVersion,
+      "io.opentelemetry" % "opentelemetry-sdk-extension-autoconfigure" % openTelemetryVersion,
       pekkoStreams,
       logback
     ),
@@ -1046,7 +1048,8 @@ lazy val examples = (projectMatrix in file("examples"))
     scribeBackend,
     slf4jBackend,
     ox,
-    cachingBackend
+    cachingBackend,
+    openTelemetryBackend
   )
 
 //TODO this should be invoked by compilation process, see #https://github.com/scalameta/mdoc/issues/355
