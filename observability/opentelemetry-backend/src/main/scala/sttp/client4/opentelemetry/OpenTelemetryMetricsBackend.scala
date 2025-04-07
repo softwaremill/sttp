@@ -45,6 +45,9 @@ object OpenTelemetryMetricsBackend {
   ): WebSocketStreamBackend[F, S] =
     apply(delegate, OpenTelemetryMetricsConfig(openTelemetry))
 
+  def apply(delegate: WebSocketSyncBackend, openTelemetry: OpenTelemetry): WebSocketSyncBackend =
+    apply(delegate, OpenTelemetryMetricsConfig(openTelemetry))
+
   def apply(delegate: SyncBackend, config: OpenTelemetryMetricsConfig): SyncBackend = {
     val listener = new OpenTelemetryMetricsListener(config)
     // redirects should be handled before metrics
@@ -73,6 +76,11 @@ object OpenTelemetryMetricsBackend {
       delegate: WebSocketStreamBackend[F, S],
       config: OpenTelemetryMetricsConfig
   ): WebSocketStreamBackend[F, S] = {
+    val listener = new OpenTelemetryMetricsListener(config)
+    FollowRedirectsBackend(ListenerBackend(delegate, RequestListener.lift(listener, delegate.monad)))
+  }
+
+  def apply(delegate: WebSocketSyncBackend, config: OpenTelemetryMetricsConfig): WebSocketSyncBackend = {
     val listener = new OpenTelemetryMetricsListener(config)
     FollowRedirectsBackend(ListenerBackend(delegate, RequestListener.lift(listener, delegate.monad)))
   }

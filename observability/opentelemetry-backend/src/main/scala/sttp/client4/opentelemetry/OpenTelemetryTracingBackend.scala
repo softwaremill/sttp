@@ -13,6 +13,7 @@ import sttp.client4.StreamBackend
 import sttp.client4.SyncBackend
 import sttp.client4.WebSocketBackend
 import sttp.client4.WebSocketStreamBackend
+import sttp.client4.WebSocketSyncBackend
 import sttp.client4.wrappers.DelegateBackend
 import sttp.client4.wrappers.FollowRedirectsBackend
 import sttp.monad.syntax._
@@ -111,6 +112,9 @@ object OpenTelemetryTracingBackend {
   ): WebSocketStreamBackend[F, S] =
     apply(delegate, OpenTelemetryTracingConfig(openTelemetry))
 
+  def apply(delegate: WebSocketSyncBackend, openTelemetry: OpenTelemetry): WebSocketSyncBackend =
+    apply(delegate, OpenTelemetryTracingConfig(openTelemetry))
+
   def apply(delegate: SyncBackend, config: OpenTelemetryTracingConfig): SyncBackend = {
     // redirects should be handled before tracing
     FollowRedirectsBackend(new OpenTelemetryTracingBackend(delegate, config) with SyncBackend)
@@ -134,4 +138,7 @@ object OpenTelemetryTracingBackend {
   ): WebSocketStreamBackend[F, S] = {
     FollowRedirectsBackend(new OpenTelemetryTracingBackend(delegate, config) with WebSocketStreamBackend[F, S])
   }
+
+  def apply(delegate: WebSocketSyncBackend, config: OpenTelemetryTracingConfig): WebSocketSyncBackend =
+    FollowRedirectsBackend(new OpenTelemetryTracingBackend(delegate, config) with WebSocketSyncBackend)
 }

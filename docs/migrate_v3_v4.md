@@ -8,7 +8,7 @@ The top-level package for sttp-client4 is `sttp.client4`. This means that sttp-c
 
 The `RequestT` type is retired, being replaced by `PartialRequest` and `GenericRequest`.
 
-`PartialRequest` is the type of requests before the method & uri are set. As before, it allows setting the headers and body, creating a reusable base for defining full requests. After the uri & method are set, the request description becomes a `Request`, which can be sent. Additionally, methods to set the body or handle the response as a non-blocking, asynchronous stream become available, as well as converting the request to a web socket one. This yields requests of type `StreamRequests`, `WebSocketRequest` and `WebSocketStreamRequest`. Hence, `GenericRequest` is never used directly in user code.
+`PartialRequest` is the type of requests before the method & uri are set. As before, it allows setting the headers and body, creating a reusable base for defining full requests. After the uri & method are set, the request description becomes a `Request`, which can be sent. Additionally, methods to set the body or handle the response as a non-blocking, asynchronous stream become available, as well as converting the request to a web socket one. This yields requests of type `StreamRequest`, `WebSocketRequest` and `WebSocketStreamRequest`. Hence, `GenericRequest` is never used directly in user code.
 
 A parallel change is from a fully-parametrized `SttpBackend` to a family of traits: `SyncBackend`, `Backend`, `StreamBackend`, `WebSocketBackend`, `WebSocketSyncBackend`, `WebSocketStreamBackend`. These specialize the backend type to the capabilities they support, and are used to send requests of the corresponding type.
 
