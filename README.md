@@ -69,7 +69,7 @@ sttp (v2) documentation is available at [sttp.softwaremill.com/en/v2](https://st
 
 sttp (v1) documentation is available at [sttp.softwaremill.com/en/v1](https://sttp.softwaremill.com/en/v1).
 
-scaladoc is available at [https://www.javadoc.io](https://www.javadoc.io/doc/com.softwaremill.sttp.client4/core_2.12/4.0.0)
+scaladoc is available at [https://www.javadoc.io](https://www.javadoc.io/doc/com.softwaremill.sttp.client4/core_3/4.0.0)
 
 ## Quickstart with scala-cli
 
