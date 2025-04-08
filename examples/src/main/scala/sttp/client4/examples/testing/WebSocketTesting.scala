@@ -1,6 +1,6 @@
 // {cat=Testing; effects=cats-effect; backend=HttpClient}: Create a backend stub which simulates interactions with a WebSocket
 
-//> using dep com.softwaremill.sttp.client4::fs2:4.0.0-RC4
+//> using dep com.softwaremill.sttp.client4::fs2:4.0.0
 
 package sttp.client4.examples.testing
 
