@@ -61,7 +61,7 @@ But that's just a small glimpse of sttp client's features! For more examples, se
 
 ## Documentation
 
-sttp (v4) documentation is available at [sttp.softwaremill.com/](https://sttp.softwaremill.com/).
+sttp (v4) documentation is available at [sttp.softwaremill.com](https://sttp.softwaremill.com).
 
 sttp (v3) documentation is available at [sttp.softwaremill.com/en/v3](https://sttp.softwaremill.com/en/v3).
 
