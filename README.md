@@ -6,8 +6,6 @@
 
 # The Scala HTTP client you always wanted!
 
-> This is the development version of the upcoming sttp client 4. For the current stable version, see [sttp 3 on GitHub](https://github.com/softwaremill/sttp/tree/v3) and its [documentation](https://sttp.softwaremill.com/en/stable).
-
 ## Welcome!
 
 sttp client is an open-source HTTP client for Scala, supporting various approaches to writing Scala code: synchronous (direct-style), `Future`-based, and using functional effect systems (cats-effect, ZIO, Monix, Kyo, scalaz).
@@ -63,9 +61,9 @@ But that's just a small glimpse of sttp client's features! For more examples, se
 
 ## Documentation
 
-sttp (v4) documentation is available at [sttp.softwaremill.com/en/latest](https://sttp.softwaremill.com/en/latest).
+sttp (v4) documentation is available at [sttp.softwaremill.com/en/stable](https://sttp.softwaremill.com/en/stable).
 
-sttp (v3) documentation is available at [sttp.softwaremill.com/en/stable](https://sttp.softwaremill.com/en/stable).
+sttp (v3) documentation is available at [sttp.softwaremill.com/en/v3](https://sttp.softwaremill.com/en/v3).
 
 sttp (v2) documentation is available at [sttp.softwaremill.com/en/v2](https://sttp.softwaremill.com/en/v2).
 
