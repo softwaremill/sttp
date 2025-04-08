@@ -1,9 +1,9 @@
-// {cat=Backend wrapper; effects=Future; backend=Pekko}: Report metrics to a cloud service
+// {cat=Observability; effects=Future; backend=Pekko}: Report metrics to a cloud service
 
 //> using dep com.softwaremill.sttp.client4::pekko-http-backend:4.0.0-M20
 //> using dep org.apache.pekko::pekko-stream:1.1.2
 
-package sttp.client4.examples.wrapper
+package sttp.client4.examples.observability
 
 import sttp.attributes.AttributeKey
 import sttp.capabilities.Effect
