@@ -1,8 +1,8 @@
 // {cat=Hello, World!; effects=Monix; backend=HttpClient}: Post JSON data
 
 //> using scala 2.13
-//> using dep com.softwaremill.sttp.client4::monix:4.0.0-RC4
-//> using dep com.softwaremill.sttp.client4::circe:4.0.0-RC4
+//> using dep com.softwaremill.sttp.client4::monix:4.0.0
+//> using dep com.softwaremill.sttp.client4::circe:4.0.0
 //> using dep io.circe::circe-generic:0.14.12
 
 package sttp.client4.examples
