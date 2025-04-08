@@ -13,6 +13,7 @@
 * [Integrate with resilience4j to implement rate-limiting](https://github.com/softwaremill/sttp/tree/master/examples/src/main/scala/sttp/client4/examples/wrapper/rateLimiterFuture.scala) <span class="example-tag example-backend">HttpClient</span> <span class="example-tag example-effects">Future</span>
 * [Report metrics to a cloud service](https://github.com/softwaremill/sttp/tree/master/examples/src/main/scala/sttp/client4/examples/wrapper/metricsWrapperPekkoHttp.scala) <span class="example-tag example-backend">Pekko</span> <span class="example-tag example-effects">Future</span>
 * [Simple retrying backend wrapper](https://github.com/softwaremill/sttp/tree/master/examples/src/main/scala/sttp/client4/examples/wrapper/retryingBackend.scala) <span class="example-tag example-backend">HttpClient</span> <span class="example-tag example-effects">Synchronous</span>
+* [Use the OpenTelemetry tracing & metrics wrappers](https://github.com/softwaremill/sttp/tree/master/examples/src/main/scala/sttp/client4/examples/wrapper/openTelemetryTracingAndMetrics.scala) <span class="example-tag example-backend">HttpClient</span> <span class="example-tag example-effects">Synchronous</span>
 * [Use the caching backend wrapper with Redis](https://github.com/softwaremill/sttp/tree/master/examples/src/main/scala/sttp/client4/examples/wrapper/redisCachingBackend.scala) <span class="example-tag example-backend">HttpClient</span> <span class="example-tag example-effects">Synchronous</span>
 
 ## Error handling
