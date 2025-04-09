@@ -72,6 +72,14 @@ class HttpClientCatsBackend[F[_]: Async] private (
 
   override protected def bodyHandlerBodyToBody(p: InputStream): InputStream = p
 
+  override protected def cancelLowLevelBody(p: InputStream): Unit = p.close()
+
+  override protected def ensureOnAbnormal[T](effect: F[T])(finalizer: => F[Unit]): F[T] =
+    Async[F].guaranteeCase(effect) { outcome =>
+      if (outcome.isSuccess) Async[F].unit
+      else Async[F].onError(finalizer) { case t => Async[F].delay(t.printStackTrace()) }
+    }
+
   override protected def emptyBody(): InputStream = emptyInputStream()
 }
 

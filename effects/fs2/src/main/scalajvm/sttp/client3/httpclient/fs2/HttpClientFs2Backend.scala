@@ -13,6 +13,7 @@ import fs2.{Chunk, Stream}
 import org.reactivestreams.FlowAdapters
 import sttp.capabilities.WebSockets
 import sttp.capabilities.fs2.Fs2Streams
+import sttp.client3.internal.httpclient.cancelPublisher
 import sttp.client3.HttpClientBackend.EncodingHandler
 import sttp.client3.httpclient.fs2.HttpClientFs2Backend.Fs2EncodingHandler
 import sttp.client3.internal.httpclient.{BodyFromHttpClient, BodyToHttpClient, Sequencer}
@@ -89,6 +90,15 @@ class HttpClientFs2Backend[F[_]: Async] private (
       .toPublisher(p)
       .toStream[F]
       .flatMap(data => Stream.emits(data.asScala.map(Chunk.byteBuffer)).flatMap(Stream.chunk))
+  }
+
+  override protected def cancelLowLevelBody(p: Publisher[ju.List[ByteBuffer]]): Unit = cancelPublisher(p)
+
+  override protected def ensureOnAbnormal[T](effect: F[T])(finalizer: => F[Unit]): F[T] = {
+    Async[F].guaranteeCase(effect) { outcome =>
+      if (outcome.isSuccess) Async[F].unit
+      else Async[F].onError(finalizer) { case t => Async[F].delay(t.printStackTrace()) }
+    }
   }
 
   override protected def emptyBody(): Stream[F, Byte] = Stream.empty

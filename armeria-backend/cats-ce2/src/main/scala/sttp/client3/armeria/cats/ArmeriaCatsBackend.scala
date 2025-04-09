@@ -1,6 +1,6 @@
 package sttp.client3.armeria.cats
 
-import cats.effect.{Concurrent, Resource, Sync}
+import cats.effect.{Concurrent, Resource, Sync, ExitCase}
 import com.linecorp.armeria.client.WebClient
 import com.linecorp.armeria.common.HttpData
 import com.linecorp.armeria.common.stream.StreamMessage
@@ -16,6 +16,12 @@ private final class ArmeriaCatsBackend[F[_]: Concurrent](client: WebClient, clos
     extends AbstractArmeriaBackend[F, Nothing](client, closeFactory, new CatsMonadAsyncError) {
 
   override val streams: NoStreams = NoStreams
+
+  override protected def ensureOnAbnormal[T](effect: F[T])(finalizer: => F[Unit]): F[T] =
+    Concurrent[F].guaranteeCase(effect) { exit =>
+      if (exit == ExitCase.Completed) Concurrent[F].unit
+      else Concurrent[F].recoverWith(finalizer) { case t => Concurrent[F].delay(t.printStackTrace()) }
+    }
 
   override protected def bodyFromStreamMessage: BodyFromStreamMessage[F, Nothing] =
     new BodyFromStreamMessage[F, Nothing] {

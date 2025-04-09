@@ -4,6 +4,7 @@ import java.io.InputStream
 import java.util.concurrent.ArrayBlockingQueue
 
 import cats.effect.Resource
+import cats.effect.ExitCase
 import monix.eval.Task
 import monix.execution.Ack.Continue
 import monix.execution.{Ack, Scheduler}
@@ -38,6 +39,11 @@ class OkHttpMonixBackend private (
       customEncodingHandler
     ) {
   override val streams: MonixStreams = MonixStreams
+
+  override protected def ensureOnAbnormal[T](effect: Task[T])(finalizer: => Task[Unit]): Task[T] =
+    effect.guaranteeCase { exit =>
+      if (exit == ExitCase.Completed) Task.unit else finalizer.onErrorHandleWith(t => Task.eval(t.printStackTrace()))
+    }
 
   override protected val bodyToOkHttp: BodyToOkHttp[Task, MonixStreams] = new BodyToOkHttp[Task, MonixStreams] {
     override val streams: MonixStreams = MonixStreams

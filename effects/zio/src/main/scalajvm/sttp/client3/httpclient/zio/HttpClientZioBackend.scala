@@ -2,6 +2,7 @@ package sttp.client3.httpclient.zio
 
 import _root_.zio.interop.reactivestreams._
 import org.reactivestreams.FlowAdapters
+import sttp.client3.internal.httpclient.cancelPublisher
 import sttp.capabilities.WebSockets
 import sttp.capabilities.zio.ZioStreams
 import sttp.client3.HttpClientBackend.EncodingHandler
@@ -56,6 +57,13 @@ class HttpClientZioBackend private (
       val a = Chunk.fromJavaIterable(list).flatMap(_.safeRead()).toArray
       ByteArray(a, 0, a.length)
     }
+
+  override protected def cancelLowLevelBody(p: Publisher[ju.List[ByteBuffer]]): Unit = cancelPublisher(p)
+
+  override protected def ensureOnAbnormal[T](effect: Task[T])(finalizer: => Task[Unit]): Task[T] = effect.onExit {
+    exit =>
+      if (exit.isSuccess) ZIO.unit else finalizer.catchAll(t => ZIO.logErrorCause("Error in finalizer", Cause.fail(t)))
+  }.resurrect
 
   override protected val bodyToHttpClient: BodyToHttpClient[Task, ZioStreams] =
     new BodyToHttpClient[Task, ZioStreams] {

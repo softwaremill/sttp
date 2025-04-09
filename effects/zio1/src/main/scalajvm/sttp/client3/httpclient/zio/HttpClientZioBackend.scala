@@ -7,7 +7,7 @@ import sttp.capabilities.zio.ZioStreams
 import sttp.client3.HttpClientBackend.EncodingHandler
 import sttp.client3.impl.zio.{RIOMonadAsyncError, ZioSimpleQueue}
 import sttp.client3.internal._
-import sttp.client3.internal.httpclient.{BodyFromHttpClient, BodyToHttpClient, Sequencer}
+import sttp.client3.internal.httpclient.{BodyFromHttpClient, BodyToHttpClient, Sequencer, cancelPublisher}
 import sttp.client3.internal.ws.SimpleQueue
 import sttp.client3.testing.SttpBackendStub
 import sttp.client3.{FollowRedirectsBackend, HttpClientAsyncBackend, HttpClientBackend, SttpBackend, SttpBackendOptions}
@@ -57,6 +57,13 @@ class HttpClientZioBackend private (
       .toPublisher(p)
       .toStream()
       .mapConcatChunk(list => ByteArray(list.asScala.toList.flatMap(_.safeRead()).toArray))
+
+  override protected def cancelLowLevelBody(p: Publisher[ju.List[ByteBuffer]]): Unit = cancelPublisher(p)
+
+  override protected def ensureOnAbnormal[T](effect: Task[T])(finalizer: => Task[Unit]): Task[T] = effect.onExit {
+    exit =>
+      if (exit.succeeded) ZIO.unit else finalizer.catchAll(t => ZIO.effect(t.printStackTrace()).orDie)
+  }.resurrect
 
   override protected val bodyToHttpClient: BodyToHttpClient[Task, ZioStreams] =
     new BodyToHttpClient[Task, ZioStreams] {
