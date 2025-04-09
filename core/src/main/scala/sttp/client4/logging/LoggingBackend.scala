@@ -138,10 +138,10 @@ object LoggingBackend {
 
   def apply(delegate: SyncBackend, log: Log[Identity], includeTimings: Boolean, logResponseBody: Boolean): SyncBackend =
     // redirects should be handled before logging
-    FollowRedirectsBackend(new LoggingBackend(delegate, log, includeTimings, logResponseBody) with SyncBackend {})
+    FollowRedirectsBackend(new LoggingBackend(delegate, log, logResponseBody, includeTimings) with SyncBackend {})
 
   def apply[F[_]](delegate: Backend[F], log: Log[F], includeTimings: Boolean, logResponseBody: Boolean): Backend[F] =
-    FollowRedirectsBackend(new LoggingBackend(delegate, log, includeTimings, logResponseBody) with Backend[F] {})
+    FollowRedirectsBackend(new LoggingBackend(delegate, log, logResponseBody, includeTimings) with Backend[F] {})
 
   def apply[F[_]](
       delegate: WebSocketBackend[F],
@@ -150,7 +150,7 @@ object LoggingBackend {
       logResponseBody: Boolean
   ): WebSocketBackend[F] =
     FollowRedirectsBackend(
-      new LoggingBackend(delegate, log, includeTimings, logResponseBody) with WebSocketBackend[F] {}
+      new LoggingBackend(delegate, log, logResponseBody, includeTimings) with WebSocketBackend[F] {}
     )
 
   def apply(
@@ -160,7 +160,7 @@ object LoggingBackend {
       logResponseBody: Boolean
   ): WebSocketSyncBackend =
     FollowRedirectsBackend(
-      new LoggingBackend(delegate, log, includeTimings, logResponseBody) with WebSocketSyncBackend {}
+      new LoggingBackend(delegate, log, logResponseBody, includeTimings) with WebSocketSyncBackend {}
     )
 
   def apply[F[_], S](
@@ -170,7 +170,7 @@ object LoggingBackend {
       logResponseBody: Boolean
   ): StreamBackend[F, S] =
     FollowRedirectsBackend(
-      new LoggingBackend(delegate, log, includeTimings, logResponseBody) with StreamBackend[F, S] {}
+      new LoggingBackend(delegate, log, logResponseBody, includeTimings) with StreamBackend[F, S] {}
     )
 
   def apply[F[_], S](
@@ -180,7 +180,7 @@ object LoggingBackend {
       logResponseBody: Boolean
   ): WebSocketStreamBackend[F, S] =
     FollowRedirectsBackend(
-      new LoggingBackend(delegate, log, includeTimings, logResponseBody) with WebSocketStreamBackend[F, S] {}
+      new LoggingBackend(delegate, log, logResponseBody, includeTimings) with WebSocketStreamBackend[F, S] {}
     )
 
   private case class LoggingTag(start: Long, bodyReceived: AtomicLong)
