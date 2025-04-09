@@ -81,7 +81,7 @@ class HttpClientFs2Backend[F[_]: ConcurrentEffect: ContextShift] private (
 
   override protected def createSequencer: F[Sequencer[F]] = Fs2Sequencer.create
 
-  override protected def lowLevelBodyToBody(p: Publisher[ju.List[ByteBuffer]]): Stream[F, Byte] = {
+  override protected def bodyHandlerBodyToBody(p: Publisher[ju.List[ByteBuffer]]): Stream[F, Byte] = {
     FlowAdapters
       .toPublisher(p)
       .toStream[F]

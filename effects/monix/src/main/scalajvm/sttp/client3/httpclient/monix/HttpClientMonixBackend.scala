@@ -71,7 +71,7 @@ class HttpClientMonixBackend private (
   override protected def createBodyHandler: HttpResponse.BodyHandler[Publisher[ju.List[ByteBuffer]]] =
     BodyHandlers.ofPublisher()
 
-  override protected def lowLevelBodyToBody(p: Publisher[ju.List[ByteBuffer]]): Observable[Array[Byte]] =
+  override protected def bodyHandlerBodyToBody(p: Publisher[ju.List[ByteBuffer]]): Observable[Array[Byte]] =
     Observable
       .fromReactivePublisher(FlowAdapters.toPublisher(p))
       .flatMapIterable(_.asScala.toList)

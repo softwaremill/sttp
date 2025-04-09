@@ -70,7 +70,7 @@ class HttpClientCatsBackend[F[_]: Async] private (
 
   override protected def createBodyHandler: HttpResponse.BodyHandler[InputStream] = BodyHandlers.ofInputStream()
 
-  override protected def lowLevelBodyToBody(p: InputStream): InputStream = p
+  override protected def bodyHandlerBodyToBody(p: InputStream): InputStream = p
 
   override protected def cancelLowLevelBody(p: InputStream): Unit = p.close()
 

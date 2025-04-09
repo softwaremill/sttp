@@ -85,7 +85,7 @@ class HttpClientFs2Backend[F[_]: Async] private (
 
   override protected def createSequencer: F[Sequencer[F]] = Fs2Sequencer.create
 
-  override protected def lowLevelBodyToBody(p: Publisher[util.List[ByteBuffer]]): Stream[F, Byte] = {
+  override protected def bodyHandlerBodyToBody(p: Publisher[util.List[ByteBuffer]]): Stream[F, Byte] = {
     FlowAdapters
       .toPublisher(p)
       .toStream[F]

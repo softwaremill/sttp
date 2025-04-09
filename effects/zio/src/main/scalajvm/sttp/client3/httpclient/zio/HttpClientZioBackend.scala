@@ -52,7 +52,7 @@ class HttpClientZioBackend private (
 
   override protected def emptyBody(): ZStream[Any, Throwable, Byte] = ZStream.empty
 
-  override protected def lowLevelBodyToBody(p: Publisher[util.List[ByteBuffer]]): ZStream[Any, Throwable, Byte] =
+  override protected def bodyHandlerBodyToBody(p: Publisher[util.List[ByteBuffer]]): ZStream[Any, Throwable, Byte] =
     FlowAdapters.toPublisher(p).toZIOStream().mapConcatChunk { list =>
       val a = Chunk.fromJavaIterable(list).flatMap(_.safeRead()).toArray
       ByteArray(a, 0, a.length)

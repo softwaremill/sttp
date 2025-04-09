@@ -41,8 +41,9 @@ abstract class HttpClientAsyncBackend[F[_], S, P, BH, B](
   protected def createBodyHandler: HttpResponse.BodyHandler[BH]
   protected def createSimpleQueue[T]: F[SimpleQueue[F, T]]
   protected def createSequencer: F[Sequencer[F]]
-  protected def lowLevelBodyToBody(p: BH): B
-  protected def cancelLowLevelBody(p: BH): Unit
+  protected def bodyHandlerBodyToBody(p: BH): B
+  protected def cancelLowLevelBody(p: BH): Unit =
+    () // default implementation given for binary compatibility, should be overridden
   protected def emptyBody(): B
 
   /** A variant of [[MonadAsyncError.ensure]] which runs the finalizer only when the effect finished abnormally
@@ -55,8 +56,14 @@ abstract class HttpClientAsyncBackend[F[_], S, P, BH, B](
     *
     * Any exceptions that occur while running `finalizer` should be added as suppressed or logged, not impacting the
     * outcome of `effect`. If possible, `finalizer` should not be run in a cancellable way.
+    *
+    * The default implementation is provided for binary compatibility and should be overridden for specific effects, as
+    * it might not work for interrupted effects.
     */
-  protected def ensureOnAbnormal[T](effect: F[T])(finalizer: => F[Unit]): F[T]
+  protected def ensureOnAbnormal[T](effect: F[T])(finalizer: => F[Unit]): F[T] = effect.handleError {
+    case e: Throwable =>
+      finalizer.handleError { case e2: Throwable => monad.unit(()) }.flatMap { _ => monad.error(e) }
+  }
 
   private def sendRegular[T, R >: PE](request: Request[T, R]): F[Response[T]] = {
     monad.flatMap(convertRequest(request)) { convertedRequest =>
@@ -92,7 +99,7 @@ abstract class HttpClientAsyncBackend[F[_], S, P, BH, B](
           .flatMap { jResponse =>
             // sometimes body returned by HttpClient can be null, we handle this by returning empty body to prevent NPE
             val body = Option(jResponse.body())
-              .map(lowLevelBodyToBody)
+              .map(bodyHandlerBodyToBody)
               .getOrElse(emptyBody())
 
             readResponse(jResponse, Left(body), request)
