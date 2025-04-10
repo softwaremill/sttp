@@ -34,8 +34,8 @@
 
 ## Observability
 
-* [Use the OpenTelemetry tracing & metrics wrappers](https://github.com/softwaremill/sttp/tree/master/examples/src/main/scala/sttp/client4/examples/observability/openTelemetryTracingAndMetrics.scala) <span class="example-tag example-backend">HttpClient</span> <span class="example-tag example-effects">Synchronous</span>
 * [Report metrics to a cloud service](https://github.com/softwaremill/sttp/tree/master/examples/src/main/scala/sttp/client4/examples/observability/metricsWrapperPekkoHttp.scala) <span class="example-tag example-backend">Pekko</span> <span class="example-tag example-effects">Future</span>
+* [Use the OpenTelemetry tracing & metrics wrappers](https://github.com/softwaremill/sttp/tree/master/examples/src/main/scala/sttp/client4/examples/observability/openTelemetryTracingAndMetrics.scala) <span class="example-tag example-backend">HttpClient</span> <span class="example-tag example-effects">Synchronous</span>
 
 ## Other
 
