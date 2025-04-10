@@ -16,7 +16,7 @@ import sttp.capabilities.{Effect, WebSockets}
 import sttp.client4.testing.WebSocketStreamBackendStub
 import sttp.client4._
 import sttp.client4.wrappers.FollowRedirectsBackend
-import sttp.model.{ResponseMetadata, StatusCode}
+import sttp.model.{ResponseMetadata, StatusCode, HeaderNames}
 import sttp.monad.{FutureMonad, MonadError}
 import sttp.client4.compression.CompressionHandlers
 import sttp.client4.compression.Decompressor
@@ -63,9 +63,10 @@ class AkkaHttpBackend private (
       )
 
   private def sendWebSocket[T](r: GenericRequest[T, R]): Future[Response[T]] = {
+    val subprotocol = r.header(HeaderNames.SecWebSocketProtocol)
     val akkaWebsocketRequest = ToAkka
       .headers(r.headers)
-      .map(h => WebSocketRequest(uri = r.uri.toString, extraHeaders = h))
+      .map(h => WebSocketRequest(uri = r.uri.toString, extraHeaders = h, subprotocol = subprotocol))
       .map(customizeWebsocketRequest)
 
     val flowPromise = Promise[Flow[Message, Message, NotUsed]]()
