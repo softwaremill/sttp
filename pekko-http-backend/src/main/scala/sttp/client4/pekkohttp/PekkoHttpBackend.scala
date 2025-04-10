@@ -33,6 +33,7 @@ import sttp.model.ResponseMetadata
 import sttp.model.StatusCode
 import sttp.monad.FutureMonad
 import sttp.monad.MonadError
+import sttp.model.HeaderNames
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -78,9 +79,10 @@ class PekkoHttpBackend private (
       )
 
   private def sendWebSocket[T](r: GenericRequest[T, R]): Future[Response[T]] = {
+    val subprotocol = r.header(HeaderNames.SecWebSocketProtocol)
     val pekkoWebsocketRequest = ToPekko
       .headers(r.headers)
-      .map(h => WebSocketRequest(uri = r.uri.toString, extraHeaders = h))
+      .map(h => WebSocketRequest(uri = r.uri.toString, extraHeaders = h, subprotocol = subprotocol))
       .map(customizeWebsocketRequest)
 
     val flowPromise = Promise[Flow[Message, Message, NotUsed]]()
@@ -96,8 +98,10 @@ class PekkoHttpBackend private (
       )
       .flatMap {
         case (ValidUpgrade(response, _), _) =>
+          println("X")
           responseFromPekko(r, response, Some(flowPromise)).recoverWith(consumeResponseOnFailure(response))
         case (InvalidUpgradeResponse(response, _), _) =>
+          println("Y")
           flowPromise.failure(new InterruptedException)
           responseFromPekko(r, response, None).recoverWith(consumeResponseOnFailure(response))
       }

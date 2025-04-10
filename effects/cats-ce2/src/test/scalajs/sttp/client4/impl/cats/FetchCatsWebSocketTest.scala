@@ -11,6 +11,7 @@ class FetchCatsWebSocketTest extends WebSocketTest[IO] with CatsTestBase {
   implicit override def executionContext: ExecutionContext = queue
   override def throwsWhenNotAWebSocket: Boolean = true
   override def supportsReadingWebSocketResponseHeaders: Boolean = false
+  override def supportsReadingSubprotocolWebSocketResponseHeader: Boolean = false
 
   override val backend: WebSocketBackend[IO] = FetchCatsBackend()
 }

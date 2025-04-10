@@ -24,6 +24,8 @@ import java.util.concurrent.CompletionException
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
 import java.util.function.BiConsumer
+import sttp.model.Header
+import sttp.model.HeaderNames
 
 /** @tparam F
   *   The effect type
@@ -176,7 +178,14 @@ abstract class HttpClientAsyncBackend[F[_], S <: Streams[S], BH, B](
                   }
                 }
             )
-            val baseResponse = Response((), StatusCode.SwitchingProtocols, "", Nil, Nil, request.onlyMetadata)
+
+            val subprotocol = ws.getSubprotocol()
+            val headers =
+              if (subprotocol != null && subprotocol.nonEmpty)
+                List(Header(HeaderNames.SecWebSocketProtocol, subprotocol))
+              else Nil
+            val baseResponse = Response((), StatusCode.SwitchingProtocols, "", headers, Nil, request.onlyMetadata)
+
             val body = bodyFromHttpClient(Right(webSocket), request.response, baseResponse)
             success(body.map(b => baseResponse.copy(body = b)))
           },

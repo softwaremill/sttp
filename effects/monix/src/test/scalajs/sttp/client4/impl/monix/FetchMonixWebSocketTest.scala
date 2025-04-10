@@ -16,6 +16,7 @@ class FetchMonixWebSocketTest extends WebSocketTest[Task] with WebSocketStreamin
   implicit override def executionContext: ExecutionContext = queue
   override def throwsWhenNotAWebSocket: Boolean = true
   override def supportsReadingWebSocketResponseHeaders: Boolean = false
+  override def supportsReadingSubprotocolWebSocketResponseHeader: Boolean = false
 
   override val backend: WebSocketStreamBackend[Task, MonixStreams] = FetchMonixBackend()
   override implicit val convertToFuture: ConvertToFuture[Task] = convertMonixTaskToFuture

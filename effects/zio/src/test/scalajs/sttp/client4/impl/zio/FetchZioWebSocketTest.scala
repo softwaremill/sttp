@@ -16,6 +16,7 @@ class FetchZioWebSocketTest extends WebSocketTest[Task] with WebSocketStreamingT
   implicit override def executionContext: ExecutionContext = queue
   override def throwsWhenNotAWebSocket: Boolean = true
   override def supportsReadingWebSocketResponseHeaders: Boolean = false
+  override def supportsReadingSubprotocolWebSocketResponseHeader: Boolean = false
 
   override val backend: WebSocketStreamBackend[Task, ZioStreams] = FetchZioBackend()
   override implicit val convertToFuture: ConvertToFuture[Task] = convertZioTaskToFuture
