@@ -17,6 +17,7 @@ import sttp.ws.{WebSocket, WebSocketFrame}
 
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicBoolean
+import sttp.model.HeaderNames
 
 abstract class WebSocketTest[F[_]]
     extends AsyncFlatSpec
@@ -220,6 +221,18 @@ abstract class WebSocketTest[F[_]]
         }
         .toFuture()
     }
+  }
+
+  it should "receive the subprotocol header set by the server" in {
+    basicRequest
+      .get(uri"$wsEndpoint/ws/protocol-header")
+      .header(HeaderNames.SecWebSocketProtocol, "abc")
+      .response(asWebSocketAlways((ws: WebSocket[F]) => ws.close()))
+      .send(backend)
+      .map { response =>
+        response.header(HeaderNames.SecWebSocketProtocol) shouldBe Some("abc")
+      }
+      .toFuture()
   }
 
   it should "not call onBodyReceived callback for WebSocket requests" in {

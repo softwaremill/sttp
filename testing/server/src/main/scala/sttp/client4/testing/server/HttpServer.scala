@@ -476,11 +476,7 @@ private class HttpServer(port: Int, info: String => Unit) extends AutoCloseable 
       }
     } ~ pathPrefix("ws") {
       path("echo") {
-        handleWebSocketMessages(Flow[Message].mapConcat {
-          case tm: TextMessage =>
-            TextMessage(Source.single("echo: ") ++ tm.textStream) :: Nil
-          case bm: BinaryMessage => bm :: Nil
-        })
+        wsEcho()
       } ~
         path("send_and_wait") {
           // send two messages and wait until the socket is closed
@@ -516,11 +512,12 @@ private class HttpServer(port: Int, info: String => Unit) extends AutoCloseable 
         } ~
         path("header") {
           respondWithHeader(HttpHeader.parse("Correlation-ID", "ABC-XYZ-123").asInstanceOf[ParsingResult.Ok].header) {
-            handleWebSocketMessages(Flow[Message].mapConcat {
-              case tm: TextMessage =>
-                TextMessage(Source.single("echo: ") ++ tm.textStream) :: Nil
-              case bm: BinaryMessage => bm :: Nil
-            })
+            wsEcho()
+          }
+        } ~
+        path("protocol-header") {
+          respondWithHeader(HttpHeader.parse("Sec-WebSocket-Protocol", "abc").asInstanceOf[ParsingResult.Ok].header) {
+            wsEcho()
           }
         }
     } ~ path("empty_content_encoding") {
@@ -530,6 +527,14 @@ private class HttpServer(port: Int, info: String => Unit) extends AutoCloseable 
         }
       }
     }
+
+  private def wsEcho() = {
+    handleWebSocketMessages(Flow[Message].mapConcat {
+      case tm: TextMessage =>
+        TextMessage(Source.single("echo: ") ++ tm.textStream) :: Nil
+      case bm: BinaryMessage => bm :: Nil
+    })
+  }
 
   def discardEntity(inner: Route): Route =
     extractRequest { request =>

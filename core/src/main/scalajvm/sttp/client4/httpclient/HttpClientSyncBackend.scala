@@ -1,27 +1,42 @@
 package sttp.client4.httpclient
 
 import sttp.capabilities.WebSockets
+import sttp.client4.BackendOptions
+import sttp.client4.GenericRequest
+import sttp.client4.Response
+import sttp.client4.WebSocketSyncBackend
+import sttp.client4.compression.CompressionHandlers
+import sttp.client4.compression.Compressor
+import sttp.client4.compression.Decompressor
+import sttp.client4.internal.FailingLimitedInputStream
+import sttp.client4.internal.NoStreams
+import sttp.client4.internal.OnEndInputStream
+import sttp.client4.internal.emptyInputStream
 import sttp.client4.internal.httpclient._
-import sttp.client4.internal.ws.{SimpleQueue, SyncQueue, WebSocketEvent}
-import sttp.client4.internal.{emptyInputStream, NoStreams}
+import sttp.client4.internal.ws.SimpleQueue
+import sttp.client4.internal.ws.SyncQueue
+import sttp.client4.internal.ws.WebSocketEvent
 import sttp.client4.testing.WebSocketSyncBackendStub
-import sttp.client4.{wrappers, BackendOptions, GenericRequest, Response, WebSocketSyncBackend}
+import sttp.client4.wrappers
+import sttp.model.Header
+import sttp.model.HeaderNames
 import sttp.model.StatusCode
-import sttp.monad.{IdentityMonad, MonadError}
+import sttp.monad.IdentityMonad
+import sttp.monad.MonadError
 import sttp.shared.Identity
-import sttp.ws.{WebSocket, WebSocketFrame}
+import sttp.ws.WebSocket
+import sttp.ws.WebSocketFrame
 
 import java.io.InputStream
+import java.net.http.HttpClient
+import java.net.http.HttpRequest
 import java.net.http.HttpRequest.BodyPublisher
 import java.net.http.HttpResponse.BodyHandlers
-import java.net.http.{HttpClient, HttpRequest, WebSocketHandshakeException}
+import java.net.http.WebSocketHandshakeException
+import java.util.concurrent.ArrayBlockingQueue
+import java.util.concurrent.CompletionException
 import java.util.concurrent.atomic.AtomicBoolean
-import java.util.concurrent.{ArrayBlockingQueue, CompletionException}
-import sttp.client4.compression.Compressor
-import sttp.client4.compression.CompressionHandlers
-import sttp.client4.compression.Decompressor
 import java.util.concurrent.atomic.AtomicReference
-import sttp.client4.internal.{FailingLimitedInputStream, OnEndInputStream}
 
 class HttpClientSyncBackend private (
     client: HttpClient,
@@ -99,7 +114,13 @@ class HttpClientSyncBackend private (
       ws => {
         lowLevelWS.set(ws)
         val webSocket = new WebSocketImpl[Identity](ws, queue, isOpen, sequencer, monad, cf => { val _ = cf.get() })
-        val baseResponse = Response((), StatusCode.SwitchingProtocols, "", Nil, Nil, request.onlyMetadata)
+
+        val subprotocol = ws.getSubprotocol()
+        val headers =
+          if (subprotocol != null && subprotocol.nonEmpty) List(Header(HeaderNames.SecWebSocketProtocol, subprotocol))
+          else Nil
+        val baseResponse = Response((), StatusCode.SwitchingProtocols, "", headers, Nil, request.onlyMetadata)
+
         val body = () => bodyFromHttpClient(Right(webSocket), request.response, baseResponse)
         fillCell(() => baseResponse.copy(body = body()))
       },
