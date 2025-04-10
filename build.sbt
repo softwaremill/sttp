@@ -675,7 +675,7 @@ lazy val armeriaMonixBackend =
     .dependsOn(monix % compileAndTest)
 
 lazy val armeriaFs2Ce2Backend =
-  armeriaBackendProject("fs2-ce2", includeScala3 = false)
+  armeriaBackendProject("fs2-ce2")
     .settings(
       libraryDependencies ++= Seq(
         "co.fs2" %% "fs2-reactive-streams" % fs2_2_version
@@ -693,7 +693,7 @@ lazy val armeriaFs2Backend =
     .dependsOn(fs2 % compileAndTest)
 
 lazy val armeriaCatsCe2Backend =
-  armeriaBackendProject("cats-ce2", includeScala3 = false)
+  armeriaBackendProject("cats-ce2")
     .dependsOn(catsCe2 % compileAndTest)
 
 lazy val armeriaCatsBackend =
