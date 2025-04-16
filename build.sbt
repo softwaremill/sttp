@@ -619,7 +619,7 @@ lazy val http4sCe2Backend = (projectMatrix in file("http4s-ce2-backend"))
       "org.http4s" %% "http4s-blaze-client" % http4s_ce2_version % Optional
     )
   )
-  .jvmPlatform(scalaVersions = scala2)
+  .jvmPlatform(scalaVersions = scala2And3)
   .dependsOn(catsCe2 % compileAndTest, core % compileAndTest, fs2Ce2 % compileAndTest)
 
 lazy val http4sBackend = (projectMatrix in file("http4s-backend"))
