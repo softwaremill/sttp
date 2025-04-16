@@ -35,14 +35,7 @@ jobs:
         distribution: 'temurin'
         cache: 'sbt'
         java-version: ${{ matrix.java }}
-    - name: Cache sbt
-      uses: actions/cache@v4
-      with:
-        path: |
-          ~/.sbt
-          ~/.ivy2/cache
-          ~/.coursier
-        key: sbt-cache-${{ runner.os }}-${{ matrix.target-platform }}-${{ hashFiles('project/build.properties') }}
+    - uses: sbt/setup-sbt@v1
     - name: Install libidn2-dev libcurl3-dev
       if: matrix.target-platform == 'Native'
       run: |
@@ -77,13 +70,6 @@ jobs:
         config-name: release-drafter.yml
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    - name: Cleanup
-      run: |
-        rm -rf "$HOME/.ivy2/local" || true
-        find $HOME/.ivy2/cache                       -name "ivydata-*.properties" -delete || true
-        find $HOME/.ivy2/cache                       -name "*-LM-SNAPSHOT*"       -delete || true
-        find $HOME/.cache/coursier/v1                -name "ivydata-*.properties" -delete || true
-        find $HOME/.sbt                              -name "*.lock"               -delete || true
 
   mima:
     uses: softwaremill/github-actions-workflows/.github/workflows/mima.yml@main
@@ -98,7 +84,7 @@ jobs:
     name: Publish release
     needs: [ci]
     if: github.event_name != 'pull_request' && (startsWith(github.ref, 'refs/tags/v'))
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     strategy:
       matrix: 
         java: [ "11", "21" ]
@@ -111,14 +97,7 @@ jobs:
           distribution: 'temurin'
           java-version: ${{ matrix.java }}
           cache: 'sbt'
-      - name: Cache sbt
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.sbt
-            ~/.ivy2/cache
-            ~/.coursier
-          key: sbt-cache-release-${{ runner.os }}-${{ hashFiles('project/build.properties') }}
+      - uses: sbt/setup-sbt@v1
       - name: Install libidn2-dev libcurl3-dev
         run: |
           sudo apt-get update
@@ -156,13 +135,6 @@ jobs:
           version: "v${{ env.VERSION }}"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: Cleanup
-        run: |
-          rm -rf "$HOME/.ivy2/local" || true
-          find $HOME/.ivy2/cache                       -name "ivydata-*.properties" -delete || true
-          find $HOME/.ivy2/cache                       -name "*-LM-SNAPSHOT*"       -delete || true
-          find $HOME/.cache/coursier/v1                -name "ivydata-*.properties" -delete || true
-          find $HOME/.sbt                              -name "*.lock"               -delete || true
 
   label:
     # only for PRs by softwaremill-ci
