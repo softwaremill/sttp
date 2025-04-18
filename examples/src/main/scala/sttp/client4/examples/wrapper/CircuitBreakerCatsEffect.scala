@@ -1,6 +1,6 @@
 // {cat=Backend wrapper; effects=cats-effect; backend=HttpClient}: Integrate with resilience4j to implement circuit-breaking
 
-//> using dep com.softwaremill.sttp.client4::cats:4.0.2
+//> using dep com.softwaremill.sttp.client4::cats:4.0.3
 //> using dep io.github.resilience4j:resilience4j-circuitbreaker:2.3.0
 //> using dep org.typelevel::cats-effect:3.5.7
 
