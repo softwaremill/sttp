@@ -19,6 +19,9 @@ object ScribeLoggingBackend {
   def apply[F[_], S](delegate: WebSocketStreamBackend[F, S]): WebSocketStreamBackend[F, S] =
     LoggingBackend(delegate, ScribeLogger(delegate.monad))
 
+  def apply[F[_], S](delegate: WebSocketSyncBackend): WebSocketSyncBackend =
+    LoggingBackend(delegate, ScribeLogger(delegate.monad))
+
   def apply(delegate: SyncBackend, config: LogConfig): SyncBackend =
     LoggingBackend(delegate, ScribeLogger(delegate.monad), config)
 
@@ -32,5 +35,8 @@ object ScribeLoggingBackend {
     LoggingBackend(delegate, ScribeLogger(delegate.monad), config)
 
   def apply[F[_], S](delegate: WebSocketStreamBackend[F, S], config: LogConfig): WebSocketStreamBackend[F, S] =
+    LoggingBackend(delegate, ScribeLogger(delegate.monad), config)
+
+  def apply[F[_], S](delegate: WebSocketSyncBackend, config: LogConfig): WebSocketSyncBackend =
     LoggingBackend(delegate, ScribeLogger(delegate.monad), config)
 }
