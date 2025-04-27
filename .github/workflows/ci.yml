@@ -111,7 +111,8 @@ jobs:
       - name: Compile
         run: sbt compile
       - name: Publish artifacts
-        run: sbt ci-release
+        # Timeout needed until https://github.com/xerial/sbt-sonatype/issues/597 is fixed
+        run: sbt -Dsun.net.client.defaultReadTimeout=60000 ci-release
         env:
           PGP_PASSPHRASE: ${{ secrets.PGP_PASSPHRASE }}
           PGP_SECRET: ${{ secrets.PGP_SECRET }}
