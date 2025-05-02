@@ -1027,7 +1027,7 @@ lazy val examples = (projectMatrix in file("examples"))
       "io.github.resilience4j" % "resilience4j-circuitbreaker" % resilience4jVersion,
       "io.github.resilience4j" % "resilience4j-ratelimiter" % resilience4jVersion,
       "com.lihaoyi" %% "os-lib" % osLibVersion,
-      "redis.clients" % "jedis" % "5.2.0",
+      "redis.clients" % "jedis" % "6.0.0",
       "io.opentelemetry" % "opentelemetry-exporter-otlp" % openTelemetryVersion,
       "io.opentelemetry" % "opentelemetry-sdk-extension-autoconfigure" % openTelemetryVersion,
       pekkoStreams,
