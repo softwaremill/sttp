@@ -2,7 +2,11 @@ package sttp.client4.armeria
 
 import com.linecorp.armeria.client.{ClientFactory, WebClient, WebClientBuilder}
 import com.linecorp.armeria.client.encoding.DecodingClient
+import com.linecorp.armeria.client.proxy.ProxyConfig
 import sttp.client4.BackendOptions
+import sttp.client4.BackendOptions.ProxyType
+
+import java.net.InetSocketAddress
 
 object ArmeriaWebClient {
   private def newClientFactory(options: BackendOptions): ClientFactory = {
@@ -10,9 +14,14 @@ object ArmeriaWebClient {
       .builder()
       .connectTimeoutMillis(options.connectionTimeout.toMillis)
     options.proxy.fold(builder.build()) { proxy =>
-      builder
-        .proxyConfig(proxy.asJavaProxySelector)
-        .build()
+      val host = new InetSocketAddress(proxy.host, proxy.port)
+      val config = (proxy.proxyType, proxy.auth) match {
+        case (ProxyType.Http, None)        => ProxyConfig.connect(host)
+        case (ProxyType.Http, Some(auth))  => ProxyConfig.connect(host, auth.username, auth.password, true)
+        case (ProxyType.Socks, None)       => ProxyConfig.socks5(host)
+        case (ProxyType.Socks, Some(auth)) => ProxyConfig.socks5(host, auth.username, auth.password)
+      }
+      builder.proxyConfig(config).build()
     }
   }
 
