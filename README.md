@@ -129,8 +129,7 @@ Or, if you encounter a bug, something is unclear in the code or documentation, d
 
 We are also always looking for contributions and new ideas, so if you’d like to get into the project, check out the [open issues](https://github.com/softwaremill/sttp/issues), or post your own suggestions!
 
-Note that running the default `test` task will run the tests using both the JVM and JS backends, and is likely to run out of memory.
-If you'd like to run the tests using *only* the JVM backend, execute: `sbt rootJVM/test`.
+Note that running the default `compile` and `test` tasks will build all of the JVM, Native and JS backends, and is likely to run out of memory, or to encounter missing native dependencies. If you'd like to run compilation/tests using *only* the JVM backend, run: `sbt "compileScoped 3 JVM"` or `sbt "testScoped 3 JVM"`.
 
 When you have a PR ready, take a look at our ["How to prepare a good PR" guide](https://softwaremill.community/t/how-to-prepare-a-good-pr-to-a-library/448). Thanks! :)
 
