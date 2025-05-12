@@ -78,18 +78,32 @@ abstract class AbstractCurlBackend[F[_]](_monad: MonadError[F], verbose: Boolean
         if (request.attributes.nonEmpty) {
           return monad.error(new UnsupportedOperationException("Attributes are not supported"))
         }
-        val reqHeaders = request.headers
+
+        val reqHeaders = collection.mutable.ListBuffer[Header](request.headers: _*)
+
+        request.body match {
+          case _: MultipartBody[_] =>
+            reqHeaders += Header.contentType(MediaType.MultipartFormData)
+          case _ =>
+        }
+
+        val userAgent =
+          reqHeaders.find(_.is(HeaderNames.UserAgent)) match {
+            case Some(h) => h.value
+            case None    => curlUserAgent
+          }
+
+        curl.option(
+          UserAgent,
+          userAgent
+        )
+
         if (reqHeaders.nonEmpty) {
           reqHeaders.find(_.name == "Accept-Encoding").foreach(h => curl.option(AcceptEncoding, h.value))
-          val headers = request.body match {
-            case _: MultipartBody[_] =>
-              ctx.transformHeaders(
-                reqHeaders :+ Header.contentType(MediaType.MultipartFormData)
-              )
-            case _ =>
-              ctx.transformHeaders(reqHeaders)
-          }
-          curl.option(HttpHeader, headers.ptr)
+
+          val curlHeaders = ctx.transformHeaders(reqHeaders)
+
+          curl.option(HttpHeader, curlHeaders.ptr)
         }
 
         val spaces = responseSpace
@@ -266,6 +280,8 @@ abstract class AbstractCurlBackend[F[_]](_monad: MonadError[F], verbose: Boolean
           Header(split(0).trim, "")
       }
   }
+
+  private lazy val curlUserAgent = "sttp-curl/" + fromCString(CCurl.getVersion())
 
   private lazy val bodyFromResponseAs = new BodyFromResponseAs[F, String, Nothing, Nothing] {
     override protected def withReplayableBody(

@@ -37,6 +37,9 @@ private[curl] trait CCurl {
   @name("sttp_curl_getinfo_pointer")
   def getInfo(handle: Ptr[Curl], info: CInt, parameter: Ptr[_]): CInt = extern
 
+  @name("sttp_curl_get_version")
+  def getVersion(): CString = extern
+
   @name("curl_easy_init")
   def init: Ptr[Curl] = extern
 
