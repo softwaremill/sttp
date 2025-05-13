@@ -1,7 +1,7 @@
 // {cat=JSON; effects=ZIO; backend=HttpClient}: Receive & parse JSON using ZIO Json
 
-//> using dep com.softwaremill.sttp.client4::zio:4.0.3
-//> using dep com.softwaremill.sttp.client4::zio-json:4.0.3
+//> using dep com.softwaremill.sttp.client4::zio:4.0.5
+//> using dep com.softwaremill.sttp.client4::zio-json:4.0.5
 
 package sttp.client4.examples.json
 
