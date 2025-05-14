@@ -14,7 +14,7 @@ Also note that the [http4s](http4s.md) backend can also be created for a type im
 Firstly, add the following dependency to your project:
 
 ```scala
-"com.softwaremill.sttp.client4" %% "cats" % "4.0.5"
+"com.softwaremill.sttp.client4" %% "cats" % "4.0.6"
 ```
 
 Obtain a cats-effect `Resource` which creates the backend, and closes the thread pool after the resource is no longer used:
@@ -83,9 +83,9 @@ Firstly, add the following dependency to your project:
 
 ```scala
 // for cats-effect 3.x
-"com.softwaremill.sttp.client4" %% "armeria-backend-cats" % "4.0.5" 
+"com.softwaremill.sttp.client4" %% "armeria-backend-cats" % "4.0.6" 
 // or for cats-effect 2.x
-"com.softwaremill.sttp.client4" %% "armeria-backend-cats-ce2" % "4.0.5" 
+"com.softwaremill.sttp.client4" %% "armeria-backend-cats-ce2" % "4.0.6" 
 ```
 
 create client:
