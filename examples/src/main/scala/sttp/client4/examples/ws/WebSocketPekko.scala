@@ -1,6 +1,6 @@
 // {cat=WebSocket; effects=Future; backend=Pekko}: Connect to & interact with a WebSocket
 
-//> using dep com.softwaremill.sttp.client4::pekko-http-backend:4.0.3
+//> using dep com.softwaremill.sttp.client4::pekko-http-backend:4.0.6
 //> using dep org.apache.pekko::pekko-stream:1.1.2
 
 package sttp.client4.examples.ws

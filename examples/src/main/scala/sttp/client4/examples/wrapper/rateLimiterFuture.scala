@@ -1,6 +1,6 @@
 // {cat=Backend wrapper; effects=Future; backend=HttpClient}: Integrate with resilience4j to implement rate-limiting
 
-//> using dep com.softwaremill.sttp.client4::core:4.0.3
+//> using dep com.softwaremill.sttp.client4::core:4.0.6
 //> using dep io.github.resilience4j:resilience4j-ratelimiter:2.3.0
 
 package sttp.client4.examples.wrapper
