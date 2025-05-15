@@ -12,7 +12,7 @@ sttp client is available for Scala 2.12, 2.13 and 3, on the JVM (Java 11+), Scal
 The basic dependency which provides the API, together with a synchronous and `Future`-based backends, is:
 
 ```scala
-"com.softwaremill.sttp.client4" %% "core" % "4.0.6"
+"com.softwaremill.sttp.client4" %% "core" % "4.0.7"
 ```
 
 ## Using scala-cli
@@ -20,7 +20,7 @@ The basic dependency which provides the API, together with a synchronous and `Fu
 Add the following directive to the top of your scala file to add the core sttp dependency:
 
 ```
-//> using dep com.softwaremill.sttp.client4::core:4.0.6
+//> using dep com.softwaremill.sttp.client4::core:4.0.7
 ```
 
 ## Using Ammonite
@@ -28,7 +28,7 @@ Add the following directive to the top of your scala file to add the core sttp d
 If you are an [Ammonite](https://ammonite.io) user, you can quickly start experimenting with sttp by copy-pasting the following:
 
 ```scala
-import $ivy.`com.softwaremill.sttp.client4::core:4.0.6`
+import $ivy.`com.softwaremill.sttp.client4::core:4.0.7`
 ```
 
 ## Imports
@@ -74,14 +74,14 @@ As an example, to integrate with the [uPickle](https://github.com/com-lihaoyi/up
 dependency:
 
 ```scala
-"com.softwaremill.sttp.client4" %% "upickle" % "4.0.6"
+"com.softwaremill.sttp.client4" %% "upickle" % "4.0.7"
 ```
 
 Your code might then look as follows:
 
 ```scala
-//> using dep com.softwaremill.sttp.client4::core:4.0.6
-//> using dep com.softwaremill.sttp.client4::upickle:4.0.6
+//> using dep com.softwaremill.sttp.client4::core:4.0.7
+//> using dep com.softwaremill.sttp.client4::upickle:4.0.7
 
 import sttp.client4.*
 import sttp.client4.upicklejson.default.*
@@ -122,7 +122,7 @@ Logging can be added using the [logging backend wrapper](backends/wrappers/loggi
 use slf4j, you'll need the following dependency:
 
 ```
-"com.softwaremill.sttp.client4" %% "slf4j-backend" % "4.0.6"
+"com.softwaremill.sttp.client4" %% "slf4j-backend" % "4.0.7"
 ```
 
 Then, you'll need to configure your backend:
