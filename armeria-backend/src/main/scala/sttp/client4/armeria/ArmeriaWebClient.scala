@@ -5,16 +5,12 @@ import com.linecorp.armeria.client.encoding.DecodingClient
 import sttp.client4.BackendOptions
 
 object ArmeriaWebClient {
-  private def newClientFactory(options: BackendOptions): ClientFactory = {
-    val builder = ClientFactory
+  private def newClientFactory(options: BackendOptions): ClientFactory =
+    ClientFactory
       .builder()
       .connectTimeoutMillis(options.connectionTimeout.toMillis)
-    options.proxy.fold(builder.build()) { proxy =>
-      builder
-        .proxyConfig(proxy.asJavaProxySelector)
-        .build()
-    }
-  }
+      .proxyConfig(new AuthProxyConfigSelector(options.proxy))
+      .build()
 
   /** Create a new [[WebClient]] which is adjusted for sttp client's needs. */
   def newClient(): WebClient = newClient(identity[WebClientBuilder] _)
@@ -40,7 +36,7 @@ object ArmeriaWebClient {
   def newClient(
       options: BackendOptions,
       customizeWebClient: WebClientBuilder => WebClientBuilder = identity
-  ): WebClient =
+  ): WebClient = {
     customizeWebClient(
       WebClient
         .builder()
@@ -54,4 +50,5 @@ object ArmeriaWebClient {
         .factory(newClientFactory(options))
     )
       .build()
+  }
 }
