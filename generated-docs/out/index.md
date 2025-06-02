@@ -9,7 +9,7 @@ The library is available for Scala 2.12, 2.13 and 3. Supported platforms are the
 Here's a quick example of sttp client in action, runnable using [scala-cli](https://scala-cli.virtuslab.org):
 
 ```scala
-//> using dep com.softwaremill.sttp.client4::core::4.0.7
+//> using dep com.softwaremill.sttp.client4::core::4.0.8
 
 import sttp.client4.quick.*
 
@@ -28,7 +28,7 @@ Additionally, sttp client seamlessly integrates with popular libraries for JSON 
 Some more features: URI interpolation, a self-managed backend, and type-safe HTTP error/success representation, are demonstrated by the below example:
 
 ```scala
-//> using dep com.softwaremill.sttp.client4::core::4.0.7
+//> using dep com.softwaremill.sttp.client4::core::4.0.8
 
 import sttp.client4.*
 
@@ -54,7 +54,7 @@ import sttp.client4.*
 
 But that's just a small glimpse of sttp client's features! For more examples, see the [usage examples](examples.md) section. 
 
-To start using sttp client in your project, see the [quickstart](quickstart.md). Or, browse the documentation to find the topics that interest you the most! ScalaDoc is available at [https://www.javadoc.io](https://www.javadoc.io/doc/com.softwaremill.sttp.client4/core_2.12/4.0.7).
+To start using sttp client in your project, see the [quickstart](quickstart.md). Or, browse the documentation to find the topics that interest you the most! ScalaDoc is available at [https://www.javadoc.io](https://www.javadoc.io/doc/com.softwaremill.sttp.client4/core_2.12/4.0.8).
 
 sttp client is licensed under Apache2, the source code is [available on GitHub](https://github.com/softwaremill/sttp).
 
