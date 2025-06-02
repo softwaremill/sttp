@@ -187,43 +187,44 @@ abstract class StreamingTest[F[_], S]
       }
   }
 
-  "receive a stream from an https site (unsafe)" in {
-    val numChunks = 100
-    val url = uri"https://httpbin.org/stream/$numChunks"
+  // due to instability of httpbin.org, this test was very flaky, hence it's commented out
+  // "receive a stream from an https site (unsafe)" in {
+  //   val numChunks = 100
+  //   val url = uri"https://httpbin.org/stream/$numChunks"
 
-    implicit val monadError: MonadError[Future] = new FutureMonad
+  //   implicit val monadError: MonadError[Future] = new FutureMonad
 
-    def retryImmediatelyOnError[A](action: => Future[A], retriesLeft: Int): Future[A] =
-      action.handleError { case error =>
-        new Exception(s"Error in ${getClass.getSimpleName}, retries left = $retriesLeft", error).printStackTrace
-        if (retriesLeft > 1)
-          retryImmediatelyOnError(action, retriesLeft - 1)
-        else
-          action
-      }
+  //   def retryImmediatelyOnError[A](action: => Future[A], retriesLeft: Int): Future[A] =
+  //     action.handleError { case error =>
+  //       new Exception(s"Error in ${getClass.getSimpleName}, retries left = $retriesLeft", error).printStackTrace
+  //       if (retriesLeft > 1)
+  //         retryImmediatelyOnError(action, retriesLeft - 1)
+  //       else
+  //         action
+  //     }
 
-    // TODO: for some reason these explicit types are needed in Dotty
-    val r0: StreamRequest[streams.BinaryStream, S] = basicRequest
-      // of course, you should never rely on the internet being available
-      // in tests, but that's so much easier than setting up an https
-      // testing server
-      .get(url)
-      .response(asStreamAlwaysUnsafe(streams))
+  //   // TODO: for some reason these explicit types are needed in Dotty
+  //   val r0: StreamRequest[streams.BinaryStream, S] = basicRequest
+  //     // of course, you should never rely on the internet being available
+  //     // in tests, but that's so much easier than setting up an https
+  //     // testing server
+  //     .get(url)
+  //     .response(asStreamAlwaysUnsafe(streams))
 
-    def runTest: Future[Assertion] = r0
-      .send(backend)
-      .toFuture()
-      .flatMap { response =>
-        bodyConsumer(response.body).toFuture()
-      }
-      .map { responseBody =>
-        val urlRegex = s""""${url.toString}"""".r
+  //   def runTest: Future[Assertion] = r0
+  //     .send(backend)
+  //     .toFuture()
+  //     .flatMap { response =>
+  //       bodyConsumer(response.body).toFuture()
+  //     }
+  //     .map { responseBody =>
+  //       val urlRegex = s""""${url.toString}"""".r
 
-        urlRegex.findAllIn(responseBody).length shouldBe numChunks
-      }
-    // Repeating, because this request to a real https endpoint of httpbin occasionally fails
-    retryImmediatelyOnError(runTest, retriesLeft = 5)
-  }
+  //       urlRegex.findAllIn(responseBody).length shouldBe numChunks
+  //     }
+  //   // Repeating, because this request to a real https endpoint of httpbin occasionally fails
+  //   retryImmediatelyOnError(runTest, retriesLeft = 5)
+  // }
 
   "lift errors due to mapping with impure functions into the response monad" in {
     implicit val monadError: MonadError[F] = backend.monad
