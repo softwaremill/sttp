@@ -2,7 +2,7 @@
 
 //> using dep com.softwaremill.sttp.client4::json4s:4.0.8
 //> using dep com.softwaremill.sttp.client4::pekko-http-backend:4.0.8
-//> using dep org.json4s::json4s-native:4.0.8
+//> using dep org.json4s::json4s-native:4.0.7
 //> using dep org.apache.pekko::pekko-stream:1.1.2
 
 package sttp.client4.examples.json
