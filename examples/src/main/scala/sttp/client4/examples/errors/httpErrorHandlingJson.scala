@@ -1,6 +1,6 @@
 // {cat=Error handling; effects=Direct; backend=HttpClient}: Parsing the response as JSON, with parsing failures and HTTP errors
 
-//> using dep com.softwaremill.sttp.client4::jsoniter:4.0.7
+//> using dep com.softwaremill.sttp.client4::jsoniter:4.0.8
 //> using dep com.github.plokhotnyuk.jsoniter-scala::jsoniter-scala-macros:2.33.3
 
 package sttp.client4.examples
