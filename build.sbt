@@ -118,9 +118,9 @@ val testServerSettings = Seq(
   }
 )
 
-val circeVersion: String = "0.14.13"
+val circeVersion: String = "0.14.14"
 
-val jsoniterVersion = "2.36.2"
+val jsoniterVersion = "2.36.4"
 
 val play29JsonVersion = "2.10.6"
 
@@ -138,7 +138,7 @@ val akkaStreamVersion = "2.6.20"
 val akkaStreams = "com.typesafe.akka" %% "akka-stream" % akkaStreamVersion
 
 val pekkoHttp = "org.apache.pekko" %% "pekko-http" % "1.2.0"
-val pekkoStreamVersion = "1.1.3"
+val pekkoStreamVersion = "1.1.4"
 val pekkoStreams = "org.apache.pekko" %% "pekko-stream" % pekkoStreamVersion
 
 val scalaTest = libraryDependencies ++= Seq("freespec", "funsuite", "flatspec", "wordspec", "shouldmatchers").map(m =>
@@ -166,7 +166,7 @@ val http4s_ce3_version = "0.23.30"
 val osLibVersion = "0.11.4"
 val tethysVersion = "0.29.5"
 val openTelemetryVersion = "1.51.0"
-val openTelemetrySemconvVersion = "1.32.0"
+val openTelemetrySemconvVersion = "1.34.0"
 val otel4s = "0.12.0"
 val slf4jVersion = "1.7.36"
 
