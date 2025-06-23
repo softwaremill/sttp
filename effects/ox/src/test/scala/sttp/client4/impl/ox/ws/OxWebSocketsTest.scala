@@ -12,7 +12,6 @@ import ox.channels.ChannelClosed
 import ox.channels.Sink
 import ox.channels.Source
 import sttp.client4.*
-import sttp.client4.DefaultSyncBackend
 import sttp.client4.logging.LogLevel
 import sttp.client4.logging.Logger
 import sttp.client4.logging.LoggingBackend
@@ -26,6 +25,7 @@ import sttp.ws.testing.WebSocketStub
 import java.util.concurrent.atomic.AtomicInteger
 import scala.util.Failure
 import scala.util.Success
+import java.util.concurrent.atomic.AtomicReference
 
 class OxWebSocketTest extends AnyFlatSpec with BeforeAndAfterAll with Matchers with EitherValues with Eventually:
   lazy val backend: WebSocketSyncBackend = DefaultSyncBackend()
@@ -44,7 +44,7 @@ class OxWebSocketTest extends AnyFlatSpec with BeforeAndAfterAll with Matchers w
       .send(backend)
   }
 
-  it should "send and receive three messages using asWebSocket" in supervised {
+  it should "send and receive three messages using asWebSocket and asSourceAndSink" in supervised {
     basicRequest
       .get(uri"$wsEndpoint/ws/echo")
       .response(asWebSocket { ws =>
@@ -52,6 +52,27 @@ class OxWebSocketTest extends AnyFlatSpec with BeforeAndAfterAll with Matchers w
         sendText(wsSink, 3)
         receiveEchoText(wsSource, 3)
         eventually(expectClosed(wsSource, wsSink))
+      })
+      .send(backend)
+  }
+
+  it should "send and receive three messages using asWebSocket and runWebSocketPipe" in {
+    basicRequest
+      .get(uri"$wsEndpoint/ws/echo")
+      .response(asWebSocket { ws =>
+        val received = new AtomicReference[List[WebSocketFrame]](Nil)
+        runWebSocketPipe(ws)(incoming =>
+          incoming
+            .tap(r => received.set(r :: received.get()))
+            .take(3)
+            .drain()
+            .merge(sendTextFlow(3))
+        )
+        received.get().reverse shouldBe List(
+          WebSocketFrame.text("echo: test1"),
+          WebSocketFrame.text("echo: test2"),
+          WebSocketFrame.text("echo: test3")
+        )
       })
       .send(backend)
   }
@@ -158,12 +179,16 @@ class OxWebSocketTest extends AnyFlatSpec with BeforeAndAfterAll with Matchers w
         receiveEchoText(wsSource, 3)
       })
       .send(loggingBackend)
+      .discard
     logger.msgCounter.get() shouldBe 2
     logger.errCounter.get() shouldBe 0
   }
 
   def sendText(wsSink: Sink[WebSocketFrame], count: Int)(using Ox): Unit =
     Source.fromIterable(1 to count).map(i => WebSocketFrame.text(s"test$i")).pipeTo(wsSink, propagateDone = true)
+
+  def sendTextFlow(count: Int): Flow[WebSocketFrame] =
+    Flow.fromIterable(1 to count).map(i => WebSocketFrame.text(s"test$i"))
 
   def sendBinary(wsSink: Sink[WebSocketFrame], count: Int)(using Ox): Unit =
     Source
