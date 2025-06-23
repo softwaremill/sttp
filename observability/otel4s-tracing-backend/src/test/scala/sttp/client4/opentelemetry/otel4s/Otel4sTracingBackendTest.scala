@@ -21,9 +21,10 @@ import cats.effect.testkit.TestControl
 import cats.effect.unsafe.implicits.global
 import org.scalatest.freespec.AsyncFreeSpec
 import org.scalatest.matchers.should.Matchers
+import org.typelevel.otel4s.sdk.data.LimitedData
 import org.typelevel.otel4s.sdk.testkit.trace.TracesTestkit
 import org.typelevel.otel4s.sdk.trace.context.propagation.W3CTraceContextPropagator
-import org.typelevel.otel4s.sdk.trace.data.{EventData, LimitedData, StatusData}
+import org.typelevel.otel4s.sdk.trace.data.{EventData, StatusData}
 import org.typelevel.otel4s.trace.{StatusCode, TracerProvider}
 import org.typelevel.otel4s.{Attribute, Attributes}
 import sttp.client4._
