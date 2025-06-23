@@ -3,7 +3,7 @@
 This backend is based on [pekko-http](https://pekko.apache.org/docs/pekko-http/current/). To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client4" %% "pekko-http-backend" % "4.0.8"
+"com.softwaremill.sttp.client4" %% "pekko-http-backend" % "4.0.9"
 ```
 
 A fully **asynchronous** backend. Uses the `Future` effect to return responses. There are also [other `Future`-based backends](future.md), which don't depend on Pekko. 
@@ -11,7 +11,7 @@ A fully **asynchronous** backend. Uses the `Future` effect to return responses. 
 Note that you'll also need an explicit dependency on pekko-streams, as pekko-http doesn't depend on any specific pekko-streams version. So you'll also need to add, for example:
 
 ```
-"org.apache.pekko" %% "pekko-stream" % "1.1.3"
+"org.apache.pekko" %% "pekko-stream" % "1.1.4"
 ```
 
 Next you'll need to add create the backend instance:

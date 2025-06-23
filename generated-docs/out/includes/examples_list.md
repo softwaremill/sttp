@@ -52,6 +52,7 @@
 
 ## Streaming
 
+* [Stream request & response bodies using Ox's Flow (synchronous, blocking streams)](https://github.com/softwaremill/sttp/tree/master/examples/src/main/scala/sttp/client4/examples/streaming/streamOx.scala) <span class="example-tag example-backend">HttpClient</span> <span class="example-tag example-effects">Direct</span>
 * [Stream request & response bodies using ZIO-Streams](https://github.com/softwaremill/sttp/tree/master/examples/src/main/scala/sttp/client4/examples/streaming/StreamZio.scala) <span class="example-tag example-backend">HttpClient</span> <span class="example-tag example-effects">ZIO</span>
 * [Stream request & response bodies using fs2](https://github.com/softwaremill/sttp/tree/master/examples/src/main/scala/sttp/client4/examples/streaming/StreamFs2.scala) <span class="example-tag example-backend">HttpClient</span> <span class="example-tag example-effects">cats-effect</span>
 

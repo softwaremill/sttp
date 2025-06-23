@@ -7,7 +7,7 @@ There are several synchronous backend implementations. Sending a request using t
 The default **synchronous** backend. To use, you don't need any extra dependencies, `core` is enough:
 
 ```
-"com.softwaremill.sttp.client4" %% "core" % "4.0.8"
+"com.softwaremill.sttp.client4" %% "core" % "4.0.9"
 ```
 
 Create the backend using:
@@ -40,7 +40,7 @@ Host header override is supported in environments running Java 12 onwards, but i
 To use, you don't need any extra dependencies, `core` is enough: 
 
 ```
-"com.softwaremill.sttp.client4" %% "core" % "4.0.8"
+"com.softwaremill.sttp.client4" %% "core" % "4.0.9"
 ```
 
 Create the backend using:
@@ -62,7 +62,7 @@ This backend supports host header override, but it has to be enabled by system p
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client4" %% "okhttp-backend" % "4.0.8"
+"com.softwaremill.sttp.client4" %% "okhttp-backend" % "4.0.9"
 ```
 
 Create the backend using:
@@ -87,28 +87,37 @@ This backend depends on [OkHttp](http://square.github.io/okhttp/) and fully supp
 
 ## Streaming
 
-Synchronous backends don't support non-blocking [streaming](../requests/streaming.md).
+Synchronous backends don't support non-blocking [streaming](../requests/streaming.md). However, blocking, synchronous 
+streaming is supported when sttp is used in combination with [Ox](https://ox.softwaremill.com): a Scala 3 toolkit that
+allows you to handle concurrency and resiliency in direct-style, leveraging Java 21+ virtual threads.
+
+For a start, in a virtual thread environment, often using `InputStreams` is enough. However, for more flexibility, 
+these can be created or consumed using Ox's `Flow`s.
+
+See the [example](https://github.com/softwaremill/sttp/blob/master/examples/src/main/scala/sttp/client4/examples/streaming/streamOx.scala)
+where sending & receiving bodies describes as `Flow`s is demonstrated.
 
 ## Websockets
 
-Both HttpClient and OkHttp backends support regular [websockets](../other/websockets.md).
+Both HttpClient and OkHttp backends support regular [WebSockets](../other/websockets.md), with a blocking, synchronous
+streaming variant available through integration with Ox. See the linked WebSockets docs for details.
 
 ## Server-sent events
 
-[Ox](https://ox.softwaremill.com) is a Scala 3 toolkit that allows you to handle concurrency and resiliency in direct-style, leveraging Java 21 virtual threads. If you're using Ox with `sttp`, you can handle SSE as a `Source[ServerSentEvent]`:
+If you're using Ox with `sttp`, you can handle SSE as a `Flow[ServerSentEvent]`:
 
 ```
 // sbt dependency
-"com.softwaremill.sttp.client4" %% "ox" % "4.0.8",
+"com.softwaremill.sttp.client4" %% "ox" % "4.0.9",
 ```
 
-```scala 
+```scala
 import sttp.client4.*
 import sttp.client4.impl.ox.sse.OxServerSentEvents
 import java.io.InputStream
 
 def handleSse(is: InputStream): Unit =
-  OxServerSentEvents.parse(is).foreach(event => println(s"Received event: $event"))
+  OxServerSentEvents.parse(is).runForeach(event => println(s"Received event: $event"))
 
 val backend = DefaultSyncBackend()
   basicRequest
