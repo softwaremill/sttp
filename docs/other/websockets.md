@@ -96,39 +96,52 @@ effect type      class name
 
 ## Using blocking, synchronous Ox streams
 
-[Ox](https://ox.softwaremill.com) is a Scala 3 toolkit that allows you to handle concurrency and resiliency in direct-style, leveraging Java 21 virtual threads.
-If you're using Ox with `sttp`, you can use the `DefaultSyncBackend` from `sttp-core` for HTTP communication. An additional `ox` module allows handling WebSockets 
-as Ox `Source` and `Sink`:
+[Ox](https://ox.softwaremill.com) is a Scala 3 toolkit that allows you to handle concurrency and resiliency in direct
+style, leveraging Java's 21+ virtual threads. If you're using Ox with `sttp`, you can use the `DefaultSyncBackend` from
+`sttp-core` for HTTP communication. The `ox` integration module allows handling WebSockets as Ox's `Flow`:
 
 ```
 // sbt dependency
 "com.softwaremill.sttp.client4" %% "ox" % "@VERSION@"
 ```
 
-```scala 
-import ox.*
-import ox.channels.{Sink, Source}
-import sttp.client4.*
-import sttp.client4.impl.ox.ws.* // import to access asSourceAnkSink
-import sttp.client4.ws.SyncWebSocket
-import sttp.client4.ws.sync.*
-import sttp.ws.WebSocketFrame
+The `runWebSocketPipe` function from that module accepts a `SyncWebSocket`, as well as a function, which takes a `Flow`
+of messages received from the server, and produces a combined `Flow` which should both consume the incoming messages, and
+produce outgoing messages to be sent:
 
-def useWebSocket(ws: SyncWebSocket): Unit =
-    supervised {
-      // (Source[WebSocketFrame], Sink[WebSocketFrame])
-      val (wsSource, wsSink) = asSourceAndSink(ws) 
-      // ...
-    }
+```scala mdoc:compile-only
+import sttp.client4.*
+import sttp.client4.impl.ox.ws.runWebSocketPipe
+import sttp.client4.ws.sync.*
 
 val backend = DefaultSyncBackend()
 basicRequest
   .get(uri"wss://ws.postman-echo.com/raw")
-  .response(asWebSocket(useWebSocket))
+  // you need to provide a Flow[WebSocketFrame] => Flow[WebSocketFrame] function
+  .response(asWebSocket(ws => runWebSocketPipe(ws)(incoming => ???)))
   .send(backend)
 ```
 
 See the [full example here](https://github.com/softwaremill/sttp/blob/master/examples/src/main/scala/sttp/client4/examples/ws/wsOxExample.scala).
+
+Read more about Ox, structured concurrency and Flows on the [project website](https://ox.softwaremill.com).
+
+### Using channels
+
+Alternatively, you can obtain a lower-level `Source` + `Sink`, which allows directly reading/writing from the WebSocket using Ox's channels:
+
+```scala mdoc:compile-only
+import ox.*
+import sttp.client4.ws.SyncWebSocket
+import sttp.client4.impl.ox.ws.asSourceAndSink
+
+def useWebSocket(ws: SyncWebSocket): Unit =
+  supervised {
+    // (Source[WebSocketFrame], Sink[WebSocketFrame])
+    val (wsSource, wsSink) = asSourceAndSink(ws) 
+    // ...
+  }
+```
 
 Make sure that the `Source` is continually read. This will guarantee that server-side `Close` signal is received and handled. 
 If you don't want to process frames from the server, you can at least handle it with a `fork { source.drain() }`.
@@ -138,8 +151,6 @@ according to following rules:
  - If the request `Sink` is closed due to an upstream error, a `Close` frame is sent, and the `Source` with incoming responses gets completed as `Done`.
  - If the request `Sink` completes as `Done`, a `Close` frame is sent, and the response `Sink` keeps receiving responses until the server closes communication.
  - If the response `Source` is closed by a `Close` frame from the server or due to an error, the request Sink is closed as `Done`, which will still send all outstanding buffered frames, and then finish.
-
-Read more about Ox, structured concurrency, Sources and Sinks on the [project website](https://ox.softwaremill.com).
 
 ## Compression
 

@@ -56,12 +56,12 @@ class OxWebSocketTest extends AnyFlatSpec with BeforeAndAfterAll with Matchers w
       .send(backend)
   }
 
-  it should "send and receive three messages using asWebSocket and runPipe" in {
+  it should "send and receive three messages using asWebSocket and runWebSocketPipe" in {
     basicRequest
       .get(uri"$wsEndpoint/ws/echo")
       .response(asWebSocket { ws =>
         val received = new AtomicReference[List[WebSocketFrame]](Nil)
-        runPipe(ws)(incoming =>
+        runWebSocketPipe(ws)(incoming =>
           incoming
             .tap(r => received.set(r :: received.get()))
             .take(3)

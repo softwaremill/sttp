@@ -151,7 +151,7 @@ val zio2Version = "2.1.19"
 val zio1InteropRsVersion = "1.3.12"
 val zio2InteropRsVersion = "2.0.2"
 
-val oxVersion = "0.6.0"
+val oxVersion = "0.6.1"
 val sttpModelVersion = "1.7.14"
 val sttpSharedVersion = "1.5.0"
 
@@ -1109,6 +1109,7 @@ lazy val docs: ProjectMatrix = (projectMatrix in file("generated-docs")) // impo
     openTelemetryTracingZioBackend,
     otel4sMetricsBackend,
     otel4sTracingBackend,
+    ox,
     slf4jBackend
   )
   .jvmPlatform(scalaVersions = List(documentationScalaVersion))

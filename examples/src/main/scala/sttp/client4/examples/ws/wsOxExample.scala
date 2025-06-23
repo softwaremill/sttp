@@ -5,22 +5,27 @@
 package sttp.client4.examples.ws
 
 import ox.*
-import ox.channels.Source
+import ox.flow.Flow
 import sttp.client4.*
 import sttp.client4.impl.ox.ws.*
 import sttp.client4.ws.SyncWebSocket
 import sttp.client4.ws.sync.*
 import sttp.ws.WebSocketFrame
 
-@main def wsOxExample =
+import scala.concurrent.duration.*
+
+@main def wsOxExample: Unit =
   def useWebSocket(ws: SyncWebSocket): Unit =
-    supervised:
-      val inputs = Source.fromValues(1, 2, 3).map(i => WebSocketFrame.text(s"Frame no $i"))
-      val (wsSource, wsSink) = asSourceAndSink(ws)
-      forkDiscard:
-        inputs.pipeTo(wsSink, propagateDone = true)
-      wsSource.foreach: frame =>
-        println(s"RECEIVED: $frame")
+    runWebSocketPipe(ws): incoming =>
+      incoming
+        .tap(frame => println(s"RECEIVED: $frame"))
+        .drain()
+        .merge(
+          // Waiting for 1 second before completing the outgoing flow, so that the responses are received.
+          // Since propagateDoneRight = true, the web socket will be terminated after the outgoing flow is completed.
+          Flow.fromValues(1, 2, 3).map(i => WebSocketFrame.text(s"Frame no $i")) ++ Flow.timeout(1.second),
+          propagateDoneRight = true
+        )
 
   val backend = DefaultSyncBackend()
   try

@@ -18,7 +18,7 @@ import ox.flow.Flow
   * and the resulting flow merged with the requests (outgoing) flow. That way, server-side completion of the web socket
   * is guaranteed to be discovered.
   */
-def runPipe(ws: SyncWebSocket, concatenateFragmented: Boolean = true)(
+def runWebSocketPipe(ws: SyncWebSocket, concatenateFragmented: Boolean = true)(
     pipe: Flow[WebSocketFrame] => Flow[WebSocketFrame]
 ): Unit =
   supervised:
