@@ -2,23 +2,23 @@
 
 //> using dep com.softwaremill.sttp.client4::ox:4.0.8
 
-package sttp.client4.examples.ws
+// package sttp.client4.examples.ws
 
-import ox.*
-import ox.flow.Flow
-import sttp.client4.*
+// import ox.*
+// import ox.flow.Flow
+// import sttp.client4.*
 
-@main def streamOx: Unit =
-  val backend = DefaultSyncBackend()
-  supervised:
-    releaseAfterScope(backend.close())
+// @main def streamOx: Unit =
+//   val backend = DefaultSyncBackend()
+//   supervised:
+//     releaseAfterScope(backend.close())
 
-    val result = basicRequest
-      .post(uri"https://httpbin.org/post")
-      .body(
-        Flow.fromValues(Chunk.fromArray("Hello, ".getBytes()), Chunk.fromArray("world!".getBytes())).runToInputStream()
-      )
-      .response(asInputStream(is => Flow.fromInputStream(is).decodeStringUtf8.runToList().mkString))
-      .send(backend)
+//     val result = basicRequest
+//       .post(uri"https://httpbin.org/post")
+//       .body(
+//         Flow.fromValues(Chunk.fromArray("Hello, ".getBytes()), Chunk.fromArray("world!".getBytes())).runToInputStream()
+//       )
+//       .response(asInputStream(is => Flow.fromInputStream(is).decodeStringUtf8.runToList().mkString))
+//       .send(backend)
 
-    println(s"Received: ${result.body}")
+//     println(s"Received: ${result.body}")
