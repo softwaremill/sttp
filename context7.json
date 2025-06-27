@@ -1,0 +1,30 @@
+{
+    "$schema": "https://context7.com/schema/context7.json",
+    "projectTitle": "sttp client",
+    "description": "The Scala HTTP client you always wanted!",
+    "folders": [
+        "generated-docs"
+    ],
+    "rules": [
+        "Always import `sttp.client4.*` as the first step when working with sttp client to bring the essential API into scope.",
+        "Start with `basicRequest` as the foundation for building HTTP requests, as it provides a sensible default with gzip/deflate encoding support.",
+        "Request definitions are immutable data structures that can be safely shared across threads and customized multiple times without side effects.",
+        "The request method and URI must be specified together using methods like `.get(uri)`, `.post(uri)`, etc., and both are required before a request can be sent.",
+        "Use the `uri` string interpolator for building URIs with automatic escaping and support for optional parameters that are removed when undefined.",
+        "Request parameters (headers, cookies, body, etc.) can be specified in any order, allowing for flexible request template creation.",
+        "Choose backends based on your effect system: `DefaultSyncBackend` for synchronous blocking operations, `Future`-based backends for async operations, or effect-specific backends for cats-effect, ZIO, Monix, etc.",
+        "Response body handling must be specified upfront as part of the request description using `ResponseAs[T]` methods like `asString`, `asByteArray`, or `asJson`.",
+        "By default, response bodies are returned as `Either[String, T]` where left indicates HTTP 4xx/5xx errors and right indicates 2xx success.",
+        "Use `...OrFail` response descriptions (like `asStringOrFail`) when you want exceptions thrown for non-2xx status codes instead of `Either` error handling.",
+        "Backend instances should be created once per application lifecycle and properly closed when the application terminates to manage resources like connection pools.",
+        "For JSON handling, add specific integration dependencies (like `upickle`, `circe`) and use `asJson[T]` response descriptions with appropriate type class instances.",
+        "Streaming responses require backends that support the specific stream type (e.g., `fs2.Stream`, `zio.stream.Stream`, `akka.stream.Source`).",
+        "Use `fromMetadata` combinator to dynamically choose response deserialization based on status codes and headers.",
+        "WebSocket support requires selecting a backend that explicitly supports WebSocket capabilities as indicated in the backend summary table.",
+        "For synchronous backends, streaming operations use `java.io.InputStream` (blocking) or `ox.flow.Flow` (available on Java 21+).",
+        "Backend wrappers like `LoggingBackend`, `PrometheusBackend`, and `OpenTelemetryTracingBackend` can be layered to add cross-cutting concerns without changing the core API.",
+        "Always handle resource cleanup properly by using `asInputStream(f)` for safe stream consumption or ensure manual cleanup with `asInputStreamUnsafe`.",
+        "Request definitions separate the 'what' (request description) from the 'how' (backend execution), enabling better testability and flexibility.",
+        "Use `.mapResponse()` method to transform response types directly on the request description for cleaner API usage."
+    ]
+}
