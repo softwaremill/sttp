@@ -126,7 +126,7 @@ val play29JsonVersion = "2.10.7"
 
 val playJsonVersion = "3.0.5"
 
-val catsEffect_3_version = "3.6.1"
+val catsEffect_3_version = "3.6.2"
 val fs2_3_version = "3.12.0"
 
 val catsEffect_2_version = "2.5.5"
