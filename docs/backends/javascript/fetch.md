@@ -161,19 +161,4 @@ The backend supports both regular and streaming [websockets](../../other/websock
 
 ## Server-sent events
 
-Received data streams can be parsed to a stream of server-sent events (SSE), when using the Monix variant:
-
-```scala
-import monix.reactive.Observable
-import monix.eval.Task
-
-import sttp.capabilities.monix.MonixStreams
-import sttp.client4.impl.monix.MonixServerSentEvents
-import sttp.model.sse.ServerSentEvent
-import sttp.client4.*
-
-def processEvents(source: Observable[ServerSentEvent]): Task[Unit] = ???
-
-basicRequest.response(asStream(MonixStreams)(stream => 
-  processEvents(stream.transform(MonixServerSentEvents.parse))))
-```
+Received data streams can be parsed to a stream of server-sent events (SSE), when using the [Monix](../monix.md) and [ZIO](../zio.md) variants - the respective documentation pages contain appropriate SSE examples.
