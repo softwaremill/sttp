@@ -126,7 +126,7 @@ val play29JsonVersion = "2.10.7"
 
 val playJsonVersion = "3.0.5"
 
-val catsEffect_3_version = "3.6.3"
+val catsEffect_3_version = "3.7.0-RC1"
 val fs2_3_version = "3.12.0"
 
 val catsEffect_2_version = "2.5.5"
@@ -401,6 +401,10 @@ lazy val cats = (projectMatrix in file("effects/cats"))
   .jsPlatform(
     scalaVersions = scala2And3,
     settings = commonJsSettings ++ commonJsBackendSettings ++ browserChromeTestSettings ++ testServerSettings
+  )
+  .nativePlatform(
+    scalaVersions = List(scala3),
+    settings = commonNativeSettings ++ testServerSettings
   )
 
 lazy val fs2Ce2 = (projectMatrix in file("effects/fs2-ce2"))
