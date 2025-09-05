@@ -7,7 +7,7 @@ A JavaScript backend with web socket support. Implemented using the [Fetch API](
 This is the default backend, available in the main jar for JS. To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client4" %%% "core" % "4.0.9"
+"com.softwaremill.sttp.client4" %%% "core" % "4.0.10"
 ```
 
 And create the backend instance:
@@ -26,7 +26,7 @@ Note that `Fetch` does not pass cookies by default. If your request needs cookie
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client4" %%% "monix" % "4.0.9"
+"com.softwaremill.sttp.client4" %%% "monix" % "4.0.10"
 ```
 
 And create the backend instance:
@@ -40,7 +40,7 @@ val backend = FetchMonixBackend()
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client4" %%% "zio" % "4.0.9"
+"com.softwaremill.sttp.client4" %%% "zio" % "4.0.10"
 ```
 
 And create the backend instance:
@@ -55,13 +55,13 @@ Any effect implementing the cats-effect `Concurrent` typeclass can be used. To u
 your project:
 
 ```
-"com.softwaremill.sttp.client4" %%% "cats" % "4.0.9"
+"com.softwaremill.sttp.client4" %%% "cats" % "4.0.10"
 ```
 
 If you are on Cats Effect 2 (CE2) you will need to add the CE2 specific dependency instead:
 
 ```
-"com.softwaremill.sttp.client4" %%% "catsce2" % "4.0.9"
+"com.softwaremill.sttp.client4" %%% "catsce2" % "4.0.10"
 ```
 
 And create the backend instance:
@@ -129,7 +129,7 @@ Streaming support is provided via `FetchMonixBackend`. Note that streaming suppo
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client4" %%% "monix" % "4.0.9"
+"com.softwaremill.sttp.client4" %%% "monix" % "4.0.10"
 ```
 
 An example of streaming a response:
@@ -161,19 +161,4 @@ The backend supports both regular and streaming [websockets](../../other/websock
 
 ## Server-sent events
 
-Received data streams can be parsed to a stream of server-sent events (SSE), when using the Monix variant:
-
-```scala
-import monix.reactive.Observable
-import monix.eval.Task
-
-import sttp.capabilities.monix.MonixStreams
-import sttp.client4.impl.monix.MonixServerSentEvents
-import sttp.model.sse.ServerSentEvent
-import sttp.client4.*
-
-def processEvents(source: Observable[ServerSentEvent]): Task[Unit] = ???
-
-basicRequest.response(asStream(MonixStreams)(stream => 
-  processEvents(stream.transform(MonixServerSentEvents.parse))))
-```
+Received data streams can be parsed to a stream of server-sent events (SSE), when using the [Monix](../monix.md) and [ZIO](../zio.md) variants - the respective documentation pages contain appropriate SSE examples.

@@ -30,6 +30,7 @@
 
 ## Logging
 
+* [A backend wrapper which logs the response body as a string](https://github.com/softwaremill/sttp/tree/master/examples/src/main/scala/sttp/client4/examples/logging/logAsStringBackend.scala) <span class="example-tag example-backend">HttpClient</span> <span class="example-tag example-effects">Synchronous</span>
 * [Add a logging backend wrapper, which uses slf4j](https://github.com/softwaremill/sttp/tree/master/examples/src/main/scala/sttp/client4/examples/logging/logRequestsSlf4j.scala) <span class="example-tag example-backend">HttpClient</span> <span class="example-tag example-effects">Direct</span>
 
 ## Observability
