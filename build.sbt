@@ -129,6 +129,9 @@ val playJsonVersion = "3.0.5"
 val catsEffect_3_version = "3.6.3"
 val fs2_3_version = "3.12.2"
 
+// This version provides Scala Native 0.5.x support. Drop this when 3.7.0 is released.
+val catsEffect_3_RC_version = "3.7.0-RC1"
+
 val catsEffect_2_version = "2.5.5"
 
 val fs2_2_version = "2.5.12"
@@ -382,15 +385,22 @@ lazy val catsCe2 = (projectMatrix in file("effects/cats-ce2"))
     settings = commonJsSettings ++ commonJsBackendSettings ++ browserChromeTestSettings ++ testServerSettings
   )
 
+lazy val catsEffect = Def.setting {
+  val ceVersion =
+    if (virtualAxes.value.contains(VirtualAxis.native)) catsEffect_3_RC_version
+    else catsEffect_3_version
+  Seq(
+    "org.typelevel" %%% "cats-effect-kernel" % ceVersion,
+    "org.typelevel" %%% "cats-effect-std" % ceVersion,
+    "org.typelevel" %%% "cats-effect" % ceVersion % Test
+  )
+}
+
 lazy val cats = (projectMatrix in file("effects/cats"))
   .settings(
     name := "cats",
     Test / publishArtifact := true,
-    libraryDependencies ++= Seq(
-      "org.typelevel" %%% "cats-effect-kernel" % catsEffect_3_version,
-      "org.typelevel" %%% "cats-effect-std" % catsEffect_3_version,
-      "org.typelevel" %%% "cats-effect" % catsEffect_3_version % Test
-    )
+    libraryDependencies ++= catsEffect.value
   )
   .settings(testServerSettings)
   .dependsOn(core % compileAndTest)
@@ -401,6 +411,10 @@ lazy val cats = (projectMatrix in file("effects/cats"))
   .jsPlatform(
     scalaVersions = scala2And3,
     settings = commonJsSettings ++ commonJsBackendSettings ++ browserChromeTestSettings ++ testServerSettings
+  )
+  .nativePlatform(
+    scalaVersions = List(scala3),
+    settings = commonNativeSettings ++ testServerSettings
   )
 
 lazy val fs2Ce2 = (projectMatrix in file("effects/fs2-ce2"))
