@@ -58,6 +58,15 @@ class ZioJsonTests extends AnyFlatSpec with Matchers with EitherValues {
     original shouldBe body
   }
 
+  it should "include a non-null deserialization exception cause" in {
+    val body = """not valid json"""
+
+    val responseAs = asJson[Outer]
+
+    val Left(DeserializationException(_, cause, _)) = RunResponseAs(responseAs)(body)
+    cause.getMessage should not be null
+  }
+
   it should "fail to decode from empty input" in {
     val responseAs = asJson[Inner]
 

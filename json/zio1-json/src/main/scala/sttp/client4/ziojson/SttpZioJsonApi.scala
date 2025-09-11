@@ -67,5 +67,5 @@ trait SttpZioJsonApi extends SttpZioJsonApiExtensions {
   def deserializeJson[B: JsonDecoder: IsOption]: String => Either[Exception, B] =
     JsonInput.sanitize[B].andThen(_.fromJson[B].left.map(ZioJsonException(_)))
 
-  case class ZioJsonException(error: String) extends Exception
+  case class ZioJsonException(error: String) extends Exception(error)
 }
