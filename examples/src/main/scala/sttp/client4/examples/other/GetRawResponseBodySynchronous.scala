@@ -1,6 +1,6 @@
 // {cat=Other; effects=Direct; backend=HttpClient}: Handle the body by both parsing it to JSON and returning the raw string
 
-//> using dep com.softwaremill.sttp.client4::circe:4.0.9
+//> using dep com.softwaremill.sttp.client4::circe:4.0.11
 //> using dep io.circe::circe-generic:0.14.14
 
 package sttp.client4.examples.other
