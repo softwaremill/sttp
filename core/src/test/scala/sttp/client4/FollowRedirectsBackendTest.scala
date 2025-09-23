@@ -9,8 +9,11 @@ import sttp.model.internal.Rfc3986
 import sttp.model.{Header, StatusCode, Uri}
 import sttp.model.headers.CookieWithMeta
 import sttp.model.Method
+import org.scalatest.Checkpoints
+import sttp.model.headers.Cookie
+import sttp.model.HeaderNames
 
-class FollowRedirectsBackendTest extends AnyFunSuite with Matchers with EitherValues {
+class FollowRedirectsBackendTest extends AnyFunSuite with Matchers with EitherValues with Checkpoints {
   val testData = List(
     ("/x/y/z", true),
     ("  /x2/y/z", true),
@@ -57,36 +60,62 @@ class FollowRedirectsBackendTest extends AnyFunSuite with Matchers with EitherVa
 
   test("should pass cookies during redirections") {
 
-    val url0 = uri"https://example.com/0"
-    val url1 = uri"https://example.com/1"
+    val maxRedirects = 5
+    val staticName = "session"
 
-    val response0 = ResponseStub
+    val (idToUrl, urlToId) = {
+      val x = (0 to maxRedirects).map(id => id -> uri"https://example.com/$id")
+      (x.toMap, x.map { case (id, url) => url -> id }.toMap)
+    }
+
+    def response(number: Int) = ResponseStub
       .adjust(
         "",
         StatusCode.Found,
         Vector(
-          Header.location(url1),
-          Header.setCookie(CookieWithMeta("session", "one"))
+          Header.location(idToUrl.apply(number + 1)),
+          Header.setCookie(CookieWithMeta(staticName, (number + 1).toString)),
+          Header.setCookie(CookieWithMeta(s"$number-fuzz", ""))
         )
       )
 
-    val stub0 = BackendStub.synchronous
-      .whenRequestMatches { r => r.uri == url0 && r.method == Method.POST }
-      .thenRespond(response0)
-      .whenRequestMatches { r => r.uri == url1 && r.method == Method.GET && r.unsafeCookies.isEmpty }
-      .thenRespondUnauthorized()
-      .whenRequestMatches { r =>
-        r.uri == url1 && r.method == Method.GET && r.unsafeCookies.map(_.name).contains("session")
+    val checkpoint = new Checkpoint()
+
+    val stub = BackendStub.synchronous
+      .whenRequestMatchesPartial {
+        case r if (urlToId.contains(r.uri)) => {
+          val id = urlToId.apply(r.uri)
+          if (id < maxRedirects) {
+            checkpoint(
+              r.unsafeCookies.map(_.name) should contain(staticName)
+            )
+            response(urlToId.apply(r.uri))
+          } else {
+            ResponseStub.adjust("", StatusCode.Ok, Vector(Header.setCookie(CookieWithMeta(staticName, "final"))))
+          }
+        }
+        case r => ResponseStub.adjust(s"No cookies found, or unxpected request $r")
       }
-      .thenRespondOk()
-      .whenAnyRequest
-      .thenRespondNotFound()
 
     val redirectsBackend =
-      wrappers.FollowRedirectsBackend(stub0, config = FollowRedirectsConfig(sensitiveHeaders = Set.empty))
-    val result = basicRequest.redirectToGet(true).post(url0).send(redirectsBackend)
+      wrappers.FollowRedirectsBackend(stub, config = FollowRedirectsConfig(sensitiveHeaders = Set.empty))
+    val result = basicRequest.redirectToGet(true).post(idToUrl.apply(0)).send(redirectsBackend)
 
-    result.unsafeCookies.size shouldEqual 1
-    result.code shouldBe StatusCode.Ok
+    checkpoint(result.code shouldBe StatusCode.Ok)
+
+    // typical solution needed to populate the next request (oldest to newest),
+    // assuming map internals have not changed
+    // adds oldest first which gets overriden by the last item on the list
+    val cookies = result.history
+      .flatMap(_.unsafeCookies)
+      .appendedAll(result.unsafeCookies)
+      .map(cookie => (cookie.name, cookie.domain) -> cookie)
+      .toMap
+      .values
+      .toSeq
+      .sortBy(_.name)
+
+    checkpoint(result.unsafeCookies.sortBy(_.name) shouldEqual cookies)
+    checkpoint.reportAll()
   }
 }
