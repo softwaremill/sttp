@@ -165,7 +165,7 @@ val braveOpentracingVersion = "1.0.1"
 val zipkinSenderOkHttpVersion = "3.5.1"
 val resilience4jVersion = "2.3.0"
 val http4s_ce2_version = "0.22.15"
-val http4s_ce3_version = "0.23.31"
+val http4s_ce3_version = "0.23.32"
 val osLibVersion = "0.11.4"
 val tethysVersion = "0.29.5"
 val openTelemetryVersion = "1.54.1"
@@ -643,7 +643,7 @@ lazy val http4sBackend = (projectMatrix in file("http4s-backend"))
     name := "http4s-backend",
     libraryDependencies ++= Seq(
       "org.http4s" %% "http4s-client" % http4s_ce3_version,
-      "org.http4s" %% "http4s-ember-client" % "0.23.31" % Optional,
+      "org.http4s" %% "http4s-ember-client" % "0.23.32" % Optional,
       "org.http4s" %% "http4s-blaze-client" % "0.23.17" % Optional
     ),
     evictionErrorLevel := Level.Info
