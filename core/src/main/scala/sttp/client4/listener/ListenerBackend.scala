@@ -6,6 +6,7 @@ import sttp.capabilities.Effect
 import sttp.client4.wrappers.DelegateBackend
 import sttp.shared.Identity
 import java.util.concurrent.atomic.AtomicBoolean
+import scala.util.control.NoStackTrace
 
 /** A backend wrapper which notifies the given [[RequestListener]] when a request starts and completes. */
 abstract class ListenerBackend[F[_], P, L](
@@ -15,12 +16,18 @@ abstract class ListenerBackend[F[_], P, L](
   override def send[T](request: GenericRequest[T, P with Effect[F]]): F[Response[T]] =
     listener.before(request).flatMap { case tag =>
       val onBodyReceivedCalled = new AtomicBoolean
+      // #2669. It would be best to either:
+      // * have a dedicated .handleCancelled method on MonadError, implemented for monads which support it
+      // * and/or, have a dedicated callback on the RequestListener, which is called when the request is cancelled
+      // But we cannot modify either of the interfaces (due to bincompat), so we resort to using an atomic flag
+      val responseHandledOrExceptionCalled = new AtomicBoolean
       val requestToSend = request.onBodyReceived { meta =>
         onBodyReceivedCalled.set(true)
         listener.responseBodyReceived(request, meta, tag)
       }
       monad
         .handleError(delegate.send(requestToSend)) { case e: Exception =>
+          responseHandledOrExceptionCalled.set(true)
           monad.flatMap {
             ResponseException.find(e) match {
               case Some(re) => listener.responseHandled(requestToSend, re.response, tag, Some(re))
@@ -28,7 +35,20 @@ abstract class ListenerBackend[F[_], P, L](
             }
           } { _ => monad.error(e) }
         }
-        .flatMap(response => listener.responseHandled(requestToSend, response, tag, None).map(_ => response))
+        .flatMap { response =>
+          responseHandledOrExceptionCalled.set(true)
+          listener.responseHandled(requestToSend, response, tag, None).map(_ => response)
+        }
+        .ensure {
+          if (!responseHandledOrExceptionCalled.get()) {
+            listener.exception(
+              requestToSend,
+              tag,
+              new InterruptedException with NoStackTrace,
+              onBodyReceivedCalled.get()
+            )
+          } else monad.unit(())
+        }
     }
 }
 

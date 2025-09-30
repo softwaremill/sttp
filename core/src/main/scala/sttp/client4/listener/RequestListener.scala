@@ -49,6 +49,9 @@ trait RequestListener[F[_], L] {
     *
     * The [[responseBodyReceived]] might have been called before this method, but will not be called after.
     *
+    * If handling of the request is cancelled, and the effect system used doesn't rely on exceptions for cancellation,
+    * this method will still be called, with an [[InterruptedException]] exception.
+    *
     * @param responseBodyReceivedCalled
     *   Indicates if [[responseBodyReceivedCalled]] has been called before this method.
     */
