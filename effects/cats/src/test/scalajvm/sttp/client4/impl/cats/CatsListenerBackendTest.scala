@@ -6,7 +6,7 @@ import cats.effect.std.Semaphore
 import cats.effect.unsafe.implicits.global
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
-import sttp.client4.*
+import sttp.client4._
 import sttp.client4.httpclient.cats.HttpClientCatsBackend
 import sttp.client4.listener.ListenerBackend
 import sttp.client4.listener.RequestListener
