@@ -5,7 +5,10 @@ the `scala-sttp` code generator, included in the [openapi-generator](https://git
 
 ## Using the openapi-generator
 
-For `scala-sttp`'s generator's configuration options refer to: [https://openapi-generator.tech/docs/generators/scala-sttp](https://openapi-generator.tech/docs/generators/scala-sttp).
+There are two generators that you can use:
+
+* [scala-sttp4-jsoniter](https://openapi-generator.tech/docs/generators/scala-sttp4-jsoniter), using sttp-client 4, Scala 3 and jsoniter-scala for JSON
+* [scala-sttp](https://openapi-generator.tech/docs/generators/scala-sttp), using sttp-client 4, json4s or circe for JSON
 
 ### Standalone setup
 
@@ -13,14 +16,12 @@ This is the simplest setup which relies on calling openapi-generator manually an
 
 First, you will need to install/download openapi-generator. Follow openapi-generator's [official documentation](https://github.com/OpenAPITools/openapi-generator#1---installation) on how to do this.
 
-Keep in mind that the `scala-sttp` generator is available only since v5.0.0-beta. 
-
 Next, call the generator with the following options:
 
 ```bash
 openapi-generator-cli generate \
   -i petstore.yaml \
-  --generator-name scala-sttp \
+  --generator-name scala-sttp4-jsoniter \
   -o samples/client/petstore/
 ```
 
@@ -40,7 +41,7 @@ lazy val petstoreApi: Project = project
   .in(file("petstore-api"))
   .settings(
     openApiInputSpec := s"${baseDirectory.value.getPath}/petstore.yaml",
-    openApiGeneratorName := "scala-sttp",
+    openApiGeneratorName := "scala-sttp4-jsoniter",
     openApiOutputDir := baseDirectory.value.name,
     libraryDependencies ++= Seq(
       "com.softwaremill.sttp.client4" %% "core" % "@VERSION@",
@@ -90,7 +91,7 @@ lazy val petstoreApi: Project = project
   .in(file("petstore-api"))
   .settings(
     openApiInputSpec := s"${baseDirectory.value.getPath}/petstore.yaml",
-    openApiGeneratorName := "scala-sttp",
+    openApiGeneratorName := "scala-sttp4-jsoniter",
     openApiOutputDir := baseDirectory.value.name,
     openApiIgnoreFileOverride := s"${baseDirectory.in(ThisBuild).value.getPath}/openapi-ignore-file",
     libraryDependencies ++= Seq(
@@ -108,4 +109,4 @@ Full demo project is available on [github](https://github.com/softwaremill/sttp-
 #### Additional notes
 
 Although recent versions of the IntelliJ IDEA IDE come with "OpenApi Specification" plugin bundled into it, this plugin doesn't seem to support 
-latest versions of generator and so, it is impossible to generate sttp bindings from it. 
+latest versions of generator and so, it might be impossible to generate sttp bindings from it. 
