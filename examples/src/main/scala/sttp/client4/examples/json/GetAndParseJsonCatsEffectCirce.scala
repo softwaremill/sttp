@@ -3,7 +3,7 @@
 //> using dep com.softwaremill.sttp.client4::circe:4.0.9
 //> using dep com.softwaremill.sttp.client4::cats:4.0.9
 //> using dep org.typelevel::cats-effect:3.5.7
-//> using dep io.circe::circe-generic:0.14.14
+//> using dep io.circe::circe-generic:0.14.15
 
 package sttp.client4.examples.json
 
