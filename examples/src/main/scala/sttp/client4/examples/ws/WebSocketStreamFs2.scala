@@ -1,6 +1,6 @@
 // {cat=WebSocket; effects=cats-effect; backend=HttpClient}: Connect to & interact with a WebSocket, using fs2 streaming
 
-//> using dep com.softwaremill.sttp.client4::fs2:4.0.9
+//> using dep com.softwaremill.sttp.client4::fs2:4.0.12
 
 package sttp.client4.examples.ws
 
