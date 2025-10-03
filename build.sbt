@@ -134,7 +134,7 @@ val catsEffect_3_RC_version = "3.7.0-RC1"
 
 val catsEffect_2_version = "2.5.5"
 
-val fs2_2_version = "2.5.12"
+val fs2_2_version = "2.5.13"
 
 val akkaHttp = "com.typesafe.akka" %% "akka-http" % "10.2.10"
 val akkaStreamVersion = "2.6.20"
