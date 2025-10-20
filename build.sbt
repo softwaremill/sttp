@@ -833,7 +833,7 @@ lazy val upickle = (projectMatrix in file("json/upickle"))
   .settings(
     name := "upickle",
     libraryDependencies ++= Seq(
-      "com.lihaoyi" %%% "upickle" % "4.3.2"
+      "com.lihaoyi" %%% "upickle" % "4.4.0"
     ),
     scalaTest,
     // using macroRW causes a "match may not be exhaustive" error
