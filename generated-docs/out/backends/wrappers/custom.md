@@ -45,7 +45,7 @@ A number of example backend wrappers can be found in [examples](../../examples.m
 Implementing a new backend is made easy as the tests are published in the `core` jar file under the `tests` classifier. Simply add the follow dependencies to your `build.sbt`:
 
 ```
-"com.softwaremill.sttp.client4" %% "core" % "4.0.12" % Test classifier "tests"
+"com.softwaremill.sttp.client4" %% "core" % "4.0.13" % Test classifier "tests"
 ```
 
 Implement your backend and extend the `HttpTest` class:
@@ -72,9 +72,9 @@ import sttp.client4.impl.cats.implicits.*
 from the cats integration module. The module should be available on the classpath after adding following dependency:
 
 ```scala
-"com.softwaremill.sttp.client4" %% "cats" % "4.0.12" // for cats-effect 3.x
+"com.softwaremill.sttp.client4" %% "cats" % "4.0.13" // for cats-effect 3.x
 // or
-"com.softwaremill.sttp.client4" %% "catsce2" % "4.0.12" // for cats-effect 2.x
+"com.softwaremill.sttp.client4" %% "catsce2" % "4.0.13" // for cats-effect 2.x
 ```
 
 The object contains implicits to convert a cats `MonadError` into the sttp `MonadError`, 
