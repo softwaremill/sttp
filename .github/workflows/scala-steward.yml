@@ -10,32 +10,10 @@ permissions:
   contents: write        # Required to checkout and push changes
   pull-requests: write   # Required to create PRs for dependency updates
 
-# jobs:
-#   scala-steward:
-#     uses: softwaremill/github-actions-workflows/.github/workflows/scala-steward.yml@main
-#     secrets: inherit
-#     with:
-#       java-opts: '-Xmx3500M'
-
 jobs:
   scala-steward:
-    runs-on: ubuntu-24.04
-    env:
-      JAVA_OPTS: '-Xmx3500M'
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Set up JDK
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '11'
-          cache: 'sbt'
-      - uses: sbt/setup-sbt@3e125ece5c3e5248e18da9ed8d2cce3d335ec8dd # v1, specifically v1.1.14
-      - name: Launch Scala Steward
-        uses: scala-steward-org/scala-steward-action@53d486a68877f4a6d1e110e8058fe21e593db356 # v2, specifically v2.77.0
-        with:
-          author-name: scala-steward
-          author-email: scala-steward
-          repo-config: .scala-steward.conf
-          ignore-opts-files: false      
+    uses: softwaremill/github-actions-workflows/.github/workflows/scala-steward.yml@main
+    secrets:
+      github-token: ${{ secrets.GITHUB_TOKEN }}
+    with:
+      java-version: '21'
