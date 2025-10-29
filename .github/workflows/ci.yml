@@ -10,12 +10,12 @@ permissions:
   pull-requests: write   # labeler, auto-merge requirement
 jobs:
   ci:
-    # run on 1) push, 2) external PRs, 3) softwaremill-ci PRs
+    # run on 1) push, 2) external PRs, 3) github-actions[bot] PRs
     # do not run on internal, non-steward PRs since those will be run by push to branch
     if: |
       github.event_name == 'push' || 
       github.event.pull_request.head.repo.full_name != github.repository ||
-      github.event.pull_request.user.login == 'softwaremill-ci'
+      github.event.pull_request.user.login == 'github-actions[bot]'
     runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
@@ -47,7 +47,7 @@ jobs:
         echo "STTP_NATIVE=1" >> $GITHUB_ENV
     - name: Install scala-cli
       if: matrix.target-platform == 'JVM'
-      uses: VirtusLab/scala-cli-setup@main
+      uses: VirtusLab/scala-cli-setup@77834b5926f3eb70869d8009530c65585f7a039b # main, specifically v1.9.1
       with:
         jvm: '' # needed because scala-cli-setup otherwise forces the installation of their default JVM (17)        
     - name: Enable Loom-specific modules
@@ -94,7 +94,7 @@ jobs:
           distribution: 'temurin'
           java-version: ${{ matrix.java }}
           cache: 'sbt'
-      - uses: sbt/setup-sbt@v1
+      - uses: sbt/setup-sbt@3e125ece5c3e5248e18da9ed8d2cce3d335ec8dd # v1, specifically v1.1.14
       - name: Install libidn2-dev libcurl3-dev
         run: |
           sudo apt-get update
@@ -134,14 +134,14 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   label:
-    # only for PRs by softwaremill-ci
-    if: github.event.pull_request.user.login == 'softwaremill-ci'
+    # only for PRs by github-actions[bot]
+    if: github.event.pull_request.user.login == 'github-actions[bot]'
     uses: softwaremill/github-actions-workflows/.github/workflows/label.yml@main
     secrets: inherit
 
   auto-merge:
-    # only for PRs by softwaremill-ci
-    if: github.event.pull_request.user.login == 'softwaremill-ci'
+    # only for PRs by github-actions[bot]
+    if: github.event.pull_request.user.login == 'github-actions[bot]'
     needs: [ ci, mima, label ]
     uses: softwaremill/github-actions-workflows/.github/workflows/auto-merge.yml@main
     secrets: inherit
