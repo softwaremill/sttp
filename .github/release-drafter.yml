@@ -3,6 +3,6 @@ categories:
     labels:
       - 'dependency'
 template: |
-  ## What’s Changed
+  ## What's Changed
 
   $CHANGES
