@@ -51,7 +51,7 @@ class CachingBackend[F[_], P](delegate: GenericBackend[F, P], cache: Cache[F], c
       val key = config.cacheKey(request)
       cache.get(key).flatMap { cached =>
         cached.map(c => config.deserializeResponse(c)) match {
-          case None => sendNotInCache(request, key)
+          case None                          => sendNotInCache(request, key)
           case Some(Success(cachedResponse)) =>
             log.debug(s"Found a cached response for ${request.showBasic}.")
             monad.unit(adjustResponseReadFromCache(cachedResponse.toResponse(request), request))
@@ -102,16 +102,16 @@ class CachingBackend[F[_], P](delegate: GenericBackend[F, P], cache: Cache[F], c
 
   private def responseAsCacheFriendly(responseAs: GenericResponseAs[_, _]): Boolean =
     responseAs match {
-      case IgnoreResponse                  => true
-      case ResponseAsByteArray             => true
-      case ResponseAsStream(_, _)          => false
-      case ResponseAsStreamUnsafe(_)       => false
-      case ResponseAsInputStream(_)        => true
-      case ResponseAsInputStreamUnsafe     => true
-      case ResponseAsFile(_)               => false
-      case ResponseAsWebSocket(_)          => false
-      case ResponseAsWebSocketUnsafe()     => false
-      case ResponseAsWebSocketStream(_, _) => false
+      case IgnoreResponse                              => true
+      case ResponseAsByteArray                         => true
+      case ResponseAsStream(_, _)                      => false
+      case ResponseAsStreamUnsafe(_)                   => false
+      case ResponseAsInputStream(_)                    => true
+      case ResponseAsInputStreamUnsafe                 => true
+      case ResponseAsFile(_)                           => false
+      case ResponseAsWebSocket(_)                      => false
+      case ResponseAsWebSocketUnsafe()                 => false
+      case ResponseAsWebSocketStream(_, _)             => false
       case ResponseAsFromMetadata(conditions, default) =>
         conditions.forall(c => responseAsCacheFriendly(c.responseAs)) && responseAsCacheFriendly(default)
       case MappedResponseAs(raw, _, _) => responseAsCacheFriendly(raw)
@@ -124,16 +124,16 @@ class CachingBackend[F[_], P](delegate: GenericBackend[F, P], cache: Cache[F], c
       responseMetadata: ResponseMetadata
   ): T =
     responseAs match {
-      case IgnoreResponse                  => ()
-      case ResponseAsByteArray             => data
-      case ResponseAsStream(_, _)          => throw new UnsupportedOperationException()
-      case ResponseAsStreamUnsafe(s)       => throw new UnsupportedOperationException()
-      case ResponseAsInputStream(f)        => f(new ByteArrayInputStream(data))
-      case ResponseAsInputStreamUnsafe     => new ByteArrayInputStream(data)
-      case ResponseAsFile(_)               => throw new UnsupportedOperationException()
-      case ResponseAsWebSocket(_)          => throw new UnsupportedOperationException()
-      case ResponseAsWebSocketUnsafe()     => throw new UnsupportedOperationException()
-      case ResponseAsWebSocketStream(_, _) => throw new UnsupportedOperationException()
+      case IgnoreResponse                              => ()
+      case ResponseAsByteArray                         => data
+      case ResponseAsStream(_, _)                      => throw new UnsupportedOperationException()
+      case ResponseAsStreamUnsafe(s)                   => throw new UnsupportedOperationException()
+      case ResponseAsInputStream(f)                    => f(new ByteArrayInputStream(data))
+      case ResponseAsInputStreamUnsafe                 => new ByteArrayInputStream(data)
+      case ResponseAsFile(_)                           => throw new UnsupportedOperationException()
+      case ResponseAsWebSocket(_)                      => throw new UnsupportedOperationException()
+      case ResponseAsWebSocketUnsafe()                 => throw new UnsupportedOperationException()
+      case ResponseAsWebSocketStream(_, _)             => throw new UnsupportedOperationException()
       case ResponseAsFromMetadata(conditions, default) =>
         runResponseAs(
           conditions.find(_.condition(responseMetadata)).map(_.responseAs).getOrElse(default),
@@ -141,7 +141,7 @@ class CachingBackend[F[_], P](delegate: GenericBackend[F, P], cache: Cache[F], c
           responseMetadata
         )
       case MappedResponseAs(raw, g, _) => g(runResponseAs(raw, data, responseMetadata), responseMetadata)
-      case ResponseAsBoth(l, r) =>
+      case ResponseAsBoth(l, r)        =>
         (runResponseAs(l, data, responseMetadata), Some(runResponseAs(r, data, responseMetadata)))
     }
 

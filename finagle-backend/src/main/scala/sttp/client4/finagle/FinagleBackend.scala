@@ -97,10 +97,10 @@ class FinagleBackend(client: Option[Client] = None) extends Backend[TFuture] {
       case FileBody(f, _) =>
         val content: String = Source.fromFile(f.toFile).mkString
         buildRequest(url, headers, finagleMethod, Some(ByteArray(content.getBytes: _*)), r.httpVersion)
-      case NoBody => buildRequest(url, headers, finagleMethod, None, r.httpVersion)
+      case NoBody              => buildRequest(url, headers, finagleMethod, None, r.httpVersion)
       case StringBody(s, e, _) =>
         buildRequest(url, headers, finagleMethod, Some(ByteArray(s.getBytes(e): _*)), r.httpVersion)
-      case ByteArrayBody(b, _) => buildRequest(url, headers, finagleMethod, Some(ByteArray(b: _*)), r.httpVersion)
+      case ByteArrayBody(b, _)  => buildRequest(url, headers, finagleMethod, Some(ByteArray(b: _*)), r.httpVersion)
       case ByteBufferBody(b, _) =>
         buildRequest(url, headers, finagleMethod, Some(ByteBuffer.Owned(b)), r.httpVersion)
       case InputStreamBody(is, _) =>

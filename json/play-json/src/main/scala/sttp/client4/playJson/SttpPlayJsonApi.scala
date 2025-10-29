@@ -69,7 +69,7 @@ trait SttpPlayJsonApi {
       Try(Json.parse(s)) match {
         case Failure(e: Exception) => Left(PlayJsErrorException(JsError(e.getMessage), Some(e)))
         case Failure(t: Throwable) => throw t
-        case Success(json) =>
+        case Success(json)         =>
           Json.fromJson(json).asEither match {
             case Left(failures) => Left(PlayJsErrorException(JsError(failures), None))
             case Right(success) => Right(success)

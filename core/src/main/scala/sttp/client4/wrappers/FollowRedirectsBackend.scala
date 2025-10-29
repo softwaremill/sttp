@@ -50,7 +50,7 @@ abstract class FollowRedirectsBackend[F[_], P] private (
       redirects: Int
   ): F[Response[T]] =
     response.header(HeaderNames.Location) match {
-      case None => monad.unit(response)
+      case None      => monad.unit(response)
       case Some(loc) =>
         if (redirects >= request.options.maxRedirects) {
           monad.error(new SttpClientException.TooManyRedirectsException(request, redirects))

@@ -27,16 +27,16 @@ private[client4] trait BodyToHttpClient[F[_], S, R] {
   ): F[BodyPublisher] = {
     val (maybeCompressedBody, contentLength) = Compressor.compressIfNeeded(request, compressors)
     val body = maybeCompressedBody match {
-      case NoBody              => BodyPublishers.noBody().unit
-      case StringBody(b, _, _) => BodyPublishers.ofString(b).unit
-      case ByteArrayBody(b, _) => BodyPublishers.ofByteArray(b).unit
+      case NoBody               => BodyPublishers.noBody().unit
+      case StringBody(b, _, _)  => BodyPublishers.ofString(b).unit
+      case ByteArrayBody(b, _)  => BodyPublishers.ofByteArray(b).unit
       case ByteBufferBody(b, _) =>
         if (b.hasArray) BodyPublishers.ofByteArray(b.array(), 0, b.limit()).unit
         else { val a = new Array[Byte](b.remaining()); b.get(a); BodyPublishers.ofByteArray(a).unit }
       case InputStreamBody(b, _) => BodyPublishers.ofInputStream(toJavaSupplier(() => b)).unit
       case FileBody(f, _)        => BodyPublishers.ofFile(f.toFile.toPath).unit
       case StreamBody(s)         => streamToPublisher(s.asInstanceOf[streams.BinaryStream])
-      case m: MultipartBody[_] =>
+      case m: MultipartBody[_]   =>
         val baseContentType = contentType.getOrElse("multipart/form-data")
         val (body, boundary) = multiPartBodyBuilder(m.parts)(monad)
         builder.header(HeaderNames.ContentType, s"$baseContentType; boundary=$boundary")

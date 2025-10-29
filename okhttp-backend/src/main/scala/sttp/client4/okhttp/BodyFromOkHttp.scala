@@ -22,7 +22,7 @@ private[okhttp] trait BodyFromOkHttp[F[_], S] {
     r match {
       case ResponseAsWebSocket(f) =>
         f.asInstanceOf[(WebSocket[F], ResponseMetadata) => F[TT]](ws, meta).ensure(ws.close())
-      case ResponseAsWebSocketUnsafe() => ws.unit.asInstanceOf[F[TT]]
+      case ResponseAsWebSocketUnsafe()     => ws.unit.asInstanceOf[F[TT]]
       case ResponseAsWebSocketStream(_, p) =>
         compileWebSocketPipe(ws, p.asInstanceOf[streams.Pipe[WebSocketFrame.Data[_], WebSocketFrame]])
     }

@@ -39,7 +39,7 @@ trait NonStreamMultipartBodyBuilder[BinaryStream, F[_]] extends MultipartBodyBui
         case NoBody         => // ignore
         case FileBody(f, _) => multipartBuilder.addPart(p.name, f.toFile.toPath, partHeaders)
         case StringBody(b, e, _) if e.equalsIgnoreCase(Utf8) => multipartBuilder.addPart(p.name, b, partHeaders)
-        case StringBody(b, e, _) =>
+        case StringBody(b, e, _)                             =>
           multipartBuilder.addPart(p.name, supplier(new ByteArrayInputStream(b.getBytes(e))), partHeaders)
         case ByteArrayBody(b, _) =>
           multipartBuilder.addPart(p.name, supplier(new ByteArrayInputStream(b)), partHeaders)
@@ -49,7 +49,7 @@ trait NonStreamMultipartBodyBuilder[BinaryStream, F[_]] extends MultipartBodyBui
           else
             multipartBuilder.addPart(p.name, supplier(new ByteArrayInputStream(b.array())), partHeaders)
         case InputStreamBody(b, _) => multipartBuilder.addPart(p.name, supplier(b), partHeaders)
-        case StreamBody(_) =>
+        case StreamBody(_)         =>
           throw new IllegalArgumentException("Multipart streaming bodies are not supported with this backend")
         case m: MultipartBody[_] => throwNestedMultipartNotAllowed
       }
@@ -82,7 +82,7 @@ trait StreamMultipartBodyBuilder[BinaryStream, F[_]] extends MultipartBodyBuilde
       val allHeaders = Header(HeaderNames.ContentDisposition, part.contentDispositionHeaderValue) +: part.headers
       val partHeaders = allHeaders.map(h => h.name -> h.value).toMap
       part.body match {
-        case NoBody => accumulatedStream
+        case NoBody         => accumulatedStream
         case FileBody(f, _) => {
           val encodedHeaders = byteArrayToStream(encodeHeaders(partHeaders, boundary))
           val endPartBytes = byteArrayToStream(CRLFBytes)

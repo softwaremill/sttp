@@ -23,7 +23,7 @@ private[client4] class WebSocketImpl[F[_]](
 ) extends WebSocket[F] {
   override def receive(): F[WebSocketFrame] =
     queue.poll.flatMap {
-      case WebSocketEvent.Open() => receive()
+      case WebSocketEvent.Open()                         => receive()
       case WebSocketEvent.Frame(c: WebSocketFrame.Close) =>
         queue.offer(WebSocketEvent.Error(WebSocketClosed(Some(c))))
         monad.unit(c)
@@ -31,7 +31,7 @@ private[client4] class WebSocketImpl[F[_]](
         // putting back the error so that subsequent invocations end in an error as well, instead of hanging
         queue.offer(e)
         monad.error(t)
-      case WebSocketEvent.Error(t) => throw t
+      case WebSocketEvent.Error(t)                 => throw t
       case WebSocketEvent.Frame(f: WebSocketFrame) =>
         monad.eval {
           ws.request(1)

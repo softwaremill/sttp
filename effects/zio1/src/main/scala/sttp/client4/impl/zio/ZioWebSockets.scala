@@ -15,7 +15,7 @@ object ZioWebSockets {
         Stream
           .repeatEffect(ws.receive())
           .flatMap {
-            case WebSocketFrame.Close(_, _) => onClose
+            case WebSocketFrame.Close(_, _)   => onClose
             case WebSocketFrame.Ping(payload) =>
               Stream.fromEffect(ws.send(WebSocketFrame.Pong(payload))).flatMap(_ => Stream.empty)
             case WebSocketFrame.Pong(_)     => Stream.empty

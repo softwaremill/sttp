@@ -37,7 +37,7 @@ private[client4] class WebSocketImpl[F[_]] private (
 
   override def send(f: WebSocketFrame, isContinuation: Boolean): F[Unit] =
     f match {
-      case WebSocketFrame.Text(payload, _, _) => monad.unit(ws.send(payload))
+      case WebSocketFrame.Text(payload, _, _)   => monad.unit(ws.send(payload))
       case WebSocketFrame.Binary(payload, _, _) =>
         val ab: ArrayBuffer = payload.toTypedArray.buffer
         monad.unit(ws.send(ab))

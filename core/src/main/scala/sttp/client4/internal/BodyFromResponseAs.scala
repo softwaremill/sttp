@@ -30,7 +30,7 @@ abstract class BodyFromResponseAs[F[_], RegularResponse, WSResponse, Stream](imp
 
       case (ResponseAsBoth(l, r), _) =>
         doApply(l, meta, response).flatMap {
-          case (leftResult, None) => ((leftResult, None): T, nonReplayableBody).unit
+          case (leftResult, None)     => ((leftResult, None): T, nonReplayableBody).unit
           case (leftResult, Some(rb)) =>
             (response match {
               case Left(rr)  => withReplayableBody(rr, rb).map(Left(_))

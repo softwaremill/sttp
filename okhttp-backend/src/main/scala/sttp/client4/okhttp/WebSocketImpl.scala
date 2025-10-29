@@ -31,7 +31,7 @@ private[okhttp] class WebSocketImpl[F[_]](
       case e @ WebSocketEvent.Error(t: Exception) =>
         queue.offer(e)
         monad.error(t)
-      case WebSocketEvent.Error(t) => throw t
+      case WebSocketEvent.Error(t)                       => throw t
       case WebSocketEvent.Frame(f: WebSocketFrame.Close) =>
         queue.offer(WebSocketEvent.Error(WebSocketClosed(Some(f))))
         monad.unit(f)

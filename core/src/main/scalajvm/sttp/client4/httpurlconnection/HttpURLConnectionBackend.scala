@@ -84,9 +84,9 @@ class HttpURLConnectionBackend private (
         val limitedIs = r.options.maxResponseBodyLength.fold[InputStream](is)(new FailingLimitedInputStream(is, _))
         readResponse(c, limitedIs, r)
       } catch {
-        case e: CharacterCodingException     => throw e
-        case e: UnsupportedEncodingException => throw e
-        case e: SocketException              => throw e
+        case e: CharacterCodingException               => throw e
+        case e: UnsupportedEncodingException           => throw e
+        case e: SocketException                        => throw e
         case _: IOException if c.getResponseCode != -1 =>
           readResponse(c, c.getErrorStream, r)
       }

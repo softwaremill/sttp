@@ -25,7 +25,7 @@ private[client4] trait BodyFromHttpClient[F[_], S, B] {
     r match {
       case ResponseAsWebSocket(f) =>
         f.asInstanceOf[(WebSocket[F], ResponseMetadata) => F[T]](ws, meta).ensure(ws.close())
-      case ResponseAsWebSocketUnsafe() => ws.unit.asInstanceOf[F[T]]
+      case ResponseAsWebSocketUnsafe()     => ws.unit.asInstanceOf[F[T]]
       case ResponseAsWebSocketStream(_, p) =>
         compileWebSocketPipe(ws, p.asInstanceOf[streams.Pipe[WebSocketFrame.Data[_], WebSocketFrame]])
     }

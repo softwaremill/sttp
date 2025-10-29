@@ -15,7 +15,7 @@ object ZioWebSockets {
         ZStream
           .repeatZIO(ws.receive())
           .flatMap {
-            case WebSocketFrame.Close(_, _) => onClose
+            case WebSocketFrame.Close(_, _)   => onClose
             case WebSocketFrame.Ping(payload) =>
               ZStream.fromZIO(ws.send(WebSocketFrame.Pong(payload))).flatMap(_ => ZStream.empty)
             case WebSocketFrame.Pong(_)     => ZStream.empty

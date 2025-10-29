@@ -211,7 +211,7 @@ abstract class AbstractFetchBackend[F[_], S <: Streams[S]](
           val blob =
             value match {
               case b: Blob => b
-              case v =>
+              case v       =>
                 new Blob(
                   Iterable(v.asInstanceOf[BlobPart]).toJSIterable,
                   BlobPropertyBag(part.contentType.orUndefined)
@@ -336,7 +336,7 @@ abstract class AbstractFetchBackend[F[_], S <: Streams[S]](
       responseAs match {
         case ResponseAsWebSocket(f) =>
           f.asInstanceOf[(WebSocket[F], ResponseMetadata) => F[T]].apply(ws, meta)
-        case ResponseAsWebSocketUnsafe() => ws.unit.asInstanceOf[F[T]]
+        case ResponseAsWebSocketUnsafe()        => ws.unit.asInstanceOf[F[T]]
         case ResponseAsWebSocketStream(_, pipe) =>
           compileWebSocketPipe(ws, pipe.asInstanceOf[streams.Pipe[WebSocketFrame.Data[_], WebSocketFrame]])
       }

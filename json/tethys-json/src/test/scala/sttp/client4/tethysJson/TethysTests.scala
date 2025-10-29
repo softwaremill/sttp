@@ -154,7 +154,7 @@ class TethysTests extends AnyFlatSpec with Matchers with EitherValues {
         ) match {
           case (Success(value), Failure(_)) => Left(value)
           case (Failure(_), Success(value)) => Right(value)
-          case (Success(_), Success(_)) =>
+          case (Success(_), Success(_))     =>
             ReaderError.wrongJson("Both succeeded.")
           case (Failure(exceptionLeft), Failure(exceptionRight)) =>
             ReaderError.wrongJson(

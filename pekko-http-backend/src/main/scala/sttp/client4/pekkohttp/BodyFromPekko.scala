@@ -150,7 +150,7 @@ private[pekkohttp] class BodyFromPekko()(implicit ec: ExecutionContext, mat: Mat
       override def receive(): Future[WebSocketFrame] = {
         val result = sinkQueue.pull().flatMap {
           case Some(m) => messageToFrame(m)
-          case None =>
+          case None    =>
             open.set(false)
             val c = closeReceived.getAndSet(true)
             if (!c) Future.successful(WebSocketFrame.close)
@@ -177,10 +177,10 @@ private[pekkohttp] class BodyFromPekko()(implicit ec: ExecutionContext, mat: Mat
               case Some(m) =>
                 sourceQueue.offer(m).flatMap {
                   case QueueOfferResult.Enqueued => Future.successful(())
-                  case QueueOfferResult.Dropped =>
+                  case QueueOfferResult.Dropped  =>
                     Future.failed(throw new IllegalStateException(WebSocketBufferFull(1)))
                   case QueueOfferResult.Failure(cause) => Future.failed(cause)
-                  case QueueOfferResult.QueueClosed =>
+                  case QueueOfferResult.QueueClosed    =>
                     Future.failed(throw new IllegalStateException(WebSocketClosed(None)))
                 }
               case None => Future.successful(())

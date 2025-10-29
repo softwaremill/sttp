@@ -26,7 +26,7 @@ object RetryWhen {
   val Default: RetryWhen = {
     case (_, Left(_: SttpClientException.ConnectException)) => true
     case (_, Left(_))                                       => false
-    case (request, Right(response)) =>
+    case (request, Right(response))                         =>
       isBodyRetryable(request.body) && Method.isIdempotent(request.method) && response.code.isServerError
   }
 }
