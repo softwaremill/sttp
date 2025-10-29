@@ -5,6 +5,9 @@ on:
   push:
     branches: ['**']
     tags: [v*]
+permissions:
+  contents: write        # release-drafter, auto-merge requirement
+  pull-requests: write   # labeler, auto-merge requirement
 jobs:
   ci:
     # run on 1) push, 2) external PRs, 3) softwaremill-ci PRs
@@ -35,7 +38,7 @@ jobs:
         distribution: 'temurin'
         cache: 'sbt'
         java-version: ${{ matrix.java }}
-    - uses: sbt/setup-sbt@v1
+    - uses: sbt/setup-sbt@3e125ece5c3e5248e18da9ed8d2cce3d335ec8dd # v1, specifically v1.1.14
     - name: Install libidn2-dev libcurl3-dev
       if: matrix.target-platform == 'Native'
       run: |
@@ -65,7 +68,7 @@ jobs:
       run: sbt -v "testScoped ${{ matrix.scala-version }} ${{ matrix.target-platform }}"        
     - name: Prepare release notes
       if: matrix.java == '11'
-      uses: release-drafter/release-drafter@v5
+      uses: release-drafter/release-drafter@b1476f6e6eb133afa41ed8589daba6dc69b4d3f5 # v6, specifically v6.1.0
       with:
         config-name: release-drafter.yml
       env:
@@ -120,7 +123,7 @@ jobs:
           COMMIT_MSG: ${{ github.event.head_commit.message }}
       - name: Publish release notes
         if: matrix.java == '11'
-        uses: release-drafter/release-drafter@v5
+        uses: release-drafter/release-drafter@b1476f6e6eb133afa41ed8589daba6dc69b4d3f5 # v6, specifically v6.1.0
         with:
           config-name: release-drafter.yml
           publish: true

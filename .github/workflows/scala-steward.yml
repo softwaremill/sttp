@@ -6,10 +6,13 @@ on:
     - cron: '0 0 * * *'
   workflow_dispatch:
 
+permissions:
+  contents: write        # Required to checkout and push changes
+  pull-requests: write   # Required to create PRs for dependency updates
+
 jobs:
   scala-steward:
     uses: softwaremill/github-actions-workflows/.github/workflows/scala-steward.yml@main
-    secrets:
-      repo-github-token: ${{secrets.REPO_GITHUB_TOKEN}}
+    secrets: inherit
     with:
       java-opts: '-Xmx3500M'
