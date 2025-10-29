@@ -122,9 +122,9 @@ val circeVersion: String = "0.14.15"
 
 val jsoniterVersion = "2.38.2"
 
-val play29JsonVersion = "2.10.7"
+val play29JsonVersion = "2.10.8"
 
-val playJsonVersion = "3.0.5"
+val playJsonVersion = "3.0.6"
 
 val catsEffect_3_version = "3.6.3"
 val fs2_3_version = "3.12.2"
@@ -150,12 +150,12 @@ val scalaTest = libraryDependencies ++= Seq("freespec", "funsuite", "flatspec", 
 val scalaTestPlusScalaCheck = libraryDependencies += "org.scalatestplus" %% "scalacheck-1-18" % "3.2.19.0" % Test
 
 val zio1Version = "1.0.18"
-val zio2Version = "2.1.21"
+val zio2Version = "2.1.22"
 val zio1InteropRsVersion = "1.3.12"
 val zio2InteropRsVersion = "2.0.2"
 
 val oxVersion = "0.6.1"
-val sttpModelVersion = "1.7.16"
+val sttpModelVersion = "1.7.17"
 val sttpSharedVersion = "1.5.0"
 
 val logback = "ch.qos.logback" % "logback-classic" % "1.5.14"
@@ -168,9 +168,9 @@ val http4s_ce2_version = "0.22.15"
 val http4s_ce3_version = "0.23.32"
 val osLibVersion = "0.11.4"
 val tethysVersion = "0.29.5"
-val openTelemetryVersion = "1.54.1"
+val openTelemetryVersion = "1.55.0"
 val openTelemetrySemconvVersion = "1.37.0"
-val otel4s = "0.13.2"
+val otel4s = "0.14.0"
 val slf4jVersion = "1.7.36"
 
 val compileAndTest = "compile->compile;test->test"
@@ -833,7 +833,7 @@ lazy val upickle = (projectMatrix in file("json/upickle"))
   .settings(
     name := "upickle",
     libraryDependencies ++= Seq(
-      "com.lihaoyi" %%% "upickle" % "4.3.2"
+      "com.lihaoyi" %%% "upickle" % "4.4.0"
     ),
     scalaTest,
     // using macroRW causes a "match may not be exhaustive" error
@@ -911,7 +911,7 @@ lazy val prometheusBackend = (projectMatrix in file("observability/prometheus-ba
   .settings(
     name := "prometheus-backend",
     libraryDependencies ++= Seq(
-      "io.prometheus" % "prometheus-metrics-core" % "1.4.1"
+      "io.prometheus" % "prometheus-metrics-core" % "1.4.2"
     ),
     scalaTest
   )
