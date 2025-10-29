@@ -1,6 +1,6 @@
 // {cat=JSON; effects=Direct; backend=HttpClient}: Receive & parse JSON using jsoniter
 
-//> using dep com.softwaremill.sttp.client4::jsoniter:4.0.9
+//> using dep com.softwaremill.sttp.client4::jsoniter:4.0.13
 //> using dep com.github.plokhotnyuk.jsoniter-scala::jsoniter-scala-macros:2.33.3
 
 package sttp.client4.examples.json

@@ -1,6 +1,6 @@
 // {cat=Hello, World!; effects=Direct; backend=HttpClient}: POST multipart form
 
-//> using dep com.softwaremill.sttp.client4::core:4.0.9
+//> using dep com.softwaremill.sttp.client4::core:4.0.13
 
 package sttp.client4.examples
 
