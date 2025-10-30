@@ -54,7 +54,7 @@ abstract class AbstractBackendStub[F[_], P](
             request.options.onBodyReceived(r)
 
             r.body match {
-              case StubBody.Exact(v) => monad.unit(r.copy(body = v.asInstanceOf[T]))
+              case StubBody.Exact(v)  => monad.unit(r.copy(body = v.asInstanceOf[T]))
               case StubBody.Adjust(v) =>
                 monad.map(adjustResponseBody(request.response.delegate, v, r.asInstanceOf[Response[T]])(monad))(b =>
                   r.copy(body = b)
@@ -167,12 +167,12 @@ object AbstractBackendStub {
       case a: Array[Byte]  => (new ByteArrayInputStream(a)).unit
       case is: InputStream => is.unit
       case ()              => (new ByteArrayInputStream(new Array[Byte](0))).unit
-      case _ =>
+      case _               =>
         monad.error(throw new IllegalArgumentException(s"Provided body: $b, cannot be adjusted to an input stream"))
     }
 
     ra match {
-      case IgnoreResponse => ().unit.asInstanceOf[F[T]]
+      case IgnoreResponse      => ().unit.asInstanceOf[F[T]]
       case ResponseAsByteArray =>
         b match {
           case s: String       => s.getBytes(Utf8).unit.asInstanceOf[F[T]]
@@ -185,7 +185,7 @@ object AbstractBackendStub {
       case ResponseAsStreamUnsafe(_)   => b.unit.asInstanceOf[F[T]]
       case ResponseAsInputStream(f)    => bAsInputStream.map(f).asInstanceOf[F[T]]
       case ResponseAsInputStreamUnsafe => bAsInputStream.asInstanceOf[F[T]]
-      case ResponseAsFile(_) =>
+      case ResponseAsFile(_)           =>
         b match {
           case f: SttpFile => f.unit.asInstanceOf[F[T]]
           case _ => monad.error(new IllegalArgumentException(s"Provided body: $b, cannot be adjusted to a file"))
@@ -207,7 +207,7 @@ object AbstractBackendStub {
         b match {
           case wss: WebSocketStub[_] => wss.build[F](monad).unit.asInstanceOf[F[T]]
           case ws: WebSocket[_]      => ws.asInstanceOf[WebSocket[F]].unit.asInstanceOf[F[T]]
-          case _ =>
+          case _                     =>
             monad.error(
               new IllegalArgumentException(
                 s"Provided body: $b is neither a WebSocket, nor a WebSocketStub instance"
@@ -222,7 +222,7 @@ object AbstractBackendStub {
       case MappedResponseAs(raw, g, _) =>
         adjustResponseBody(raw, b, meta).flatMap(result => monad.eval(g(result, meta)))
       case rfm: ResponseAsFromMetadata[_, _] => adjustResponseBody(rfm(meta), b, meta)
-      case ResponseAsBoth(l, r) =>
+      case ResponseAsBoth(l, r)              =>
         adjustResponseBody(l, b, meta)
           .flatMap { lAdjusted =>
             adjustResponseBody(r, b, meta)

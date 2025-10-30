@@ -16,7 +16,7 @@ package object testing {
         case ByteBufferBody(b, _)  => new String(b.array())
         case InputStreamBody(b, _) => new String(toByteArray(b))
         case FileBody(f, _)        => f.readAsString()
-        case StreamBody(_) =>
+        case StreamBody(_)         =>
           throw new IllegalArgumentException("The body of this request is a stream, cannot convert to String")
         case _: MultipartBody[_] =>
           throw new IllegalArgumentException("The body of this request is multipart, cannot convert to String")
@@ -33,7 +33,7 @@ package object testing {
         case ByteBufferBody(b, _)       => b.array()
         case InputStreamBody(b, _)      => toByteArray(b)
         case FileBody(f, _)             => f.readAsByteArray()
-        case StreamBody(_) =>
+        case StreamBody(_)              =>
           throw new IllegalArgumentException("The body of this request is a stream, cannot convert to String")
         case _: MultipartBody[_] =>
           throw new IllegalArgumentException("The body of this request is multipart, cannot convert to String")

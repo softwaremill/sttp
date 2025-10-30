@@ -25,7 +25,7 @@ private[okhttp] trait BodyToOkHttp[F[_], S] {
       case NoBody                                          => None
       case StringBody(b, e, _) if e.equalsIgnoreCase(Utf8) => Some(OkHttpRequestBody.create(b, mediaType))
       case StringBody(b, e, _)                             => Some(OkHttpRequestBody.create(b.getBytes(e), mediaType))
-      case ByteArrayBody(b, _) =>
+      case ByteArrayBody(b, _)                             =>
         Some(OkHttpRequestBody.create(b, mediaType))
       case ByteBufferBody(b, _) =>
         Some(OkHttpRequestBody.create(ByteString.of(b), mediaType))

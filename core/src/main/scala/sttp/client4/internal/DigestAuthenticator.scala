@@ -157,8 +157,8 @@ private[client4] class DigestAuthenticator private (
       messageDigest: MessageDigestCompatibility
   ) =
     qop match {
-      case Some(QualityOfProtectionAuth) => md5HexString(s"${request.method.method}:$digestUri", messageDigest)
-      case None                          => md5HexString(s"${request.method.method}:$digestUri", messageDigest)
+      case Some(QualityOfProtectionAuth)    => md5HexString(s"${request.method.method}:$digestUri", messageDigest)
+      case None                             => md5HexString(s"${request.method.method}:$digestUri", messageDigest)
       case Some(QualityOfProtectionAuthInt) =>
         val body = request.body match {
           case brb: BasicBodyPart =>

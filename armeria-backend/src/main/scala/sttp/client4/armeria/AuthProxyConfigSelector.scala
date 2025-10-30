@@ -17,9 +17,9 @@ class AuthProxyConfigSelector(proxy: Option[Proxy]) extends ProxyConfigSelector 
 
   private def toAuthenticatedProxyConfig(proxy: Proxy, sp: SessionProtocol, e: Endpoint): ProxyConfig =
     toProxyConfig(proxy, sp, e).proxyType() match {
-      case DIRECT => ProxyConfig.direct()
-      case SOCKS4 => ProxyConfig.socks4(proxy.inetSocketAddress, proxy.auth.get.username)
-      case SOCKS5 => ProxyConfig.socks5(proxy.inetSocketAddress, proxy.auth.get.username, proxy.auth.get.password)
+      case DIRECT  => ProxyConfig.direct()
+      case SOCKS4  => ProxyConfig.socks4(proxy.inetSocketAddress, proxy.auth.get.username)
+      case SOCKS5  => ProxyConfig.socks5(proxy.inetSocketAddress, proxy.auth.get.username, proxy.auth.get.password)
       case CONNECT =>
         ProxyConfig.connect(
           proxy.inetSocketAddress,

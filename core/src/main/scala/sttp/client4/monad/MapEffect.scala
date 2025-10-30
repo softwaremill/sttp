@@ -53,19 +53,19 @@ object MapEffect {
       gm: MonadError[G]
   ): GenericResponseAs[_, _] =
     r match {
-      case IgnoreResponse      => IgnoreResponse
-      case ResponseAsByteArray => ResponseAsByteArray
+      case IgnoreResponse         => IgnoreResponse
+      case ResponseAsByteArray    => ResponseAsByteArray
       case ResponseAsStream(s, f) =>
         ResponseAsStream(s)((s, m) => fk(f.asInstanceOf[(Any, ResponseMetadata) => F[Any]](s, m)))
       case rasu: ResponseAsStreamUnsafe[_, _] => rasu
       case ResponseAsFile(output)             => ResponseAsFile(output)
       case ResponseAsInputStream(f)           => ResponseAsInputStream(f)
       case ResponseAsInputStreamUnsafe        => ResponseAsInputStreamUnsafe
-      case ResponseAsWebSocket(f) =>
+      case ResponseAsWebSocket(f)             =>
         ResponseAsWebSocket((wg: WebSocket[G], m: ResponseMetadata) =>
           fk(f.asInstanceOf[(WebSocket[F], ResponseMetadata) => F[Any]](apply[G, F](wg, gk, fm), m))
         )
-      case ResponseAsWebSocketUnsafe() => ResponseAsWebSocketUnsafe()
+      case ResponseAsWebSocketUnsafe()     => ResponseAsWebSocketUnsafe()
       case ResponseAsWebSocketStream(s, p) =>
         ResponseAsWebSocketStream(s, p)
       case ResponseAsFromMetadata(conditions, default) =>

@@ -77,19 +77,19 @@ private def optionallyConcatenateFrames(f: Flow[WebSocketFrame], doConcatenate: 
   if doConcatenate then
     type Accumulator = Option[Either[Array[Byte], String]]
     f.mapStateful(None: Accumulator) {
-      case (None, f: WebSocketFrame.Ping)                       => (None, Some(f))
-      case (None, f: WebSocketFrame.Pong)                       => (None, Some(f))
-      case (None, f: WebSocketFrame.Close)                      => (None, Some(f))
-      case (None, f: WebSocketFrame.Data[_]) if f.finalFragment => (None, Some(f))
-      case (None, f: WebSocketFrame.Text)                       => (Some(Right(f.payload)), None)
-      case (None, f: WebSocketFrame.Binary)                     => (Some(Left(f.payload)), None)
+      case (None, f: WebSocketFrame.Ping)                                 => (None, Some(f))
+      case (None, f: WebSocketFrame.Pong)                                 => (None, Some(f))
+      case (None, f: WebSocketFrame.Close)                                => (None, Some(f))
+      case (None, f: WebSocketFrame.Data[_]) if f.finalFragment           => (None, Some(f))
+      case (None, f: WebSocketFrame.Text)                                 => (Some(Right(f.payload)), None)
+      case (None, f: WebSocketFrame.Binary)                               => (Some(Left(f.payload)), None)
       case (Some(Left(acc)), f: WebSocketFrame.Binary) if f.finalFragment =>
         (None, Some(f.copy(payload = acc ++ f.payload)))
       case (Some(Left(acc)), f: WebSocketFrame.Binary) if !f.finalFragment => (Some(Left(acc ++ f.payload)), None)
-      case (Some(Right(acc)), f: WebSocketFrame.Text) if f.finalFragment =>
+      case (Some(Right(acc)), f: WebSocketFrame.Text) if f.finalFragment   =>
         (None, Some(f.copy(payload = acc + f.payload)))
       case (Some(Right(acc)), f: WebSocketFrame.Text) if !f.finalFragment => (Some(Right(acc + f.payload)), None)
-      case (acc, f) =>
+      case (acc, f)                                                       =>
         throw new IllegalStateException(
           s"Unexpected WebSocket frame received during concatenation. Frame received: ${f.getClass
               .getSimpleName()}, accumulator type: ${acc.map(_.getClass.getSimpleName)}"
@@ -109,7 +109,7 @@ private def wsReceiveFlow(
           case frame: WebSocketFrame.Data[_]                      => emit(frame); true
           case WebSocketFrame.Close(status, msg) if status > 1001 => throw new WebSocketClosedWithError(status, msg)
           case _: WebSocketFrame.Close                            => false
-          case ping: WebSocketFrame.Ping =>
+          case ping: WebSocketFrame.Ping                          =>
             pongsSink.sendOrClosed(WebSocketFrame.Pong(ping.payload)).discard
             // Keep receiving even if pong couldn't be sent due to closed request channel. We want to process
             // whatever responses there are still coming from the server until it signals the end with a Close frome.

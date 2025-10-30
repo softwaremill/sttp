@@ -101,7 +101,7 @@ class OkHttpMonixBackend private (
           override def hasNext: Boolean =
             blockingQueue.take() match {
               case Left(Completed) => false
-              case Right(elem) =>
+              case Right(elem)     =>
                 value = elem
                 true
               case Left(ex) => throw ex

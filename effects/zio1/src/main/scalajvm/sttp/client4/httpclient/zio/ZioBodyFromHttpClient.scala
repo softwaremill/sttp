@@ -39,7 +39,7 @@ private[zio] class ZioBodyFromHttpClient extends BodyFromHttpClient[Task, ZioStr
       ): Task[ZStream[Any, Throwable, Byte]] =
         replayableBody match {
           case Left(byteArray) => ZIO.succeed(Stream.fromIterable(byteArray))
-          case Right(file) =>
+          case Right(file)     =>
             ZIO.succeed(
               for {
                 fileChannel <- Stream.managed(

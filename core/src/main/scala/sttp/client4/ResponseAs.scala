@@ -382,7 +382,7 @@ object GenericResponseAs {
 
   def isWebSocket(ra: GenericResponseAs[_, _]): Boolean =
     ra match {
-      case _: GenericWebSocketResponseAs[_, _] => true
+      case _: GenericWebSocketResponseAs[_, _]         => true
       case ResponseAsFromMetadata(conditions, default) =>
         conditions.exists(c => isWebSocket(c.responseAs)) || isWebSocket(default)
       case MappedResponseAs(raw, _, _) => isWebSocket(raw)

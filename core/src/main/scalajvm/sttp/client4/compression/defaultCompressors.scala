@@ -13,15 +13,15 @@ class GZipDefaultCompressor[R] extends Compressor[R] {
 
   def apply[R2 <: R](body: GenericRequestBody[R2]): GenericRequestBody[R] =
     body match {
-      case NoBody => NoBody
+      case NoBody                                      => NoBody
       case StringBody(s, encoding, defaultContentType) =>
         ByteArrayBody(byteArray(s.getBytes(encoding)), defaultContentType)
-      case ByteArrayBody(b, defaultContentType) => ByteArrayBody(byteArray(b), defaultContentType)
+      case ByteArrayBody(b, defaultContentType)  => ByteArrayBody(byteArray(b), defaultContentType)
       case ByteBufferBody(b, defaultContentType) =>
         ByteArrayBody(byteArray(byteBufferToArray(b)), defaultContentType)
       case InputStreamBody(b, defaultContentType) =>
         InputStreamBody(new GZIPCompressingInputStream(b), defaultContentType)
-      case StreamBody(b) => streamsNotSupported
+      case StreamBody(b)                   => streamsNotSupported
       case FileBody(f, defaultContentType) =>
         InputStreamBody(new GZIPCompressingInputStream(f.openStream()), defaultContentType)
       case MultipartStreamBody(parts) => compressingMultipartBodiesNotSupported
@@ -42,15 +42,15 @@ class DeflateDefaultCompressor[R] extends Compressor[R] {
 
   def apply[R2 <: R](body: GenericRequestBody[R2]): GenericRequestBody[R] =
     body match {
-      case NoBody => NoBody
+      case NoBody                                      => NoBody
       case StringBody(s, encoding, defaultContentType) =>
         ByteArrayBody(byteArray(s.getBytes(encoding)), defaultContentType)
-      case ByteArrayBody(b, defaultContentType) => ByteArrayBody(byteArray(b), defaultContentType)
+      case ByteArrayBody(b, defaultContentType)  => ByteArrayBody(byteArray(b), defaultContentType)
       case ByteBufferBody(b, defaultContentType) =>
         ByteArrayBody(byteArray(byteBufferToArray(b)), defaultContentType)
       case InputStreamBody(b, defaultContentType) =>
         InputStreamBody(new DeflaterInputStream(b), defaultContentType)
-      case StreamBody(b) => streamsNotSupported
+      case StreamBody(b)                   => streamsNotSupported
       case FileBody(f, defaultContentType) =>
         InputStreamBody(new DeflaterInputStream(f.openStream()), defaultContentType)
       case MultipartStreamBody(parts) => compressingMultipartBodiesNotSupported

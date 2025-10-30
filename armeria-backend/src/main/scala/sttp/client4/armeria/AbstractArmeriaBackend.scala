@@ -141,7 +141,7 @@ abstract class AbstractArmeriaBackend[F[_], S <: Streams[S]](
     val contentType = customContentType.getOrElse(ArmeriaMediaType.parse(request.body.defaultContentType.toString()))
 
     val withBody = body match {
-      case NoBody => requestPreparation
+      case NoBody                     => requestPreparation
       case StringBody(s, encoding, _) =>
         val charset =
           if (encoding == "utf-8" || encoding == "UTF-8") {
@@ -226,7 +226,7 @@ abstract class AbstractArmeriaBackend[F[_], S <: Streams[S]](
       case ex: ResponseTimeoutException => Some(new TimeoutException(request, ex))
       case ex: ClosedStreamException    => Some(new ReadException(request, ex))
       case ex: ContentTooLargeException => Some(new ReadException(request, ex))
-      case ex =>
+      case ex                           =>
         SttpClientException.defaultExceptionToSttpClientException(request, ex)
     }
 

@@ -26,7 +26,7 @@ object FileHelpers {
 
   private[client4] def getFilePath[T, R](response: GenericResponseAs[T, R]): Option[SttpFile] =
     response match {
-      case MappedResponseAs(raw, g, _) => getFilePath(raw)
+      case MappedResponseAs(raw, g, _)       => getFilePath(raw)
       case rfm: ResponseAsFromMetadata[T, _] =>
         rfm.conditions
           .flatMap(c => getFilePath(c.responseAs))

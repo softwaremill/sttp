@@ -55,7 +55,7 @@ trait SttpJsoniterJsonApi {
     asJson[B].mapLeft { (l: ResponseException[String]) =>
       l match {
         case de @ DeserializationException(_, _, _) => de
-        case UnexpectedStatusCode(e, meta) =>
+        case UnexpectedStatusCode(e, meta)          =>
           deserializeJson[E].apply(e).fold(DeserializationException(e, _, meta), UnexpectedStatusCode(_, meta))
       }
     }.showAsJsonEither

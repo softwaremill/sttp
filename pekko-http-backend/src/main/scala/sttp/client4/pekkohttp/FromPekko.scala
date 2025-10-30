@@ -20,7 +20,7 @@ private[pekkohttp] object FromPekko {
   def exception(request: GenericRequest[_, _], e: Exception): Option[Exception] =
     e match {
       case e: pekko.stream.ConnectionException => Some(new SttpClientException.ConnectException(request, e))
-      case e: pekko.stream.StreamTcpException =>
+      case e: pekko.stream.StreamTcpException  =>
         e.getCause match {
           case ee: Exception =>
             exception(request, ee).orElse(Some(new SttpClientException.ReadException(request, e)))

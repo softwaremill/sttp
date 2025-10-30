@@ -19,7 +19,7 @@ private[akkahttp] object FromAkka {
   def exception(request: GenericRequest[_, _], e: Exception): Option[Exception] =
     e match {
       case e: akka.stream.ConnectionException => Some(new SttpClientException.ConnectException(request, e))
-      case e: akka.stream.StreamTcpException =>
+      case e: akka.stream.StreamTcpException  =>
         e.getCause match {
           case ee: Exception =>
             exception(request, ee).orElse(Some(new SttpClientException.ReadException(request, e)))

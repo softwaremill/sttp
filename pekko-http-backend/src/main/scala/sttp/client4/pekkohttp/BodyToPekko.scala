@@ -69,10 +69,10 @@ private[pekkohttp] object BodyToPekko {
         case StringBody(b, encoding, _) => Success(ar.withEntity(ctWithCharset(ct, encoding), b.getBytes(encoding)))
         case ByteArrayBody(b, _)        => Success(ar.withEntity(HttpEntity(ct, b)))
         case ByteBufferBody(b, _)       => Success(ar.withEntity(HttpEntity(ct, ByteString(b))))
-        case InputStreamBody(b, _) =>
+        case InputStreamBody(b, _)      =>
           Success(ar.withEntity(streamEntity(ct, StreamConverters.fromInputStream(() => b))))
-        case FileBody(b, _) => Success(ar.withEntity(ct, b.toPath))
-        case StreamBody(s)  => Success(ar.withEntity(streamEntity(ct, s.asInstanceOf[PekkoStreams.BinaryStream])))
+        case FileBody(b, _)      => Success(ar.withEntity(ct, b.toPath))
+        case StreamBody(s)       => Success(ar.withEntity(streamEntity(ct, s.asInstanceOf[PekkoStreams.BinaryStream])))
         case m: MultipartBody[_] =>
           Util
             .traverseTry(m.parts.map(toBodyPart))
@@ -86,7 +86,7 @@ private[pekkohttp] object BodyToPekko {
       bodyParts: Seq[PekkoMultipart.FormData.BodyPart]
   ): Try[RequestEntity] =
     r.headers.find(Util.isContentType) match {
-      case None => Success(PekkoMultipart.FormData(bodyParts: _*).toEntity)
+      case None     => Success(PekkoMultipart.FormData(bodyParts: _*).toEntity)
       case Some(ct) =>
         Util.parseContentType(ct.value).map(_.mediaType).flatMap {
           case m: MediaType.Multipart =>
