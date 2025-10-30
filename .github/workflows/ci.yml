@@ -10,12 +10,12 @@ permissions:
   pull-requests: write   # labeler, auto-merge requirement
 jobs:
   ci:
-    # run on 1) push, 2) external PRs, 3) github-actions[bot] PRs
+    # run on 1) push, 2) external PRs, 3) softwaremill-ci PRs
     # do not run on internal, non-steward PRs since those will be run by push to branch
     if: |
       github.event_name == 'push' || 
       github.event.pull_request.head.repo.full_name != github.repository ||
-      github.event.pull_request.user.login == 'github-actions[bot]'
+      github.event.pull_request.user.login == 'softwaremill-ci]'
     runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
@@ -134,14 +134,14 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   label:
-    # only for PRs by github-actions[bot]
-    if: github.event.pull_request.user.login == 'github-actions[bot]'
+    # only for PRs by softwaremill-ci]
+    if: github.event.pull_request.user.login == 'softwaremill-ci]'
     uses: softwaremill/github-actions-workflows/.github/workflows/label.yml@main
     secrets: inherit
 
   auto-merge:
-    # only for PRs by github-actions[bot]
-    if: github.event.pull_request.user.login == 'github-actions[bot]'
+    # only for PRs by softwaremill-ci]
+    if: github.event.pull_request.user.login == 'softwaremill-ci]'
     needs: [ ci, mima, label ]
     uses: softwaremill/github-actions-workflows/.github/workflows/auto-merge.yml@main
     secrets: inherit
