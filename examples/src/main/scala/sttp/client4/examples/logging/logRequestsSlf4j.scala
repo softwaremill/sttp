@@ -3,7 +3,7 @@
 //> using dep com.softwaremill.sttp.client4::circe:4.0.13
 //> using dep com.softwaremill.sttp.client4::slf4j-backend:4.0.13
 //> using dep io.circe::circe-generic:0.14.15
-//> using dep ch.qos.logback:logback-classic:1.5.20
+//> using dep ch.qos.logback:logback-classic:1.5.21
 
 package sttp.client4.examples.logging
 
