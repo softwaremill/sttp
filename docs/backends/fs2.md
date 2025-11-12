@@ -126,6 +126,11 @@ This backend is built on top of [Armeria](https://armeria.dev/docs/client-http).
 Armeria's [ClientFactory](https://armeria.dev/docs/client-factory) manages connections and protocol-specific properties.
 Please visit [the official documentation](https://armeria.dev/docs/client-factory) to learn how to configure it.
 
+## Using JavaScript
+
+The Fs2 backend is also available for the JS platform, see [the `FetchBackend` documentation](javascript/fetch.md).
+The `FetchFs2Backend` companion object contains methods to create the backend directly.
+
 ## Streaming
 
 The fs2 backends support streaming for any instance of the `cats.effect.Effect` typeclass, such as `cats.effect.IO`. If `IO` is used then the type of supported streams is `fs2.Stream[IO, Byte]`. The streams capability is represented as `sttp.client4.fs2.Fs2Streams`.
