@@ -70,6 +70,21 @@ And create the backend instance:
 val backend = FetchCatsBackend[IO]()
 ```
 
+## fs2-based
+
+Any effect implementing the cats-effect `Async` typeclass can be used. To use, add the following dependency to 
+your project:
+
+```
+"com.softwaremill.sttp.client4" %%% "fs2" % "@VERSION@"
+```
+
+And create the backend instance:
+
+```scala
+val backend = FetchFs2Backend[IO]()
+```
+
 ## Node.js
 
 ### CommonJS module
@@ -161,4 +176,4 @@ The backend supports both regular and streaming [websockets](../../other/websock
 
 ## Server-sent events
 
-Received data streams can be parsed to a stream of server-sent events (SSE), when using the [Monix](../monix.md) and [ZIO](../zio.md) variants - the respective documentation pages contain appropriate SSE examples.
+Received data streams can be parsed to a stream of server-sent events (SSE), when using the [Monix](../monix.md), [ZIO](../zio.md), or [Fs2](../fs2.md) variants - the respective documentation pages contain appropriate SSE examples.

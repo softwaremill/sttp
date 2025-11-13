@@ -459,7 +459,10 @@ lazy val fs2 = (projectMatrix in file("effects/fs2"))
       )
     )
   )
-  .jsPlatform(scalaVersions = scala2And3, settings = commonJsSettings)
+  .jsPlatform(
+    scalaVersions = scala2And3,
+    settings = commonJsSettings ++ commonJsBackendSettings ++ browserChromeTestSettings ++ testServerSettings
+  )
 
 lazy val monix = (projectMatrix in file("effects/monix"))
   .settings(
