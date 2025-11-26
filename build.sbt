@@ -10,7 +10,7 @@ import com.softwaremill.SbtSoftwareMillBrowserTestJS._
 
 val scala2_12 = "2.12.20"
 val scala2_13 = "2.13.18"
-val scala3 = "3.3.6"
+val scala3 = "3.3.7"
 
 val scala2 = List(scala2_12, scala2_13)
 val scala2And3 = scala2 ++ List(scala3)
