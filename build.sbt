@@ -8,7 +8,7 @@ import complete.DefaultParsers._
 // run JS tests inside Chrome, due to jsdom not supporting fetch
 import com.softwaremill.SbtSoftwareMillBrowserTestJS._
 
-val scala2_12 = "2.12.20"
+val scala2_12 = "2.12.21"
 val scala2_13 = "2.13.18"
 val scala3 = "3.3.6"
 
