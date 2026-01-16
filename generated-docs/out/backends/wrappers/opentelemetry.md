@@ -13,7 +13,7 @@ The backend depends only on [opentelemetry-api](https://github.com/open-telemetr
 following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client4" %% "opentelemetry-backend" % "4.0.13"
+"com.softwaremill.sttp.client4" %% "opentelemetry-backend" % "4.0.14"
 ```
 
 Then an instance can be obtained as follows:
@@ -56,7 +56,7 @@ OpenTelemetryMetricsBackend(
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client4" %% "opentelemetry-backend" % "4.0.13"
+"com.softwaremill.sttp.client4" %% "opentelemetry-backend" % "4.0.14"
 ```
 
 The backend records traces corresponding to HTTP client calls. The default span name is the HTTP method (e.g. `POST`),
@@ -101,7 +101,7 @@ OpenTelemetryTracingBackend(
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client4" %% "opentelemetry-tracing-zio-backend" % "4.0.13"  // for ZIO 2.x
+"com.softwaremill.sttp.client4" %% "opentelemetry-tracing-zio-backend" % "4.0.14"  // for ZIO 2.x
 ```
 
 This backend depends on [zio-opentelemetry](https://github.com/zio/zio-telemetry).
@@ -130,7 +130,7 @@ You can override these defaults by supplying a custom `OpenTelemetryZioTracer`.
 
 Add the following dependency to your project:
 ```scala
-"com.softwaremill.sttp.client4" %% "opentelemetry-otel4s-metrics-backend" % "4.0.13"
+"com.softwaremill.sttp.client4" %% "opentelemetry-otel4s-metrics-backend" % "4.0.14"
 ```
 
 This backend depends on [otel4s](https://github.com/typelevel/otel4s).
@@ -163,7 +163,7 @@ You can customize histogram buckets by providing a custom `Otel4sMetricsConfig`.
 
 Add the following dependency to your project:
 ```scala
-"com.softwaremill.sttp.client4" %% "opentelemetry-otel4s-tracing-backend" % "4.0.13"
+"com.softwaremill.sttp.client4" %% "opentelemetry-otel4s-tracing-backend" % "4.0.14"
 ```
 
 This backend depends on [otel4s](https://github.com/typelevel/otel4s).

@@ -7,7 +7,7 @@ A JavaScript backend with web socket support. Implemented using the [Fetch API](
 This is the default backend, available in the main jar for JS. To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client4" %%% "core" % "4.0.13"
+"com.softwaremill.sttp.client4" %%% "core" % "4.0.14"
 ```
 
 And create the backend instance:
@@ -26,7 +26,7 @@ Note that `Fetch` does not pass cookies by default. If your request needs cookie
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client4" %%% "monix" % "4.0.13"
+"com.softwaremill.sttp.client4" %%% "monix" % "4.0.14"
 ```
 
 And create the backend instance:
@@ -40,7 +40,7 @@ val backend = FetchMonixBackend()
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client4" %%% "zio" % "4.0.13"
+"com.softwaremill.sttp.client4" %%% "zio" % "4.0.14"
 ```
 
 And create the backend instance:
@@ -55,19 +55,34 @@ Any effect implementing the cats-effect `Concurrent` typeclass can be used. To u
 your project:
 
 ```
-"com.softwaremill.sttp.client4" %%% "cats" % "4.0.13"
+"com.softwaremill.sttp.client4" %%% "cats" % "4.0.14"
 ```
 
 If you are on Cats Effect 2 (CE2) you will need to add the CE2 specific dependency instead:
 
 ```
-"com.softwaremill.sttp.client4" %%% "catsce2" % "4.0.13"
+"com.softwaremill.sttp.client4" %%% "catsce2" % "4.0.14"
 ```
 
 And create the backend instance:
 
 ```scala
 val backend = FetchCatsBackend[IO]()
+```
+
+## fs2-based
+
+Any effect implementing the cats-effect `Async` typeclass can be used. To use, add the following dependency to 
+your project:
+
+```
+"com.softwaremill.sttp.client4" %%% "fs2" % "4.0.14"
+```
+
+And create the backend instance:
+
+```scala
+val backend = FetchFs2Backend[IO]()
 ```
 
 ## Node.js
@@ -129,7 +144,7 @@ Streaming support is provided via `FetchMonixBackend`. Note that streaming suppo
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client4" %%% "monix" % "4.0.13"
+"com.softwaremill.sttp.client4" %%% "monix" % "4.0.14"
 ```
 
 An example of streaming a response:
@@ -161,4 +176,4 @@ The backend supports both regular and streaming [websockets](../../other/websock
 
 ## Server-sent events
 
-Received data streams can be parsed to a stream of server-sent events (SSE), when using the [Monix](../monix.md) and [ZIO](../zio.md) variants - the respective documentation pages contain appropriate SSE examples.
+Received data streams can be parsed to a stream of server-sent events (SSE), when using the [Monix](../monix.md), [ZIO](../zio.md), or [Fs2](../fs2.md) variants - the respective documentation pages contain appropriate SSE examples.

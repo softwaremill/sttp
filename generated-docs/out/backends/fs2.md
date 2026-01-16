@@ -12,9 +12,9 @@ Creation of the backend can be done in two basic ways:
 Firstly, add the following dependency to your project:
 
 ```scala
-"com.softwaremill.sttp.client4" %% "fs2" % "4.0.13" // for cats-effect 3.x & fs2 3.x
+"com.softwaremill.sttp.client4" %% "fs2" % "4.0.14" // for cats-effect 3.x & fs2 3.x
 // or 
-"com.softwaremill.sttp.client4" %% "fs2ce2" % "4.0.13" // for cats-effect 2.x & fs2 2.x
+"com.softwaremill.sttp.client4" %% "fs2ce2" % "4.0.14" // for cats-effect 2.x & fs2 2.x
 ```
 
 Obtain a cats-effect `Resource` which creates the backend, and closes the thread pool after the resource is no longer used:
@@ -78,9 +78,9 @@ To use, add the following dependency to your project:
 
 ```scala
 // for cats-effect 3.x & fs2 3.x
-"com.softwaremill.sttp.client4" %% "armeria-backend-fs2" % "4.0.13" 
+"com.softwaremill.sttp.client4" %% "armeria-backend-fs2" % "4.0.14" 
 // or for cats-effect 2.x & fs2 2.x
-"com.softwaremill.sttp.client4" %% "armeria-backend-fs2-ce2" % "4.0.13" 
+"com.softwaremill.sttp.client4" %% "armeria-backend-fs2-ce2" % "4.0.14" 
 ```
 
 create client:
@@ -125,6 +125,11 @@ A WebClient could fail to follow redirects if the WebClient is created with a ba
 This backend is built on top of [Armeria](https://armeria.dev/docs/client-http).
 Armeria's [ClientFactory](https://armeria.dev/docs/client-factory) manages connections and protocol-specific properties.
 Please visit [the official documentation](https://armeria.dev/docs/client-factory) to learn how to configure it.
+
+## Using JavaScript
+
+The Fs2 backend is also available for the JS platform, see [the `FetchBackend` documentation](javascript/fetch.md).
+The `FetchFs2Backend` companion object contains methods to create the backend directly.
 
 ## Streaming
 
