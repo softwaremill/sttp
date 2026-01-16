@@ -1,6 +1,7 @@
 package sttp.client4.opentelemetry
 
 import io.opentelemetry.api.OpenTelemetry
+import io.opentelemetry.api.trace.SpanKind
 import io.opentelemetry.context.Context
 import io.opentelemetry.context.propagation.TextMapSetter
 import sttp.capabilities.Effect
@@ -52,6 +53,7 @@ class OpenTelemetryTracingBackend[F[_], P](delegate: GenericBackend[F, P], confi
       .eval {
         config.tracer
           .spanBuilder(config.spanName(request))
+          .setSpanKind(SpanKind.CLIENT)
           .setAllAttributes(config.requestAttributes(request))
           .startSpan()
       }
