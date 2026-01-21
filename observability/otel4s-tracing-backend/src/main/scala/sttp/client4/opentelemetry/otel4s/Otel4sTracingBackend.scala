@@ -54,7 +54,7 @@ object Otel4sTracingBackend {
       delegate: Backend[F],
       config: Otel4sTracingConfig
   ): F[Backend[F]] =
-    usingMeter { implicit tracer: Tracer[F] =>
+    usingTracer { implicit tracer: Tracer[F] =>
       FollowRedirectsBackend(new Otel4sTracingBackend(delegate, config) with Backend[F])
     }
 
@@ -62,7 +62,7 @@ object Otel4sTracingBackend {
       delegate: WebSocketBackend[F],
       config: Otel4sTracingConfig
   ): F[WebSocketBackend[F]] =
-    usingMeter { implicit tracer: Tracer[F] =>
+    usingTracer { implicit tracer: Tracer[F] =>
       FollowRedirectsBackend(new Otel4sTracingBackend(delegate, config) with WebSocketBackend[F])
     }
 
@@ -70,7 +70,7 @@ object Otel4sTracingBackend {
       delegate: StreamBackend[F, S],
       config: Otel4sTracingConfig
   ): F[StreamBackend[F, S]] =
-    usingMeter { implicit tracer: Tracer[F] =>
+    usingTracer { implicit tracer: Tracer[F] =>
       FollowRedirectsBackend(new Otel4sTracingBackend(delegate, config) with StreamBackend[F, S])
     }
 
@@ -78,11 +78,11 @@ object Otel4sTracingBackend {
       delegate: WebSocketStreamBackend[F, S],
       config: Otel4sTracingConfig
   ): F[WebSocketStreamBackend[F, S]] =
-    usingMeter { implicit tracer: Tracer[F] =>
+    usingTracer { implicit tracer: Tracer[F] =>
       FollowRedirectsBackend(new Otel4sTracingBackend(delegate, config) with WebSocketStreamBackend[F, S])
     }
 
-  private def usingMeter[F[_]: MonadCancelThrow: TracerProvider, A](f: Tracer[F] => A): F[A] =
+  private def usingTracer[F[_]: MonadCancelThrow: TracerProvider, A](f: Tracer[F] => A): F[A] =
     for {
       tracer <- TracerProvider[F].tracer("sttp-client4").withVersion("1.0.0").get
     } yield f(tracer)
