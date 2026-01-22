@@ -170,7 +170,8 @@ val osLibVersion = "0.11.4"
 val tethysVersion = "0.29.7"
 val openTelemetryVersion = "1.58.0"
 val openTelemetrySemconvVersion = "1.37.0"
-val otel4s = "0.14.0"
+val otel4s = "0.15.0"
+val otel4sSdk = "0.16.0"
 val slf4jVersion = "1.7.36"
 
 val compileAndTest = "compile->compile;test->test"
@@ -957,7 +958,7 @@ lazy val otel4sMetricsBackend = (projectMatrix in file("observability/otel4s-met
       "org.typelevel" %%% "otel4s-core-metrics" % otel4s,
       "org.typelevel" %%% "otel4s-semconv" % otel4s,
       "org.typelevel" %%% "otel4s-semconv-metrics-experimental" % otel4s % Test,
-      "org.typelevel" %%% "otel4s-sdk-metrics-testkit" % otel4s % Test
+      "org.typelevel" %%% "otel4s-sdk-metrics-testkit" % otel4sSdk % Test
     )
   )
   .jvmPlatform(scalaVersions = scala2_13And3, settings = commonJvmSettings)
@@ -971,7 +972,7 @@ lazy val otel4sTracingBackend = (projectMatrix in file("observability/otel4s-tra
     libraryDependencies ++= Seq(
       "org.typelevel" %%% "otel4s-core-trace" % otel4s,
       "org.typelevel" %%% "otel4s-semconv" % otel4s,
-      "org.typelevel" %%% "otel4s-sdk-trace-testkit" % otel4s % Test,
+      "org.typelevel" %%% "otel4s-sdk-trace-testkit" % otel4sSdk % Test,
       "org.typelevel" %%% "cats-effect-testkit" % catsEffect_3_version % Test
     )
   )

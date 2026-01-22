@@ -43,7 +43,9 @@ class Otel4sTracingBackendTest extends AsyncFreeSpec with Matchers {
   "Otel4sTracingBackend" - {
     "should add tracing headers to the request" in {
       TracesTestkit
-        .inMemory[IO](_.addTextMapPropagators(W3CTraceContextPropagator.default))
+        .builder[IO]
+        .addTracerProviderCustomizer(_.addTextMapPropagators(W3CTraceContextPropagator.default))
+        .build
         .use { testkit =>
           implicit val tracerProvider: TracerProvider[IO] = testkit.tracerProvider
 
@@ -65,7 +67,9 @@ class Otel4sTracingBackendTest extends AsyncFreeSpec with Matchers {
 
     "should record request/response-specific attributes: 200 OK response" in {
       TracesTestkit
-        .inMemory[IO](_.addTextMapPropagators(W3CTraceContextPropagator.default))
+        .builder[IO]
+        .addTracerProviderCustomizer(_.addTextMapPropagators(W3CTraceContextPropagator.default))
+        .build
         .use { testkit =>
           implicit val tracerProvider: TracerProvider[IO] = testkit.tracerProvider
 
@@ -107,7 +111,9 @@ class Otel4sTracingBackendTest extends AsyncFreeSpec with Matchers {
 
     "should record request/response-specific attributes: 400 BadRequest response" in {
       TracesTestkit
-        .inMemory[IO](_.addTextMapPropagators(W3CTraceContextPropagator.default))
+        .builder[IO]
+        .addTracerProviderCustomizer(_.addTextMapPropagators(W3CTraceContextPropagator.default))
+        .build
         .use { testkit =>
           implicit val tracerProvider: TracerProvider[IO] = testkit.tracerProvider
 
@@ -152,7 +158,9 @@ class Otel4sTracingBackendTest extends AsyncFreeSpec with Matchers {
       TestControl
         .executeEmbed {
           TracesTestkit
-            .inMemory[IO](_.addTextMapPropagators(W3CTraceContextPropagator.default))
+            .builder[IO]
+            .addTracerProviderCustomizer(_.addTextMapPropagators(W3CTraceContextPropagator.default))
+            .build
             .use { testkit =>
               implicit val tracerProvider: TracerProvider[IO] = testkit.tracerProvider
 
