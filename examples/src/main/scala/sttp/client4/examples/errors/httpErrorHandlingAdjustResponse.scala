@@ -1,6 +1,6 @@
 // {cat=Error handling; effects=Direct; backend=HttpClient}: HTTP error handling, adjusting the response description
 
-//> using dep com.softwaremill.sttp.client4::core:4.0.14
+//> using dep com.softwaremill.sttp.client4::core:4.0.15
 
 package sttp.client4.examples
 
