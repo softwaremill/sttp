@@ -1,6 +1,6 @@
 // {cat=Backend wrapper; effects=Synchronous; backend=HttpClient}: Simple retrying backend wrapper
 
-//> using dep com.softwaremill.sttp.client4::core:4.0.14
+//> using dep com.softwaremill.sttp.client4::core:4.0.15
 
 package sttp.client4.examples.wrapper
 
