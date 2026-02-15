@@ -176,7 +176,7 @@ val slf4jVersion = "1.7.36"
 
 val compileAndTest = "compile->compile;test->test"
 
-lazy val loomProjects: Seq[String] = Seq(ox, examples).flatMap(_.projectRefs).flatMap(projectId)
+lazy val loomProjects: Seq[String] = Seq(ox, examples, zioJson).flatMap(_.projectRefs).flatMap(projectId)
 
 def projectId(projectRef: ProjectReference): Option[String] =
   projectRef match {
@@ -789,7 +789,7 @@ lazy val zioJson = (projectMatrix in file("json/zio-json"))
   .settings(
     name := "zio-json",
     libraryDependencies ++= Seq(
-      "dev.zio" %%% "zio-json" % "0.7.44",
+      "dev.zio" %%% "zio-json" % "0.9.0",
       "com.softwaremill.sttp.shared" %%% "zio" % sttpSharedVersion
     ),
     scalaTest
