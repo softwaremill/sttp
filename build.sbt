@@ -177,6 +177,7 @@ val slf4jVersion = "1.7.36"
 val compileAndTest = "compile->compile;test->test"
 
 lazy val loomProjects: Seq[String] = Seq(ox, examples, zioJson).flatMap(_.projectRefs).flatMap(projectId)
+lazy val zioProjects: Seq[String] = Seq(zioJson).flatMap(_.projectRefs).flatMap(projectId)
 
 def projectId(projectRef: ProjectReference): Option[String] =
   projectRef match {
@@ -193,15 +194,24 @@ lazy val allAggregates: Seq[ProjectReference] = {
     println("[info] STTP_NATIVE *not* defined, *not* including native in the aggregate projects")
     rawAllAggregates.filterNot(_.toString.contains("Native"))
   }
-  if (sys.env.isDefinedAt("ONLY_LOOM")) {
-    println("[info] ONLY_LOOM defined, including only loom-based projects")
-    filteredByNative.filter(p => projectId(p).forall(loomProjects.contains))
-  } else if (sys.env.isDefinedAt("ALSO_LOOM")) {
-    println("[info] ALSO_LOOM defined, including also loom-based projects")
+
+  val filteredByZio = if (sys.env.isDefinedAt("WITH_ZIO")) {
+    println("[info] WITH_ZIO defined, including zio projects in the aggregate projects")
     filteredByNative
   } else {
+    println("[info] WITH_ZIO *not* defined, *not* including zio-json in the aggregate projects")
+    filteredByNative.filterNot(p => projectId(p).forall(zioProjects.contains))
+  }
+
+  if (sys.env.isDefinedAt("ONLY_LOOM")) {
+    println("[info] ONLY_LOOM defined, including only loom-based projects")
+    filteredByZio.filter(p => projectId(p).forall(loomProjects.contains))
+  } else if (sys.env.isDefinedAt("ALSO_LOOM")) {
+    println("[info] ALSO_LOOM defined, including also loom-based projects")
+    filteredByZio
+  } else {
     println("[info] ONLY_LOOM *not* defined, *not* including loom-based-projects")
-    filteredByNative.filterNot(p => projectId(p).forall(loomProjects.contains))
+    filteredByZio.filterNot(p => projectId(p).forall(loomProjects.contains))
   }
 }
 
@@ -799,6 +809,7 @@ lazy val zioJson = (projectMatrix in file("json/zio-json"))
     settings = commonJvmSettings
   )
   .jsPlatform(scalaVersions = scala2And3, settings = commonJsSettings)
+  .nativePlatform(scalaVersions = scala2And3, settings = commonNativeSettings)
   .dependsOn(core, jsonCommon % compileAndTest)
 
 lazy val zio1Json = (projectMatrix in file("json/zio1-json"))

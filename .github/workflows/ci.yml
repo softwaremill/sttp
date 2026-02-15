@@ -44,6 +44,9 @@ jobs:
       uses: VirtusLab/scala-cli-setup@77834b5926f3eb70869d8009530c65585f7a039b # main, specifically v1.9.1
       with:
         jvm: '' # needed because scala-cli-setup otherwise forces the installation of their default JVM (17)        
+    - name: Enable ZIO-specific modules
+      if: matrix.java == '21'
+      run: echo "WITH_ZIO=1" >> $GITHUB_ENV
     - name: Enable Loom-specific modules
       if: matrix.target-platform == 'JVM' && matrix.java == '21' && matrix.scala-version == '3'
       run: echo "ONLY_LOOM=1" >> $GITHUB_ENV
@@ -96,6 +99,9 @@ jobs:
       - name: Enable Native-specific modules
         if: matrix.target-platform == 'Native'
         run: echo "STTP_NATIVE=1" >> $GITHUB_ENV
+      - name: Enable ZIO-specific modules
+        if: matrix.java == '21'
+        run: echo "WITH_ZIO=1" >> $GITHUB_ENV
       - name: Enable Loom-specific modules
         if: matrix.target-platform == 'JVM' && matrix.java == '21' && matrix.scala-version == '3'
         run: echo "ONLY_LOOM=1" >> $GITHUB_ENV
