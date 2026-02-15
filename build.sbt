@@ -176,7 +176,7 @@ val slf4jVersion = "1.7.36"
 
 val compileAndTest = "compile->compile;test->test"
 
-lazy val loomProjects: Seq[String] = Seq(ox, examples).flatMap(_.projectRefs).flatMap(projectId)
+lazy val loomProjects: Seq[String] = Seq(ox, examples, zioJson).flatMap(_.projectRefs).flatMap(projectId)
 
 def projectId(projectRef: ProjectReference): Option[String] =
   projectRef match {
