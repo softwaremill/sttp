@@ -102,7 +102,7 @@ style, leveraging Java's 21+ virtual threads. If you're using Ox with `sttp`, yo
 
 ```
 // sbt dependency
-"com.softwaremill.sttp.client4" %% "ox" % "4.0.16"
+"com.softwaremill.sttp.client4" %% "ox" % "4.0.17"
 ```
 
 The `runWebSocketPipe` function from that module accepts a `SyncWebSocket`, as well as a function, which takes a `Flow`
