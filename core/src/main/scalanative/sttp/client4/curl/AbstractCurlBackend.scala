@@ -61,7 +61,7 @@ abstract class AbstractCurlBackend[F[_]](_monad: MonadError[F], verbose: Boolean
       * required by libcurl's CURLOPT_HTTPHEADER contract.
       */
     def detachHeaders(): Seq[CurlList] = {
-      val h = headers.toSeq
+      val h = headers.toList
       headers.clear()
       h
     }
@@ -217,16 +217,16 @@ abstract class AbstractCurlBackend[F[_]](_monad: MonadError[F], verbose: Boolean
   private object InputStreamResponseDetector {
 
     /** Recursively checks if a response descriptor contains any InputStream response types. This inspects through
-      * MappedResponseAs, ResponseAsFromMetadata conditions, and ResponseAsBoth. Returns true if ANY branch might produce
-      * an InputStream response.
+      * MappedResponseAs, ResponseAsFromMetadata conditions, and ResponseAsBoth. Returns true if ANY branch might
+      * produce an InputStream response.
       */
     def containsInputStreamResponse(delegate: GenericResponseAs[_, _]): Boolean =
       delegate match {
         case ResponseAsInputStream(_) | ResponseAsInputStreamUnsafe => true
-        case MappedResponseAs(raw, _, _)                           => containsInputStreamResponse(raw)
-        case rfm: ResponseAsFromMetadata[_, _] =>
+        case MappedResponseAs(raw, _, _)                            => containsInputStreamResponse(raw)
+        case rfm: ResponseAsFromMetadata[_, _]                      =>
           containsInputStreamResponse(rfm.default) ||
-            rfm.conditions.exists(c => containsInputStreamResponse(c.responseAs))
+          rfm.conditions.exists(c => containsInputStreamResponse(c.responseAs))
         case ResponseAsBoth(l, r) =>
           containsInputStreamResponse(l) || containsInputStreamResponse(r)
         case _ => false
@@ -558,9 +558,9 @@ abstract class AbstractCurlBackend[F[_]](_monad: MonadError[F], verbose: Boolean
 
   /** Parses raw header string from curl into a status line and header list.
     *
-    * Returns (statusText, headers). The first line is expected to be the HTTP status line (e.g. "HTTP/1.1 200 OK").
-    * The status text is extracted as everything after the status code (the part after the second space), which may be
-    * empty (HTTP/2 responses often omit the reason phrase). If headers are empty (e.g. connection failed before any
+    * Returns (statusText, headers). The first line is expected to be the HTTP status line (e.g. "HTTP/1.1 200 OK"). The
+    * status text is extracted as everything after the status code (the part after the second space), which may be empty
+    * (HTTP/2 responses often omit the reason phrase). If headers are empty (e.g. connection failed before any
     * response), returns ("", Nil).
     */
   private def parseHeadersAndStatus(str: String): (String, Seq[Header]) = {
