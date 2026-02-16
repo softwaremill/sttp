@@ -97,13 +97,10 @@ jobs:
           sudo apt-get update
           sudo apt-get install libidn2-dev libcurl3-dev
       - name: Enable Native-specific modules
-        if: matrix.target-platform == 'Native'
+        if: matrix.java == '11'
         run: echo "STTP_NATIVE=1" >> $GITHUB_ENV
-      - name: Enable ZIO-specific modules
+      - name: Enable ZIO and Loom-specific modules
         if: matrix.java == '21'
-        run: echo "WITH_ZIO=1" >> $GITHUB_ENV
-      - name: Enable Loom-specific modules
-        if: matrix.target-platform == 'JVM' && matrix.java == '21' && matrix.scala-version == '3'
         run: echo "ONLY_LOOM=1" >> $GITHUB_ENV
       - name: Compile
         run: sbt compile

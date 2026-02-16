@@ -809,7 +809,6 @@ lazy val zioJson = (projectMatrix in file("json/zio-json"))
     settings = commonJvmSettings
   )
   .jsPlatform(scalaVersions = scala2And3, settings = commonJsSettings)
-  .nativePlatform(scalaVersions = scala2And3, settings = commonNativeSettings)
   .dependsOn(core, jsonCommon % compileAndTest)
 
 lazy val zio1Json = (projectMatrix in file("json/zio1-json"))
