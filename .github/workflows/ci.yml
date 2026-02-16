@@ -101,7 +101,9 @@ jobs:
         run: echo "STTP_NATIVE=1" >> $GITHUB_ENV
       - name: Enable ZIO and Loom-specific modules
         if: matrix.java == '21'
-        run: echo "ONLY_LOOM=1" >> $GITHUB_ENV
+        run: |
+          echo "WITH_ZIO=1" >> $GITHUB_ENV
+          echo "ONLY_LOOM=1" >> $GITHUB_ENV
       - name: Compile
         run: sbt compile
       - name: Publish artifacts
