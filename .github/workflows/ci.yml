@@ -97,7 +97,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install libidn2-dev libcurl3-dev
       - name: Enable Native-specific modules
-        if: matrix.target-platform == 'Native'
+        if: matrix.java == '11'
         run: echo "STTP_NATIVE=1" >> $GITHUB_ENV
       - name: Enable ZIO-specific modules
         if: matrix.java == '21'
