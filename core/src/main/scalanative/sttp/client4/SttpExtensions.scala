@@ -1,12 +1,22 @@
 package sttp.client4
 
-import java.io.File
+import java.io.{File, InputStream}
 import java.nio.file.Path
 
 import sttp.client4.internal._
 import sttp.model.{Part, StatusCode}
 
 trait SttpExtensions {
+
+  def asInputStream[T](f: InputStream => T): ResponseAs[Either[String, T]] =
+    asEither(asStringAlways, asInputStreamAlways(f))
+
+  def asInputStreamAlways[T](f: InputStream => T): ResponseAs[T] = new ResponseAs(ResponseAsInputStream(f))
+
+  def asInputStreamUnsafe: ResponseAs[Either[String, InputStream]] = asEither(asStringAlways, asInputStreamAlwaysUnsafe)
+
+  def asInputStreamAlwaysUnsafe: ResponseAs[InputStream] = new ResponseAs(ResponseAsInputStreamUnsafe)
+
   def asFile(file: File): ResponseAs[Either[String, File]] = asEither(asStringAlways, asFileAlways(file))
 
   def asFileAlways(file: File): ResponseAs[File] =
