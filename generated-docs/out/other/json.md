@@ -159,7 +159,8 @@ To use, add an import: `import sttp.client4.playJson._`.
 
 To encode and decode JSON using the high-performance [zio-json](https://zio.github.io/zio-json/) library, one add the following dependency to your project.
 
-The `zio-json` module depends on ZIO 2.x. For ZIO 1.x support, use `zio1-json`.
+The `zio-json` module depends on ZIO 2.x and on the JVM requires Java 21+.
+For ZIO 1.x support, use `zio1-json`.
 
 ```scala
 "com.softwaremill.sttp.client4" %% "zio-json" % "4.0.16"  // for ZIO 2.x
