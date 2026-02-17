@@ -1,6 +1,6 @@
 // {cat=Resilience; effects=Direct; backend=HttpClient}: Retry sending a request using Ox
 
-//> using dep com.softwaremill.sttp.client4::ox:4.0.15
+//> using dep com.softwaremill.sttp.client4::ox:4.0.18
 
 package sttp.client4.examples.resilience
 

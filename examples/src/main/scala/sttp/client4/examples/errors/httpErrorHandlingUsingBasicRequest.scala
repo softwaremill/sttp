@@ -1,6 +1,6 @@
 // {cat=Error handling; effects=Direct; backend=HttpClient}: HTTP error handling using basicRequest
 
-//> using dep com.softwaremill.sttp.client4::core:4.0.15
+//> using dep com.softwaremill.sttp.client4::core:4.0.18
 
 package sttp.client4.examples
 

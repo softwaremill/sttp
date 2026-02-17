@@ -1,6 +1,6 @@
 // {cat=Backend wrapper; effects=Synchronous; backend=HttpClient}: A backend which adds a header to all outgoing requests
 
-//> using dep com.softwaremill.sttp.client4::core:4.0.15
+//> using dep com.softwaremill.sttp.client4::core:4.0.18
 
 package sttp.client4.examples.wrapper
 
