@@ -12,4 +12,4 @@ addSbtPlugin("com.softwaremill.sbt-softwaremill" % "sbt-softwaremill-browser-tes
 addSbtPlugin("org.scalameta" % "sbt-mdoc" % "2.8.2")
 
 addSbtPlugin("org.jetbrains.scala" % "sbt-ide-settings" % "1.1.3")
-addSbtPlugin("com.typesafe" % "sbt-mima-plugin" % "1.1.4")
+addSbtPlugin("com.typesafe" % "sbt-mima-plugin" % "1.1.5")
