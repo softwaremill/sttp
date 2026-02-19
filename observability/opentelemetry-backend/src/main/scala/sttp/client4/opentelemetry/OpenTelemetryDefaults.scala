@@ -3,7 +3,6 @@ package sttp.client4.opentelemetry
 import sttp.client4.GenericRequest
 import io.opentelemetry.api.common.Attributes
 import io.opentelemetry.semconv.HttpAttributes
-import sttp.client4.Response
 import io.opentelemetry.semconv.UrlAttributes
 import io.opentelemetry.semconv.ErrorAttributes
 import io.opentelemetry.semconv.ServerAttributes
@@ -28,7 +27,6 @@ object OpenTelemetryDefaults {
   private def requestAttributesBuilder(request: GenericRequest[_, _]): AttributesBuilder =
     Attributes.builder
       .put(HttpAttributes.HTTP_REQUEST_METHOD, request.method.method)
-      .put(UrlAttributes.URL_FULL, request.uri.toString())
       .put(ServerAttributes.SERVER_ADDRESS, request.uri.host.getOrElse("unknown"))
       .put(ServerAttributes.SERVER_PORT, request.uri.port.getOrElse(80))
 
