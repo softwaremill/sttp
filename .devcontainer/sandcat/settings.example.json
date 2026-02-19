@@ -1,0 +1,45 @@
+{
+  "env": {
+    "GIT_USER_NAME": "Your Name",
+    "GIT_USER_EMAIL": "you@example.com"
+  },
+  "secrets": {
+    "ANTHROPIC_API_KEY": {
+      "value": "sk-ant-your-real-key-here",
+      "hosts": [
+        "api.anthropic.com"
+      ]
+    },
+    "GITHUB_TOKEN": {
+      "value": "ghp_your-real-token-here",
+      "hosts": [
+        "github.com",
+        "api.github.com",
+        "*.githubusercontent.com"
+      ]
+    }
+  },
+  "network": [
+    {
+      "action": "allow",
+      "host": "*",
+      "method": "GET"
+    },
+    {
+      "action": "allow",
+      "host": "*.github.com"
+    },
+    {
+      "action": "allow",
+      "host": "github.com"
+    },
+    {
+      "action": "allow",
+      "host": "*.anthropic.com"
+    },
+    {
+      "action": "allow",
+      "host": "*.claude.com"
+    }
+  ]
+}

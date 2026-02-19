@@ -1,0 +1,17 @@
+FROM debian:trixie-slim
+
+# Dependencies for the WireGuard tunnel and iptables kill switch:
+#   wireguard-tools - `wg` command to configure WireGuard interfaces
+#   iproute2       - `ip` command for interface, address, route, and rule management
+#   iptables       - firewall rules used as a kill switch (blocks traffic if tunnel drops)
+#   jq             - parse mitmproxy's wireguard.conf JSON to extract key pairs
+#   openresolv     - `resolvconf` command to configure DNS through the tunnel
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        wireguard-tools iproute2 iptables jq openresolv \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY scripts/wg-client-init.sh /usr/local/bin/wg-client-init.sh
+RUN chmod +x /usr/local/bin/wg-client-init.sh
+
+ENTRYPOINT ["/usr/local/bin/wg-client-init.sh"]

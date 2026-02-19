@@ -1,0 +1,41 @@
+name: sttp
+
+include:
+  - path: sandcat/compose-proxy.yml
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.app
+    # Share wg-client's network namespace so all traffic goes through its
+    # WireGuard tunnel. The app container has no NET_ADMIN capability,
+    # so processes inside cannot modify routing, iptables, or the tunnel.
+    network_mode: "service:wg-client"
+    volumes:
+      # Mount the project's code
+      - ..:/workspaces/sttp:cached
+      # Overlay .devcontainer as read-only so the agent cannot modify its
+      # own sandbox (scripts, compose files, Dockerfile, devcontainer.json).
+      - ../.devcontainer:/workspaces/sttp/.devcontainer:ro
+      # Named volume for the home directory so Claude Code auth state,
+      # shell history, and other user-level config persist across rebuilds.
+      - app-home:/home/vscode
+      # Shared volume from mitmproxy containing the CA cert and
+      # sandcat.env (env vars + secret placeholders). Read-only — app
+      # containers should never write to this.
+      - mitmproxy-config:/mitmproxy-config:ro
+      # Bind-mount host Claude Code customizations (read-only) so personal
+      # settings, agents, and slash commands carry into the container.
+      # Remove any mount whose source does not exist on your host —
+      # Docker will otherwise create an empty directory in its place.
+      - ~/.claude/CLAUDE.md:/home/vscode/.claude/CLAUDE.md:ro
+      - ~/.claude/agents:/home/vscode/.claude/agents:ro
+      - ~/.claude/commands:/home/vscode/.claude/commands:ro
+    command: sleep infinity
+    depends_on:
+      wg-client:
+        condition: service_healthy
+
+volumes:
+  app-home:

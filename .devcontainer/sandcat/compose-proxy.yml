@@ -1,0 +1,42 @@
+services:
+  # Dedicated networking container that manages the WireGuard tunnel to
+  # mitmproxy. Only this container has NET_ADMIN — no user code runs here.
+  wg-client:
+    build:
+      context: .
+      dockerfile: Dockerfile.wg-client
+    volumes:
+      - mitmproxy-config:/mitmproxy-config:ro
+    cap_add:
+      - NET_ADMIN # required for WireGuard interface and iptables setup
+    sysctls:
+      - net.ipv4.conf.all.src_valid_mark=1 # required by WireGuard fwmark routing; can't be set inside the container (/proc/sys is read-only)
+    command: sleep infinity
+    depends_on:
+      mitmproxy:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "test", "-f", "/tmp/wg-ready"]
+      interval: 2s
+      timeout: 2s
+      retries: 15
+
+  mitmproxy:
+    image: mitmproxy/mitmproxy:latest
+    command: mitmweb --mode wireguard --web-host 0.0.0.0 --set web_password=mitmproxy -s /scripts/mitmproxy_addon.py
+    ports:
+      - "8081" # mitmweb UI; host port assigned dynamically to avoid conflicts
+    volumes:
+      - mitmproxy-config:/home/mitmproxy/.mitmproxy
+      - ./scripts/mitmproxy_addon.py:/scripts/mitmproxy_addon.py:ro
+      - ~/.config/sandcat/settings.json:/config/settings.json:ro
+    cap_add:
+      - NET_ADMIN
+    healthcheck:
+      test: ["CMD", "test", "-f", "/home/mitmproxy/.mitmproxy/wireguard.conf"]
+      interval: 2s
+      timeout: 2s
+      retries: 15
+
+volumes:
+  mitmproxy-config:
