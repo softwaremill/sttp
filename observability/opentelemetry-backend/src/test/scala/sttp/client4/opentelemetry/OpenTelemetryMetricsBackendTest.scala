@@ -276,6 +276,42 @@ class OpenTelemetryMetricsBackendTest extends AnyFlatSpec with Matchers with Opt
       .find(_.getName.equals(name))
       .head
 
+  it should "not include url.full in default request attributes to avoid high cardinality" in {
+    // given
+    val reader = InMemoryMetricReader.create()
+    val backend = OpenTelemetryMetricsBackend(stubAlwaysOk, spawnNewOpenTelemetry(reader))
+
+    // when
+    basicRequest.get(uri"http://127.0.0.1/foo?bar=1").send(backend)
+
+    // then
+    val metrics = reader.collectAllMetrics().asScala.toList
+    val metric = metrics.find(_.getName == OpenTelemetryMetricsBackend.DefaultLatencyHistogramName).value
+    metric.getHistogramData.getPoints.forEach { point =>
+      point.getAttributes.get(AttributeKey.stringKey("url.full")) shouldBe null
+    }
+  }
+
+  it should "include url.full when using requestAttributesWithFullUrl" in {
+    // given
+    val reader = InMemoryMetricReader.create()
+    val config = OpenTelemetryMetricsConfig(
+      spawnNewOpenTelemetry(reader),
+      requestAttributes = OpenTelemetryDefaults.requestAttributesWithFullUrl _
+    )
+    val backend = OpenTelemetryMetricsBackend(stubAlwaysOk, config)
+
+    // when
+    basicRequest.get(uri"http://127.0.0.1/foo?bar=1").send(backend)
+
+    // then
+    val metrics = reader.collectAllMetrics().asScala.toList
+    val metric = metrics.find(_.getName == OpenTelemetryMetricsBackend.DefaultLatencyHistogramName).value
+    metric.getHistogramData.getPoints.forEach { point =>
+      point.getAttributes.get(AttributeKey.stringKey("url.full")) shouldBe "http://127.0.0.1/foo?bar=1"
+    }
+  }
+
   private[this] def specTest(metrics: List[MetricData], expectedMetricName: String): Unit = {
     val metric = metrics.find(_.getName == expectedMetricName)
     assert(
