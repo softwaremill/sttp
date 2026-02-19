@@ -3,7 +3,7 @@
 To use the caching backend, add the following dependency:
 
 ```
-"com.softwaremill.sttp.client4" %% "caching-backend" % "4.0.18"
+"com.softwaremill.sttp.client4" %% "caching-backend" % "4.0.19"
 ```
 
 The backend caches responses to eligible requests, and returns them from the cache if a repeated request is made. A prerequisite for a request to be considered for caching is that its response-as description is "cache-friendly"; this excludes non-blocking streaming responses, file-based responses and WebSockets.
