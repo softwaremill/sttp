@@ -71,17 +71,10 @@ if [ -n "$MISE_JAVA_HOME" ] && [ -f "$CA_CERT" ]; then
 EOFJSON
     fi
 
-    # Signal to app-init.sh (which runs as root) where the cacerts copy is,
-    # so it can set JAVA_TOOL_OPTIONS. Written on every start since /tmp
-    # is cleared on container restart.
-    if [ -f "$SANDCAT_CACERTS" ]; then
-        echo "$SANDCAT_CACERTS" > /tmp/sandcat-java-cacerts-path
-    fi
-
     # Write Java env vars to ~/.bashrc (on the persistent app-home volume)
     # so VS Code's userEnvProbe picks them up even after container rebuild.
-    # /etc/profile.d/ is ephemeral and works for shells, but VS Code may
-    # probe the environment before the entrypoint recreates those files.
+    # The Dockerfile bakes these into the image for first-run, but rebuilds
+    # with a changed toolchain need the runtime fallback.
     BASHRC_JAVA_MARKER="# sandcat-java-env"
     if ! grep -q "$BASHRC_JAVA_MARKER" "$HOME/.bashrc" 2>/dev/null; then
         cat >> "$HOME/.bashrc" << 'BASHRC_JAVA'
