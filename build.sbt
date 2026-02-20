@@ -861,15 +861,15 @@ lazy val upickle = (projectMatrix in file("json/upickle"))
   .nativePlatform(scalaVersions = scala2And3, settings = commonNativeSettings)
   .dependsOn(core, jsonCommon % compileAndTest)
 
-lazy val json4sVersion = "4.0.7"
+lazy val json4sVersion = "4.1.0"
 
 lazy val json4s = (projectMatrix in file("json/json4s"))
   .settings(commonJvmSettings)
   .settings(
     name := "json4s",
     libraryDependencies ++= Seq(
-      "org.json4s" %% "json4s-core" % json4sVersion,
-      "org.json4s" %% "json4s-native" % json4sVersion % Test
+      "io.github.json4s" %% "json4s-core" % json4sVersion,
+      "io.github.json4s" %% "json4s-native" % json4sVersion % Test
     ),
     scalaTest
   )
@@ -1050,7 +1050,7 @@ lazy val examples = (projectMatrix in file("examples"))
     publish / skip := true,
     libraryDependencies ++= Seq(
       "io.circe" %% "circe-generic" % circeVersion,
-      "org.json4s" %% "json4s-native" % json4sVersion,
+      "io.github.json4s" %% "json4s-native" % json4sVersion,
       "com.github.plokhotnyuk.jsoniter-scala" %%% "jsoniter-scala-macros" % jsoniterVersion,
       "io.github.resilience4j" % "resilience4j-circuitbreaker" % resilience4jVersion,
       "io.github.resilience4j" % "resilience4j-ratelimiter" % resilience4jVersion,
@@ -1104,7 +1104,7 @@ lazy val docs: ProjectMatrix = (projectMatrix in file("generated-docs")) // impo
     publishArtifact := false,
     name := "docs",
     libraryDependencies ++= Seq(
-      "org.json4s" %% "json4s-native" % json4sVersion,
+      "io.github.json4s" %% "json4s-native" % json4sVersion,
       "io.circe" %% "circe-generic" % circeVersion,
       "com.github.plokhotnyuk.jsoniter-scala" %% "jsoniter-scala-macros" % jsoniterVersion,
       "commons-io" % "commons-io" % "2.21.0",
