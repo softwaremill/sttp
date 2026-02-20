@@ -1,6 +1,6 @@
 // {cat=WebSocket; effects=Direct; backend=HttpClient}: Connect to & interact with a WebSocket, using Ox channels for streaming
 
-//> using dep com.softwaremill.sttp.client4::ox:4.0.18
+//> using dep com.softwaremill.sttp.client4::ox:4.0.19
 
 package sttp.client4.examples.ws
 

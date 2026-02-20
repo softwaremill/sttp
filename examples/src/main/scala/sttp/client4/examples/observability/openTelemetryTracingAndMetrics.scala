@@ -1,6 +1,6 @@
 // {cat=Observability; effects=Synchronous; backend=HttpClient}: Use the OpenTelemetry tracing & metrics wrappers
 
-//> using dep com.softwaremill.sttp.client4::opentelemetry-backend:4.0.18
+//> using dep com.softwaremill.sttp.client4::opentelemetry-backend:4.0.19
 //> using dep io.opentelemetry:opentelemetry-exporter-otlp:1.59.0
 //> using dep io.opentelemetry:opentelemetry-sdk-extension-autoconfigure:1.59.0
 
