@@ -7,8 +7,13 @@ import sttp.client4.testing.{BackendStub, ResponseStub}
 import sttp.client4.wrappers.{FollowRedirectsBackend, FollowRedirectsConfig}
 import sttp.model.internal.Rfc3986
 import sttp.model.{Header, StatusCode, Uri}
+import sttp.model.headers.CookieWithMeta
+import sttp.model.Method
+import org.scalatest.Checkpoints
+import sttp.model.headers.Cookie
+import sttp.model.HeaderNames
 
-class FollowRedirectsBackendTest extends AnyFunSuite with Matchers with EitherValues {
+class FollowRedirectsBackendTest extends AnyFunSuite with Matchers with EitherValues with Checkpoints {
   val testData = List(
     ("/x/y/z", true),
     ("  /x2/y/z", true),
@@ -53,4 +58,64 @@ class FollowRedirectsBackendTest extends AnyFunSuite with Matchers with EitherVa
     result.body.value shouldBe "All good!"
   }
 
+  test("should pass cookies during redirections") {
+
+    val maxRedirects = 5
+    val staticName = "session"
+
+    val (idToUrl, urlToId) = {
+      val x = (0 to maxRedirects).map(id => id -> uri"https://example.com/$id")
+      (x.toMap, x.map { case (id, url) => url -> id }.toMap)
+    }
+
+    def response(number: Int) = ResponseStub
+      .adjust(
+        "",
+        StatusCode.Found,
+        Vector(
+          Header.location(idToUrl.apply(number + 1)),
+          Header.setCookie(CookieWithMeta(staticName, (number + 1).toString)),
+          Header.setCookie(CookieWithMeta(s"$number-fuzz", ""))
+        )
+      )
+
+    val checkpoint = new Checkpoint()
+
+    val stub = BackendStub.synchronous
+      .whenRequestMatchesPartial {
+        case r if (urlToId.contains(r.uri)) => {
+          val id = urlToId.apply(r.uri)
+          if (id < maxRedirects) {
+            checkpoint(
+              r.unsafeCookies.map(_.name) should contain(staticName)
+            )
+            response(urlToId.apply(r.uri))
+          } else {
+            ResponseStub.adjust("", StatusCode.Ok, Vector(Header.setCookie(CookieWithMeta(staticName, "final"))))
+          }
+        }
+        case r => ResponseStub.adjust(s"No cookies found, or unxpected request $r")
+      }
+
+    val redirectsBackend =
+      wrappers.FollowRedirectsBackend(stub, config = FollowRedirectsConfig(sensitiveHeaders = Set.empty))
+    val result = basicRequest.redirectToGet(true).post(idToUrl.apply(0)).send(redirectsBackend)
+
+    checkpoint(result.code shouldBe StatusCode.Ok)
+
+    // typical solution needed to populate the next request (oldest to newest),
+    // assuming map internals have not changed
+    // adds oldest first which gets overriden by the last item on the list
+    val cookies = result.history
+      .flatMap(_.unsafeCookies)
+      .appendedAll(result.unsafeCookies)
+      .map(cookie => (cookie.name, cookie.domain) -> cookie)
+      .toMap
+      .values
+      .toSeq
+      .sortBy(_.name)
+
+    checkpoint(result.unsafeCookies.sortBy(_.name) shouldEqual cookies)
+    checkpoint.reportAll()
+  }
 }
