@@ -127,7 +127,7 @@ val play29JsonVersion = "2.10.8"
 val playJsonVersion = "3.0.6"
 
 val catsEffect_3_version = "3.7.0"
-val fs2_3_version = "3.12.2"
+val fs2_3_version = "3.13.0"
 
 // This version provides Scala Native 0.5.x support. Drop this when 3.7.0 is released.
 val catsEffect_3_RC_version = "3.7.0-RC1"
