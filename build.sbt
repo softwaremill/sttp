@@ -967,6 +967,7 @@ lazy val otel4sMetricsBackend = (projectMatrix in file("observability/otel4s-met
     libraryDependencies ++= Seq(
       "org.typelevel" %%% "otel4s-core-metrics" % otel4s,
       "org.typelevel" %%% "otel4s-semconv" % otel4s,
+      "org.typelevel" %%% "otel4s-semconv-experimental" % otel4s,
       "org.typelevel" %%% "otel4s-semconv-metrics-experimental" % otel4s % Test,
       "org.typelevel" %%% "otel4s-sdk-metrics-testkit" % otel4sSdk % Test
     )
