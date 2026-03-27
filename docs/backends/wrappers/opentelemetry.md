@@ -161,9 +161,9 @@ You can customize histogram buckets and URL template behavior by providing a cus
 
 ### URL template
 
-The `url.template` [experimental attribute](https://opentelemetry.io/docs/specs/semconv/attributes-registry/url/) is not added by default, as URL structures vary widely across APIs. To enable it, provide a `Uri => Option[String]` function via the `urlTemplate` config field.
+The `url.template` [experimental attribute](https://opentelemetry.io/docs/specs/semconv/attributes-registry/url/) is not added by default, as URL structures vary widely across APIs. To enable it, provide a `GenericRequest[_, _] => Option[String]` function via the `urlTemplate` config field. Because the function receives the full request, you can use request attributes to pass the template from the call site.
 
-A built-in implementation is available in `UrlTemplates.urlTemplate`: it replaces UUIDs and numeric IDs in path segments and query values with `{id}`, and always returns `Some` (the URL unchanged when no IDs are found).
+A built-in implementation is available in `UrlTemplates.replaceIds`: it replaces UUIDs and numeric IDs in path segments and query values with `{id}`, and always returns `Some` (the URL unchanged when no IDs are found).
 
 ```scala mdoc:compile-only
 import cats.effect.*
@@ -181,20 +181,24 @@ Otel4sMetricsBackend(
     requestDurationHistogramBuckets = Otel4sMetricsConfig.DefaultDurationBuckets,
     requestBodySizeHistogramBuckets = None,
     responseBodySizeHistogramBuckets = None,
-    urlTemplate = UrlTemplates.urlTemplate
+    urlTemplate = UrlTemplates.replaceIds
   )
 )
 
-// Or provide a custom function:
+// Or provide a custom function based on request attributes:
+import sttp.attributes.AttributeKey
+val UrlTemplateKey = AttributeKey[String]
 Otel4sMetricsBackend(
   catsBackend,
   Otel4sMetricsConfig(
     requestDurationHistogramBuckets = Otel4sMetricsConfig.DefaultDurationBuckets,
     requestBodySizeHistogramBuckets = None,
     responseBodySizeHistogramBuckets = None,
-    urlTemplate = (uri => Some(uri.pathSegments.segments.map(_ => "{?}").mkString("/")))
+    urlTemplate = req => req.attribute(UrlTemplateKey)
   )
 )
+// Then, at the call site:
+// basicRequest.get(uri"...").attribute(UrlTemplateKey, "/users/{id}")
 ```
 
 ## Tracing (cats-effect, otel4s)

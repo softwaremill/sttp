@@ -1,5 +1,6 @@
 package sttp.client4.opentelemetry.otel4s
 
+import sttp.client4.GenericRequest
 import sttp.model.Uri
 
 object UrlTemplates {
@@ -9,7 +10,8 @@ object UrlTemplates {
   /** URL template function that replaces numeric IDs and UUIDs in path segments and query values with `{id}`. Always
     * returns `Some` — the template equals the original URL when no IDs are found.
     */
-  val urlTemplate: Uri => Option[String] = uri => {
+  val replaceIds: GenericRequest[_, _] => Option[String] = request => {
+    val uri = request.uri
     val templatedSegments = uri.pathSegments.segments.map(s => if (IdRegex.matches(s.v)) IdPlaceholder else s.v)
 
     val templatedQueryParts = uri.querySegments.map {
