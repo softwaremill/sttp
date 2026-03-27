@@ -10,7 +10,6 @@ import org.typelevel.otel4s.metrics.MeterProvider
 import org.typelevel.otel4s.sdk.metrics.data.MetricData
 import org.typelevel.otel4s.sdk.testkit.metrics.MetricsTestkit
 import org.typelevel.otel4s.semconv.experimental.metrics.HttpExperimentalMetrics
-import org.typelevel.otel4s.semconv.metrics.HttpMetrics
 import org.typelevel.otel4s.semconv.{MetricSpec, Requirement}
 import sttp.model.{Header, StatusCode}
 import sttp.client4._
@@ -27,7 +26,7 @@ class Otel4sMetricsBackendTest extends AsyncFreeSpec with Matchers {
   "Otel4sMetricsBackend" - {
     "should pass the client semantic test" in {
       val specs = List(
-        HttpMetrics.ClientRequestDuration,
+        HttpExperimentalMetrics.ClientRequestDuration,
         HttpExperimentalMetrics.ClientRequestBodySize,
         HttpExperimentalMetrics.ClientResponseBodySize,
         HttpExperimentalMetrics.ClientActiveRequests

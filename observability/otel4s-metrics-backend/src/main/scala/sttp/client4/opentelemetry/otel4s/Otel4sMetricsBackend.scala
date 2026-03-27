@@ -18,6 +18,7 @@ import org.typelevel.otel4s.semconv.attributes.{
   ServerAttributes,
   UrlAttributes
 }
+import org.typelevel.otel4s.semconv.experimental.attributes.UrlExperimentalAttributes
 import sttp.client4.listener.{ListenerBackend, RequestListener}
 import sttp.client4._
 import sttp.model.{HttpVersion, ResponseMetadata, StatusCode}
@@ -103,7 +104,8 @@ object Otel4sMetricsBackend {
       requestBodySize,
       responseBodySize,
       activeRequests,
-      dispatcher
+      dispatcher,
+      config.urlTemplate
     )
 
   private final case class State(start: FiniteDuration, activeRequestsAttributes: Attributes)
@@ -113,7 +115,8 @@ object Otel4sMetricsBackend {
       requestBodySize: Histogram[F, Long],
       responseBodySize: Histogram[F, Long],
       activeRequests: UpDownCounter[F, Long],
-      dispatcher: Dispatcher[F]
+      dispatcher: Dispatcher[F],
+      urlTemplate: GenericRequest[_, _] => Option[String]
   ) extends RequestListener[F, State] {
     def before(request: GenericRequest[_, _]): F[State] =
       for {
@@ -173,6 +176,7 @@ object Otel4sMetricsBackend {
       b ++= ServerAttributes.ServerAddress.maybe(request.uri.host)
       b ++= ServerAttributes.ServerPort.maybe(request.uri.port.map(_.toLong))
       b ++= UrlAttributes.UrlScheme.maybe(request.uri.scheme)
+      b ++= UrlExperimentalAttributes.UrlTemplate.maybe(urlTemplate(request))
 
       b.result()
     }
@@ -196,6 +200,7 @@ object Otel4sMetricsBackend {
       b ++= ServerAttributes.ServerPort.maybe(request.uri.port.map(_.toLong))
       b ++= NetworkAttributes.NetworkProtocolVersion.maybe(request.httpVersion.map(networkProtocol))
       b ++= UrlAttributes.UrlScheme.maybe(request.uri.scheme)
+      b ++= UrlExperimentalAttributes.UrlTemplate.maybe(urlTemplate(request))
 
       // response
       b ++= HttpAttributes.HttpResponseStatusCode.maybe(responseStatusCode.map(_.code.toLong))
@@ -211,6 +216,7 @@ object Otel4sMetricsBackend {
         case HttpVersion.HTTP_2   => "2"
         case HttpVersion.HTTP_3   => "3"
       }
+
   }
 
 }
