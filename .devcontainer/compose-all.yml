@@ -1,10 +1,8 @@
-name: sttp
-
+name: sttp-sandbox
 include:
   - path: sandcat/compose-proxy.yml
-
 services:
-  app:
+  agent:
     build:
       context: .
       dockerfile: Dockerfile.app
@@ -13,11 +11,6 @@ services:
     # so processes inside cannot modify routing, iptables, or the tunnel.
     network_mode: "service:wg-client"
     volumes:
-      # Mount the project's code
-      - ..:/workspaces/sttp:cached
-      # Overlay .devcontainer as read-only so the agent cannot modify its
-      # own sandbox (scripts, compose files, Dockerfile, devcontainer.json).
-      - ../.devcontainer:/workspaces/sttp/.devcontainer:ro
       # Named volume for the home directory so Claude Code auth state,
       # shell history, and other user-level config persist across rebuilds.
       - app-home:/home/vscode
@@ -25,17 +18,32 @@ services:
       # sandcat.env (env vars + secret placeholders). Read-only — app
       # containers should never write to this.
       - mitmproxy-config:/mitmproxy-config:ro
-      # Bind-mount host Claude Code customizations (read-only) so personal
-      # settings, agents, and slash commands carry into the container.
-      # Remove any mount whose source does not exist on your host —
-      # Docker will otherwise create an empty directory in its place.
-      - ~/.claude/CLAUDE.md:/home/vscode/.claude/CLAUDE.md:ro
-      - ~/.claude/agents:/home/vscode/.claude/agents:ro
-      - ~/.claude/commands:/home/vscode/.claude/commands:ro
+      # Mount the project's code
+      - ..:/workspaces/sttp-sandbox
+      # Read-only devcontainer directory
+      - ../.devcontainer:/workspaces/sttp-sandbox/.devcontainer:ro
+      # Read-only settings directory
+      - ../.sandcat:/workspaces/sttp-sandbox/.sandcat:ro
+      # Host Claude config (optional)
+      - ${HOME}/.claude/CLAUDE.md:/home/vscode/.claude/CLAUDE.md:ro
+      - ${HOME}/.claude/agents:/home/vscode/.claude/agents:ro
+      - ${HOME}/.claude/commands:/home/vscode/.claude/commands:ro
+      # Read-only Git directory
+      # - ../.git:/workspace/.git:ro
+      # Read-only IntelliJ IDEA project directory
+      # - ../.idea:/workspace/.idea:ro
     command: sleep infinity
+    environment:
+      - CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1
     depends_on:
       wg-client:
         condition: service_healthy
-
+    working_dir: /workspaces/sttp-sandbox
+  mitmproxy:
+    volumes:
+      - ../.sandcat:/config/project:ro
+      # Project-level settings (.sandcat/ directory). If the directory does
+      # not exist on the host, Docker creates an empty one and the addon
+      # simply finds no files — no error.
 volumes:
   app-home:
