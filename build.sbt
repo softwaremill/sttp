@@ -126,8 +126,8 @@ val play29JsonVersion = "2.10.8"
 
 val playJsonVersion = "3.0.6"
 
-val catsEffect_3_version = "3.6.3"
-val fs2_3_version = "3.12.2"
+val catsEffect_3_version = "3.7.0"
+val fs2_3_version = "3.13.0"
 
 // This version provides Scala Native 0.5.x support. Drop this when 3.7.0 is released.
 val catsEffect_3_RC_version = "3.7.0-RC1"
@@ -163,15 +163,15 @@ val logback = "ch.qos.logback" % "logback-classic" % "1.5.14"
 val jaegerClientVersion = "1.8.1"
 val braveOpentracingVersion = "1.0.1"
 val zipkinSenderOkHttpVersion = "3.5.1"
-val resilience4jVersion = "2.3.0"
+val resilience4jVersion = "2.4.0"
 val http4s_ce2_version = "0.22.15"
 val http4s_ce3_version = "0.23.33"
 val osLibVersion = "0.11.4"
 val tethysVersion = "0.29.7"
 val openTelemetryVersion = "1.59.0"
 val openTelemetrySemconvVersion = "1.40.0"
-val otel4s = "0.15.1"
-val otel4sSdk = "0.16.1"
+val otel4s = "0.15.2"
+val otel4sSdk = "0.17.0"
 val slf4jVersion = "1.7.36"
 
 val compileAndTest = "compile->compile;test->test"
@@ -683,7 +683,7 @@ lazy val armeriaBackend = (projectMatrix in file("armeria-backend"))
   .settings(testServerSettings)
   .settings(
     name := "armeria-backend",
-    libraryDependencies += "com.linecorp.armeria" % "armeria" % "1.36.0"
+    libraryDependencies += "com.linecorp.armeria" % "armeria" % "1.37.0"
   )
   .jvmPlatform(scalaVersions = scala2And3)
   .dependsOn(core % compileAndTest)
@@ -951,7 +951,7 @@ lazy val openTelemetryTracingZioBackend = (projectMatrix in file("observability/
   .settings(
     name := "opentelemetry-tracing-zio-backend",
     libraryDependencies ++= Seq(
-      "dev.zio" %% "zio-opentelemetry" % "3.1.14",
+      "dev.zio" %% "zio-opentelemetry" % "3.1.15",
       "io.opentelemetry.semconv" % "opentelemetry-semconv" % openTelemetrySemconvVersion,
       "io.opentelemetry" % "opentelemetry-api" % openTelemetryVersion,
       "io.opentelemetry" % "opentelemetry-sdk-testing" % openTelemetryVersion % Test
