@@ -187,7 +187,7 @@ Otel4sMetricsBackend(
 
 // Or provide a custom function based on request attributes:
 import sttp.attributes.AttributeKey
-val UrlTemplateKey = AttributeKey[String]
+val UrlTemplateKey = new AttributeKey[String]("UrlTemplateKey")
 Otel4sMetricsBackend(
   catsBackend,
   Otel4sMetricsConfig(
