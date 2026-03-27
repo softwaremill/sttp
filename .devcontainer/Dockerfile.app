@@ -31,7 +31,7 @@ ENV PATH="/home/vscode/.local/bin:/home/vscode/.local/share/mise/shims:$PATH"
 
 # Development stacks (managed by sandcat init --stacks):
 RUN mise use -g java@lts
-RUN mise use -g scala@latest # END STACKS# END STACKS mise use -g sbt@latest
+RUN mise use -g scala@latest && mise use -g sbt@latest
 # END STACKS
 
 # If Java was installed above, bake JAVA_HOME and JAVA_TOOL_OPTIONS into
