@@ -559,6 +559,14 @@ lazy val zio = (projectMatrix in file("effects/zio"))
     scalaVersions = scala2And3,
     settings = commonJsSettings ++ commonJsBackendSettings ++ browserChromeTestSettings ++ testServerSettings
   )
+  .nativePlatform(
+    scalaVersions = List(scala3),
+    settings = commonNativeSettings ++ Seq(
+      libraryDependencies ++= Seq(
+        "io.github.cquiroz" %%% "scala-java-time" % "2.6.0"
+      )
+    )
+  )
 
 lazy val scalaz = (projectMatrix in file("effects/scalaz"))
   .settings(commonJvmSettings)
