@@ -1,6 +1,6 @@
 // {cat=Hello, World!; effects=Direct; backend=HttpClient}: POST form data
 
-//> using dep com.softwaremill.sttp.client4::core:4.0.19
+//> using dep com.softwaremill.sttp.client4::core:4.0.21
 
 package sttp.client4.examples
 
