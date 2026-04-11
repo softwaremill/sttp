@@ -16,12 +16,9 @@ import sttp.client4._
 import sttp.client4.impl.cats.CatsMonadAsyncError
 import sttp.client4.testing.{BackendStub, ResponseStub, StubBody}
 
-import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 
-class Otel4sMetricsBackendTest extends AsyncFreeSpec with Matchers {
-
-  override def executionContext: ExecutionContext = ExecutionContext.global
+class Otel4sMetricsBackendTest extends AsyncFreeSpec with Matchers with AsyncExecutionContext {
 
   "Otel4sMetricsBackend" - {
     "should pass the client semantic test" in {

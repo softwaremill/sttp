@@ -23,7 +23,6 @@ import org.scalatest.freespec.AsyncFreeSpec
 import org.scalatest.matchers.should.Matchers
 import org.typelevel.otel4s.sdk.data.LimitedData
 import org.typelevel.otel4s.sdk.testkit.trace._
-import org.typelevel.otel4s.sdk.testkit.trace.TracesTestkit
 import org.typelevel.otel4s.sdk.trace.context.propagation.W3CTraceContextPropagator
 import org.typelevel.otel4s.sdk.trace.data.{EventData, SpanData}
 import org.typelevel.otel4s.trace.TracerProvider
@@ -33,13 +32,10 @@ import sttp.client4.impl.cats.CatsMonadAsyncError
 import sttp.client4.testing.{BackendStub, ResponseStub, StubBody}
 import sttp.model.{StatusCode => HttpStatusCode}
 
-import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.Duration
 import scala.util.control.NoStackTrace
 
-class Otel4sTracingBackendTest extends AsyncFreeSpec with Matchers {
-
-  override def executionContext: ExecutionContext = ExecutionContext.global
+class Otel4sTracingBackendTest extends AsyncFreeSpec with Matchers with AsyncExecutionContext {
 
   "Otel4sTracingBackend" - {
     "should add tracing headers to the request" in {
