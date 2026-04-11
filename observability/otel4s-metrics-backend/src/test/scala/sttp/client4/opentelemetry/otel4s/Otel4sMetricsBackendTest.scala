@@ -1,14 +1,14 @@
 package sttp.client4.opentelemetry.otel4s
 
 import cats.effect.IO
-import cats.effect.unsafe.IORuntime
 import cats.effect.unsafe.implicits.global
-import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.freespec.AsyncFreeSpec
 import org.scalatest.matchers.should.Matchers
 import org.typelevel.otel4s.metrics.MeterProvider
 import org.typelevel.otel4s.sdk.metrics.data.MetricData
+import org.typelevel.otel4s.sdk.testkit.metrics.{MetricExpectation, MetricExpectations}
 import org.typelevel.otel4s.sdk.testkit.metrics.MetricsTestkit
+import org.typelevel.otel4s.semconv.metrics.HttpMetrics
 import org.typelevel.otel4s.semconv.experimental.metrics.HttpExperimentalMetrics
 import org.typelevel.otel4s.semconv.{MetricSpec, Requirement}
 import sttp.model.{Header, StatusCode}
@@ -26,7 +26,7 @@ class Otel4sMetricsBackendTest extends AsyncFreeSpec with Matchers {
   "Otel4sMetricsBackend" - {
     "should pass the client semantic test" in {
       val specs = List(
-        HttpExperimentalMetrics.ClientRequestDuration,
+        HttpMetrics.ClientRequestDuration,
         HttpExperimentalMetrics.ClientRequestBodySize,
         HttpExperimentalMetrics.ClientResponseBodySize,
         HttpExperimentalMetrics.ClientActiveRequests
@@ -50,11 +50,11 @@ class Otel4sMetricsBackendTest extends AsyncFreeSpec with Matchers {
 
           makeBackend.use { backend =>
             for {
-              r <- backend.send(basicRequest.post(uri"http://localhost:8080/success").body("payload"))
+              _ <- backend.send(basicRequest.post(uri"http://localhost:8080/success").body("payload"))
               // we use `.unsafeRunAndForget()` in the backend and JS could be slow
               _ <- IO.sleep(1.second)
               metrics <- testkit.collectMetrics
-              _ = specs.foreach(spec => specTest(metrics, spec))
+              _ = assertMetricsMatch(metrics, specs.map(metricExpectation))
             } yield succeed
           }
         }
@@ -62,29 +62,30 @@ class Otel4sMetricsBackendTest extends AsyncFreeSpec with Matchers {
     }
   }
 
-  private def specTest(metrics: List[MetricData], spec: MetricSpec): Unit = {
-    val metric = metrics.find(_.name == spec.name)
-    assert(
-      metric.isDefined,
-      s"${spec.name} metric is missing. Available [${metrics.map(_.name).mkString(", ")}]"
-    )
+  private def metricExpectation(spec: MetricSpec): MetricExpectation = {
+    val required = spec.attributeSpecs
+      .filter(_.requirement.level == Requirement.Level.Required)
+      .map(_.key)
+      .toSet
 
-    metric.foreach { md =>
-      md.name shouldBe spec.name
-      md.description shouldBe Some(spec.description)
-      md.unit shouldBe Some(spec.unit)
-
-      val required = spec.attributeSpecs
-        .filter(_.requirement.level == Requirement.Level.Required)
-        .map(_.key)
-        .toSet
-
-      val current = md.data.points.toVector
-        .flatMap(_.attributes.map(_.key))
-        .filter(key => required.contains(key))
-        .toSet
-
-      current shouldBe required
-    }
+    MetricExpectation
+      .name(spec.name)
+      .description(spec.description)
+      .unit(spec.unit)
+      .clue(spec.name)
+      .where("required semantic-convention attributes are present") { metric =>
+        metric.data.points.iterator
+          .flatMap(_.attributes.iterator.map(_.key))
+          .filter(required.contains)
+          .toSet == required
+      }
   }
+
+  private def assertMetricsMatch(metrics: List[MetricData], expectations: List[MetricExpectation]): Unit =
+    MetricExpectations.checkAllDistinct(metrics, expectations) match {
+      case Right(_) =>
+        ()
+      case Left(mismatches) =>
+        fail(MetricExpectations.format(mismatches))
+    }
 }
