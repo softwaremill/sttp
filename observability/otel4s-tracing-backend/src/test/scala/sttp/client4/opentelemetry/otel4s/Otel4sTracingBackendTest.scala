@@ -111,8 +111,6 @@ class Otel4sTracingBackendTest extends AsyncFreeSpec with Matchers {
                 )
               )
             )
-
-            succeed
           }
         }
         .unsafeToFuture()
@@ -164,8 +162,6 @@ class Otel4sTracingBackendTest extends AsyncFreeSpec with Matchers {
                 )
               )
             )
-
-            succeed
           }
         }
         .unsafeToFuture()
@@ -227,8 +223,6 @@ class Otel4sTracingBackendTest extends AsyncFreeSpec with Matchers {
                     )
                   )
                 )
-
-                succeed
               }
             }
         }
@@ -236,10 +230,10 @@ class Otel4sTracingBackendTest extends AsyncFreeSpec with Matchers {
     }
   }
 
-  private def assertSpansMatch(spans: List[SpanData], expectation: TraceForestExpectation): Unit =
+  private def assertSpansMatch(spans: List[SpanData], expectation: TraceForestExpectation) =
     TraceExpectations.check(spans, expectation) match {
       case Right(_) =>
-        ()
+        succeed
       case Left(mismatches) =>
         fail(TraceExpectations.format(mismatches))
     }

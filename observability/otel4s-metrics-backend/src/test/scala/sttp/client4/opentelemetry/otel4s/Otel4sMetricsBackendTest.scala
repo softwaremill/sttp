@@ -54,8 +54,7 @@ class Otel4sMetricsBackendTest extends AsyncFreeSpec with Matchers {
               // we use `.unsafeRunAndForget()` in the backend and JS could be slow
               _ <- IO.sleep(1.second)
               metrics <- testkit.collectMetrics
-              _ = assertMetricsMatch(metrics, specs.map(metricExpectation))
-            } yield succeed
+            } yield assertMetricsMatch(metrics, specs.map(metricExpectation))
           }
         }
         .unsafeToFuture()
@@ -81,10 +80,10 @@ class Otel4sMetricsBackendTest extends AsyncFreeSpec with Matchers {
       }
   }
 
-  private def assertMetricsMatch(metrics: List[MetricData], expectations: List[MetricExpectation]): Unit =
+  private def assertMetricsMatch(metrics: List[MetricData], expectations: List[MetricExpectation]) =
     MetricExpectations.checkAllDistinct(metrics, expectations) match {
       case Right(_) =>
-        ()
+        succeed
       case Left(mismatches) =>
         fail(MetricExpectations.format(mismatches))
     }
