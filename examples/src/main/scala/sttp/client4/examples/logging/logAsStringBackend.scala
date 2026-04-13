@@ -1,6 +1,6 @@
 // {cat=Logging; effects=Synchronous; backend=HttpClient}: A backend wrapper which logs the response body as a string
 
-//> using dep com.softwaremill.sttp.client4::core:4.0.19
+//> using dep com.softwaremill.sttp.client4::core:4.0.21
 
 package sttp.client4.examples.logging
 
