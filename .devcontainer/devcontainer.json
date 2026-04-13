@@ -1,14 +1,14 @@
 {
-	"name": "sttp",
+	"name": "sttp-sandbox",
 	"dockerComposeFile": "compose-all.yml",
-	"service": "app",
-	"workspaceFolder": "/workspaces/sttp",
+	"service": "agent",
+	"workspaceFolder": "/workspaces/sttp-sandbox",
 	// Remove credential sockets that VS Code forwards into the container
 	// (SSH agent, git credential helper).  Clearing env vars alone only
 	// hides the paths — the socket files in /tmp can still be discovered
 	// by scanning.  The post-start script deletes them as best-effort
 	// hardening.
-	"postStartCommand": "bash /workspaces/sttp/.devcontainer/sandcat/scripts/app-post-start.sh",
+	"postStartCommand": "bash /workspaces/sttp-sandbox/.devcontainer/sandcat/scripts/app-post-start.sh",
 	// VS Code forwards host credential sockets into containers by default.
 	// Clear them so container code cannot use host SSH keys, GPG signing,
 	// or VS Code's git credential helpers to authenticate as the host user.
@@ -22,7 +22,8 @@
 			"extensions": [
 				"anthropic.claude-code",
 				"github.vscode-pull-request-github",
-				"scalameta.metals"
+				"redhat.java",
+				"scalameta.metals",
 			],
 			"settings": {
 				// Prevent VS Code from copying host .gitconfig into the

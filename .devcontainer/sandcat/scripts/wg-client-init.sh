@@ -71,36 +71,60 @@ ip -6 route add ::/0 dev wg0 table 51820
 ip -6 rule add not fwmark 51820 table 51820
 ip -6 rule add table main suppress_prefixlength 0
 
+# ── Override DNS ──────────────────────────────────────────────────────────
+# Docker's embedded DNS at 127.0.0.11 resolves queries on the host,
+# bypassing the WireGuard tunnel. Point resolv.conf at an external
+# nameserver so DNS goes through wg0 and is intercepted by mitmproxy.
+printf "nameserver 1.1.1.1\nnameserver 8.8.8.8\n" > /etc/resolv.conf
+
 # ── Firewall kill switch ────────────────────────────────────────────────────
 # iptables rules that enforce the tunnel. Without these, traffic could leak
 # via eth0 if the WireGuard interface goes down, or a process could reach
 # arbitrary IPs on the Docker network subnet directly (bypassing mitmproxy).
 #
-# The rules allow:
+# Insert rules (-I) are evaluated first (in reverse insertion order):
 #   - All traffic on the WireGuard interface (wg0) and loopback
 #   - WireGuard's own UDP encapsulation to the mitmproxy endpoint (fwmark 51820)
 #   - Established/related return traffic on eth0 (for the WG handshake)
-# Everything else outbound on eth0 is dropped.
+#
+# Append rules (-A) handle remaining eth0 traffic in order:
+#   1. DROP direct access to the mitmproxy container (prevent proxy bypass)
+#   2. DROP access to the Docker gateway (host machine)
+#   3. ACCEPT traffic to other containers on the Docker network
+#   4. DROP everything else (external IPs)
 #
 # These rules cannot be modified by containers sharing this network namespace
 # via network_mode, because those containers don't have NET_ADMIN.
+docker_network=$(ip -4 route show dev eth0 proto kernel | awk '{print $1}')
+docker_gateway=$(ip -4 route show default dev eth0 | awk '{print $3}')
+
+if [ -z "$docker_network" ] || [ -z "$docker_gateway" ]; then
+    echo "Failed to determine Docker IPv4 network/gateway for eth0; refusing to configure iptables." >&2
+    exit 1
+fi
+
 iptables -I OUTPUT -o wg0 -j ACCEPT
 iptables -I OUTPUT -o lo -j ACCEPT
 iptables -I OUTPUT -d "$mitmproxy_ip" -p udp --dport 51820 -m mark --mark 51820 -j ACCEPT
 iptables -I OUTPUT -o eth0 -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
+
+iptables -A OUTPUT -o eth0 -d "$mitmproxy_ip" -j DROP
+iptables -A OUTPUT -o eth0 -d "$docker_gateway" -j DROP
+iptables -A OUTPUT -o eth0 -d "$docker_network" -j ACCEPT
 iptables -A OUTPUT -o eth0 -j DROP
 
 ip6tables -I OUTPUT -o wg0 -j ACCEPT
 ip6tables -I OUTPUT -o lo -j ACCEPT
 ip6tables -I OUTPUT -o eth0 -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
-ip6tables -A OUTPUT -o eth0 -j DROP
 
-# ── DNS ─────────────────────────────────────────────────────────────────────
-# Point DNS at mitmproxy's built-in resolver (10.0.0.53) so DNS queries also
-# go through the tunnel.
-resolvconf -a wg0 -m 0 -x <<EOF
-nameserver 10.0.0.53
-EOF
+docker_network_v6=$(ip -6 route show dev eth0 proto kernel 2>/dev/null | awk '{print $1}')
+if [ -n "$docker_network_v6" ]; then
+    docker_gateway_v6=$(ip -6 route show default dev eth0 2>/dev/null | awk '{print $3}')
+    ip6tables -A OUTPUT -o eth0 -d "$mitmproxy_ip" -j DROP
+    [ -n "$docker_gateway_v6" ] && ip6tables -A OUTPUT -o eth0 -d "$docker_gateway_v6" -j DROP
+    ip6tables -A OUTPUT -o eth0 -d "$docker_network_v6" -j ACCEPT
+fi
+ip6tables -A OUTPUT -o eth0 -j DROP
 
 # Signal readiness to containers waiting on the healthcheck.
 touch /tmp/wg-ready

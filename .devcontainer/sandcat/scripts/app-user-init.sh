@@ -19,11 +19,18 @@ fi
 # repo-level config.
 git config --global commit.gpgsign false
 
+# SSH keys are not available in the container (SSH_AUTH_SOCK is cleared
+# and credential sockets are removed), so rewrite git SSH URLs to HTTPS.
+# Sandcat's secret substitution handles GitHub token authentication over
+# HTTPS transparently.
+git config --global --replace-all url."https://github.com/".insteadOf "git@github.com:" "git@github.com:"
+git config --global --replace-all url."https://github.com/".insteadOf "ssh://git@github.com/" "ssh://git@github.com/"
+
 # If Java is installed (via mise), import the mitmproxy CA into Java's trust
 # store. Java uses its own cacerts and ignores the system CA store.
 CA_CERT="/mitmproxy-config/mitmproxy-ca-cert.pem"
 
-# Ensure mise is on PATH.  `su - vscode` resets the environment and sources
+# Ensure mise is on PATH. `su - vscode` resets the environment and sources
 # only the first of ~/.bash_profile, ~/.bash_login, ~/.profile.  If
 # ~/.bash_profile exists (e.g. created by VS Code on a persistent volume),
 # ~/.profile — where the Dockerfile adds mise — is never read.
@@ -33,8 +40,8 @@ fi
 
 MISE_JAVA_HOME="$(mise where java 2>/dev/null || true)"
 if [ -n "$MISE_JAVA_HOME" ] && [ -f "$CA_CERT" ]; then
-    # Create a version-independent symlink so JAVA_HOME (exported via
-    # /etc/profile.d/) doesn't depend on the mise Java version.
+    # Create a version-independent symlink so JAVA_HOME doesn't depend
+    # on the mise Java version.
     SANDCAT_DIR="$HOME/.local/share/sandcat"
     mkdir -p "$SANDCAT_DIR"
     ln -sfn "$MISE_JAVA_HOME" "$SANDCAT_DIR/java-home"
@@ -69,25 +76,17 @@ if [ -n "$MISE_JAVA_HOME" ] && [ -f "$CA_CERT" ]; then
   }
 }
 EOFJSON
-    fi
 
-    # Write Java env vars to ~/.bashrc (on the persistent app-home volume)
-    # so VS Code's userEnvProbe picks them up even after container rebuild.
-    # The Dockerfile bakes these into the image for first-run, but rebuilds
-    # with a changed toolchain need the runtime fallback.
-    BASHRC_JAVA_MARKER="# sandcat-java-env"
-    if ! grep -q "$BASHRC_JAVA_MARKER" "$HOME/.bashrc" 2>/dev/null; then
-        cat >> "$HOME/.bashrc" << 'BASHRC_JAVA'
-
-# sandcat-java-env
-_sc_java="$HOME/.local/share/sandcat/java-home"
-_sc_cacerts="$HOME/.local/share/sandcat/cacerts"
-[ -L "$_sc_java" ] && export JAVA_HOME="$_sc_java"
-[ -f "$_sc_cacerts" ] && export JAVA_TOOL_OPTIONS="-Djavax.net.ssl.trustStore=$_sc_cacerts -Djavax.net.ssl.trustStorePassword=changeit"
-unset _sc_java _sc_cacerts
-BASHRC_JAVA
     fi
 fi
 
-# Best-effort: may fail if network isn't routed yet or CLI was just installed.
-claude update || true
+# Seed the onboarding flag so Claude Code uses the API key without interactive
+# setup. Only written when the user configured an ANTHROPIC_API_KEY secret.
+if [ -n "${ANTHROPIC_API_KEY:-}" ]; then
+    echo '{"hasCompletedOnboarding":true}' > "$HOME/.claude.json"
+fi
+
+# Claude Code is installed at build time (Dockerfile.app).
+# Background update so it doesn't block startup.
+(claude install >/dev/null 2>&1 &)
+
