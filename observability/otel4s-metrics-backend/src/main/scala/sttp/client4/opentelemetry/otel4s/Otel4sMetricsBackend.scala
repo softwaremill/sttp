@@ -18,7 +18,6 @@ import org.typelevel.otel4s.semconv.attributes.{
   ServerAttributes,
   UrlAttributes
 }
-import org.typelevel.otel4s.semconv.experimental.attributes.UrlExperimentalAttributes
 import sttp.client4.listener.{ListenerBackend, RequestListener}
 import sttp.client4._
 import sttp.model.{HttpVersion, ResponseMetadata, StatusCode}
