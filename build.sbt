@@ -129,9 +129,6 @@ val playJsonVersion = "3.0.6"
 val catsEffect_3_version = "3.7.0"
 val fs2_3_version = "3.13.0"
 
-// This version provides Scala Native 0.5.x support. Drop this when 3.7.0 is released.
-val catsEffect_3_RC_version = "3.7.0-RC1"
-
 val catsEffect_2_version = "2.5.5"
 
 val fs2_2_version = "2.5.13"
@@ -150,7 +147,7 @@ val scalaTest = libraryDependencies ++= Seq("freespec", "funsuite", "flatspec", 
 val scalaTestPlusScalaCheck = libraryDependencies += "org.scalatestplus" %% "scalacheck-1-18" % "3.2.19.0" % Test
 
 val zio1Version = "1.0.18"
-val zio2Version = "2.1.24"
+val zio2Version = "2.1.25"
 val zio1InteropRsVersion = "1.3.12"
 val zio2InteropRsVersion = "2.0.2"
 
@@ -165,13 +162,13 @@ val braveOpentracingVersion = "1.0.1"
 val zipkinSenderOkHttpVersion = "3.5.1"
 val resilience4jVersion = "2.4.0"
 val http4s_ce2_version = "0.22.15"
-val http4s_ce3_version = "0.23.33"
+val http4s_ce3_version = "0.23.34"
 val osLibVersion = "0.11.4"
-val tethysVersion = "0.29.7"
+val tethysVersion = "0.29.8"
 val openTelemetryVersion = "1.59.0"
 val openTelemetrySemconvVersion = "1.40.0"
-val otel4s = "0.15.2"
-val otel4sSdk = "0.17.0"
+val otel4s = "0.16.0"
+val otel4sSdk = "0.18.0"
 val slf4jVersion = "1.7.36"
 
 val compileAndTest = "compile->compile;test->test"
@@ -397,13 +394,10 @@ lazy val catsCe2 = (projectMatrix in file("effects/cats-ce2"))
   )
 
 lazy val catsEffect = Def.setting {
-  val ceVersion =
-    if (virtualAxes.value.contains(VirtualAxis.native)) catsEffect_3_RC_version
-    else catsEffect_3_version
   Seq(
-    "org.typelevel" %%% "cats-effect-kernel" % ceVersion,
-    "org.typelevel" %%% "cats-effect-std" % ceVersion,
-    "org.typelevel" %%% "cats-effect" % ceVersion % Test
+    "org.typelevel" %%% "cats-effect-kernel" % catsEffect_3_version,
+    "org.typelevel" %%% "cats-effect-std" % catsEffect_3_version,
+    "org.typelevel" %%% "cats-effect" % catsEffect_3_version % Test
   )
 }
 
@@ -424,7 +418,7 @@ lazy val cats = (projectMatrix in file("effects/cats"))
     settings = commonJsSettings ++ commonJsBackendSettings ++ browserChromeTestSettings ++ testServerSettings
   )
   .nativePlatform(
-    scalaVersions = List(scala3),
+    scalaVersions = scala2And3,
     settings = commonNativeSettings ++ testServerSettings
   )
 
@@ -665,7 +659,7 @@ lazy val http4sBackend = (projectMatrix in file("http4s-backend"))
     name := "http4s-backend",
     libraryDependencies ++= Seq(
       "org.http4s" %% "http4s-client" % http4s_ce3_version,
-      "org.http4s" %% "http4s-ember-client" % "0.23.33" % Optional,
+      "org.http4s" %% "http4s-ember-client" % "0.23.34" % Optional,
       "org.http4s" %% "http4s-blaze-client" % "0.23.17" % Optional
     ),
     evictionErrorLevel := Level.Info
@@ -691,7 +685,7 @@ lazy val armeriaBackend = (projectMatrix in file("armeria-backend"))
   .settings(testServerSettings)
   .settings(
     name := "armeria-backend",
-    libraryDependencies += "com.linecorp.armeria" % "armeria" % "1.37.0"
+    libraryDependencies += "com.linecorp.armeria" % "armeria" % "1.38.0"
   )
   .jvmPlatform(scalaVersions = scala2And3)
   .dependsOn(core % compileAndTest)
@@ -975,13 +969,14 @@ lazy val otel4sMetricsBackend = (projectMatrix in file("observability/otel4s-met
     libraryDependencies ++= Seq(
       "org.typelevel" %%% "otel4s-core-metrics" % otel4s,
       "org.typelevel" %%% "otel4s-semconv" % otel4s,
-      "org.typelevel" %%% "otel4s-semconv-experimental" % otel4s,
+      "org.typelevel" %%% "otel4s-semconv-experimental" % otel4s % Test,
       "org.typelevel" %%% "otel4s-semconv-metrics-experimental" % otel4s % Test,
       "org.typelevel" %%% "otel4s-sdk-metrics-testkit" % otel4sSdk % Test
     )
   )
   .jvmPlatform(scalaVersions = scala2_13And3, settings = commonJvmSettings)
   .jsPlatform(scalaVersions = scala2_13And3, settings = commonJsSettings)
+  .nativePlatform(scalaVersions = scala2_13And3, settings = commonNativeSettings)
   .dependsOn(cats % Test)
   .dependsOn(core % compileAndTest)
 
@@ -997,6 +992,7 @@ lazy val otel4sTracingBackend = (projectMatrix in file("observability/otel4s-tra
   )
   .jvmPlatform(scalaVersions = scala2_13And3, settings = commonJvmSettings)
   .jsPlatform(scalaVersions = scala2_13And3, settings = commonJsSettings)
+  .nativePlatform(scalaVersions = scala2_13And3, settings = commonNativeSettings)
   .dependsOn(cats % Test)
   .dependsOn(core % compileAndTest)
 
