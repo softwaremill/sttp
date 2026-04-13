@@ -1,7 +1,7 @@
 // {cat=WebSocket; effects=Monix; backend=HttpClient}: Connect to & interact with a WebSocket
 
 //> using scala 2.13
-//> using dep com.softwaremill.sttp.client4::monix:4.0.19
+//> using dep com.softwaremill.sttp.client4::monix:4.0.21
 
 package sttp.client4.examples
 

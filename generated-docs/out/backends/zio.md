@@ -9,8 +9,8 @@ The `*-zio` modules depend on ZIO 2.x. For ZIO 1.x support, use modules with the
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client4" %% "zio" % "4.0.19"  // for ZIO 2.x
-"com.softwaremill.sttp.client4" %% "zio1" % "4.0.19" // for ZIO 1.x
+"com.softwaremill.sttp.client4" %% "zio" % "4.0.21"  // for ZIO 2.x
+"com.softwaremill.sttp.client4" %% "zio1" % "4.0.21" // for ZIO 1.x
 ```
 
 Create the backend using:
@@ -45,8 +45,8 @@ Host header override is supported in environments running Java 12 onwards, but i
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client4" %% "armeria-backend-zio" % "4.0.19"  // for ZIO 2.x
-"com.softwaremill.sttp.client4" %% "armeria-backend-zio1" % "4.0.19" // for ZIO 1.x
+"com.softwaremill.sttp.client4" %% "armeria-backend-zio" % "4.0.21"  // for ZIO 2.x
+"com.softwaremill.sttp.client4" %% "armeria-backend-zio1" % "4.0.21" // for ZIO 1.x
 ```
 
 add imports:
@@ -99,6 +99,11 @@ Please visit [the official documentation](https://armeria.dev/docs/client-factor
 
 The ZIO backend is also available for the JS platform, see [the `FetchBackend` documentation](javascript/fetch.md).
 The `FetchBackend` companion object contains methods to create the backend directly, as a layer or scoped.
+
+## Using Scala Native
+
+The ZIO backend is also available for the native platform backed by curl, see [the `CurlZioBackend` documentation](native/curl.md).
+The `CurlZioBackend` companion object contains methods to create the backend directly, as a layer or scoped.
 
 ## ZIO layers + constructors
 

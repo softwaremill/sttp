@@ -1,24 +1,22 @@
 #!/bin/bash
 #
 # Entrypoint for containers that share the wg-client's network namespace.
-# Installs the mitmproxy CA cert, loads env vars and secret placeholders
-# from sandcat.env, then hands off to the container's main command.
+# Installs the mitmproxy CA cert, disables commit signing, loads env vars
+# and secret placeholders from sandcat.env, runs vscode-user setup (git
+# identity, Java trust store, Claude Code update), then drops to vscode
+# and exec's the container's main command.
 #
 set -e
 
 CA_CERT="/mitmproxy-config/mitmproxy-ca-cert.pem"
 
-# The CA cert should already exist (wg-client depends_on mitmproxy healthy),
-# but wait briefly in case of a slight race on the shared volume.
-elapsed=0
-while [ ! -f "$CA_CERT" ]; do
-    if [ "$elapsed" -ge 30 ]; then
-        echo "Timed out waiting for mitmproxy CA cert" >&2
-        exit 1
-    fi
-    sleep 1
-    elapsed=$((elapsed + 1))
-done
+# The CA cert is guaranteed to exist: app depends_on wg-client (healthy),
+# which depends_on mitmproxy (healthy), whose healthcheck requires the
+# WireGuard config — generated after the CA.
+if [ ! -f "$CA_CERT" ]; then
+    echo "mitmproxy CA cert not found at $CA_CERT" >&2
+    exit 1
+fi
 
 cp "$CA_CERT" /usr/local/share/ca-certificates/mitmproxy.crt
 update-ca-certificates
@@ -55,7 +53,7 @@ else
     echo "No $SANDCAT_ENV found — env vars and secret substitution disabled"
 fi
 
-# Run vscode-user tasks: git identity and Claude Code update.
+# Run vscode-user tasks: git identity, Java trust store, Claude Code update.
 su - vscode -c /usr/local/bin/app-user-init.sh
 
 # Source all sandcat profile.d scripts from /etc/bash.bashrc so env vars
