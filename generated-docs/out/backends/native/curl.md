@@ -5,7 +5,7 @@ A Scala Native (0.5.x) backend implemented using [Curl](https://github.com/curl/
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client4" %%% "core" % "4.0.22"
+"com.softwaremill.sttp.client4" %%% "core" % "4.0.23"
 ```
 
 and initialize one of the backends:
@@ -28,7 +28,7 @@ Try the following example:
 // hello.scala
 
 //> using platform native
-//> using dep com.softwaremill.sttp.client4::core_native0.5:4.0.22
+//> using dep com.softwaremill.sttp.client4::core_native0.5:4.0.23
 
 import sttp.client4.*
 import sttp.client4.curl.CurlBackend
@@ -42,7 +42,7 @@ import sttp.client4.curl.CurlBackend
 To use in an sbt project, add the following dependency:
 
 ```
-"com.softwaremill.sttp.client4" %%% "zio" % 4.0.22
+"com.softwaremill.sttp.client4" %%% "zio" % 4.0.23
 ```
 
 Create the backend instance for example via `scoped()`
@@ -52,7 +52,7 @@ which will also ensure that acquired resources (if any) are released once out of
 //> using platform native
 //> using nativeVersion 0.5.10
 //> using scala 3
-//> using dep com.softwaremill.sttp.client4::zio::4.0.22
+//> using dep com.softwaremill.sttp.client4::zio::4.0.23
 
 import sttp.client4.*
 import sttp.client4.curl.zio.CurlZioBackend
