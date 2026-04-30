@@ -153,7 +153,7 @@ val zio2InteropRsVersion = "2.0.2"
 
 val oxVersion = "0.6.1"
 val sttpModelVersion = "1.7.17"
-val sttpSharedVersion = "1.5.0"
+val sttpSharedVersion = "1.5.2"
 
 val logback = "ch.qos.logback" % "logback-classic" % "1.5.14"
 
@@ -468,6 +468,14 @@ lazy val fs2 = (projectMatrix in file("effects/fs2"))
     scalaVersions = scala2And3,
     settings = commonJsSettings ++ commonJsBackendSettings ++ browserChromeTestSettings ++ testServerSettings
   )
+  .nativePlatform(
+    scalaVersions = scala2And3,
+    settings = commonNativeSettings ++ testServerSettings ++ Seq(
+      libraryDependencies ++= Seq(
+        "co.fs2" %%% "fs2-io" % fs2_3_version
+      )
+    )
+  )
 
 lazy val monix = (projectMatrix in file("effects/monix"))
   .settings(
@@ -658,13 +666,21 @@ lazy val http4sBackend = (projectMatrix in file("http4s-backend"))
   .settings(
     name := "http4s-backend",
     libraryDependencies ++= Seq(
-      "org.http4s" %% "http4s-client" % http4s_ce3_version,
-      "org.http4s" %% "http4s-ember-client" % "0.23.34" % Optional,
-      "org.http4s" %% "http4s-blaze-client" % "0.23.17" % Optional
+      "org.http4s" %%% "http4s-client" % http4s_ce3_version,
+      "org.http4s" %%% "http4s-ember-client" % "0.23.34" % Optional
     ),
     evictionErrorLevel := Level.Info
   )
-  .jvmPlatform(scalaVersions = scala2And3)
+  .jvmPlatform(
+    scalaVersions = scala2And3,
+    settings = commonJvmSettings ++ Seq(
+      libraryDependencies += "org.http4s" %% "http4s-blaze-client" % "0.23.17" % Optional
+    )
+  )
+  .nativePlatform(
+    scalaVersions = scala2And3,
+    settings = commonNativeSettings ++ testServerSettings
+  )
   .dependsOn(cats % compileAndTest, core % compileAndTest, fs2 % compileAndTest)
 
 //-- finagle backend
