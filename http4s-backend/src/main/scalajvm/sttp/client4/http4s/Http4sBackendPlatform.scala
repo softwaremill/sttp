@@ -22,16 +22,25 @@ private[http4s] trait Http4sBackendPlatform { self: Http4sBackendCompanion =>
 
   def usingBlazeClientBuilder[F[_]: Async](
       blazeClientBuilder: BlazeClientBuilder[F],
-      customizeRequest: Http4sRequest[F] => Http4sRequest[F] = identity[Http4sRequest[F]] _,
-      compressionHandlers: Async[F] => CompressionHandlers[Fs2Streams[F], EntityBody[F]] =
-        defaultCompressionHandlers[F](_: Async[F])
+      customizeRequest: Http4sRequest[F] => Http4sRequest[F] = identity[Http4sRequest[F]] _
+  ): Resource[F, StreamBackend[F, Fs2Streams[F]]] =
+    usingBlazeClientBuilder(blazeClientBuilder, customizeRequest, async => defaultCompressionHandlers[F](using async))
+
+  def usingBlazeClientBuilder[F[_]: Async](
+      blazeClientBuilder: BlazeClientBuilder[F],
+      customizeRequest: Http4sRequest[F] => Http4sRequest[F],
+      compressionHandlers: Async[F] => CompressionHandlers[Fs2Streams[F], EntityBody[F]]
   ): Resource[F, StreamBackend[F, Fs2Streams[F]]] =
     blazeClientBuilder.resource.map(c => usingClient(c, customizeRequest, compressionHandlers))
 
   def usingDefaultBlazeClientBuilder[F[_]: Async](
-      customizeRequest: Http4sRequest[F] => Http4sRequest[F] = identity[Http4sRequest[F]] _,
-      compressionHandlers: Async[F] => CompressionHandlers[Fs2Streams[F], EntityBody[F]] =
-        defaultCompressionHandlers[F](_: Async[F])
+      customizeRequest: Http4sRequest[F] => Http4sRequest[F] = identity[Http4sRequest[F]] _
+  ): Resource[F, StreamBackend[F, Fs2Streams[F]]] =
+    usingDefaultBlazeClientBuilder(customizeRequest, async => defaultCompressionHandlers[F](using async))
+
+  def usingDefaultBlazeClientBuilder[F[_]: Async](
+      customizeRequest: Http4sRequest[F] => Http4sRequest[F],
+      compressionHandlers: Async[F] => CompressionHandlers[Fs2Streams[F], EntityBody[F]]
   ): Resource[F, StreamBackend[F, Fs2Streams[F]]] =
     usingBlazeClientBuilder(
       BlazeClientBuilder[F],
