@@ -9,25 +9,17 @@ import fs2.io.file.Files
 import fs2.{Chunk, Stream}
 import org.http4s.{EntityBody, Request => Http4sRequest, Status}
 import org.http4s
-import org.http4s.blaze.client.BlazeClientBuilder
 import org.http4s.client.Client
-import org.http4s.ember.client.EmberClientBuilder
 import org.typelevel.ci.CIString
 import sttp.capabilities.fs2.Fs2Streams
 import sttp.client4.impl.cats.CatsMonadAsyncError
 import sttp.client4.internal.{BodyFromResponseAs, IOBufferSize, SttpFile}
 import sttp.model._
 import sttp.monad.MonadError
-import sttp.client4.testing.StreamBackendStub
 import sttp.client4.ws.{GotAWebSocketException, NotAWebSocketException}
 import sttp.client4._
-import sttp.client4.wrappers.FollowRedirectsBackend
 import sttp.client4.compression.Compressor
-import sttp.client4.impl.fs2.GZipFs2Compressor
-import sttp.client4.impl.fs2.DeflateFs2Compressor
 import sttp.client4.compression.CompressionHandlers
-import sttp.client4.impl.fs2.GZipFs2Decompressor
-import sttp.client4.impl.fs2.DeflateFs2Decompressor
 import sttp.client4.compression.Decompressor
 import cats.effect.kernel.Resource.ExitCase
 
@@ -284,58 +276,4 @@ class Http4sBackend[F[_]: Async](
   override def close(): F[Unit] = monad.unit(())
 }
 
-object Http4sBackend {
-  def defaultCompressionHandlers[F[_]: Async]: CompressionHandlers[Fs2Streams[F], Stream[F, Byte]] =
-    CompressionHandlers(
-      List(new GZipFs2Compressor[F, Fs2Streams[F]](), new DeflateFs2Compressor[F, Fs2Streams[F]]()),
-      List(new GZipFs2Decompressor, new DeflateFs2Decompressor)
-    )
-
-  def usingClient[F[_]: Async](
-      client: Client[F],
-      customizeRequest: Http4sRequest[F] => Http4sRequest[F] = identity[Http4sRequest[F]] _,
-      compressionHandlers: Async[F] => CompressionHandlers[Fs2Streams[F], EntityBody[F]] =
-        defaultCompressionHandlers[F](_: Async[F])
-  ): StreamBackend[F, Fs2Streams[F]] =
-    FollowRedirectsBackend(new Http4sBackend[F](client, customizeRequest, compressionHandlers(implicitly)))
-
-  def usingBlazeClientBuilder[F[_]: Async](
-      blazeClientBuilder: BlazeClientBuilder[F],
-      customizeRequest: Http4sRequest[F] => Http4sRequest[F] = identity[Http4sRequest[F]] _,
-      compressionHandlers: Async[F] => CompressionHandlers[Fs2Streams[F], EntityBody[F]] =
-        defaultCompressionHandlers[F](_: Async[F])
-  ): Resource[F, StreamBackend[F, Fs2Streams[F]]] =
-    blazeClientBuilder.resource.map(c => usingClient(c, customizeRequest, compressionHandlers))
-
-  def usingDefaultBlazeClientBuilder[F[_]: Async](
-      customizeRequest: Http4sRequest[F] => Http4sRequest[F] = identity[Http4sRequest[F]] _,
-      compressionHandlers: Async[F] => CompressionHandlers[Fs2Streams[F], EntityBody[F]] =
-        defaultCompressionHandlers[F](_: Async[F])
-  ): Resource[F, StreamBackend[F, Fs2Streams[F]]] =
-    usingBlazeClientBuilder(
-      BlazeClientBuilder[F],
-      customizeRequest,
-      compressionHandlers
-    )
-
-  def usingEmberClientBuilder[F[_]: Async](
-      emberClientBuilder: EmberClientBuilder[F],
-      customizeRequest: Http4sRequest[F] => Http4sRequest[F] = identity[Http4sRequest[F]] _,
-      compressionHandlers: Async[F] => CompressionHandlers[Fs2Streams[F], EntityBody[F]] =
-        defaultCompressionHandlers[F](_: Async[F])
-  ): Resource[F, StreamBackend[F, Fs2Streams[F]]] =
-    emberClientBuilder.build.map(c => usingClient(c, customizeRequest, compressionHandlers))
-
-  def usingDefaultEmberClientBuilder[F[_]: Async](
-      customizeRequest: Http4sRequest[F] => Http4sRequest[F] = identity[Http4sRequest[F]] _,
-      compressionHandlers: Async[F] => CompressionHandlers[Fs2Streams[F], EntityBody[F]] =
-        defaultCompressionHandlers[F](_: Async[F])
-  ): Resource[F, StreamBackend[F, Fs2Streams[F]]] =
-    usingEmberClientBuilder(EmberClientBuilder.default[F], customizeRequest, compressionHandlers)
-
-  /** Create a stub backend for testing, which uses the `F` response wrapper, and supports `Stream[F, Byte]` streaming.
-    *
-    * See [[StreamBackendStub]] for details on how to configure stub responses.
-    */
-  def stub[F[_]: Async]: StreamBackendStub[F, Fs2Streams[F]] = StreamBackendStub(new CatsMonadAsyncError)
-}
+object Http4sBackend extends Http4sBackendCompanion with Http4sBackendPlatform
