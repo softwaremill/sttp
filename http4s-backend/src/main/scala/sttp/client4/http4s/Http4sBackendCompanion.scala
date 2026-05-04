@@ -17,7 +17,7 @@ private[http4s] trait Http4sBackendCompanion {
 
   def defaultCompressionHandlers[F[_]: Async]: CompressionHandlers[Fs2Streams[F], Stream[F, Byte]]
 
-  def usingClient[F[_]: Async: Network](
+  def usingClient[F[_]: Async](
       client: Client[F],
       customizeRequest: Http4sRequest[F] => Http4sRequest[F] = identity[Http4sRequest[F]] _,
       compressionHandlers: Async[F] => CompressionHandlers[Fs2Streams[F], EntityBody[F]] =
