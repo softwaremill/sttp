@@ -277,4 +277,3 @@ class Http4sBackend[F[_]: Async](
 }
 
 object Http4sBackend extends Http4sBackendCompanion with Http4sBackendPlatform
-
