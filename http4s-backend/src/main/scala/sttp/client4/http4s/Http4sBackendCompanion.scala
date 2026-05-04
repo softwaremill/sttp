@@ -19,24 +19,38 @@ private[http4s] trait Http4sBackendCompanion {
 
   def usingClient[F[_]: Async](
       client: Client[F],
-      customizeRequest: Http4sRequest[F] => Http4sRequest[F] = identity[Http4sRequest[F]] _,
-      compressionHandlers: Async[F] => CompressionHandlers[Fs2Streams[F], EntityBody[F]] =
-        defaultCompressionHandlers[F](_: Async[F])
+      customizeRequest: Http4sRequest[F] => Http4sRequest[F] = identity[Http4sRequest[F]] _
+  ): StreamBackend[F, Fs2Streams[F]] =
+    usingClient(client, customizeRequest, async => defaultCompressionHandlers[F](using async))
+
+  def usingClient[F[_]: Async](
+      client: Client[F],
+      customizeRequest: Http4sRequest[F] => Http4sRequest[F],
+      compressionHandlers: Async[F] => CompressionHandlers[Fs2Streams[F], EntityBody[F]]
   ): StreamBackend[F, Fs2Streams[F]] =
     FollowRedirectsBackend(new Http4sBackend[F](client, customizeRequest, compressionHandlers(implicitly)))
 
   def usingEmberClientBuilder[F[_]: Async: Network](
       emberClientBuilder: EmberClientBuilder[F],
-      customizeRequest: Http4sRequest[F] => Http4sRequest[F] = identity[Http4sRequest[F]] _,
-      compressionHandlers: Async[F] => CompressionHandlers[Fs2Streams[F], EntityBody[F]] =
-        defaultCompressionHandlers[F](_: Async[F])
+      customizeRequest: Http4sRequest[F] => Http4sRequest[F] = identity[Http4sRequest[F]] _
+  ): Resource[F, StreamBackend[F, Fs2Streams[F]]] =
+    usingEmberClientBuilder(emberClientBuilder, customizeRequest, async => defaultCompressionHandlers[F](using async))
+
+  def usingEmberClientBuilder[F[_]: Async: Network](
+      emberClientBuilder: EmberClientBuilder[F],
+      customizeRequest: Http4sRequest[F] => Http4sRequest[F],
+      compressionHandlers: Async[F] => CompressionHandlers[Fs2Streams[F], EntityBody[F]]
   ): Resource[F, StreamBackend[F, Fs2Streams[F]]] =
     emberClientBuilder.build.map(c => usingClient(c, customizeRequest, compressionHandlers))
 
   def usingDefaultEmberClientBuilder[F[_]: Async: Network](
-      customizeRequest: Http4sRequest[F] => Http4sRequest[F] = identity[Http4sRequest[F]] _,
-      compressionHandlers: Async[F] => CompressionHandlers[Fs2Streams[F], EntityBody[F]] =
-        defaultCompressionHandlers[F](_: Async[F])
+      customizeRequest: Http4sRequest[F] => Http4sRequest[F] = identity[Http4sRequest[F]] _
+  ): Resource[F, StreamBackend[F, Fs2Streams[F]]] =
+    usingDefaultEmberClientBuilder(customizeRequest, async => defaultCompressionHandlers[F](using async))
+
+  def usingDefaultEmberClientBuilder[F[_]: Async: Network](
+      customizeRequest: Http4sRequest[F] => Http4sRequest[F],
+      compressionHandlers: Async[F] => CompressionHandlers[Fs2Streams[F], EntityBody[F]]
   ): Resource[F, StreamBackend[F, Fs2Streams[F]]] =
     usingEmberClientBuilder(EmberClientBuilder.default[F], customizeRequest, compressionHandlers)
 
