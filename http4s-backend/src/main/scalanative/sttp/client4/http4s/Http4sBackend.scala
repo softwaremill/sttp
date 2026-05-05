@@ -6,6 +6,7 @@ import cats.effect.{Async, Deferred, Resource}
 import cats.implicits._
 import cats.effect.implicits._
 import fs2.io.file.Files
+import fs2.io.net.Network
 import fs2.{Chunk, Stream}
 import org.http4s.{EntityBody, Request => Http4sRequest, Status}
 import org.http4s
@@ -304,20 +305,20 @@ object Http4sBackend {
   ): StreamBackend[F, Fs2Streams[F]] =
     FollowRedirectsBackend(new Http4sBackend[F](client, customizeRequest, compressionHandlers(implicitly)))
 
-  def usingEmberClientBuilder[F[_]: Async](
+  def usingEmberClientBuilder[F[_]: Async: Network](
       emberClientBuilder: EmberClientBuilder[F],
       customizeRequest: Http4sRequest[F] => Http4sRequest[F] = identity[Http4sRequest[F]] _
   ): Resource[F, StreamBackend[F, Fs2Streams[F]]] =
     usingEmberClientBuilder(emberClientBuilder, customizeRequest, defaultCompressionHandlers[F](_: Async[F]))
 
-  def usingEmberClientBuilder[F[_]: Async](
+  def usingEmberClientBuilder[F[_]: Async: Network](
       emberClientBuilder: EmberClientBuilder[F],
       customizeRequest: Http4sRequest[F] => Http4sRequest[F],
       compressionHandlers: Async[F] => CompressionHandlers[Fs2Streams[F], EntityBody[F]]
   ): Resource[F, StreamBackend[F, Fs2Streams[F]]] =
     emberClientBuilder.build.map(c => usingClient(c, customizeRequest, compressionHandlers))
 
-  def usingDefaultEmberClientBuilder[F[_]: Async](
+  def usingDefaultEmberClientBuilder[F[_]: Async: Network](
       customizeRequest: Http4sRequest[F] => Http4sRequest[F] = identity[Http4sRequest[F]] _,
       compressionHandlers: Async[F] => CompressionHandlers[Fs2Streams[F], EntityBody[F]] =
         defaultCompressionHandlers[F](_: Async[F])
