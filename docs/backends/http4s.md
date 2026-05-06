@@ -18,15 +18,34 @@ import sttp.client4.*
 import sttp.client4.http4s.*
 
 // the "org.http4s" %% "http4s-ember-client" % http4sVersion dependency needs to be explicitly added
-val _ = Http4sBackend.usingDefaultEmberClientBuilder[IO](): Resource[IO, StreamBackend[IO, Fs2Streams[IO]]]
+Http4sBackend.usingDefaultEmberClientBuilder[IO](): Resource[IO, StreamBackend[IO, Fs2Streams[IO]]]
 
 // the "org.http4s" %% "http4s-blaze-client" % http4sVersion dependency needs to be explicitly added
-val _ = Http4sBackend.usingDefaultBlazeClientBuilder[IO](): Resource[IO, StreamBackend[IO, Fs2Streams[IO]]]
+Http4sBackend.usingDefaultBlazeClientBuilder[IO](): Resource[IO, StreamBackend[IO, Fs2Streams[IO]]]
 ```
 
 Sending a request is a non-blocking, lazily-evaluated operation and results in a wrapped response. There's a transitive dependency on `http4s`. 
 
 There are also [other cats-effect-based backends](catseffect.md), which don't depend on http4s. 
+
+## Scala Native Support
+
+When using the http4s backend on Scala Native, the `EmberClientBuilder` methods require a `Network[F]` constraint in addition to `Async[F]`:
+
+```scala mdoc:compile-only
+import cats.effect.*
+import fs2.io.net.Network
+import sttp.capabilities.fs2.Fs2Streams
+import sttp.client4.*
+import sttp.client4.http4s.*
+
+// On Scala Native, this requires an implicit Network[IO] in scope
+Http4sBackend.usingDefaultEmberClientBuilder[IO](): Resource[IO, StreamBackend[IO, Fs2Streams[IO]]]
+```
+
+The `Network[IO]` instance is provided automatically when extending `cats.effect.IOApp` or can be summoned explicitly using `Network[IO]` where needed. This constraint is specific to Scala Native; on the JVM, only the `Async[F]` constraint is required.
+
+Note that the Blaze client is JVM-only and not available on Scala Native.
 
 Please note that: 
 

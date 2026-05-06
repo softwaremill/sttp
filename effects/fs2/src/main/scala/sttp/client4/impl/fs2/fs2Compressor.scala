@@ -22,11 +22,12 @@ trait Fs2Compressor[F[_], R <: Fs2Streams[F]] extends Compressor[R] {
       case ByteArrayBody(b, _) =>
         StreamBody(Fs2Streams[F])(compressStream(Stream.chunk(Chunk.array(b))))
       case ByteBufferBody(b, _) =>
+        val buffer = b.duplicate()
         val bytes =
-          if (b.hasArray()) b.array()
+          if (buffer.hasArray()) buffer.array()
           else {
-            val arr = new Array[Byte](b.remaining())
-            b.get(arr)
+            val arr = new Array[Byte](buffer.remaining())
+            buffer.get(arr)
             arr
           }
         StreamBody(Fs2Streams[F])(compressStream(Stream.chunk(Chunk.array(bytes))))

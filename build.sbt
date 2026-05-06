@@ -461,7 +461,8 @@ lazy val fs2 = (projectMatrix in file("effects/fs2"))
       libraryDependencies ++= Seq(
         "co.fs2" %%% "fs2-reactive-streams" % fs2_3_version,
         "co.fs2" %%% "fs2-io" % fs2_3_version
-      )
+      ),
+      Compile / unmanagedSourceDirectories += (ThisBuild / baseDirectory).value / "effects" / "fs2" / "src" / "main" / "scalajvmnative"
     )
   )
   .jsPlatform(
@@ -473,7 +474,8 @@ lazy val fs2 = (projectMatrix in file("effects/fs2"))
     settings = commonNativeSettings ++ testServerSettings ++ Seq(
       libraryDependencies ++= Seq(
         "co.fs2" %%% "fs2-io" % fs2_3_version
-      )
+      ),
+      Compile / unmanagedSourceDirectories += (ThisBuild / baseDirectory).value / "effects" / "fs2" / "src" / "main" / "scalajvmnative"
     )
   )
 
