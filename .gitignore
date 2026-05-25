@@ -36,4 +36,5 @@ metals.sbt
 # scala-native
 lowered.hnir
 
+.orca
 work.txt
