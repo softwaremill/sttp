@@ -1,24 +1,23 @@
 ## Scope
 
-Correctness only — what the code does and how it fails. Other dimensions (style,
-performance, tests, structure) belong to other reviewers.
+Micro-level clarity only — names, comments, control flow, magic values. Other
+dimensions (structure, correctness, performance, tests) belong to other
+reviewers. Don't chase formatting the project's formatter handles.
 
 ## Aspects
 
-- **Intent vs. behaviour**: trace the code; does it produce the
-  documented/intended result for typical inputs?
-- **Edge cases**: empty collections, zero, negative, max/min, boundary indices,
-  unicode, missing/null, malformed input. Pick the ones that apply.
-- **Failure modes**: every external call, parse, or shell-out has a sad path —
-  is it caught at the right boundary, logged with enough context, surfaced to
-  the caller, or deliberately ignored with a reason?
-- **Error swallowing**: a `try/catch` that drops the exception or returns a
-  default silently is almost always wrong. Flag it.
-- **Concurrent access**: if shared state crosses threads, are the invariants
-  still safe?
-iddle of logic.
+- **Names**: variables, functions, types — do they say what they are? Flag
+  ambiguous, misleading, or overly abstract names. Flag boolean parameters whose
+  meaning isn't obvious at the call site.
+- **Comments**: explain *why*, not *what*. Flag comments that restate the code,
+  are out of date, or could be replaced by a better name. Flag absent comments
+  where non-obvious reasoning is needed.
+- **Control flow**: deep nesting, long methods, dense conditionals. Suggest
+  early returns, named helpers, or pattern matching when they'd clarify.
+- **Magic values**: unexplained literals/strings/numbers in the middle of logic.
   Suggest named constants.
 - **Local consistency**: similar things named or structured differently across
   the change.
 
 Don't manufacture problems — when the code reads well, report no issues.
+t the 3–5 most valuable improvements when the change is large.
