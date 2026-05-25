@@ -1,22 +1,21 @@
 ## Scope
 
-Correctness only — what the code does and how it fails. Other dimensions (style,
-performance, tests, structure) belong to other reviewers.
+Structure only — how the pieces fit together. Other dimensions (correctness,
+naming, performance, tests) belong to other reviewers.
 
 ## Aspects
 
-- **Intent vs. behaviour**: trace the code; does it produce the
-  documented/intended result for typical inputs?
-- **Edge cases**: empty collections, zero, negative, max/min, boundary indices,
-  unicode, missing/null, malformed input. Pick the ones that apply.
-- **Failure modes**: every external call, parse, or shell-out has a sad path —
-  is it caught at the right boundary, logged with enough context, surfaced to
-  the caller, or deliberately ignored with a reason?
-- **Error swallowing**: a `try/catch` that drops the exception or returns a
-  default silently is almost always wrong. Flag it.
-- **Concurrent access**: if shared state crosses threads, are the invariants
-  still safe?
-ouldn't depend on transport/IO concretely).
+- **Duplication**: semantic duplication (same logic, different syntax) repeated
+  2+ times. Suggest a name and a home for the extracted unit.
+- **Abstraction quality**: extractions that genuinely simplify vs. premature
+  ones that just add indirection. An extracted unit should have a coherent
+  single responsibility. Don't propose abstractions for one-off code.
+- **Module boundaries**: do new symbols sit in the right package? Are
+  types/helpers grouped by feature, not by category (`utils`, `helpers`,
+  `common` are smells)?
+- **Dependency direction**: no circular package dependencies; downstream modules
+  don't reach into internals of upstream ones; layering is respected (domain
+  logic shouldn't depend on transport/IO concretely).
 - **Symbol visibility**: top-level constructs and helpers should be
   `private[xxx]` to the smallest enclosing scope that uses them. Flag
   over-exposed symbols.

@@ -53,10 +53,11 @@ package object internal {
   private[client4] def enqueueBytes(
       queue: Queue[Array[Byte]],
       bytes: ByteBuffer
-  ): Queue[Array[Byte]] = queue.enqueue(bytes.array())
+  ): Queue[Array[Byte]] = queue.enqueue(byteBufferToArray(bytes))
 
   private[client4] def concatBytes(queue: Queue[Array[Byte]]): Array[Byte] = {
     val size = queue.map(_.length).sum
+    // Heap buffer of exact size, fully filled and never read partially: array() is safe here.
     val bytes = ByteBuffer.allocate(size)
     queue.foreach(bytes.put)
     bytes.array()
