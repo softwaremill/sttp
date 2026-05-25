@@ -93,7 +93,10 @@ trait StreamMultipartBodyBuilder[BinaryStream, F[_]] extends MultipartBodyBuilde
         case ByteArrayBody(b, _) =>
           concatBytesToStream(accumulatedStream, encodeBytes(b, partHeaders, boundary))
         case ByteBufferBody(b, _) =>
-          concatBytesToStream(accumulatedStream, encodeBytes(byteBufferToArray(b), partHeaders, boundary))
+          concatStreams(
+            accumulatedStream,
+            encodeStream(inputStreamToStream(new ByteBufferBackedInputStream(b.duplicate())), partHeaders, boundary)
+          )
         case InputStreamBody(b, _) =>
           concatStreams(accumulatedStream, encodeStream(inputStreamToStream(b), partHeaders, boundary))
         case StreamBody(s) =>
@@ -134,5 +137,19 @@ trait StreamMultipartBodyBuilder[BinaryStream, F[_]] extends MultipartBodyBuilde
   private def lastBoundary(boundary: String): Array[Byte] = {
     val lastPart = "--" + boundary + "--"
     lastPart.getBytes(StandardCharsets.UTF_8)
+  }
+}
+
+private[httpclient] class ByteBufferBackedInputStream(buf: ByteBuffer) extends InputStream {
+  override def read: Int = {
+    if (!buf.hasRemaining) return -1
+    buf.get & 0xff
+  }
+
+  override def read(bytes: Array[Byte], off: Int, len: Int): Int = {
+    if (!buf.hasRemaining) return -1
+    val len2 = Math.min(len, buf.remaining)
+    buf.get(bytes, off, len2)
+    len2
   }
 }
