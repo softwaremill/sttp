@@ -31,6 +31,7 @@ metals.sbt
 
 .vscode
 .cursor
+.devcontainer
 
 # scala-native
 lowered.hnir
