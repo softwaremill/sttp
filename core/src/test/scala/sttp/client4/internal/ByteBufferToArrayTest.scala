@@ -34,12 +34,18 @@ class ByteBufferToArrayTest extends AnyFlatSpec with Matchers {
     byteBufferToArray(sliced) shouldBe "CDE".getBytes
   }
 
-  it should "return a fresh array that does not alias the source buffer's storage" in {
+  it should "return the backing array directly for a fresh full heap buffer" in {
     val data = "ABCDE".getBytes
     val full = ByteBuffer.wrap(data)
-    val out = byteBufferToArray(full)
+    byteBufferToArray(full) should be theSameInstanceAs data
+  }
+
+  it should "return a fresh array that does not alias storage for a partial buffer" in {
+    val partial = ByteBuffer.wrap("ABCDE".getBytes)
+    partial.position(1)
+    val out = byteBufferToArray(partial)
     out(0) = 'Z'.toByte
-    full.get(0) shouldBe 'A'.toByte
+    partial.get(1) shouldBe 'B'.toByte
   }
 
   it should "not mutate the source buffer's position or limit" in {

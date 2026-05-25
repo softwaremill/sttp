@@ -40,15 +40,18 @@ package object internal {
 
   private[client4] def emptyInputStream(): InputStream = new ByteArrayInputStream(Array[Byte]())
 
-  /** Returns the bytes between the buffer's current `position` and `limit` as a fresh `Array[Byte]`. Safe for direct,
-    * read-only, partially-consumed, and sliced buffers. The source buffer is not mutated (its `position` and `limit`
-    * are preserved), and the result never aliases the buffer's storage.
+  /** Returns the bytes between the buffer's current `position` and `limit` as an `Array[Byte]`. Safe for direct,
+    * read-only, partially-consumed, and sliced buffers. The source buffer's `position` and `limit` are preserved. For
+    * a fresh, full heap buffer the backing array is returned directly (no copy); otherwise a new array is allocated.
     */
-  private[client4] def byteBufferToArray(b: ByteBuffer): Array[Byte] = {
-    val out = new Array[Byte](b.remaining())
-    b.duplicate().get(out)
-    out
-  }
+  private[client4] def byteBufferToArray(b: ByteBuffer): Array[Byte] =
+    if (b.hasArray && b.arrayOffset() == 0 && b.position() == 0 && b.remaining() == b.array().length)
+      b.array()
+    else {
+      val out = new Array[Byte](b.remaining())
+      b.duplicate().get(out)
+      out
+    }
 
   private[client4] def enqueueBytes(
       queue: Queue[Array[Byte]],
