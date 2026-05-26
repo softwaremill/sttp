@@ -1,7 +1,6 @@
 package sttp.client4.compression
 
 import sttp.client4._
-import java.nio.ByteBuffer
 
 /** Allows compressing bodies, using the supported encoding. The compressed bodies might use `R` capabilities (e.g.
   * streaming).
@@ -53,12 +52,4 @@ object Compressor extends CompressorExtensions {
   private[compression] def streamsNotSupported: Nothing =
     throw new IllegalArgumentException("Streams are not supported")
 
-  private[compression] def byteBufferToArray(inputBuffer: ByteBuffer): Array[Byte] =
-    if (inputBuffer.hasArray()) {
-      inputBuffer.array()
-    } else {
-      val inputBytes = new Array[Byte](inputBuffer.remaining())
-      inputBuffer.get(inputBytes)
-      inputBytes
-    }
 }
