@@ -47,7 +47,7 @@ The `Network[IO]` instance is provided automatically when extending `cats.effect
 
 Note that the Blaze client is JVM-only and not available on Scala Native.
 
-Please note that: 
+## Notes
 
 * the backend contains **optional** dependencies on `http4s-ember-client` and `http4s-blaze-client`, to provide the `Http4sBackend.usingEmberClientBuilder`, `Http4sBackend.usingBlazeClientBuilder`, `Http4sBackend.usingDefaultEmberClientBuilder` and `Http4sBackend.usingDefaultBlazeClientBuilder` methods. This makes the client usable with other http4s client implementations, without the need to depend on ember or blaze.
 * the backend does not support `SttpBackendOptions`, that is specifying proxy settings (proxies are not implemented in http4s, see [this issue](https://github.com/http4s/http4s/issues/251)), as well as configuring the connect timeout 
