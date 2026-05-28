@@ -120,7 +120,7 @@ val testServerSettings = Seq(
 
 val circeVersion: String = "0.14.15"
 
-val jsoniterVersion = "2.38.9"
+val jsoniterVersion = "2.38.12"
 
 val play29JsonVersion = "2.10.8"
 
@@ -147,7 +147,7 @@ val scalaTest = libraryDependencies ++= Seq("freespec", "funsuite", "flatspec", 
 val scalaTestPlusScalaCheck = libraryDependencies += "org.scalatestplus" %% "scalacheck-1-18" % "3.2.19.0" % Test
 
 val zio1Version = "1.0.18"
-val zio2Version = "2.1.25"
+val zio2Version = "2.1.26"
 val zio1InteropRsVersion = "1.3.12"
 val zio2InteropRsVersion = "2.0.2"
 
@@ -166,9 +166,9 @@ val http4s_ce3_version = "0.23.34"
 val osLibVersion = "0.11.4"
 val tethysVersion = "0.29.8"
 val openTelemetryVersion = "1.59.0"
-val openTelemetrySemconvVersion = "1.41.0"
-val otel4s = "1.0.0-RC1"
-val otel4sSdk = "0.19.0-RC1"
+val openTelemetrySemconvVersion = "1.41.1"
+val otel4s = "1.0.0"
+val otel4sSdk = "0.19.0"
 val slf4jVersion = "1.7.36"
 
 val compileAndTest = "compile->compile;test->test"
@@ -705,7 +705,7 @@ lazy val armeriaBackend = (projectMatrix in file("armeria-backend"))
   .settings(testServerSettings)
   .settings(
     name := "armeria-backend",
-    libraryDependencies += "com.linecorp.armeria" % "armeria" % "1.38.0"
+    libraryDependencies += "com.linecorp.armeria" % "armeria" % "1.39.0"
   )
   .jvmPlatform(scalaVersions = scala2And3)
   .dependsOn(core % compileAndTest)
