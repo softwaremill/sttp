@@ -461,12 +461,22 @@ lazy val fs2 = (projectMatrix in file("effects/fs2"))
       libraryDependencies ++= Seq(
         "co.fs2" %%% "fs2-reactive-streams" % fs2_3_version,
         "co.fs2" %%% "fs2-io" % fs2_3_version
-      )
+      ),
+      Compile / unmanagedSourceDirectories += (ThisBuild / baseDirectory).value / "effects" / "fs2" / "src" / "main" / "scalajvmnative"
     )
   )
   .jsPlatform(
     scalaVersions = scala2And3,
     settings = commonJsSettings ++ commonJsBackendSettings ++ browserChromeTestSettings ++ testServerSettings
+  )
+  .nativePlatform(
+    scalaVersions = scala2And3,
+    settings = commonNativeSettings ++ testServerSettings ++ Seq(
+      libraryDependencies ++= Seq(
+        "co.fs2" %%% "fs2-io" % fs2_3_version
+      ),
+      Compile / unmanagedSourceDirectories += (ThisBuild / baseDirectory).value / "effects" / "fs2" / "src" / "main" / "scalajvmnative"
+    )
   )
 
 lazy val monix = (projectMatrix in file("effects/monix"))
@@ -658,13 +668,23 @@ lazy val http4sBackend = (projectMatrix in file("http4s-backend"))
   .settings(
     name := "http4s-backend",
     libraryDependencies ++= Seq(
-      "org.http4s" %% "http4s-client" % http4s_ce3_version,
-      "org.http4s" %% "http4s-ember-client" % "0.23.34" % Optional,
-      "org.http4s" %% "http4s-blaze-client" % "0.23.17" % Optional
+      "org.http4s" %%% "http4s-client" % http4s_ce3_version,
+      "org.http4s" %%% "http4s-ember-client" % http4s_ce3_version % Optional
     ),
     evictionErrorLevel := Level.Info
   )
-  .jvmPlatform(scalaVersions = scala2And3)
+  .jvmPlatform(
+    scalaVersions = scala2And3,
+    settings = commonJvmSettings ++ Seq(
+      libraryDependencies ++= Seq(
+        "org.http4s" %% "http4s-blaze-client" % "0.23.17" % Optional
+      )
+    )
+  )
+  .nativePlatform(
+    scalaVersions = scala2And3,
+    settings = commonNativeSettings ++ testServerSettings
+  )
   .dependsOn(cats % compileAndTest, core % compileAndTest, fs2 % compileAndTest)
 
 //-- finagle backend

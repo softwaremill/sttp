@@ -37,8 +37,16 @@ jobs:
       if: matrix.target-platform == 'Native'
       run: |
         sudo apt-get update
-        sudo apt-get install libidn2-dev libcurl3-dev
+        sudo apt-get install libidn2-dev libcurl3-dev cmake libssl-dev
         echo "STTP_NATIVE=1" >> $GITHUB_ENV
+    - name: Install s2n-tls
+      if: matrix.target-platform == 'Native'
+      run: |
+        git clone https://github.com/aws/s2n-tls.git /tmp/s2n-tls
+        cd /tmp/s2n-tls
+        cmake . -Bbuild -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local
+        cmake --build build -j $(nproc)
+        sudo cmake --install build
     - name: Install scala-cli
       if: matrix.target-platform == 'JVM'
       uses: VirtusLab/scala-cli-setup@77834b5926f3eb70869d8009530c65585f7a039b # main, specifically v1.9.1
@@ -95,7 +103,14 @@ jobs:
       - name: Install libidn2-dev libcurl3-dev
         run: |
           sudo apt-get update
-          sudo apt-get install libidn2-dev libcurl3-dev
+          sudo apt-get install libidn2-dev libcurl3-dev cmake libssl-dev
+      - name: Install s2n-tls
+        run: |
+          git clone https://github.com/aws/s2n-tls.git /tmp/s2n-tls
+          cd /tmp/s2n-tls
+          cmake . -Bbuild -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local
+          cmake --build build -j $(nproc)
+          sudo cmake --install build
       - name: Enable Native-specific modules
         if: matrix.java == '11'
         run: echo "STTP_NATIVE=1" >> $GITHUB_ENV
