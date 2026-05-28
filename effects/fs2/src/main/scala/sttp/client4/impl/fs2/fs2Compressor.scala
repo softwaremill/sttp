@@ -9,6 +9,7 @@ import cats.effect.Sync
 import sttp.capabilities.fs2.Fs2Streams
 import fs2.compression.DeflateParams
 import sttp.client4.compression.Compressor
+import sttp.client4.internal.byteBufferToArray
 import sttp.model.Encodings
 
 trait Fs2Compressor[F[_], R <: Fs2Streams[F]] extends Compressor[R] {
@@ -22,15 +23,7 @@ trait Fs2Compressor[F[_], R <: Fs2Streams[F]] extends Compressor[R] {
       case ByteArrayBody(b, _) =>
         StreamBody(Fs2Streams[F])(compressStream(Stream.chunk(Chunk.array(b))))
       case ByteBufferBody(b, _) =>
-        val buffer = b.duplicate()
-        val bytes =
-          if (buffer.hasArray()) buffer.array()
-          else {
-            val arr = new Array[Byte](buffer.remaining())
-            buffer.get(arr)
-            arr
-          }
-        StreamBody(Fs2Streams[F])(compressStream(Stream.chunk(Chunk.array(bytes))))
+        StreamBody(Fs2Streams[F])(compressStream(Stream.chunk(Chunk.array(byteBufferToArray(b)))))
       case InputStreamBody(b, _) =>
         compressInputStreamBody(b)
       case StreamBody(b) =>
