@@ -288,7 +288,7 @@ object Http4sBackend {
 
   def defaultCompressionHandlers[F[_]: Async]: CompressionHandlers[Fs2Streams[F], Stream[F, Byte]] =
     CompressionHandlers(
-      List(new PlatformGZipFs2Compressor[F, Fs2Streams[F]] {}, new PlatformDeflateFs2Compressor[F, Fs2Streams[F]] {}),
+      List(new PlatformGZipFs2Compressor[F, Fs2Streams[F]], new PlatformDeflateFs2Compressor[F, Fs2Streams[F]]),
       List(new GZipFs2Decompressor, new DeflateFs2Decompressor)
     )
 

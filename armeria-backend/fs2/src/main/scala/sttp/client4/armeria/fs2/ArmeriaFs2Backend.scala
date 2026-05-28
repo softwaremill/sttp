@@ -45,7 +45,7 @@ private final class ArmeriaFs2Backend[F[_]: Async](client: WebClient, closeFacto
     )
 
   override protected def compressors: List[Compressor[R]] =
-    List(new PlatformGZipFs2Compressor[F, R] {}, new PlatformDeflateFs2Compressor[F, R] {})
+    List(new PlatformGZipFs2Compressor[F, R], new PlatformDeflateFs2Compressor[F, R])
 
   override protected def ensureOnAbnormal[T](effect: F[T])(finalizer: => F[Unit]): F[T] =
     Async[F].guaranteeCase(effect) { outcome =>
