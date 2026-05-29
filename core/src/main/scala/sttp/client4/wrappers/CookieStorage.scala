@@ -15,10 +15,12 @@ import sttp.model.Uri
   * `Set-Cookie` during a redirect chain visible to subsequent requests in that chain - which otherwise doesn't happen,
   * as the `Cookie` header is a sensitive header, stripped when following redirects.
   *
-  * Cookies are represented as plain name/value pairs (rather than [[sttp.model.headers.CookieWithMeta]]) so that the
-  * storage is usable on all platforms, including Scala Native. Time-based expiry (`Max-Age` > 0, `Expires`) is not
-  * tracked, as the storage has no notion of the current time; a `Set-Cookie` with `Max-Age` <= 0 removes a matching
-  * cookie, so a server can still clear cookies within a chain.
+  * Cookies are represented as plain name/value pairs rather than [[sttp.model.headers.CookieWithMeta]]. That type is
+  * available on all platforms, but its `Set-Cookie` rendering and parsing reach `java.time` date formatting (for
+  * `Expires`, via `ZoneId`/`DateTimeFormatter`), a subset of `java.time` not supported on Scala Native; referencing it
+  * from this shared code pulls those symbols in and breaks the Native link. Time-based expiry (`Max-Age` > 0, `Expires`)
+  * is not tracked anyway, as the storage has no notion of the current time; a `Set-Cookie` with `Max-Age` <= 0 removes a
+  * matching cookie, so a server can still clear cookies within a chain.
   */
 final class CookieStorage private (private val entries: Map[CookieStorage.Key, CookieStorage.Stored]) {
   import CookieStorage._
