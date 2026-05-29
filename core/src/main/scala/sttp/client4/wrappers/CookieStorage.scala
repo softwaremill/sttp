@@ -9,7 +9,7 @@ import sttp.model.Uri
   * request to a given URI, applying a subset of the [[https://www.rfc-editor.org/rfc/rfc6265 RFC 6265]] rules:
   * domain-matching, path-matching and the `Secure` attribute.
   *
-  * Intended use: attach a storage to a request using [[sttp.client4.RequestBuilder.cookieStorage]]. The
+  * Intended use: attach a storage to a request using [[sttp.client4.PartialRequestBuilder.cookieStorage]]. The
   * [[FollowRedirectsBackend]] (applied to all backends by default) then, for each request in a redirect chain, sends
   * the matching stored cookies and threads an updated storage through to the next request. This makes cookies set via
   * `Set-Cookie` during a redirect chain visible to subsequent requests in that chain - which otherwise doesn't happen,
@@ -34,7 +34,7 @@ final class CookieStorage private (private val entries: Map[CookieStorage.Key, C
       val domain = c.domain.map(normalizeDomain).getOrElse(host)
       if (domain.isEmpty || !domainMatches(host, domain)) acc
       else {
-        val key = Key(c.name, domain, c.path.getOrElse(DefaultPath))
+        val key = Key(c.name, domain, c.path.getOrElse(defaultPathOf(setBy)))
         if (c.removed) acc - key
         else acc.updated(key, Stored(c.value, c.secure, hostOnly))
       }
@@ -49,13 +49,12 @@ final class CookieStorage private (private val entries: Map[CookieStorage.Key, C
     val host = hostOf(uri)
     val path = pathOf(uri)
     val secure = uri.scheme.exists(_.equalsIgnoreCase("https"))
-    entries.collect {
-      case (key, stored)
-          if (if (stored.hostOnly) host == key.domain else domainMatches(host, key.domain)) &&
-            pathMatches(path, key.path) &&
-            (!stored.secure || secure) =>
-        key.name -> stored.value
-    }.toSeq
+    entries.collect { case (key, stored) if matches(key, stored, host, path, secure) => key.name -> stored.value }.toSeq
+  }
+
+  private def matches(key: Key, stored: Stored, host: String, path: String, secure: Boolean): Boolean = {
+    val domainMatch = if (stored.hostOnly) host == key.domain else domainMatches(host, key.domain)
+    domainMatch && pathMatches(path, key.path) && (!stored.secure || secure)
   }
 
   def isEmpty: Boolean = entries.isEmpty
@@ -67,7 +66,7 @@ object CookieStorage {
   val empty: CookieStorage = new CookieStorage(Map.empty)
 
   /** The attribute key under which a [[CookieStorage]] is attached to a request; see
-    * [[sttp.client4.RequestBuilder.cookieStorage]].
+    * [[sttp.client4.PartialRequestBuilder.cookieStorage]].
     */
   val attributeKey: AttributeKey[CookieStorage] =
     new AttributeKey[CookieStorage]("sttp.client4.wrappers.CookieStorage")
@@ -93,6 +92,14 @@ object CookieStorage {
   private def pathOf(uri: Uri): String = "/" + uri.path.mkString("/")
   private def normalizeDomain(d: String): String = d.stripPrefix(".").toLowerCase
 
+  // RFC 6265, 5.1.4: the default-path of a cookie without a `Path` attribute is the setting request's directory - the
+  // path up to, but not including, the rightmost "/" (or "/" if there is none beyond the leading one)
+  private def defaultPathOf(uri: Uri): String = {
+    val p = pathOf(uri)
+    val lastSlash = p.lastIndexOf('/')
+    if (lastSlash <= 0) DefaultPath else p.substring(0, lastSlash)
+  }
+
   // RFC 6265, 5.1.3: equal, or `host` is a subdomain of `domain`
   private def domainMatches(host: String, domain: String): Boolean =
     host == domain || host.endsWith("." + domain)
@@ -103,9 +110,9 @@ object CookieStorage {
       (requestPath.startsWith(cookiePath) &&
         (cookiePath.endsWith("/") || requestPath.charAt(cookiePath.length) == '/'))
 
-  // A minimal `Set-Cookie` parser reading only the attributes used for storage. CookieWithMeta isn't used, as it isn't
-  // available on Scala Native (its date handling depends on java.time formatting); `Expires` is ignored for the same
-  // reason - storage doesn't track time-based expiry anyway.
+  // A minimal `Set-Cookie` parser reading only the attributes used for storage. CookieWithMeta.parse isn't reused
+  // because its `Expires` handling relies on java.time date formatting, which doesn't work on Scala Native; `Expires`
+  // is ignored here anyway, as the storage doesn't track time-based expiry.
   private def parseSetCookie(headerValue: String): Option[Parsed] =
     headerValue.split(";").iterator.map(_.trim).filter(_.nonEmpty).toList match {
       case nameValue :: directives =>

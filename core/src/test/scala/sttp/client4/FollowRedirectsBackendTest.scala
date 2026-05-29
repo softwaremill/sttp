@@ -6,7 +6,7 @@ import org.scalatest.matchers.should.Matchers
 import sttp.client4.testing.{BackendStub, ResponseStub}
 import sttp.client4.wrappers.{CookieStorage, FollowRedirectsBackend, FollowRedirectsConfig}
 import sttp.model.internal.Rfc3986
-import sttp.model.{Header, HeaderNames, StatusCode, Uri}
+import sttp.model.{Header, HeaderNames, ResponseMetadata, StatusCode, Uri}
 
 class FollowRedirectsBackendTest extends AnyFunSuite with Matchers with EitherValues {
   val testData = List(
@@ -53,6 +53,9 @@ class FollowRedirectsBackendTest extends AnyFunSuite with Matchers with EitherVa
     result.body.value shouldBe "All good!"
   }
 
+  private def cookiesIn(r: GenericRequest[_, _]): Set[String] =
+    r.header(HeaderNames.Cookie).map(_.split("; ").toSet).getOrElse(Set.empty)
+
   // a redirect chain example.com/0 -> /1 -> ... -> /n, where each hop sets a cookie `c<id>`; records the cookies
   // (name=value) seen in the `Cookie` header of each request, by target id
   private def redirectChainSettingCookies(n: Int): (SyncBackend, collection.Map[Int, Set[String]]) = {
@@ -61,7 +64,7 @@ class FollowRedirectsBackendTest extends AnyFunSuite with Matchers with EitherVa
     val stub = BackendStub.synchronous.whenRequestMatchesPartial {
       case r if r.uri.host.contains("example.com") =>
         val id = r.uri.path.last.toInt
-        seen(id) = r.header(HeaderNames.Cookie).map(_.split("; ").toSet).getOrElse(Set.empty)
+        seen(id) = cookiesIn(r)
         if (id < n)
           ResponseStub.adjust(
             "",
@@ -92,6 +95,31 @@ class FollowRedirectsBackendTest extends AnyFunSuite with Matchers with EitherVa
 
     result.code shouldBe StatusCode.Ok
     seen.values.foreach(_ shouldBe empty)
+  }
+
+  test("should harvest cookies from a redirect that a backend signals by throwing") {
+    var atTarget = Set.empty[String]
+    val stub = BackendStub.synchronous.whenRequestMatchesPartial {
+      // first hop: signal the redirect (with a Set-Cookie) by throwing, as some backends do
+      case r if r.uri == uri"https://example.com/0" =>
+        throw ResponseException.UnexpectedStatusCode(
+          "",
+          ResponseMetadata(
+            StatusCode.Found,
+            "",
+            Vector(Header.location(uri"https://example.com/1"), Header(HeaderNames.SetCookie, "s=1"))
+          )
+        )
+      case r if r.uri == uri"https://example.com/1" =>
+        atTarget = cookiesIn(r)
+        ResponseStub.adjust("done", StatusCode.Ok)
+    }
+    val backend = FollowRedirectsBackend(stub)
+
+    val result = basicRequest.get(uri"https://example.com/0").cookieStorage(CookieStorage.empty).send(backend)
+
+    result.code shouldBe StatusCode.Ok
+    atTarget shouldBe Set("s=1")
   }
 
 }

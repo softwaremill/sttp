@@ -28,10 +28,23 @@ class CookieStorageTest extends AnyFunSuite with Matchers {
     storage.isEmpty shouldBe true
   }
 
-  test("respects the cookie path") {
+  test("normalizes the cookie domain (leading dot, case)") {
+    val storage =
+      CookieStorage.empty.setFromSetCookieHeaders(uri"https://example.com/", List("s=1; Domain=.EXAMPLE.com"))
+    names(storage.cookiesFor(uri"https://sub.example.com/")) shouldBe Set("s")
+  }
+
+  test("respects the cookie path, requiring a path-segment boundary") {
     val storage = CookieStorage.empty.setFromSetCookieHeaders(uri"https://example.com/admin", List("s=1; Path=/admin"))
     names(storage.cookiesFor(uri"https://example.com/admin/x")) shouldBe Set("s")
+    storage.cookiesFor(uri"https://example.com/administrator") shouldBe empty // prefix, but not a segment boundary
     storage.cookiesFor(uri"https://example.com/public") shouldBe empty
+  }
+
+  test("defaults a path-less cookie to the setting request's directory (RFC 6265 5.1.4)") {
+    val storage = CookieStorage.empty.setFromSetCookieHeaders(uri"https://example.com/admin/page", List("s=1"))
+    names(storage.cookiesFor(uri"https://example.com/admin/other")) shouldBe Set("s")
+    storage.cookiesFor(uri"https://example.com/elsewhere") shouldBe empty
   }
 
   test("does not send a secure cookie over http") {
