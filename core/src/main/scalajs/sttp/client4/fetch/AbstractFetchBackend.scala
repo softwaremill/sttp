@@ -244,13 +244,6 @@ abstract class AbstractFetchBackend[F[_], S <: Streams[S]](
         f.toDomFile
     }
 
-  // https://stackoverflow.com/questions/679298/gets-byte-array-from-a-bytebuffer-in-java
-  private def byteBufferToArray(bb: ByteBuffer): Array[Byte] = {
-    val b = new Array[Byte](bb.remaining())
-    bb.get(b)
-    b
-  }
-
   private def sendWebSocket[T](request: GenericRequest[T, R]): F[Response[T]] = {
     val queue = new JSSimpleQueue[F, WebSocketEvent]
     val ws = new JSWebSocket(request.uri.toString)

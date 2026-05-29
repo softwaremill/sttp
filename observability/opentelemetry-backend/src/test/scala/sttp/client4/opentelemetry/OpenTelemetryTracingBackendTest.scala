@@ -33,6 +33,7 @@ class OpenTelemetryTracingBackendTest extends AnyFlatSpec with Matchers {
     val span = spanItems.head
 
     span.getName() shouldBe "GET"
+    span.getKind() shouldBe io.opentelemetry.api.trace.SpanKind.CLIENT
 
     val attributes = span.getAttributes().asMap().asScala
     attributes(UrlAttributes.URL_FULL) shouldBe "http://test.com/foo"
@@ -58,6 +59,7 @@ class OpenTelemetryTracingBackendTest extends AnyFlatSpec with Matchers {
     spanItems should have size 1
 
     val span = spanItems.head
+    span.getKind() shouldBe io.opentelemetry.api.trace.SpanKind.CLIENT
     val attributes = span.getAttributes().asMap().asScala
     attributes(UrlAttributes.URL_FULL) shouldBe "http://test.com/foo"
     attributes(ErrorAttributes.ERROR_TYPE) shouldBe "RuntimeException"

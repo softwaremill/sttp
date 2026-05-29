@@ -5,6 +5,7 @@ import sttp.client4.internal.httpclient
 import sttp.model.Part
 import sttp.model.Header
 import sttp.model.HeaderNames
+import sttp.client4.internal.byteBufferToArray
 import sttp.client4.internal.throwNestedMultipartNotAllowed
 import sttp.client4.internal.Utf8
 import sttp.monad.MonadError
@@ -14,7 +15,6 @@ import java.net.http.HttpRequest
 import java.util.function.Supplier
 import java.io.File
 import java.io.InputStream
-import java.nio.Buffer
 import java.nio.ByteBuffer
 import java.io.ByteArrayInputStream
 import java.util.UUID
@@ -44,10 +44,7 @@ trait NonStreamMultipartBodyBuilder[BinaryStream, F[_]] extends MultipartBodyBui
         case ByteArrayBody(b, _) =>
           multipartBuilder.addPart(p.name, supplier(new ByteArrayInputStream(b)), partHeaders)
         case ByteBufferBody(b, _) =>
-          if ((b: Buffer).isReadOnly)
-            multipartBuilder.addPart(p.name, supplier(new ByteBufferBackedInputStream(b)), partHeaders)
-          else
-            multipartBuilder.addPart(p.name, supplier(new ByteArrayInputStream(b.array())), partHeaders)
+          multipartBuilder.addPart(p.name, supplier(new ByteArrayInputStream(byteBufferToArray(b))), partHeaders)
         case InputStreamBody(b, _) => multipartBuilder.addPart(p.name, supplier(b), partHeaders)
         case StreamBody(_)         =>
           throw new IllegalArgumentException("Multipart streaming bodies are not supported with this backend")
@@ -96,11 +93,10 @@ trait StreamMultipartBodyBuilder[BinaryStream, F[_]] extends MultipartBodyBuilde
         case ByteArrayBody(b, _) =>
           concatBytesToStream(accumulatedStream, encodeBytes(b, partHeaders, boundary))
         case ByteBufferBody(b, _) =>
-          if ((b: Buffer).isReadOnly) {
-            val buffer = new ByteBufferBackedInputStream(b)
-            concatStreams(accumulatedStream, encodeStream(inputStreamToStream(buffer), partHeaders, boundary))
-          } else
-            concatBytesToStream(accumulatedStream, encodeBytes(b.array(), partHeaders, boundary))
+          concatStreams(
+            accumulatedStream,
+            encodeStream(inputStreamToStream(new ByteBufferBackedInputStream(b.duplicate())), partHeaders, boundary)
+          )
         case InputStreamBody(b, _) =>
           concatStreams(accumulatedStream, encodeStream(inputStreamToStream(b), partHeaders, boundary))
         case StreamBody(s) =>
@@ -144,7 +140,6 @@ trait StreamMultipartBodyBuilder[BinaryStream, F[_]] extends MultipartBodyBuilde
   }
 }
 
-// https://stackoverflow.com/a/6603018/362531
 private[httpclient] class ByteBufferBackedInputStream(buf: ByteBuffer) extends InputStream {
   override def read: Int = {
     if (!buf.hasRemaining) return -1

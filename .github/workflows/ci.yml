@@ -23,12 +23,6 @@ jobs:
         scala-version: [ "2.12", "2.13", "3" ]
         target-platform: [ "JVM", "JS", "Native" ]
         java: [ "11", "21" ]
-        exclude:
-          - java: "21"
-        include: # Restricted to build only specific Loom-based modules
-          - scala-version: "3"
-            target-platform: "JVM"
-            java: "21"
     steps:
     - name: Checkout
       uses: actions/checkout@v2
@@ -43,15 +37,26 @@ jobs:
       if: matrix.target-platform == 'Native'
       run: |
         sudo apt-get update
-        sudo apt-get install libidn2-dev libcurl3-dev
+        sudo apt-get install libidn2-dev libcurl3-dev cmake libssl-dev
         echo "STTP_NATIVE=1" >> $GITHUB_ENV
+    - name: Install s2n-tls
+      if: matrix.target-platform == 'Native'
+      run: |
+        git clone https://github.com/aws/s2n-tls.git /tmp/s2n-tls
+        cd /tmp/s2n-tls
+        cmake . -Bbuild -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local
+        cmake --build build -j $(nproc)
+        sudo cmake --install build
     - name: Install scala-cli
       if: matrix.target-platform == 'JVM'
       uses: VirtusLab/scala-cli-setup@77834b5926f3eb70869d8009530c65585f7a039b # main, specifically v1.9.1
       with:
         jvm: '' # needed because scala-cli-setup otherwise forces the installation of their default JVM (17)        
-    - name: Enable Loom-specific modules
+    - name: Enable ZIO-specific modules
       if: matrix.java == '21'
+      run: echo "WITH_ZIO=1" >> $GITHUB_ENV
+    - name: Enable Loom-specific modules
+      if: matrix.target-platform == 'JVM' && matrix.java == '21' && matrix.scala-version == '3'
       run: echo "ONLY_LOOM=1" >> $GITHUB_ENV
     - name: Compile
       run: sbt -v "compileScoped ${{ matrix.scala-version }} ${{ matrix.target-platform }}"
@@ -98,13 +103,22 @@ jobs:
       - name: Install libidn2-dev libcurl3-dev
         run: |
           sudo apt-get update
-          sudo apt-get install libidn2-dev libcurl3-dev
+          sudo apt-get install libidn2-dev libcurl3-dev cmake libssl-dev
+      - name: Install s2n-tls
+        run: |
+          git clone https://github.com/aws/s2n-tls.git /tmp/s2n-tls
+          cd /tmp/s2n-tls
+          cmake . -Bbuild -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local
+          cmake --build build -j $(nproc)
+          sudo cmake --install build
       - name: Enable Native-specific modules
         if: matrix.java == '11'
         run: echo "STTP_NATIVE=1" >> $GITHUB_ENV
-      - name: Enable Loom-specific modules
+      - name: Enable ZIO and Loom-specific modules
         if: matrix.java == '21'
-        run: echo "ONLY_LOOM=1" >> $GITHUB_ENV
+        run: |
+          echo "WITH_ZIO=1" >> $GITHUB_ENV
+          echo "ONLY_LOOM=1" >> $GITHUB_ENV
       - name: Compile
         run: sbt compile
       - name: Publish artifacts

@@ -100,6 +100,11 @@ Please visit [the official documentation](https://armeria.dev/docs/client-factor
 The ZIO backend is also available for the JS platform, see [the `FetchBackend` documentation](javascript/fetch.md).
 The `FetchBackend` companion object contains methods to create the backend directly, as a layer or scoped.
 
+## Using Scala Native
+
+The ZIO backend is also available for the native platform backed by curl, see [the `CurlZioBackend` documentation](native/curl.md).
+The `CurlZioBackend` companion object contains methods to create the backend directly, as a layer or scoped.
+
 ## ZIO layers + constructors
 
 When using constructors to express service dependencies, ZIO layers can be used to provide the `SttpBackend` instance, instead of creating one by hand. In this scenario, the lifecycle of a `SttpBackend` service is described by `ZLayer`s, which can be created using the `.layer`/`.layerUsingConfig`/... methods on `HttpClientZioBackend` / `ArmeriaZioBackend`.
