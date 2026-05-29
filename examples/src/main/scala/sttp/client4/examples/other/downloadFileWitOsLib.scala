@@ -8,11 +8,10 @@ package sttp.client4.examples.other
 import sttp.client4.*
 import os.*
 
-private val fileSize = 8192
-private val dest: os.Path = os.Path(s"/tmp/file-example-$fileSize-bytes")
-private val backend: SyncBackend = DefaultSyncBackend()
-
 @main def downloadFileWithOsLib(): Unit = {
+  val fileSize = 8192
+  val dest: os.Path = os.Path(s"/tmp/file-example-$fileSize-bytes")
+  val backend: SyncBackend = DefaultSyncBackend()
   val _ = os.remove(dest)
   val request = basicRequest
     .get(uri"https://httpbin.org/bytes/$fileSize")

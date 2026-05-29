@@ -9,7 +9,16 @@ import sttp.client4.*
 import java.nio.file.Files
 import java.nio.file.Path
 
-@main def fileUploadSynchronous(): Unit =
+@main def fileUploadSynchronous(): Unit = {
+  def withTemporaryFile[T](data: Array[Byte])(f: Path => T): T = {
+    val file = Files.createTempFile("sttp", "demo")
+    try
+      Files.write(file, data)
+      f(file)
+    finally
+      val _ = Files.deleteIfExists(file)
+  }
+
   withTemporaryFile("Hello, World!".getBytes) { file =>
     val request = basicRequest
       .body(file)
@@ -21,12 +30,4 @@ import java.nio.file.Path
     // the uploaded data should be echoed in the "data" field of the response body
     println(response.body)
   }
-
-private def withTemporaryFile[T](data: Array[Byte])(f: Path => T): T = {
-  val file = Files.createTempFile("sttp", "demo")
-  try
-    Files.write(file, data)
-    f(file)
-  finally
-    val _ = Files.deleteIfExists(file)
 }
