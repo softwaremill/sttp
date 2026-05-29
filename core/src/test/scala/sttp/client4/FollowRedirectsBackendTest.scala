@@ -5,7 +5,6 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import sttp.client4.testing.{BackendStub, ResponseStub}
 import sttp.client4.wrappers.{CookieStorage, FollowRedirectsBackend, FollowRedirectsConfig}
-import sttp.model.headers.CookieWithMeta
 import sttp.model.internal.Rfc3986
 import sttp.model.{Header, HeaderNames, StatusCode, Uri}
 
@@ -67,7 +66,7 @@ class FollowRedirectsBackendTest extends AnyFunSuite with Matchers with EitherVa
           ResponseStub.adjust(
             "",
             StatusCode.Found,
-            Vector(Header.location(url(id + 1)), Header.setCookie(CookieWithMeta(s"c$id", id.toString)))
+            Vector(Header.location(url(id + 1)), Header(HeaderNames.SetCookie, s"c$id=$id"))
           )
         else ResponseStub.adjust("done", StatusCode.Ok)
     }

@@ -54,8 +54,8 @@ abstract class FollowRedirectsBackend[F[_], P] private (
   private def applyStoredCookies[T](request: GenericRequest[T, R]): GenericRequest[T, R] =
     request.attribute(CookieStorage.attributeKey) match {
       case Some(storage) =>
-        val cookies = storage.forUri(request.uri)
-        if (cookies.isEmpty) request else request.cookies(cookies)
+        val cookies = storage.cookiesFor(request.uri)
+        if (cookies.isEmpty) request else request.cookies(cookies: _*)
       case None => request
     }
 
