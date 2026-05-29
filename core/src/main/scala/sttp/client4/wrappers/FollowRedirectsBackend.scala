@@ -16,15 +16,19 @@ abstract class FollowRedirectsBackend[F[_], P] private (
   override def send[T](request: GenericRequest[T, R]): F[Response[T]] = sendWithCounter(request, 0)
 
   protected def sendWithCounter[T](request: GenericRequest[T, R], redirects: Int): F[Response[T]] = {
+    // if a cookie storage is attached, send the cookies matching this request's URI (cookies are otherwise lost
+    // across redirects, as the `Cookie` header is sensitive and stripped)
+    val requestWithCookies = applyStoredCookies(request)
+
     // if there are nested follow redirect backends, disabling them and handling redirects here
     // using a def instead of a val so that errors are properly caught
-    def resp = delegate.send(request.followRedirects(false))
+    def resp = delegate.send(requestWithCookies.followRedirects(false))
 
     if (request.options.followRedirects) {
       resp
         .flatMap { (response: Response[T]) =>
           if (response.isRedirect) {
-            followRedirect(request, response, redirects)
+            followRedirect(updateStoredCookies(request, response), response, redirects)
           } else {
             monad.unit(response)
           }
@@ -34,7 +38,7 @@ abstract class FollowRedirectsBackend[F[_], P] private (
             case Some(re) if re.response.isRedirect =>
               re.response.header(HeaderNames.Location) match {
                 case None      => monad.error(e) // no location header, propagating the exception
-                case Some(loc) => followRedirect(request, re.response, redirects, loc)
+                case Some(loc) => followRedirect(updateStoredCookies(request, re.response), re.response, redirects, loc)
               }
             case _ => monad.error(e)
           }
@@ -43,6 +47,28 @@ abstract class FollowRedirectsBackend[F[_], P] private (
       resp
     }
   }
+
+  /** If a [[CookieStorage]] is attached, adds the cookies matching the request's URI as a `Cookie` header. No-op
+    * otherwise, so the default behaviour is unchanged unless a storage is explicitly attached.
+    */
+  private def applyStoredCookies[T](request: GenericRequest[T, R]): GenericRequest[T, R] =
+    request.attribute(CookieStorage.attributeKey) match {
+      case Some(storage) =>
+        val cookies = storage.cookiesFor(request.uri)
+        if (cookies.isEmpty) request else request.cookies(cookies: _*)
+      case None => request
+    }
+
+  /** If a [[CookieStorage]] is attached, returns the request with the storage updated with the response's `Set-Cookie`
+    * cookies, so that the next request in the redirect chain can send them. No-op otherwise.
+    */
+  private def updateStoredCookies[T](request: GenericRequest[T, R], response: ResponseMetadata): GenericRequest[T, R] =
+    request.attribute(CookieStorage.attributeKey) match {
+      case Some(storage) =>
+        val updated = storage.setFromSetCookieHeaders(request.uri, response.headers(HeaderNames.SetCookie))
+        request.attribute(CookieStorage.attributeKey, updated)
+      case None => request
+    }
 
   private def followRedirect[T](
       request: GenericRequest[T, R],
