@@ -59,7 +59,7 @@ private[client4] class DigestAuthenticator private (
         true
       }
     if (isFirstOrShouldRetry) {
-      val qualityOfProtection = wwwAuthHeader.qop
+      val qualityOfProtection = selectQop(wwwAuthHeader.qop)
       val algorithm = wwwAuthHeader.algorithm.getOrElse("MD5")
       val messageDigest = new MessageDigestCompatibility(algorithm)
       val digestUri =
@@ -101,6 +101,19 @@ private[client4] class DigestAuthenticator private (
       None
     }
   }
+
+  // Picks a single qop value from a possibly comma-separated `qop` directive (RFC 7616 allows e.g. `qop="auth,auth-int"`).
+  // Prefers `auth` over `auth-int` per the RFC's recommendation. Returns the input unchanged for a single-value qop,
+  // and `None` when no qop was advertised so the no-qop digest branch is preserved. If only unsupported tokens are
+  // advertised, the first one is returned and the downstream match fails fast with `IllegalArgumentException`.
+  private def selectQop(advertised: Option[String]): Option[String] =
+    advertised.map { raw =>
+      val tokens = raw.split(",").map(_.trim).toList
+      tokens
+        .find(_ == QualityOfProtectionAuth)
+        .orElse(tokens.find(_ == QualityOfProtectionAuthInt))
+        .getOrElse(tokens.head)
+    }
 
   private def calculateResponseChallenge(
       request: GenericRequest[_, _],

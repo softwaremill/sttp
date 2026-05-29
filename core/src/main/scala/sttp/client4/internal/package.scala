@@ -41,8 +41,8 @@ package object internal {
   private[client4] def emptyInputStream(): InputStream = new ByteArrayInputStream(Array[Byte]())
 
   /** Returns the bytes between the buffer's current `position` and `limit` as an `Array[Byte]`. Safe for direct,
-    * read-only, partially-consumed, and sliced buffers. The source buffer's `position` and `limit` are preserved. For
-    * a fresh, full heap buffer the backing array is returned directly (no copy); otherwise a new array is allocated.
+    * read-only, partially-consumed, and sliced buffers. The source buffer's `position` and `limit` are preserved. For a
+    * fresh, full heap buffer the backing array is returned directly (no copy); otherwise a new array is allocated.
     */
   private[client4] def byteBufferToArray(b: ByteBuffer): Array[Byte] =
     if (b.hasArray && b.arrayOffset() == 0 && b.position() == 0 && b.remaining() == b.array().length)
@@ -95,6 +95,7 @@ package object internal {
   private[client4] val IOBufferSize = 1024
 
   implicit class RichByteBuffer(byteBuffer: ByteBuffer) {
+
     /** Reads the buffer's remaining bytes into a fresh array, advancing the buffer's `position` to `limit`. Use
       * [[byteBufferToArray]] instead when the buffer's position should be preserved.
       */
