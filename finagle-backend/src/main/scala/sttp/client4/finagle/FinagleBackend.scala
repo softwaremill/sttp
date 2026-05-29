@@ -15,7 +15,7 @@ import com.twitter.io.Buf.{ByteArray, ByteBuffer}
 import com.twitter.util
 import com.twitter.util.{Duration, Future => TFuture}
 import sttp.capabilities.Effect
-import sttp.client4.internal.{BodyFromResponseAs, FileHelpers, SttpFile, Utf8}
+import sttp.client4.internal.{BodyFromResponseAs, FileHelpers, SttpFile, Utf8, byteBufferToArray}
 import sttp.client4.testing.BackendStub
 import sttp.client4.ws.{GotAWebSocketException, NotAWebSocketException}
 import sttp.client4.{wrappers, _}
@@ -126,7 +126,7 @@ class FinagleBackend(client: Option[Client] = None) extends Backend[TFuture] {
       case StringBody(s, e, _) if e.equalsIgnoreCase(Utf8) => s
       case StringBody(s, e, _)                             => Source.fromBytes(s.getBytes(e)).mkString
       case ByteArrayBody(b, _)                             => Source.fromBytes(b).mkString
-      case ByteBufferBody(b, _)                            => Source.fromBytes(b.array()).mkString
+      case ByteBufferBody(b, _)                            => Source.fromBytes(byteBufferToArray(b)).mkString
       case InputStreamBody(is, _)                          => Source.fromInputStream(is).mkString
       case FileBody(f, _)                                  => Source.fromFile(f.toFile).mkString
       case StreamBody(_) => throw new IllegalArgumentException("Streaming is not supported")

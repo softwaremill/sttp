@@ -22,28 +22,27 @@ import cats.effect.unsafe.implicits.global
 import org.scalatest.freespec.AsyncFreeSpec
 import org.scalatest.matchers.should.Matchers
 import org.typelevel.otel4s.sdk.data.LimitedData
-import org.typelevel.otel4s.sdk.testkit.trace.TracesTestkit
+import org.typelevel.otel4s.sdk.testkit.trace._
 import org.typelevel.otel4s.sdk.trace.context.propagation.W3CTraceContextPropagator
-import org.typelevel.otel4s.sdk.trace.data.{EventData, StatusData}
-import org.typelevel.otel4s.trace.{StatusCode, TracerProvider}
+import org.typelevel.otel4s.sdk.trace.data.{EventData, SpanData}
+import org.typelevel.otel4s.trace.TracerProvider
 import org.typelevel.otel4s.{Attribute, Attributes}
 import sttp.client4._
 import sttp.client4.impl.cats.CatsMonadAsyncError
 import sttp.client4.testing.{BackendStub, ResponseStub, StubBody}
 import sttp.model.{StatusCode => HttpStatusCode}
 
-import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.Duration
 import scala.util.control.NoStackTrace
 
-class Otel4sTracingBackendTest extends AsyncFreeSpec with Matchers {
-
-  override def executionContext: ExecutionContext = ExecutionContext.global
+class Otel4sTracingBackendTest extends AsyncFreeSpec with Matchers with AsyncExecutionContext {
 
   "Otel4sTracingBackend" - {
     "should add tracing headers to the request" in {
       TracesTestkit
-        .inMemory[IO](_.addTextMapPropagators(W3CTraceContextPropagator.default))
+        .builder[IO]
+        .addTracerProviderCustomizer(_.addTextMapPropagators(W3CTraceContextPropagator.default))
+        .build
         .use { testkit =>
           implicit val tracerProvider: TracerProvider[IO] = testkit.tracerProvider
 
@@ -65,7 +64,9 @@ class Otel4sTracingBackendTest extends AsyncFreeSpec with Matchers {
 
     "should record request/response-specific attributes: 200 OK response" in {
       TracesTestkit
-        .inMemory[IO](_.addTextMapPropagators(W3CTraceContextPropagator.default))
+        .builder[IO]
+        .addTracerProviderCustomizer(_.addTextMapPropagators(W3CTraceContextPropagator.default))
+        .build
         .use { testkit =>
           implicit val tracerProvider: TracerProvider[IO] = testkit.tracerProvider
 
@@ -82,8 +83,6 @@ class Otel4sTracingBackendTest extends AsyncFreeSpec with Matchers {
             response <- backend.send(basicRequest.get(uri"http://user:pwd@localhost:8080/success?q=v"))
             spans <- testkit.finishedSpans
           } yield {
-            val status = StatusData(StatusCode.Unset)
-
             val attributes = Attributes(
               Attribute("http.request.method", "GET"),
               Attribute("http.response.status_code", 200L),
@@ -95,11 +94,19 @@ class Otel4sTracingBackendTest extends AsyncFreeSpec with Matchers {
 
             response.code shouldBe HttpStatusCode.Ok
 
-            spans.map(_.attributes.elements) shouldBe List(attributes)
-            spans.map(_.events.elements) shouldBe List(Vector.empty)
-            spans.map(_.status) shouldBe List(status)
-
-            succeed
+            assertSpansMatch(
+              spans,
+              TraceForestExpectation.ordered(
+                TraceExpectation.leaf(
+                  SpanExpectation
+                    .client("GET")
+                    .noParentSpanContext
+                    .attributesExact(attributes)
+                    .status(StatusExpectation.unset)
+                    .eventCount(0)
+                )
+              )
+            )
           }
         }
         .unsafeToFuture()
@@ -107,7 +114,9 @@ class Otel4sTracingBackendTest extends AsyncFreeSpec with Matchers {
 
     "should record request/response-specific attributes: 400 BadRequest response" in {
       TracesTestkit
-        .inMemory[IO](_.addTextMapPropagators(W3CTraceContextPropagator.default))
+        .builder[IO]
+        .addTracerProviderCustomizer(_.addTextMapPropagators(W3CTraceContextPropagator.default))
+        .build
         .use { testkit =>
           implicit val tracerProvider: TracerProvider[IO] = testkit.tracerProvider
 
@@ -124,8 +133,6 @@ class Otel4sTracingBackendTest extends AsyncFreeSpec with Matchers {
             response <- backend.send(basicRequest.get(uri"http://user@localhost:8080/bad-request?q=v"))
             spans <- testkit.finishedSpans
           } yield {
-            val status = StatusData(StatusCode.Error)
-
             val attributes = Attributes(
               Attribute("http.request.method", "GET"),
               Attribute("http.response.status_code", 400L),
@@ -138,11 +145,19 @@ class Otel4sTracingBackendTest extends AsyncFreeSpec with Matchers {
 
             response.code shouldBe HttpStatusCode.BadRequest
 
-            spans.map(_.attributes.elements) shouldBe List(attributes)
-            spans.map(_.events.elements) shouldBe List(Vector.empty)
-            spans.map(_.status) shouldBe List(status)
-
-            succeed
+            assertSpansMatch(
+              spans,
+              TraceForestExpectation.ordered(
+                TraceExpectation.leaf(
+                  SpanExpectation
+                    .client("GET")
+                    .noParentSpanContext
+                    .attributesExact(attributes)
+                    .status(StatusExpectation.error)
+                    .eventCount(0)
+                )
+              )
+            )
           }
         }
         .unsafeToFuture()
@@ -152,7 +167,9 @@ class Otel4sTracingBackendTest extends AsyncFreeSpec with Matchers {
       TestControl
         .executeEmbed {
           TracesTestkit
-            .inMemory[IO](_.addTextMapPropagators(W3CTraceContextPropagator.default))
+            .builder[IO]
+            .addTracerProviderCustomizer(_.addTextMapPropagators(W3CTraceContextPropagator.default))
+            .build
             .use { testkit =>
               implicit val tracerProvider: TracerProvider[IO] = testkit.tracerProvider
 
@@ -171,8 +188,6 @@ class Otel4sTracingBackendTest extends AsyncFreeSpec with Matchers {
                 response <- backend.send(basicRequest.get(uri"http://localhost/error")).attempt
                 spans <- testkit.finishedSpans
               } yield {
-                val status = StatusData(StatusCode.Error)
-
                 val attributes = Attributes(
                   Attribute("http.request.method", "GET"),
                   Attribute("server.address", "localhost"),
@@ -189,16 +204,34 @@ class Otel4sTracingBackendTest extends AsyncFreeSpec with Matchers {
 
                 response shouldBe Left(Err)
 
-                spans.map(_.attributes.elements) shouldBe List(attributes)
-                spans.map(_.events.elements) shouldBe List(Vector(event))
-                spans.map(_.status) shouldBe List(status)
-
-                succeed
+                assertSpansMatch(
+                  spans,
+                  TraceForestExpectation.ordered(
+                    TraceExpectation.leaf(
+                      SpanExpectation
+                        .client("GET")
+                        .noParentSpanContext
+                        .attributesExact(attributes)
+                        .status(StatusExpectation.error)
+                        .exactlyEvents(
+                          EventExpectation.any.where("matches the recorded exception event")(_ == event)
+                        )
+                    )
+                  )
+                )
               }
             }
         }
         .unsafeToFuture()
     }
   }
+
+  private def assertSpansMatch(spans: List[SpanData], expectation: TraceForestExpectation) =
+    TraceExpectations.check(spans, expectation) match {
+      case Right(_) =>
+        succeed
+      case Left(mismatches) =>
+        fail(TraceExpectations.format(mismatches))
+    }
 
 }

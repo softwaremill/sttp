@@ -1,8 +1,8 @@
 // {cat=Backend wrapper; effects=Synchronous; backend=HttpClient}: Use the caching backend wrapper with Redis
 
-//> using dep com.softwaremill.sttp.client4::core:4.0.13
-//> using dep com.softwaremill.sttp.client4::caching-backend:4.0.13
-//> using dep redis.clients:jedis:7.0.0
+//> using dep com.softwaremill.sttp.client4::core:4.0.24
+//> using dep com.softwaremill.sttp.client4::caching-backend:4.0.24
+//> using dep redis.clients:jedis:7.5.0
 //> using dep ch.qos.logback:logback-classic:1.5.15
 
 package sttp.client4.examples.wrapper

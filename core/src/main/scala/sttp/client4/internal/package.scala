@@ -40,13 +40,27 @@ package object internal {
 
   private[client4] def emptyInputStream(): InputStream = new ByteArrayInputStream(Array[Byte]())
 
+  /** Returns the bytes between the buffer's current `position` and `limit` as an `Array[Byte]`. Safe for direct,
+    * read-only, partially-consumed, and sliced buffers. The source buffer's `position` and `limit` are preserved. For
+    * a fresh, full heap buffer the backing array is returned directly (no copy); otherwise a new array is allocated.
+    */
+  private[client4] def byteBufferToArray(b: ByteBuffer): Array[Byte] =
+    if (b.hasArray && b.arrayOffset() == 0 && b.position() == 0 && b.remaining() == b.array().length)
+      b.array()
+    else {
+      val out = new Array[Byte](b.remaining())
+      b.duplicate().get(out)
+      out
+    }
+
   private[client4] def enqueueBytes(
       queue: Queue[Array[Byte]],
       bytes: ByteBuffer
-  ): Queue[Array[Byte]] = queue.enqueue(bytes.array())
+  ): Queue[Array[Byte]] = queue.enqueue(byteBufferToArray(bytes))
 
   private[client4] def concatBytes(queue: Queue[Array[Byte]]): Array[Byte] = {
     val size = queue.map(_.length).sum
+    // Heap buffer of exact size, fully filled and never read partially: array() is safe here.
     val bytes = ByteBuffer.allocate(size)
     queue.foreach(bytes.put)
     bytes.array()
@@ -81,6 +95,9 @@ package object internal {
   private[client4] val IOBufferSize = 1024
 
   implicit class RichByteBuffer(byteBuffer: ByteBuffer) {
+    /** Reads the buffer's remaining bytes into a fresh array, advancing the buffer's `position` to `limit`. Use
+      * [[byteBufferToArray]] instead when the buffer's position should be preserved.
+      */
     def safeRead(): Array[Byte] = {
       val array = new Array[Byte](byteBuffer.remaining())
       byteBuffer.get(array)

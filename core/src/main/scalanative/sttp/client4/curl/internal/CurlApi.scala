@@ -2,6 +2,7 @@ package sttp.client4.curl.internal
 
 import sttp.client4.curl.internal.CurlCode.CurlCode
 import sttp.client4.curl.internal.CurlInfo.CurlInfo
+import sttp.client4.curl.internal.CurlMCode.CurlMCode
 import sttp.client4.curl.internal.CurlOption.CurlOption
 
 import scala.scalanative.unsafe.{Ptr, _}
@@ -11,6 +12,8 @@ import java.nio.charset.StandardCharsets
 private[client4] object CurlApi {
   type CurlHandle = Ptr[Curl]
 
+  type CurlMultiHandle = Ptr[CurlM]
+
   type MimeHandle = Ptr[Mime]
 
   type MimePartHandle = Ptr[MimePart]
@@ -18,6 +21,8 @@ private[client4] object CurlApi {
   type SlistHandle = Ptr[CurlSlist]
 
   def init: CurlHandle = CCurl.init
+
+  def multiInit: CurlMultiHandle = CCurl.multiInit
 
   implicit class CurlHandleOps(handle: CurlHandle) {
     def mime: MimeHandle = CCurl.mimeInit(handle)
@@ -46,7 +51,7 @@ private[client4] object CurlApi {
       this.option(option, CFuncPtr.toPtr(parameter))
 
     def info(curlInfo: CurlInfo, parameter: Long)(implicit z: Zone): CurlCode = {
-      val lPtr = alloc[Long](sizeof[Long])
+      val lPtr: Ptr[Long] = alloc[Long](sizeof[Long])
       !lPtr = parameter
       getInfo(handle, curlInfo, lPtr)
     }
@@ -85,6 +90,26 @@ private[client4] object CurlApi {
 
     def withHeaders(headers: Ptr[CurlSlist], takeOwnership: Int = 0): CurlCode =
       CCurl.mimeHeaders(handle, headers, takeOwnership)
+  }
+
+  implicit class CurlMultiHandleOps(handle: CurlMultiHandle) {
+    def addHandle(easy: CurlHandle): CurlMCode =
+      CurlMCode(CCurl.multiAddHandle(handle, easy))
+
+    def removeHandle(easy: CurlHandle): CurlMCode =
+      CurlMCode(CCurl.multiRemoveHandle(handle, easy))
+
+    def perform(runningHandles: Ptr[CInt]): CurlMCode =
+      CurlMCode(CCurl.multiPerform(handle, runningHandles))
+
+    def poll(timeoutMs: Int, numfds: Ptr[CInt]): CurlMCode =
+      CurlMCode(CCurl.multiPoll(handle, null, 0.toUInt, timeoutMs, numfds))
+
+    def cleanup(): Unit = { val _ = CCurl.multiCleanup(handle) }
+
+    /** Returns the CURLcode of the completed transfer, or -1 if no transfer has completed. */
+    private[curl] def infoReadResult(easyOut: Ptr[Ptr[Curl]]): Int =
+      CCurl.multiInfoReadResult(handle, easyOut)
   }
 
   implicit class SlistHandleOps(handle: SlistHandle) {

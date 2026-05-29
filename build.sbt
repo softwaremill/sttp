@@ -8,8 +8,8 @@ import complete.DefaultParsers._
 // run JS tests inside Chrome, due to jsdom not supporting fetch
 import com.softwaremill.SbtSoftwareMillBrowserTestJS._
 
-val scala2_12 = "2.12.20"
-val scala2_13 = "2.13.16"
+val scala2_12 = "2.12.21"
+val scala2_13 = "2.13.18"
 val scala3 = "3.3.6"
 
 val scala2 = List(scala2_12, scala2_13)
@@ -120,17 +120,14 @@ val testServerSettings = Seq(
 
 val circeVersion: String = "0.14.15"
 
-val jsoniterVersion = "2.38.2"
+val jsoniterVersion = "2.38.13"
 
 val play29JsonVersion = "2.10.8"
 
 val playJsonVersion = "3.0.6"
 
-val catsEffect_3_version = "3.6.3"
-val fs2_3_version = "3.12.2"
-
-// This version provides Scala Native 0.5.x support. Drop this when 3.7.0 is released.
-val catsEffect_3_RC_version = "3.7.0-RC1"
+val catsEffect_3_version = "3.7.0"
+val fs2_3_version = "3.13.0"
 
 val catsEffect_2_version = "2.5.5"
 
@@ -140,42 +137,44 @@ val akkaHttp = "com.typesafe.akka" %% "akka-http" % "10.2.10"
 val akkaStreamVersion = "2.6.20"
 val akkaStreams = "com.typesafe.akka" %% "akka-stream" % akkaStreamVersion
 
-val pekkoHttp = "org.apache.pekko" %% "pekko-http" % "1.2.0"
-val pekkoStreamVersion = "1.2.1"
+val pekkoHttp = "org.apache.pekko" %% "pekko-http" % "1.3.0"
+val pekkoStreamVersion = "1.6.0"
 val pekkoStreams = "org.apache.pekko" %% "pekko-stream" % pekkoStreamVersion
 
 val scalaTest = libraryDependencies ++= Seq("freespec", "funsuite", "flatspec", "wordspec", "shouldmatchers").map(m =>
-  "org.scalatest" %%% s"scalatest-$m" % "3.2.19" % Test
+  "org.scalatest" %%% s"scalatest-$m" % "3.2.20" % Test
 )
 val scalaTestPlusScalaCheck = libraryDependencies += "org.scalatestplus" %% "scalacheck-1-18" % "3.2.19.0" % Test
 
 val zio1Version = "1.0.18"
-val zio2Version = "2.1.22"
+val zio2Version = "2.1.26"
 val zio1InteropRsVersion = "1.3.12"
 val zio2InteropRsVersion = "2.0.2"
 
 val oxVersion = "0.6.1"
 val sttpModelVersion = "1.7.17"
-val sttpSharedVersion = "1.5.0"
+val sttpSharedVersion = "1.5.2"
 
 val logback = "ch.qos.logback" % "logback-classic" % "1.5.14"
 
 val jaegerClientVersion = "1.8.1"
 val braveOpentracingVersion = "1.0.1"
-val zipkinSenderOkHttpVersion = "3.5.1"
-val resilience4jVersion = "2.3.0"
+val zipkinSenderOkHttpVersion = "3.5.3"
+val resilience4jVersion = "2.4.0"
 val http4s_ce2_version = "0.22.15"
-val http4s_ce3_version = "0.23.33"
+val http4s_ce3_version = "0.23.34"
 val osLibVersion = "0.11.4"
-val tethysVersion = "0.29.5"
-val openTelemetryVersion = "1.56.0"
-val openTelemetrySemconvVersion = "1.37.0"
-val otel4s = "0.14.0"
+val tethysVersion = "0.29.8"
+val openTelemetryVersion = "1.59.0"
+val openTelemetrySemconvVersion = "1.41.1"
+val otel4s = "1.0.0"
+val otel4sSdk = "0.19.0"
 val slf4jVersion = "1.7.36"
 
 val compileAndTest = "compile->compile;test->test"
 
-lazy val loomProjects: Seq[String] = Seq(ox, examples).flatMap(_.projectRefs).flatMap(projectId)
+lazy val loomProjects: Seq[String] = Seq(ox, examples, zioJson).flatMap(_.projectRefs).flatMap(projectId)
+lazy val zioProjects: Seq[String] = Seq(zioJson).flatMap(_.projectRefs).flatMap(projectId)
 
 def projectId(projectRef: ProjectReference): Option[String] =
   projectRef match {
@@ -192,15 +191,24 @@ lazy val allAggregates: Seq[ProjectReference] = {
     println("[info] STTP_NATIVE *not* defined, *not* including native in the aggregate projects")
     rawAllAggregates.filterNot(_.toString.contains("Native"))
   }
-  if (sys.env.isDefinedAt("ONLY_LOOM")) {
-    println("[info] ONLY_LOOM defined, including only loom-based projects")
-    filteredByNative.filter(p => projectId(p).forall(loomProjects.contains))
-  } else if (sys.env.isDefinedAt("ALSO_LOOM")) {
-    println("[info] ALSO_LOOM defined, including also loom-based projects")
+
+  val filteredByZio = if (sys.env.isDefinedAt("WITH_ZIO")) {
+    println("[info] WITH_ZIO defined, including zio projects in the aggregate projects")
     filteredByNative
   } else {
+    println("[info] WITH_ZIO *not* defined, *not* including zio-json in the aggregate projects")
+    filteredByNative.filterNot(p => projectId(p).forall(zioProjects.contains))
+  }
+
+  if (sys.env.isDefinedAt("ONLY_LOOM")) {
+    println("[info] ONLY_LOOM defined, including only loom-based projects")
+    filteredByZio.filter(p => projectId(p).forall(loomProjects.contains))
+  } else if (sys.env.isDefinedAt("ALSO_LOOM")) {
+    println("[info] ALSO_LOOM defined, including also loom-based projects")
+    filteredByZio
+  } else {
     println("[info] ONLY_LOOM *not* defined, *not* including loom-based-projects")
-    filteredByNative.filterNot(p => projectId(p).forall(loomProjects.contains))
+    filteredByZio.filterNot(p => projectId(p).forall(loomProjects.contains))
   }
 }
 
@@ -386,13 +394,10 @@ lazy val catsCe2 = (projectMatrix in file("effects/cats-ce2"))
   )
 
 lazy val catsEffect = Def.setting {
-  val ceVersion =
-    if (virtualAxes.value.contains(VirtualAxis.native)) catsEffect_3_RC_version
-    else catsEffect_3_version
   Seq(
-    "org.typelevel" %%% "cats-effect-kernel" % ceVersion,
-    "org.typelevel" %%% "cats-effect-std" % ceVersion,
-    "org.typelevel" %%% "cats-effect" % ceVersion % Test
+    "org.typelevel" %%% "cats-effect-kernel" % catsEffect_3_version,
+    "org.typelevel" %%% "cats-effect-std" % catsEffect_3_version,
+    "org.typelevel" %%% "cats-effect" % catsEffect_3_version % Test
   )
 }
 
@@ -413,7 +418,7 @@ lazy val cats = (projectMatrix in file("effects/cats"))
     settings = commonJsSettings ++ commonJsBackendSettings ++ browserChromeTestSettings ++ testServerSettings
   )
   .nativePlatform(
-    scalaVersions = List(scala3),
+    scalaVersions = scala2And3,
     settings = commonNativeSettings ++ testServerSettings
   )
 
@@ -456,12 +461,22 @@ lazy val fs2 = (projectMatrix in file("effects/fs2"))
       libraryDependencies ++= Seq(
         "co.fs2" %%% "fs2-reactive-streams" % fs2_3_version,
         "co.fs2" %%% "fs2-io" % fs2_3_version
-      )
+      ),
+      Compile / unmanagedSourceDirectories += (ThisBuild / baseDirectory).value / "effects" / "fs2" / "src" / "main" / "scalajvmnative"
     )
   )
   .jsPlatform(
     scalaVersions = scala2And3,
     settings = commonJsSettings ++ commonJsBackendSettings ++ browserChromeTestSettings ++ testServerSettings
+  )
+  .nativePlatform(
+    scalaVersions = scala2And3,
+    settings = commonNativeSettings ++ testServerSettings ++ Seq(
+      libraryDependencies ++= Seq(
+        "co.fs2" %%% "fs2-io" % fs2_3_version
+      ),
+      Compile / unmanagedSourceDirectories += (ThisBuild / baseDirectory).value / "effects" / "fs2" / "src" / "main" / "scalajvmnative"
+    )
   )
 
 lazy val monix = (projectMatrix in file("effects/monix"))
@@ -547,6 +562,14 @@ lazy val zio = (projectMatrix in file("effects/zio"))
   .jsPlatform(
     scalaVersions = scala2And3,
     settings = commonJsSettings ++ commonJsBackendSettings ++ browserChromeTestSettings ++ testServerSettings
+  )
+  .nativePlatform(
+    scalaVersions = List(scala3),
+    settings = commonNativeSettings ++ Seq(
+      libraryDependencies ++= Seq(
+        "io.github.cquiroz" %%% "scala-java-time" % "2.6.0"
+      )
+    )
   )
 
 lazy val scalaz = (projectMatrix in file("effects/scalaz"))
@@ -645,13 +668,23 @@ lazy val http4sBackend = (projectMatrix in file("http4s-backend"))
   .settings(
     name := "http4s-backend",
     libraryDependencies ++= Seq(
-      "org.http4s" %% "http4s-client" % http4s_ce3_version,
-      "org.http4s" %% "http4s-ember-client" % "0.23.33" % Optional,
-      "org.http4s" %% "http4s-blaze-client" % "0.23.17" % Optional
+      "org.http4s" %%% "http4s-client" % http4s_ce3_version,
+      "org.http4s" %%% "http4s-ember-client" % http4s_ce3_version % Optional
     ),
     evictionErrorLevel := Level.Info
   )
-  .jvmPlatform(scalaVersions = scala2And3)
+  .jvmPlatform(
+    scalaVersions = scala2And3,
+    settings = commonJvmSettings ++ Seq(
+      libraryDependencies ++= Seq(
+        "org.http4s" %% "http4s-blaze-client" % "0.23.17" % Optional
+      )
+    )
+  )
+  .nativePlatform(
+    scalaVersions = scala2And3,
+    settings = commonNativeSettings ++ testServerSettings
+  )
   .dependsOn(cats % compileAndTest, core % compileAndTest, fs2 % compileAndTest)
 
 //-- finagle backend
@@ -672,7 +705,7 @@ lazy val armeriaBackend = (projectMatrix in file("armeria-backend"))
   .settings(testServerSettings)
   .settings(
     name := "armeria-backend",
-    libraryDependencies += "com.linecorp.armeria" % "armeria" % "1.33.4"
+    libraryDependencies += "com.linecorp.armeria" % "armeria" % "1.39.0"
   )
   .jvmPlatform(scalaVersions = scala2And3)
   .dependsOn(core % compileAndTest)
@@ -788,7 +821,7 @@ lazy val zioJson = (projectMatrix in file("json/zio-json"))
   .settings(
     name := "zio-json",
     libraryDependencies ++= Seq(
-      "dev.zio" %%% "zio-json" % "0.7.44",
+      "dev.zio" %%% "zio-json" % "0.9.0",
       "com.softwaremill.sttp.shared" %%% "zio" % sttpSharedVersion
     ),
     scalaTest
@@ -914,7 +947,7 @@ lazy val prometheusBackend = (projectMatrix in file("observability/prometheus-ba
   .settings(
     name := "prometheus-backend",
     libraryDependencies ++= Seq(
-      "io.prometheus" % "prometheus-metrics-core" % "1.4.3"
+      "io.prometheus" % "prometheus-metrics-core" % "1.5.1"
     ),
     scalaTest
   )
@@ -940,7 +973,7 @@ lazy val openTelemetryTracingZioBackend = (projectMatrix in file("observability/
   .settings(
     name := "opentelemetry-tracing-zio-backend",
     libraryDependencies ++= Seq(
-      "dev.zio" %% "zio-opentelemetry" % "3.1.10",
+      "dev.zio" %% "zio-opentelemetry" % "3.1.17",
       "io.opentelemetry.semconv" % "opentelemetry-semconv" % openTelemetrySemconvVersion,
       "io.opentelemetry" % "opentelemetry-api" % openTelemetryVersion,
       "io.opentelemetry" % "opentelemetry-sdk-testing" % openTelemetryVersion % Test
@@ -956,12 +989,14 @@ lazy val otel4sMetricsBackend = (projectMatrix in file("observability/otel4s-met
     libraryDependencies ++= Seq(
       "org.typelevel" %%% "otel4s-core-metrics" % otel4s,
       "org.typelevel" %%% "otel4s-semconv" % otel4s,
+      "org.typelevel" %%% "otel4s-semconv-experimental" % otel4s % Test,
       "org.typelevel" %%% "otel4s-semconv-metrics-experimental" % otel4s % Test,
-      "org.typelevel" %%% "otel4s-sdk-metrics-testkit" % otel4s % Test
+      "org.typelevel" %%% "otel4s-sdk-metrics-testkit" % otel4sSdk % Test
     )
   )
   .jvmPlatform(scalaVersions = scala2_13And3, settings = commonJvmSettings)
   .jsPlatform(scalaVersions = scala2_13And3, settings = commonJsSettings)
+  .nativePlatform(scalaVersions = scala2_13And3, settings = commonNativeSettings)
   .dependsOn(cats % Test)
   .dependsOn(core % compileAndTest)
 
@@ -971,12 +1006,13 @@ lazy val otel4sTracingBackend = (projectMatrix in file("observability/otel4s-tra
     libraryDependencies ++= Seq(
       "org.typelevel" %%% "otel4s-core-trace" % otel4s,
       "org.typelevel" %%% "otel4s-semconv" % otel4s,
-      "org.typelevel" %%% "otel4s-sdk-trace-testkit" % otel4s % Test,
+      "org.typelevel" %%% "otel4s-sdk-trace-testkit" % otel4sSdk % Test,
       "org.typelevel" %%% "cats-effect-testkit" % catsEffect_3_version % Test
     )
   )
   .jvmPlatform(scalaVersions = scala2_13And3, settings = commonJvmSettings)
   .jsPlatform(scalaVersions = scala2_13And3, settings = commonJsSettings)
+  .nativePlatform(scalaVersions = scala2_13And3, settings = commonNativeSettings)
   .dependsOn(cats % Test)
   .dependsOn(core % compileAndTest)
 
@@ -1096,7 +1132,7 @@ lazy val docs: ProjectMatrix = (projectMatrix in file("generated-docs")) // impo
       "org.json4s" %% "json4s-native" % json4sVersion,
       "io.circe" %% "circe-generic" % circeVersion,
       "com.github.plokhotnyuk.jsoniter-scala" %% "jsoniter-scala-macros" % jsoniterVersion,
-      "commons-io" % "commons-io" % "2.21.0",
+      "commons-io" % "commons-io" % "2.22.0",
       "io.jaegertracing" % "jaeger-client" % jaegerClientVersion,
       "io.opentracing.brave" % "brave-opentracing" % braveOpentracingVersion,
       "io.zipkin.reporter2" % "zipkin-sender-okhttp3" % zipkinSenderOkHttpVersion,

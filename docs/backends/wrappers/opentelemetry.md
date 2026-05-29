@@ -157,7 +157,49 @@ The following metrics are available by default:
 - [http.client.response.body.size](https://opentelemetry.io/docs/specs/semconv/http/http-metrics/#metric-httpclientresponsebodysize)
 - [http.client.active_requests](https://opentelemetry.io/docs/specs/semconv/http/http-metrics/#metric-httpclientactive_requests)
 
-You can customize histogram buckets by providing a custom `Otel4sMetricsConfig`.
+You can customize histogram buckets and URL template behavior by providing a custom `Otel4sMetricsConfig`.
+
+### URL template
+
+The `url.template` [experimental attribute](https://opentelemetry.io/docs/specs/semconv/attributes-registry/url/) is not added by default, as URL structures vary widely across APIs. To enable it, provide a `GenericRequest[_, _] => Option[String]` function via the `urlTemplate` config field. Because the function receives the full request, you can use request attributes to pass the template from the call site.
+
+A built-in implementation is available in `UrlTemplates.replaceIds`: it replaces UUIDs and numeric IDs in path segments and query values with `{id}`, and always returns `Some` (the URL unchanged when no IDs are found).
+
+```scala mdoc:compile-only
+import cats.effect.*
+import org.typelevel.otel4s.metrics.MeterProvider
+import sttp.client4.*
+import sttp.client4.opentelemetry.otel4s.*
+
+implicit val meterProvider: MeterProvider[IO] = ???
+val catsBackend: Backend[IO] = ???
+
+// Use the built-in implementation (replaces UUIDs and numeric IDs with {id}):
+Otel4sMetricsBackend(
+  catsBackend,
+  Otel4sMetricsConfig(
+    requestDurationHistogramBuckets = Otel4sMetricsConfig.DefaultDurationBuckets,
+    requestBodySizeHistogramBuckets = None,
+    responseBodySizeHistogramBuckets = None,
+    urlTemplate = UrlTemplates.replaceIds
+  )
+)
+
+// Or provide a custom function based on request attributes:
+import sttp.attributes.AttributeKey
+val UrlTemplateKey = new AttributeKey[String]("UrlTemplateKey")
+Otel4sMetricsBackend(
+  catsBackend,
+  Otel4sMetricsConfig(
+    requestDurationHistogramBuckets = Otel4sMetricsConfig.DefaultDurationBuckets,
+    requestBodySizeHistogramBuckets = None,
+    responseBodySizeHistogramBuckets = None,
+    urlTemplate = req => req.attribute(UrlTemplateKey)
+  )
+)
+// Then, at the call site:
+// basicRequest.get(uri"...").attribute(UrlTemplateKey, "/users/{id}")
+```
 
 ## Tracing (cats-effect, otel4s)
 
