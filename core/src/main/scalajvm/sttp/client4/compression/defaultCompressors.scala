@@ -4,6 +4,7 @@ import sttp.client4._
 import sttp.model.Encodings
 
 import Compressor._
+import sttp.client4.internal.byteBufferToArray
 import java.util.zip.Deflater
 import java.util.zip.DeflaterInputStream
 import java.io.ByteArrayOutputStream

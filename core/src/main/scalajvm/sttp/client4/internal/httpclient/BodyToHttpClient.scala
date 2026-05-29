@@ -5,6 +5,7 @@ import sttp.client4._
 import sttp.client4.compression.Compressor
 import sttp.client4.httpclient.BodyProgressCallback
 import sttp.client4.internal.SttpToJavaConverters.toJavaSupplier
+import sttp.client4.internal.byteBufferToArray
 import sttp.model.HeaderNames
 import sttp.monad.MonadError
 import sttp.monad.syntax._
@@ -31,8 +32,7 @@ private[client4] trait BodyToHttpClient[F[_], S, R] {
       case StringBody(b, _, _)  => BodyPublishers.ofString(b).unit
       case ByteArrayBody(b, _)  => BodyPublishers.ofByteArray(b).unit
       case ByteBufferBody(b, _) =>
-        if (b.hasArray) BodyPublishers.ofByteArray(b.array(), 0, b.limit()).unit
-        else { val a = new Array[Byte](b.remaining()); b.get(a); BodyPublishers.ofByteArray(a).unit }
+        BodyPublishers.ofByteArray(byteBufferToArray(b)).unit
       case InputStreamBody(b, _) => BodyPublishers.ofInputStream(toJavaSupplier(() => b)).unit
       case FileBody(f, _)        => BodyPublishers.ofFile(f.toFile.toPath).unit
       case StreamBody(s)         => streamToPublisher(s.asInstanceOf[streams.BinaryStream])
