@@ -77,7 +77,10 @@ class OpenTelemetryTracingZioBackendTest extends AnyFlatSpec with Matchers with 
 
     val spanId = spans.head.getSpanId
     val traceId = spans.head.getTraceId
-    recordedRequests(0).header("traceparent") shouldBe Some(s"00-${traceId}-${spanId}-01")
+    // trace-flags are read from the span rather than hardcoded: since the W3C trace-context level 2 support added in
+    // OpenTelemetry 1.62, the "random trace id" flag (0x02) is set in addition to "sampled" (0x01), yielding "03"
+    val traceFlags = spans.head.getSpanContext.getTraceFlags.asHex
+    recordedRequests(0).header("traceparent") shouldBe Some(s"00-${traceId}-${spanId}-${traceFlags}")
   }
 
   it should "set span status in case of error" in {
