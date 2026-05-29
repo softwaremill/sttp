@@ -64,8 +64,10 @@ abstract class FollowRedirectsBackend[F[_], P] private (
     */
   private def updateStoredCookies[T](request: GenericRequest[T, R], response: ResponseMetadata): GenericRequest[T, R] =
     request.attribute(CookieStorage.attributeKey) match {
-      case Some(storage) => request.attribute(CookieStorage.attributeKey, storage.set(request.uri, response.unsafeCookies))
-      case None          => request
+      case Some(storage) =>
+        val updated = storage.setFromSetCookieHeaders(request.uri, response.headers(HeaderNames.SetCookie))
+        request.attribute(CookieStorage.attributeKey, updated)
+      case None => request
     }
 
   private def followRedirect[T](

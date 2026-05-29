@@ -41,6 +41,14 @@ final class CookieStorage private (private val entries: Map[CookieStorage.Key, C
     new CookieStorage(updated)
   }
 
+  /** As [[set]], but parses the raw `Set-Cookie` header values received from `setBy`. Used instead of
+    * [[sttp.model.headers.CookieWithMeta.parse]] to remain usable on Scala Native, where the date parsing that
+    * full cookie parsing depends on is unavailable; only the attributes relevant for storage (`Domain`, `Path`,
+    * `Secure`, `Max-Age`) are read, `Expires` is ignored.
+    */
+  def setFromSetCookieHeaders(setBy: Uri, setCookieHeaders: Iterable[String]): CookieStorage =
+    set(setBy, setCookieHeaders.flatMap(CookieStorage.parseSetCookie))
+
   /** The cookies that should be sent with a request to `uri`, according to domain-matching, path-matching and the
     * `Secure` attribute (secure cookies are only sent over `https`).
     */
@@ -90,4 +98,32 @@ object CookieStorage {
     requestPath == cookiePath ||
       (requestPath.startsWith(cookiePath) &&
         (cookiePath.endsWith("/") || requestPath.charAt(cookiePath.length) == '/'))
+
+  // A minimal `Set-Cookie` parser reading only the attributes used for storage. Unlike CookieWithMeta.parse it does
+  // not parse `Expires` dates, so it doesn't pull in java.time formatting (unavailable on Scala Native).
+  private def parseSetCookie(headerValue: String): Option[CookieWithMeta] =
+    headerValue.split(";").iterator.map(_.trim).filter(_.nonEmpty).toList match {
+      case nameValue :: directives =>
+        val eq = nameValue.indexOf('=')
+        val name = if (eq < 0) nameValue else nameValue.substring(0, eq).trim
+        if (name.isEmpty) None
+        else {
+          val value = if (eq < 0) "" else nameValue.substring(eq + 1).trim
+          val attrs = directives.map { d =>
+            val i = d.indexOf('=')
+            if (i < 0) (d.toLowerCase, "") else (d.substring(0, i).trim.toLowerCase, d.substring(i + 1).trim)
+          }.toMap
+          Some(
+            CookieWithMeta(
+              name = name,
+              value = value,
+              domain = attrs.get("domain").filter(_.nonEmpty),
+              path = attrs.get("path").filter(_.nonEmpty),
+              maxAge = attrs.get("max-age").flatMap(s => scala.util.Try(s.toLong).toOption),
+              secure = attrs.contains("secure")
+            )
+          )
+        }
+      case Nil => None
+    }
 }
