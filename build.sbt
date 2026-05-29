@@ -120,7 +120,7 @@ val testServerSettings = Seq(
 
 val circeVersion: String = "0.14.15"
 
-val jsoniterVersion = "2.38.9"
+val jsoniterVersion = "2.38.13"
 
 val play29JsonVersion = "2.10.8"
 
@@ -138,7 +138,7 @@ val akkaStreamVersion = "2.6.20"
 val akkaStreams = "com.typesafe.akka" %% "akka-stream" % akkaStreamVersion
 
 val pekkoHttp = "org.apache.pekko" %% "pekko-http" % "1.3.0"
-val pekkoStreamVersion = "1.5.0"
+val pekkoStreamVersion = "1.6.0"
 val pekkoStreams = "org.apache.pekko" %% "pekko-stream" % pekkoStreamVersion
 
 val scalaTest = libraryDependencies ++= Seq("freespec", "funsuite", "flatspec", "wordspec", "shouldmatchers").map(m =>
@@ -147,13 +147,13 @@ val scalaTest = libraryDependencies ++= Seq("freespec", "funsuite", "flatspec", 
 val scalaTestPlusScalaCheck = libraryDependencies += "org.scalatestplus" %% "scalacheck-1-18" % "3.2.19.0" % Test
 
 val zio1Version = "1.0.18"
-val zio2Version = "2.1.25"
+val zio2Version = "2.1.26"
 val zio1InteropRsVersion = "1.3.12"
 val zio2InteropRsVersion = "2.0.2"
 
 val oxVersion = "0.6.1"
 val sttpModelVersion = "1.7.17"
-val sttpSharedVersion = "1.5.0"
+val sttpSharedVersion = "1.5.2"
 
 val logback = "ch.qos.logback" % "logback-classic" % "1.5.14"
 
@@ -166,9 +166,9 @@ val http4s_ce3_version = "0.23.34"
 val osLibVersion = "0.11.4"
 val tethysVersion = "0.29.8"
 val openTelemetryVersion = "1.59.0"
-val openTelemetrySemconvVersion = "1.40.0"
-val otel4s = "1.0.0-RC1"
-val otel4sSdk = "0.19.0-RC1"
+val openTelemetrySemconvVersion = "1.41.1"
+val otel4s = "1.0.0"
+val otel4sSdk = "0.19.0"
 val slf4jVersion = "1.7.36"
 
 val compileAndTest = "compile->compile;test->test"
@@ -461,12 +461,22 @@ lazy val fs2 = (projectMatrix in file("effects/fs2"))
       libraryDependencies ++= Seq(
         "co.fs2" %%% "fs2-reactive-streams" % fs2_3_version,
         "co.fs2" %%% "fs2-io" % fs2_3_version
-      )
+      ),
+      Compile / unmanagedSourceDirectories += (ThisBuild / baseDirectory).value / "effects" / "fs2" / "src" / "main" / "scalajvmnative"
     )
   )
   .jsPlatform(
     scalaVersions = scala2And3,
     settings = commonJsSettings ++ commonJsBackendSettings ++ browserChromeTestSettings ++ testServerSettings
+  )
+  .nativePlatform(
+    scalaVersions = scala2And3,
+    settings = commonNativeSettings ++ testServerSettings ++ Seq(
+      libraryDependencies ++= Seq(
+        "co.fs2" %%% "fs2-io" % fs2_3_version
+      ),
+      Compile / unmanagedSourceDirectories += (ThisBuild / baseDirectory).value / "effects" / "fs2" / "src" / "main" / "scalajvmnative"
+    )
   )
 
 lazy val monix = (projectMatrix in file("effects/monix"))
@@ -658,13 +668,23 @@ lazy val http4sBackend = (projectMatrix in file("http4s-backend"))
   .settings(
     name := "http4s-backend",
     libraryDependencies ++= Seq(
-      "org.http4s" %% "http4s-client" % http4s_ce3_version,
-      "org.http4s" %% "http4s-ember-client" % "0.23.34" % Optional,
-      "org.http4s" %% "http4s-blaze-client" % "0.23.17" % Optional
+      "org.http4s" %%% "http4s-client" % http4s_ce3_version,
+      "org.http4s" %%% "http4s-ember-client" % http4s_ce3_version % Optional
     ),
     evictionErrorLevel := Level.Info
   )
-  .jvmPlatform(scalaVersions = scala2And3)
+  .jvmPlatform(
+    scalaVersions = scala2And3,
+    settings = commonJvmSettings ++ Seq(
+      libraryDependencies ++= Seq(
+        "org.http4s" %% "http4s-blaze-client" % "0.23.17" % Optional
+      )
+    )
+  )
+  .nativePlatform(
+    scalaVersions = scala2And3,
+    settings = commonNativeSettings ++ testServerSettings
+  )
   .dependsOn(cats % compileAndTest, core % compileAndTest, fs2 % compileAndTest)
 
 //-- finagle backend
@@ -685,7 +705,7 @@ lazy val armeriaBackend = (projectMatrix in file("armeria-backend"))
   .settings(testServerSettings)
   .settings(
     name := "armeria-backend",
-    libraryDependencies += "com.linecorp.armeria" % "armeria" % "1.38.0"
+    libraryDependencies += "com.linecorp.armeria" % "armeria" % "1.39.0"
   )
   .jvmPlatform(scalaVersions = scala2And3)
   .dependsOn(core % compileAndTest)
@@ -953,7 +973,7 @@ lazy val openTelemetryTracingZioBackend = (projectMatrix in file("observability/
   .settings(
     name := "opentelemetry-tracing-zio-backend",
     libraryDependencies ++= Seq(
-      "dev.zio" %% "zio-opentelemetry" % "3.1.16",
+      "dev.zio" %% "zio-opentelemetry" % "3.1.17",
       "io.opentelemetry.semconv" % "opentelemetry-semconv" % openTelemetrySemconvVersion,
       "io.opentelemetry" % "opentelemetry-api" % openTelemetryVersion,
       "io.opentelemetry" % "opentelemetry-sdk-testing" % openTelemetryVersion % Test

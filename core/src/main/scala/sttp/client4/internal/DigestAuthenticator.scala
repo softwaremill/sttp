@@ -165,7 +165,7 @@ private[client4] class DigestAuthenticator private (
             brb match {
               case StringBody(s, e, _)   => s.getBytes(Charset.forName(e))
               case ByteArrayBody(b, _)   => b
-              case ByteBufferBody(b, _)  => b.array()
+              case ByteBufferBody(b, _)  => byteBufferToArray(b)
               case InputStreamBody(b, _) => toByteArray(b)
               case _: FileBody => throw new IllegalStateException("Qop auth-int cannot be used with a file body")
             }
