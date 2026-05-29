@@ -108,7 +108,7 @@ private[client4] class DigestAuthenticator private (
   // advertised, the first one is returned and the downstream match fails fast with `IllegalArgumentException`.
   private def selectQop(advertised: Option[String]): Option[String] =
     advertised.map { raw =>
-      val tokens = raw.split(",").iterator.map(_.trim).toList
+      val tokens = raw.split(",").map(_.trim).toList
       tokens
         .find(_ == QualityOfProtectionAuth)
         .orElse(tokens.find(_ == QualityOfProtectionAuthInt))
