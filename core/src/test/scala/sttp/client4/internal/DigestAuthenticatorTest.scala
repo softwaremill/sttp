@@ -37,6 +37,18 @@ class DigestAuthenticatorTest extends AnyFreeSpec with Matchers with OptionValue
     header.value.value should fullyMatch regex """Digest username="admin", realm="myrealm", uri="/", nonce="BBBBBB", qop=auth, response="[0-9a-f]+", cnonce="[0-9a-f]+", nc=000000\d\d, algorithm=MD5"""
   }
 
+  "tolerate whitespace around commas in the advertised qop list" in {
+    val request = basicRequest
+      .get(uri"http://google.com")
+      .auth
+      .digest("admin", "password")
+
+    val r =
+      responseWithAuthenticateHeader("""Digest realm="myrealm", nonce="BBBBBB", algorithm=MD5, qop="auth-int , auth"""")
+    val header = DigestAuthenticator(DigestAuthData("admin", "password")).authenticate(request, r)
+    header.value.value should fullyMatch regex """Digest username="admin", realm="myrealm", uri="/", nonce="BBBBBB", qop=auth, response="[0-9a-f]+", cnonce="[0-9a-f]+", nc=000000\d\d, algorithm=MD5"""
+  }
+
   "throw exception when wwAuth header is invalid (missing nonce)" in {
     val request = basicRequest
       .get(uri"http://google.com")
