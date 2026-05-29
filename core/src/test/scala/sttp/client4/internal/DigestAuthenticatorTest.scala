@@ -5,6 +5,7 @@ import sttp.client4.internal.DigestAuthenticator.DigestAuthData
 import sttp.client4._
 import sttp.model.{Header, HeaderNames, StatusCode}
 
+import java.nio.ByteBuffer
 import scala.util.{Failure, Try}
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.should.Matchers
@@ -153,6 +154,40 @@ class DigestAuthenticatorTest extends AnyFreeSpec with Matchers with OptionValue
 
     val header = DigestAuthenticator(DigestAuthData("admin", "password")).authenticate(request, r)
     header.value.value should fullyMatch regex """Digest username="admin", realm="myrealm", uri="/", nonce="BBBBBB", qop=auth, response="[0-9a-f]+", cnonce="[0-9a-f]+", nc=000000\d\d, algorithm=MD5"""
+  }
+
+  "auth-int" - {
+    val payload = "hello".getBytes("UTF-8")
+    val fixedCnonce = () => "0123456789abcdef"
+    val authIntChallenge = """Digest realm="myrealm", nonce="BBBBBB", algorithm=MD5, qop="auth-int""""
+
+    def authHeaderValueFor(setBody: Request[Either[String, String]] => Request[Either[String, String]]): String = {
+      val baseRequest = basicRequest.get(uri"http://google.com/").auth.digest("admin", "password")
+      val r = responseWithAuthenticateHeader(authIntChallenge)
+      DigestAuthenticator(DigestAuthData("admin", "password"), fixedCnonce)
+        .authenticate(setBody(baseRequest), r)
+        .value
+        .value
+    }
+
+    "compute the digest for a direct ByteBufferBody (previously threw UnsupportedOperationException)" in {
+      val direct = ByteBuffer.allocateDirect(payload.length)
+      direct.put(payload)
+      direct.flip()
+      val viaDirectBuffer = authHeaderValueFor(_.body(direct))
+      val viaArray = authHeaderValueFor(_.body(payload))
+      viaDirectBuffer shouldBe viaArray
+    }
+
+    "compute the digest over the partial buffer's remaining slice, not the full backing array" in {
+      val backing = ("XX".getBytes ++ payload ++ "YY".getBytes)
+      val partial = ByteBuffer.wrap(backing)
+      partial.position(2)
+      partial.limit(2 + payload.length)
+      val viaPartialBuffer = authHeaderValueFor(_.body(partial))
+      val viaArray = authHeaderValueFor(_.body(payload))
+      viaPartialBuffer shouldBe viaArray
+    }
   }
 
   "proxy" - {

@@ -58,13 +58,27 @@ private[client4] object ToCurlConverter {
   def handleMultipartBody(parts: Seq[Part[GenericRequestBody[_]]]): String =
     parts
       .map { p =>
-        p.body match {
-          case StringBody(s, _, _) => s"--form '${p.name}=$s'"
-          case FileBody(f, _)      => s"--form '${p.name}=@${f.name}'"
-          case _                   => s"--data-binary <PLACEHOLDER>"
+        val formValue = p.body match {
+          case StringBody(s, _, _) => s"${p.name}=${escapeSingleQuotes(s)}"
+          case FileBody(f, _)      => s"${p.name}=@${escapeSingleQuotes(f.name)}"
+          case _                   => s"${p.name}=<PLACEHOLDER>"
         }
+        s"--form '$formValue${partMetadata(p)}'"
       }
       .mkString(newline)
+
+  private def partMetadata(p: Part[GenericRequestBody[_]]): String = {
+    val fileName = p.fileName.fold("")(n => s";filename=${escapeSingleQuotes(n)}")
+    val contentType = p.contentType.fold("")(ct => s";type=${escapeSingleQuotes(ct)}")
+    // Content-Type is already emitted via ;type= so it is filtered out here to avoid duplication.
+    val extraHeaders = p.headers
+      .filterNot(_.is(HeaderNames.ContentType))
+      .map(h => s""";headers="${escapeSingleQuotes(s"${h.name}: ${h.value}")}"""")
+      .mkString
+    fileName + contentType + extraHeaders
+  }
+
+  private def escapeSingleQuotes(text: String): String = text.replace("'", "\\'")
 
   private def extractOptions(r: GenericRequest[_, _]): String =
     if (r.options.followRedirects) {

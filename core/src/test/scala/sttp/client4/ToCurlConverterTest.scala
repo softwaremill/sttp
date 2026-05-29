@@ -106,7 +106,45 @@ class ToCurlConverterTest extends AnyFlatSpec with Matchers with ToCurlConverter
 
   it should "render multipart form data if content is a plain string" in {
     basicRequest.multipartBody(multipart("k1", "v1"), multipart("k2", "v2")).post(localhost).toCurl should include(
-      "--form 'k1=v1' \\\n  --form 'k2=v2'"
+      "--form 'k1=v1;type=text/plain; charset=utf-8' \\\n  --form 'k2=v2;type=text/plain; charset=utf-8'"
+    )
+  }
+
+  it should "render multipart string part with filename and content type metadata" in {
+    basicRequest
+      .multipartBody(multipart("file", "file content").fileName("document.pdf").contentType("application/pdf"))
+      .post(localhost)
+      .toCurl should include(
+      "--form 'file=file content;filename=document.pdf;type=application/pdf'"
+    )
+  }
+
+  it should "escape single quotes in multipart string value, filename, content type and headers" in {
+    basicRequest
+      .multipartBody(
+        multipart("k", "v'1").fileName("a'b.txt").contentType("text/p'lain").header("X-T'ag", "v'al")
+      )
+      .post(localhost)
+      .toCurl should include(
+      """--form 'k=v\'1;filename=a\'b.txt;type=text/p\'lain;headers="X-T\'ag: v\'al"'"""
+    )
+  }
+
+  it should "render multipart part headers other than Content-Type via the ;headers= extension" in {
+    basicRequest
+      .multipartBody(multipart("k1", "v1").header("X-Custom", "abc").header("X-Other", "xyz"))
+      .post(localhost)
+      .toCurl should include(
+      """--form 'k1=v1;type=text/plain; charset=utf-8;headers="X-Custom: abc";headers="X-Other: xyz"'"""
+    )
+  }
+
+  it should "render multipart binary part with form framing and metadata" in {
+    basicRequest
+      .multipartBody(multipart("payload", "ignored".getBytes("UTF-8")).fileName("blob.bin"))
+      .post(localhost)
+      .toCurl should include(
+      "--form 'payload=<PLACEHOLDER>;filename=blob.bin;type=application/octet-stream'"
     )
   }
 }

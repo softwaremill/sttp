@@ -7,6 +7,8 @@ import scala.scalanative.meta.LinktimeInfo.isWindows
 
 private[curl] trait Curl {}
 
+private[curl] trait CurlM {}
+
 private[curl] trait Mime {}
 
 private[curl] trait MimePart {}
@@ -87,4 +89,33 @@ private[curl] trait CCurl {
 
   @name("curl_slist_free_all")
   def slistFree(list: Ptr[CurlSlist]): Unit = extern
+
+  // Multi interface — direct bindings (fixed signatures, no varargs)
+  @name("curl_multi_init")
+  def multiInit: Ptr[CurlM] = extern
+
+  @name("curl_multi_add_handle")
+  def multiAddHandle(multi: Ptr[CurlM], easy: Ptr[Curl]): CInt = extern
+
+  @name("curl_multi_remove_handle")
+  def multiRemoveHandle(multi: Ptr[CurlM], easy: Ptr[Curl]): CInt = extern
+
+  @name("curl_multi_perform")
+  def multiPerform(multi: Ptr[CurlM], running_handles: Ptr[CInt]): CInt = extern
+
+  @name("curl_multi_poll")
+  def multiPoll(
+      multi: Ptr[CurlM],
+      extra_fds: Ptr[Byte],
+      extra_nfds: CUnsignedInt,
+      timeout_ms: CInt,
+      numfds: Ptr[CInt]
+  ): CInt = extern
+
+  @name("curl_multi_cleanup")
+  def multiCleanup(multi: Ptr[CurlM]): CInt = extern
+
+  // Via C wrapper (union extraction) — see ffi.c
+  @name("sttp_curl_multi_info_read_result")
+  def multiInfoReadResult(multi: Ptr[CurlM], easy_out: Ptr[Ptr[Curl]]): CInt = extern
 }

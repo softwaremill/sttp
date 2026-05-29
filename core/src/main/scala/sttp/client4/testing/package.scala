@@ -1,6 +1,6 @@
 package sttp.client4
 
-import sttp.client4.internal.toByteArray
+import sttp.client4.internal.{byteBufferToArray, toByteArray}
 
 package object testing {
   implicit class RichTestingRequest[T, R](r: GenericRequest[T, R]) {
@@ -13,7 +13,7 @@ package object testing {
         case NoBody                => ""
         case StringBody(s, _, _)   => s
         case ByteArrayBody(b, _)   => new String(b)
-        case ByteBufferBody(b, _)  => new String(b.array())
+        case ByteBufferBody(b, _)  => new String(byteBufferToArray(b))
         case InputStreamBody(b, _) => new String(toByteArray(b))
         case FileBody(f, _)        => f.readAsString()
         case StreamBody(_)         =>
@@ -30,7 +30,7 @@ package object testing {
         case NoBody                     => Array.emptyByteArray
         case StringBody(s, encoding, _) => s.getBytes(encoding)
         case ByteArrayBody(b, _)        => b
-        case ByteBufferBody(b, _)       => b.array()
+        case ByteBufferBody(b, _)       => byteBufferToArray(b)
         case InputStreamBody(b, _)      => toByteArray(b)
         case FileBody(f, _)             => f.readAsByteArray()
         case StreamBody(_)              =>
