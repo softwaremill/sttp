@@ -51,3 +51,20 @@ val cookiesFromResponse = response.unsafeCookies
 
 basicRequest.cookies(cookiesFromResponse)
 ```
+
+## Cookies across redirects
+
+The `Cookie` header is a sensitive header, so by default it is stripped when following a redirect; cookies set via `Set-Cookie` during a redirect chain are not carried over to subsequent requests either. To opt into a cookie jar that does this, attach a `CookieStorage` to the request. The `FollowRedirectsBackend` (applied to all backends by default) then, for each request in a redirect chain, sends the stored cookies that domain/path-match the request and collects the response's `Set-Cookie` cookies into the storage:
+
+```scala mdoc:compile-only
+import sttp.client4.*
+import sttp.client4.wrappers.CookieStorage
+
+val backend = DefaultSyncBackend()
+basicRequest
+  .cookieStorage(CookieStorage.empty)
+  .get(uri"https://endpoint.com")
+  .send(backend)
+```
+
+Matching follows a subset of [RFC 6265](https://www.rfc-editor.org/rfc/rfc6265): domain, path and the `Secure` attribute. Time-based expiry is not tracked, but a `Set-Cookie` with `Max-Age` <= 0 removes a matching cookie.

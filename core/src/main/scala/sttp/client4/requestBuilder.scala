@@ -4,6 +4,7 @@ import sttp.client4.internal.SttpFile
 import sttp.client4.internal.Utf8
 import sttp.client4.internal.contentTypeWithCharset
 import sttp.client4.logging.LoggingOptions
+import sttp.client4.wrappers.CookieStorage
 import sttp.client4.wrappers.DigestAuthenticationBackend
 import sttp.model.HasHeaders
 import sttp.model.Header
@@ -160,6 +161,14 @@ trait PartialRequestBuilder[+PR <: PartialRequestBuilder[PR, R], +R]
     nvs.map(p => p._1 + "=" + p._2).mkString("; "),
     onDuplicate = DuplicateHeaderBehavior.Combine
   )
+
+  /** Attaches a [[sttp.client4.wrappers.CookieStorage CookieStorage]] to this request. When following redirects (see
+    * [[sttp.client4.wrappers.FollowRedirectsBackend]], applied to all backends by default), cookies set via
+    * `Set-Cookie` in a redirect chain are then collected into the storage and sent with subsequent requests that they
+    * domain/path-match. Without a storage, cookies are not carried across redirects (the `Cookie` header is sensitive
+    * and stripped). Start with [[sttp.client4.wrappers.CookieStorage.empty]].
+    */
+  def cookieStorage(storage: CookieStorage): PR = attribute(CookieStorage.attributeKey, storage)
 
   private[client4] def hasContentType: Boolean = headers.exists(_.is(HeaderNames.ContentType))
   private[client4] def setContentTypeIfMissing(mt: MediaType): PR =

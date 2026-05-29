@@ -4,9 +4,10 @@ import org.scalatest.EitherValues
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import sttp.client4.testing.{BackendStub, ResponseStub}
-import sttp.client4.wrappers.{FollowRedirectsBackend, FollowRedirectsConfig}
+import sttp.client4.wrappers.{CookieStorage, FollowRedirectsBackend, FollowRedirectsConfig}
+import sttp.model.headers.CookieWithMeta
 import sttp.model.internal.Rfc3986
-import sttp.model.{Header, StatusCode, Uri}
+import sttp.model.{Header, HeaderNames, StatusCode, Uri}
 
 class FollowRedirectsBackendTest extends AnyFunSuite with Matchers with EitherValues {
   val testData = List(
@@ -51,6 +52,47 @@ class FollowRedirectsBackendTest extends AnyFunSuite with Matchers with EitherVa
 
     val result = basicRequest.get(url0).send(redirectsBackend)
     result.body.value shouldBe "All good!"
+  }
+
+  // a redirect chain example.com/0 -> /1 -> ... -> /n, where each hop sets a cookie `c<id>`; records the cookies
+  // (name=value) seen in the `Cookie` header of each request, by target id
+  private def redirectChainSettingCookies(n: Int): (SyncBackend, collection.Map[Int, Set[String]]) = {
+    def url(id: Int) = uri"https://example.com/$id"
+    val seen = scala.collection.mutable.Map[Int, Set[String]]()
+    val stub = BackendStub.synchronous.whenRequestMatchesPartial {
+      case r if r.uri.host.contains("example.com") =>
+        val id = r.uri.path.last.toInt
+        seen(id) = r.header(HeaderNames.Cookie).map(_.split("; ").toSet).getOrElse(Set.empty)
+        if (id < n)
+          ResponseStub.adjust(
+            "",
+            StatusCode.Found,
+            Vector(Header.location(url(id + 1)), Header.setCookie(CookieWithMeta(s"c$id", id.toString)))
+          )
+        else ResponseStub.adjust("done", StatusCode.Ok)
+    }
+    (FollowRedirectsBackend(stub), seen)
+  }
+
+  test("should send cookies set during a redirect chain to subsequent requests when a cookie storage is attached") {
+    val (backend, seen) = redirectChainSettingCookies(3)
+
+    val result = basicRequest.get(uri"https://example.com/0").cookieStorage(CookieStorage.empty).send(backend)
+
+    result.code shouldBe StatusCode.Ok
+    seen(0) shouldBe empty // nothing set yet
+    seen(1) shouldBe Set("c0=0")
+    seen(2) shouldBe Set("c0=0", "c1=1")
+    seen(3) shouldBe Set("c0=0", "c1=1", "c2=2")
+  }
+
+  test("should not carry cookies across redirects when no cookie storage is attached") {
+    val (backend, seen) = redirectChainSettingCookies(3)
+
+    val result = basicRequest.get(uri"https://example.com/0").send(backend)
+
+    result.code shouldBe StatusCode.Ok
+    seen.values.foreach(_ shouldBe empty)
   }
 
 }
