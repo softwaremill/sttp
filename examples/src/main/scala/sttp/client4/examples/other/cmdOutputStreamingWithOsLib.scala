@@ -8,10 +8,9 @@ package sttp.client4.examples.other
 import sttp.client4.*
 import os.*
 
-private val backend: SyncBackend = DefaultSyncBackend()
-private val path: os.Path = os.Path("/tmp/example-file.txt")
-
 @main def cmdOutputStreamingWithOsLib(): Unit = {
+  val backend: SyncBackend = DefaultSyncBackend()
+  val path: os.Path = os.Path("/tmp/example-file.txt")
   val _ = os.remove(path)
   os.write(path, "CONTENT OF THE SIMPLE FILE USED IN THIS EXAMPLE")
   val process = os.proc("cat", path.toString).spawn()
