@@ -1,6 +1,6 @@
 // {cat=WebSocket; effects=ZIO; backend=HttpClient}: Connect to & interact with a WebSocket
 
-//> using dep com.softwaremill.sttp.client4::zio:4.0.24
+//> using dep com.softwaremill.sttp.client4::zio:4.0.25
 
 package sttp.client4.examples.ws
 

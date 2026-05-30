@@ -1,6 +1,6 @@
 // {cat=Testing}: Create a backend stub which simulates interactions using multiple query parameters
 
-//> using dep com.softwaremill.sttp.client4::core:4.0.24
+//> using dep com.softwaremill.sttp.client4::core:4.0.25
 
 package sttp.client4.examples.testing
 
