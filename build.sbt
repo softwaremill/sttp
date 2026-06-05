@@ -949,7 +949,7 @@ lazy val prometheusBackend = (projectMatrix in file("observability/prometheus-ba
   .settings(
     name := "prometheus-backend",
     libraryDependencies ++= Seq(
-      "io.prometheus" % "prometheus-metrics-core" % "1.6.1"
+      "io.prometheus" % "prometheus-metrics-core" % "1.7.0"
     ),
     scalaTest
   )
