@@ -18,16 +18,16 @@ import sttp.model.Uri
   * Cookies are represented as plain name/value pairs rather than [[sttp.model.headers.CookieWithMeta]]. That type is
   * available on all platforms, but its `Set-Cookie` rendering and parsing reach `java.time` date formatting (for
   * `Expires`, via `ZoneId`/`DateTimeFormatter`), a subset of `java.time` not supported on Scala Native; referencing it
-  * from this shared code pulls those symbols in and breaks the Native link. Time-based expiry (`Max-Age` > 0, `Expires`)
-  * is not tracked anyway, as the storage has no notion of the current time; a `Set-Cookie` with `Max-Age` <= 0 removes a
-  * matching cookie, so a server can still clear cookies within a chain.
+  * from this shared code pulls those symbols in and breaks the Native link. Time-based expiry (`Max-Age` > 0,
+  * `Expires`) is not tracked anyway, as the storage has no notion of the current time; a `Set-Cookie` with `Max-Age` <=
+  * 0 removes a matching cookie, so a server can still clear cookies within a chain.
   */
 final class CookieStorage private (private val entries: Map[CookieStorage.Key, CookieStorage.Stored]) {
   import CookieStorage._
 
-  /** A new storage updated with the cookies parsed from the `Set-Cookie` header values received from `setBy`.
-    * Following RFC 6265, a cookie whose `Domain` attribute does not domain-match `setBy` is rejected (to prevent a
-    * host setting cookies for unrelated domains). A cookie with `Max-Age` <= 0 removes a matching stored cookie.
+  /** A new storage updated with the cookies parsed from the `Set-Cookie` header values received from `setBy`. Following
+    * RFC 6265, a cookie whose `Domain` attribute does not domain-match `setBy` is rejected (to prevent a host setting
+    * cookies for unrelated domains). A cookie with `Max-Age` <= 0 removes a matching stored cookie.
     */
   def setFromSetCookieHeaders(setBy: Uri, setCookieHeaders: Iterable[String]): CookieStorage = {
     val host = hostOf(setBy)

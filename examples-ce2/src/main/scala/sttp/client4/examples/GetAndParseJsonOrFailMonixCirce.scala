@@ -24,7 +24,7 @@ object GetAndParseJsonOrFailMonixCirce extends App {
   HttpClientMonixBackend
     .resource()
     .use { backend =>
-      request.send(backend).map { response: Response[HttpBinResponse] =>
+      request.send(backend).map { (response: Response[HttpBinResponse]) =>
         println(s"Got response code: ${response.code}")
         println(response.body)
       }
