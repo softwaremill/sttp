@@ -2,6 +2,7 @@ package sttp.client4.impl.fs2
 
 import cats.effect.kernel.{Concurrent, Ref}
 import cats.effect.kernel.syntax.monadCancel._
+import cats.syntax.all._
 import fs2.{Pipe, Stream}
 import sttp.ws.{WebSocket, WebSocketClosed, WebSocketFrame}
 
@@ -23,38 +24,47 @@ object Fs2WebSockets {
   def handleThroughPipe[F[_]: Concurrent](
       ws: WebSocket[F]
   )(pipe: Pipe[F, WebSocketFrame.Data[_], WebSocketFrame]): F[Unit] =
-    Stream
-      .eval(Ref.of[F, Option[WebSocketFrame.Close]](None))
-      .flatMap { closeRef =>
-        Stream
-          .repeatEval(ws.receive()) // read incoming messages
-          .flatMap[F, Option[WebSocketFrame.Data[_]]] {
-            case WebSocketFrame.Close(code, reason) =>
-              Stream.eval(closeRef.set(Some(WebSocketFrame.Close(code, reason)))).as(None)
-            case WebSocketFrame.Ping(payload) =>
-              Stream.eval(ws.send(WebSocketFrame.Pong(payload))).drain
-            case WebSocketFrame.Pong(_) =>
-              Stream.empty // ignore
-            case in: WebSocketFrame.Data[_] => Stream.emit(Some(in))
-          }
-          .handleErrorWith {
-            case _: WebSocketClosed => Stream.eval(closeRef.set(None)).as(None)
-            case e                  => Stream.eval(Concurrent[F].raiseError(e))
-          }
-          .unNoneTerminate // terminate once we got a Close
-          .through(pipe)
-          // end with matching Close or user-provided Close or no Close at all
-          .append(Stream.eval(closeRef.get).unNone)
-          // a data frame following a non-final fragment is a continuation; a Close never is
-          .mapAccumulate(false) {
-            case (afterNonFinal, frame: WebSocketFrame.Data[_]) => (!frame.finalFragment, frame -> afterNonFinal)
-            case (afterNonFinal, frame)                         => (afterNonFinal, frame -> false)
-          }
-          .evalMap { case (_, (frame, isContinuation)) => ws.send(frame, isContinuation) } // send messages
-      }
-      .compile
-      .drain
-      .guarantee(ws.close())
+    Ref.of[F, Boolean](false).flatMap { closeSent =>
+      Stream
+        .eval(Ref.of[F, Option[WebSocketFrame.Close]](None))
+        .flatMap { closeRef =>
+          Stream
+            .repeatEval(ws.receive()) // read incoming messages
+            .flatMap[F, Option[WebSocketFrame.Data[_]]] {
+              case WebSocketFrame.Close(code, reason) =>
+                Stream.eval(closeRef.set(Some(WebSocketFrame.Close(code, reason)))).as(None)
+              case WebSocketFrame.Ping(payload) =>
+                Stream.eval(ws.send(WebSocketFrame.Pong(payload))).drain
+              case WebSocketFrame.Pong(_) =>
+                Stream.empty // ignore
+              case in: WebSocketFrame.Data[_] => Stream.emit(Some(in))
+            }
+            .handleErrorWith {
+              case _: WebSocketClosed => Stream.eval(closeRef.set(None)).as(None)
+              case e                  => Stream.eval(Concurrent[F].raiseError(e))
+            }
+            .unNoneTerminate // terminate once we got a Close
+            .through(pipe)
+            // end with matching Close or user-provided Close or no Close at all
+            .append(Stream.eval(closeRef.get).unNone)
+            // a data frame following a non-final fragment is a continuation; a Close never is
+            .mapAccumulate(false) {
+              case (afterNonFinal, frame: WebSocketFrame.Data[_]) => (!frame.finalFragment, frame -> afterNonFinal)
+              case (afterNonFinal, frame)                         => (afterNonFinal, frame -> false)
+            }
+            .evalMap { case (_, (frame, isContinuation)) =>
+              ws.send(frame, isContinuation) *> (frame match {
+                case _: WebSocketFrame.Close => closeSent.set(true)
+                case _                       => ().pure[F]
+              })
+            } // send messages
+        }
+        .compile
+        .drain
+        // the stream already emits a matching/user Close when appropriate; only fall back to a
+        // default Close if none was sent (e.g. the pipe finished without one)
+        .guarantee(closeSent.get.flatMap(sent => if (sent) ().pure[F] else ws.close()))
+    }
 
   def fromTextPipe[F[_]]: (String => WebSocketFrame) => fs2.Pipe[F, WebSocketFrame, WebSocketFrame] =
     f => fromTextPipeF(_.map(f))
