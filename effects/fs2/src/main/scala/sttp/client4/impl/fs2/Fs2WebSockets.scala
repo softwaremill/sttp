@@ -44,8 +44,13 @@ object Fs2WebSockets {
           .unNoneTerminate // terminate once we got a Close
           .through(pipe)
           // end with matching Close or user-provided Close or no Close at all
-          .append(Stream.eval(closeRef.get).unNone) // A Close isn't a continuation
-          .evalMap(ws.send(_)) // send messages
+          .append(Stream.eval(closeRef.get).unNone)
+          // a data frame following a non-final fragment is a continuation; a Close never is
+          .mapAccumulate(false) {
+            case (afterNonFinal, frame: WebSocketFrame.Data[_]) => (!frame.finalFragment, frame -> afterNonFinal)
+            case (afterNonFinal, frame)                         => (afterNonFinal, frame -> false)
+          }
+          .evalMap { case (_, (frame, isContinuation)) => ws.send(frame, isContinuation) } // send messages
       }
       .compile
       .drain
