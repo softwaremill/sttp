@@ -94,9 +94,9 @@ effect type      class name
 ================ ==========================================
 ```
 
-Fragmented messages can also be sent: when using fs2, if the pipe emits a frame with `finalFragment = false`, all
-subsequent frames, up to and including the next frame with `finalFragment = true`, are automatically sent as
-continuations of that message.
+Fragmented messages can also be sent: if the pipe emits a frame with `finalFragment = false`, all subsequent frames,
+up to and including the next frame with `finalFragment = true`, are automatically sent as continuations of that
+message.
 
 ## Using blocking, synchronous Ox streams
 
