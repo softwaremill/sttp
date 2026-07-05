@@ -9,25 +9,43 @@ object ZioWebSockets {
       ws: WebSocket[ZIO[R, Throwable, *]],
       pipe: ZStream[R, Throwable, WebSocketFrame.Data[_]] => ZStream[R, Throwable, WebSocketFrame]
   ): ZIO[R, Throwable, Unit] =
-    Ref.make(true).flatMap { open =>
-      val onClose = ZStream.fromZIO(open.set(false).map(_ => None: Option[WebSocketFrame.Data[_]]))
-      pipe(
-        ZStream
-          .repeatZIO(ws.receive())
-          .flatMap {
-            case WebSocketFrame.Close(_, _)   => onClose
-            case WebSocketFrame.Ping(payload) =>
-              ZStream.fromZIO(ws.send(WebSocketFrame.Pong(payload))).flatMap(_ => ZStream.empty)
-            case WebSocketFrame.Pong(_)     => ZStream.empty
-            case in: WebSocketFrame.Data[_] => ZStream(Some(in))
+    for {
+      closeRef <- Ref.make(Option.empty[WebSocketFrame.Close])
+      closeSent <- Ref.make(false)
+      // set the close to echo (a received Close) or none (the connection is already gone), then terminate the stream
+      onClose = (close: Option[WebSocketFrame.Close]) =>
+        ZStream.fromZIO(closeRef.set(close).as(Option.empty[WebSocketFrame.Data[_]]))
+      _ <-
+        pipe(
+          ZStream
+            .repeatZIO(ws.receive())
+            .flatMap {
+              case WebSocketFrame.Close(code, reason) => onClose(Some(WebSocketFrame.Close(code, reason)))
+              case WebSocketFrame.Ping(payload)       =>
+                ZStream.fromZIO(ws.send(WebSocketFrame.Pong(payload))).flatMap(_ => ZStream.empty)
+              case WebSocketFrame.Pong(_)     => ZStream.empty
+              case in: WebSocketFrame.Data[_] => ZStream(Some(in))
+            }
+            .catchSome { case _: WebSocketClosed => onClose(None) }
+            .collectWhileSome
+        )
+          // end with matching Close or user-provided Close or no Close at all
+          .concat(ZStream.fromZIO(closeRef.get).collect { case Some(close) => close })
+          // a data frame following a non-final fragment is a continuation; a Close never is
+          .mapAccum(false) {
+            case (afterNonFinal, frame: WebSocketFrame.Data[_]) => (!frame.finalFragment, (frame, afterNonFinal))
+            case (afterNonFinal, frame)                         => (afterNonFinal, (frame, false))
           }
-          .catchSome { case _: WebSocketClosed => onClose }
-          .collectWhileSome
-      )
-        .mapZIO(ws.send(_))
-        .foreach(_ => ZIO.unit)
-        .ensuring(ws.close().catchAll(_ => ZIO.unit))
-    }
+          .mapZIO { case (frame, isContinuation) =>
+            ws.send(frame, isContinuation) *> (frame match {
+              case _: WebSocketFrame.Close => closeSent.set(true)
+              case _                       => ZIO.unit
+            })
+          }
+          .runDrain
+          // the stream already emits a Close when appropriate; only fall back to a default Close if none was sent
+          .ensuring(closeSent.get.flatMap(sent => if (sent) ZIO.unit else ws.close().catchAll(_ => ZIO.unit)))
+    } yield ()
 
   type PipeR[R, A, B] = ZStream[R, Throwable, A] => ZStream[R, Throwable, B]
 
