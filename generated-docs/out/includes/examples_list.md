@@ -41,8 +41,8 @@
 ## Other
 
 * [Command output streaming with os-lib support](https://github.com/softwaremill/sttp/tree/master/examples/src/main/scala/sttp/client4/examples/other/cmdOutputStreamingWithOsLib.scala) <span class="example-tag example-backend">HttpClient</span> <span class="example-tag example-effects">Direct</span>
-* [Download file with os-lib support](https://github.com/softwaremill/sttp/tree/master/examples/src/main/scala/sttp/client4/examples/other/uploadFileWithOsLib.scala) <span class="example-tag example-backend">HttpClient</span> <span class="example-tag example-effects">Direct</span>
 * [Download file with os-lib support](https://github.com/softwaremill/sttp/tree/master/examples/src/main/scala/sttp/client4/examples/other/downloadFileWitOsLib.scala) <span class="example-tag example-backend">HttpClient</span> <span class="example-tag example-effects">Direct</span>
+* [Download file with os-lib support](https://github.com/softwaremill/sttp/tree/master/examples/src/main/scala/sttp/client4/examples/other/uploadFileWithOsLib.scala) <span class="example-tag example-backend">HttpClient</span> <span class="example-tag example-effects">Direct</span>
 * [Handle the body by both parsing it to JSON and returning the raw string](https://github.com/softwaremill/sttp/tree/master/examples/src/main/scala/sttp/client4/examples/other/GetRawResponseBodySynchronous.scala) <span class="example-tag example-backend">HttpClient</span> <span class="example-tag example-effects">Direct</span>
 
 ## Resilience
@@ -64,9 +64,9 @@
 
 ## WebSocket
 
+* [Connect to & interact with a WebSocket](https://github.com/softwaremill/sttp/tree/master/examples/src/main/scala/sttp/client4/examples/ws/WebSocketSynchronous.scala) <span class="example-tag example-backend">HttpClient</span> <span class="example-tag example-effects">Direct</span>
 * [Connect to & interact with a WebSocket](https://github.com/softwaremill/sttp/tree/master/examples/src/main/scala/sttp/client4/examples/ws/WebSocketPekko.scala) <span class="example-tag example-backend">Pekko</span> <span class="example-tag example-effects">Future</span>
 * [Connect to & interact with a WebSocket](https://github.com/softwaremill/sttp/tree/master/examples/src/main/scala/sttp/client4/examples/ws/WebSocketZio.scala) <span class="example-tag example-backend">HttpClient</span> <span class="example-tag example-effects">ZIO</span>
-* [Connect to & interact with a WebSocket](https://github.com/softwaremill/sttp/tree/master/examples/src/main/scala/sttp/client4/examples/ws/WebSocketSynchronous.scala) <span class="example-tag example-backend">HttpClient</span> <span class="example-tag example-effects">Direct</span>
 * [Connect to & interact with a WebSocket](https://github.com/softwaremill/sttp/tree/master/examples-ce2/src/main/scala/sttp/client4/examples/WebSocketMonix.scala) <span class="example-tag example-backend">HttpClient</span> <span class="example-tag example-effects">Monix</span>
 * [Connect to & interact with a WebSocket, using Ox channels for streaming](https://github.com/softwaremill/sttp/tree/master/examples/src/main/scala/sttp/client4/examples/ws/wsOxExample.scala) <span class="example-tag example-backend">HttpClient</span> <span class="example-tag example-effects">Direct</span>
 * [Connect to & interact with a WebSocket, using fs2 streaming](https://github.com/softwaremill/sttp/tree/master/examples/src/main/scala/sttp/client4/examples/ws/WebSocketStreamFs2.scala) <span class="example-tag example-backend">HttpClient</span> <span class="example-tag example-effects">cats-effect</span>

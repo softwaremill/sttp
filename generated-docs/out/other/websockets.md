@@ -94,6 +94,10 @@ effect type      class name
 ================ ==========================================
 ```
 
+Fragmented messages can also be sent: if the pipe emits a frame with `finalFragment = false`, all subsequent frames,
+up to and including the next frame with `finalFragment = true`, are automatically sent as continuations of that
+message.
+
 ## Using blocking, synchronous Ox streams
 
 [Ox](https://ox.softwaremill.com) is a Scala 3 toolkit that allows you to handle concurrency and resiliency in direct
@@ -102,7 +106,7 @@ style, leveraging Java's 21+ virtual threads. If you're using Ox with `sttp`, yo
 
 ```
 // sbt dependency
-"com.softwaremill.sttp.client4" %% "ox" % "4.0.25"
+"com.softwaremill.sttp.client4" %% "ox" % "4.0.26"
 ```
 
 The `runWebSocketPipe` function from that module accepts a `SyncWebSocket`, as well as a function, which takes a `Flow`
