@@ -18,7 +18,8 @@ class CookieStorageTest extends AnyFunSuite with Matchers {
   }
 
   test("sends a domain cookie to matching subdomains, but not to unrelated domains") {
-    val storage = CookieStorage.empty.setFromSetCookieHeaders(uri"https://example.com/", List("s=1; Domain=example.com"))
+    val storage =
+      CookieStorage.empty.setFromSetCookieHeaders(uri"https://example.com/", List("s=1; Domain=example.com"))
     names(storage.cookiesFor(uri"https://sub.example.com/")) shouldBe Set("s")
     storage.cookiesFor(uri"https://other.com/") shouldBe empty
   }
