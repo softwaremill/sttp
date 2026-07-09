@@ -1,6 +1,6 @@
 // {cat=Streaming; effects=Direct; backend=HttpClient}: Stream request & response bodies using Ox's Flow (synchronous, blocking streams)
 
-//> using dep com.softwaremill.sttp.client4::ox:4.0.25
+//> using dep com.softwaremill.sttp.client4::ox:4.0.26
 
 package sttp.client4.examples.ws
 
