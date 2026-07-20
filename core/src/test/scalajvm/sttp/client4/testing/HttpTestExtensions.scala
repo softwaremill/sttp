@@ -171,6 +171,33 @@ trait HttpTestExtensions[F[_]] extends AsyncFreeSpecLike { self: HttpTest[F] =>
           .map(resp => resp.body shouldBe expectedBody)
       }
 
+    if (supportsQuery) {
+      val redirectQueryTestData = List(
+        (301, false, "QUERYx"),
+        (302, false, "QUERYx"),
+        (303, false, "GET"),
+        (307, false, "QUERYx"),
+        (308, false, "QUERYx"),
+        (301, true, "QUERYx"),
+        (302, true, "QUERYx"),
+        (303, true, "GET"),
+        (307, true, "QUERYx"),
+        (308, true, "QUERYx")
+      )
+
+      for ((statusCode, redirectToGet, expectedBody) <- redirectQueryTestData)
+        yield s"for $statusCode redirect of QUERY, with redirect post to get = $redirectToGet, should return body $expectedBody" in {
+          basicRequest
+            .redirectToGet(redirectToGet)
+            .body("x")
+            .query(uri"$endpoint/redirect/get_after_query/r$statusCode")
+            .response(asStringAlways)
+            .send(backend)
+            .toFuture()
+            .map(resp => resp.body shouldBe expectedBody)
+        }
+    }
+
     "strip sensitive headers" - {
       val testData = List(
         Header(HeaderNames.Authorization, "secret"),
