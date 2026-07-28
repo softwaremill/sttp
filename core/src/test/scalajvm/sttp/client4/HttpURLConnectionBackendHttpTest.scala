@@ -24,6 +24,7 @@ class HttpURLConnectionBackendHttpTest extends HttpTest[Identity] {
   override def supportsHostHeaderOverride = false
   override def supportsCancellation = false
   override def supportsDeflateWrapperChecking = false
+  override def supportsQuery = false
 
   override def timeoutToNone[T](t: Identity[T], timeoutMillis: Int): Identity[Option[T]] = Some(t)
 }
