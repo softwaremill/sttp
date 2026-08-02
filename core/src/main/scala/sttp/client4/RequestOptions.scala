@@ -12,6 +12,10 @@ import sttp.model.ResponseMetadata
   *   should the request be converted to a GET without a body. Note that this only affects 301 and 302 redirects. 303
   *   redirects are always converted, while 307 and 308 redirects always keep the same method. See
   *   https://developer.mozilla.org/en-US/docs/Web/HTTP/Redirections for details.
+  * @param readTimeout
+  *   The maximum duration to wait for a response. If no data is received within this period, the request will fail with
+  *   a timeout exception (or a failed effect). When set to `Duration.Inf` (the default), no timeout is applied. Supported
+  *   by all backends except http4s, where the timeout should be configured on the http4s client directly.
   * @param decompressResponseBody
   *   Should the response body be decompressed, if a `Content-Encoding` header is present. By default, backends support
   *   [[sttp.model.Encodings.Gzip]] and [[sttp.model.Encodings.Deflate]] encodings, but others might available as well;
