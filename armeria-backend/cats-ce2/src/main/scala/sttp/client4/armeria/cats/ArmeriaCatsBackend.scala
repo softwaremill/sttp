@@ -57,11 +57,11 @@ object ArmeriaCatsBackend {
   def resourceUsingClient[F[_]: Concurrent](client: WebClient): Resource[F, Backend[F]] =
     Resource.make(Sync[F].delay(apply(client, closeFactory = true)))(_.close())
 
-  def usingDefaultClient[F[_]: Concurrent](): Backend[F] =
-    apply(newClient(), closeFactory = false)
+  def usingDefaultClient[F[_]: Concurrent](closeFactory: Boolean = false): Backend[F] =
+    apply(newClient(), closeFactory = closeFactory)
 
-  def usingClient[F[_]: Concurrent](client: WebClient): Backend[F] =
-    apply(client, closeFactory = false)
+  def usingClient[F[_]: Concurrent](client: WebClient, closeFactory: Boolean = false): Backend[F] =
+    apply(client, closeFactory = closeFactory)
 
   private def apply[F[_]: Concurrent](
       client: WebClient,

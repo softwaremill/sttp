@@ -47,9 +47,9 @@ object ArmeriaScalazBackend {
   def apply(options: BackendOptions = BackendOptions.Default): Backend[Task] =
     apply(newClient(options), closeFactory = true)
 
-  def usingClient(client: WebClient): Backend[Task] = apply(client, closeFactory = false)
+  def usingClient(client: WebClient, closeFactory: Boolean = false): Backend[Task] = apply(client, closeFactory = closeFactory)
 
-  def usingDefaultClient(): Backend[Task] = apply(newClient(), closeFactory = false)
+  def usingDefaultClient(closeFactory: Boolean = false): Backend[Task] = apply(newClient(), closeFactory = closeFactory)
 
   private def apply(
       client: WebClient,
