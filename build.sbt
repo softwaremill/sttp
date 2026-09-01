@@ -839,7 +839,7 @@ lazy val zio1Json = (projectMatrix in file("json/zio1-json"))
   .settings(
     name := "zio1-json",
     libraryDependencies ++= Seq(
-      "dev.zio" %%% "zio-json" % "0.2.0",
+      "dev.zio" %%% "zio-json" % "0.10.0",
       "com.softwaremill.sttp.shared" %%% "zio1" % sttpSharedVersion
     ),
     scalaTest
