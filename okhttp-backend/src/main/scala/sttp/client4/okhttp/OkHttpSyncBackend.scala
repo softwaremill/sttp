@@ -128,9 +128,10 @@ object OkHttpSyncBackend {
   def usingClient(
       client: OkHttpClient,
       compressionHandlers: CompressionHandlers[Any, InputStream] = DefaultCompressionHandlers,
-      webSocketBufferCapacity: Option[Int] = OkHttpBackend.DefaultWebSocketBufferCapacity
+      webSocketBufferCapacity: Option[Int] = OkHttpBackend.DefaultWebSocketBufferCapacity,
+      closeClient: Boolean = false
   ): WebSocketSyncBackend =
-    OkHttpSyncBackend(client, closeClient = false, compressionHandlers, webSocketBufferCapacity)
+    OkHttpSyncBackend(client, closeClient = closeClient, compressionHandlers, webSocketBufferCapacity)
 
   /** Create a stub backend for testing, which uses the [[Identity]] response wrapper, and doesn't support streaming.
     *
