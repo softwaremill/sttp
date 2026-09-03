@@ -111,9 +111,13 @@ private[http4s] abstract class Http4sBackendBase[F[_]](implicit protected val as
             }
             .recoverWith { case t: Throwable => responseVar.complete(Left(t)).as(()) }
 
-          sendRequest.start >> responseVar.get.flatMap {
-            case Left(t)  => implicitly[cats.ApplicativeError[F, Throwable]].raiseError(t)
-            case Right(r) => r.pure[F]
+          sendRequest.start.flatMap { fiber =>
+            responseVar.get
+              .onCancel(fiber.cancel)
+              .flatMap {
+                case Left(t)  => implicitly[cats.ApplicativeError[F, Throwable]].raiseError(t)
+                case Right(r) => r.pure[F]
+              }
           }
         }
       }
