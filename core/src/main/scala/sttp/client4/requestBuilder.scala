@@ -72,6 +72,7 @@ trait PartialRequestBuilder[+PR <: PartialRequestBuilder[PR, R], +R]
   def delete(uri: Uri): R = method(Method.DELETE, uri)
   def options(uri: Uri): R = method(Method.OPTIONS, uri)
   def patch(uri: Uri): R = method(Method.PATCH, uri)
+  def query(uri: Uri): R = method(Method.QUERY, uri)
 
   def contentType(ct: String): PR = header(HeaderNames.ContentType, ct)
   def contentType(mt: MediaType): PR = header(HeaderNames.ContentType, mt.toString)
