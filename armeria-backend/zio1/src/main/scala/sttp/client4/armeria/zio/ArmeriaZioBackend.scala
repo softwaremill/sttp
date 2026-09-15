@@ -61,18 +61,18 @@ object ArmeriaZioBackend {
   def layer(options: BackendOptions = BackendOptions.Default): Layer[Throwable, SttpClient] =
     ZLayer.fromManaged(managed(options))
 
-  def usingClient(client: WebClient): Task[StreamBackend[Task, ZioStreams]] =
+  def usingClient(client: WebClient, closeFactory: Boolean = false): Task[StreamBackend[Task, ZioStreams]] =
     ZIO
       .runtime[Any]
-      .map(runtime => apply(runtime, client, closeFactory = false))
+      .map(runtime => apply(runtime, client, closeFactory = closeFactory))
 
-  def usingClient[R](runtime: Runtime[R], client: WebClient): StreamBackend[Task, ZioStreams] =
-    apply(runtime, client, closeFactory = false)
+  def usingClient[R](runtime: Runtime[R], client: WebClient, closeFactory: Boolean = false): StreamBackend[Task, ZioStreams] =
+    apply(runtime, client, closeFactory = closeFactory)
 
-  def usingDefaultClient(): Task[StreamBackend[Task, ZioStreams]] =
+  def usingDefaultClient(closeFactory: Boolean = false): Task[StreamBackend[Task, ZioStreams]] =
     ZIO
       .runtime[Any]
-      .map(runtime => apply(runtime, newClient(), closeFactory = false))
+      .map(runtime => apply(runtime, newClient(), closeFactory = closeFactory))
 
   private def apply[R](runtime: Runtime[R], client: WebClient, closeFactory: Boolean): StreamBackend[Task, ZioStreams] =
     wrappers.FollowRedirectsBackend(new ArmeriaZioBackend(runtime, client, closeFactory))

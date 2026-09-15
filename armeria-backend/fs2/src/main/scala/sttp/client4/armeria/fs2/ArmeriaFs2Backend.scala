@@ -80,11 +80,11 @@ object ArmeriaFs2Backend {
       .parallel[F]
       .flatMap(dispatcher => Resource.make(Sync[F].delay(apply(client, closeFactory = true, dispatcher)))(_.close()))
 
-  def usingClient[F[_]: Async](client: WebClient, dispatcher: Dispatcher[F]): StreamBackend[F, Fs2Streams[F]] =
-    apply(client, closeFactory = false, dispatcher)
+  def usingClient[F[_]: Async](client: WebClient, dispatcher: Dispatcher[F], closeFactory: Boolean = false): StreamBackend[F, Fs2Streams[F]] =
+    apply(client, closeFactory = closeFactory, dispatcher)
 
-  def usingDefaultClient[F[_]: Async](dispatcher: Dispatcher[F]): StreamBackend[F, Fs2Streams[F]] =
-    apply(newClient(), closeFactory = false, dispatcher)
+  def usingDefaultClient[F[_]: Async](dispatcher: Dispatcher[F], closeFactory: Boolean = false): StreamBackend[F, Fs2Streams[F]] =
+    apply(newClient(), closeFactory = closeFactory, dispatcher)
 
   private def apply[F[_]: Async](
       client: WebClient,
