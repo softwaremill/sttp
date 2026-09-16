@@ -92,6 +92,49 @@ class Otel4sMetricsBackendTest extends AsyncFreeSpec with Matchers with AsyncExe
         }
         .unsafeToFuture()
     }
+
+    "should not let the attributes set on the request override semantic convention ones" in {
+      MetricsTestkit
+        .inMemory[IO]()
+        .use { testkit =>
+          implicit val meterProvider: MeterProvider[IO] = testkit.meterProvider
+
+          val makeBackend = Otel4sMetricsBackend(delegate = successStub, config = Otel4sMetricsConfig.default)
+
+          makeBackend.use { backend =>
+            for {
+              _ <- backend.send(
+                basicRequest
+                  .post(uri"http://localhost:8080/success")
+                  .body("payload")
+                  .attribute(
+                    Otel4sMetricsBackend.AttributesKey,
+                    Attributes(
+                      Attribute("http.request.method", "OVERRIDDEN"),
+                      Attribute("http.response.status_code", "OVERRIDDEN")
+                    )
+                  )
+              )
+              // we use `.unsafeRunAndForget()` in the backend and JS could be slow
+              _ <- IO.sleep(1.second)
+              metrics <- testkit.collectMetrics
+
+              points = metrics.filter(_.name == "http.client.request.duration").flatMap(_.data.points.iterator)
+              activeRequestsPoints =
+                metrics.filter(_.name == "http.client.active_requests").flatMap(_.data.points.iterator)
+            } yield {
+              points.map(_.attributes.get[String]("http.request.method").map(_.value)).toSet shouldBe Set(Some("POST"))
+              points.map(_.attributes.get[Long]("http.response.status_code").map(_.value)).toSet shouldBe Set(
+                Some(200L)
+              )
+              activeRequestsPoints
+                .map(_.attributes.get[String]("http.request.method").map(_.value))
+                .toSet shouldBe Set(Some("POST"))
+            }
+          }
+        }
+        .unsafeToFuture()
+    }
   }
 
   private def successStub = BackendStub(new CatsMonadAsyncError[IO]).whenRequestMatchesPartial {

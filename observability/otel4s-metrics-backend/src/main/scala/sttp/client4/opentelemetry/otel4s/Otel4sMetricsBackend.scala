@@ -178,12 +178,13 @@ object Otel4sMetricsBackend {
     private def activeRequestAttributes(request: GenericRequest[_, _]): Attributes = {
       val b = Attributes.newBuilder
 
+      b ++= customAttributes(request)
+
       b += HttpAttributes.HttpRequestMethod(request.method.method)
       b ++= ServerAttributes.ServerAddress.maybe(request.uri.host)
       b ++= ServerAttributes.ServerPort.maybe(request.uri.port.map(_.toLong))
       b ++= UrlAttributes.UrlScheme.maybe(request.uri.scheme)
       b ++= UrlExperimentalAttributes.UrlTemplate.maybe(urlTemplate(request))
-      b ++= customAttributes(request)
 
       b.result()
     }
@@ -202,6 +203,8 @@ object Otel4sMetricsBackend {
     ): Attributes = {
       val b = Attributes.newBuilder
 
+      b ++= customAttributes(request)
+
       b += HttpAttributes.HttpRequestMethod(request.method.method)
       b ++= ServerAttributes.ServerAddress.maybe(request.uri.host)
       b ++= ServerAttributes.ServerPort.maybe(request.uri.port.map(_.toLong))
@@ -212,8 +215,6 @@ object Otel4sMetricsBackend {
       // response
       b ++= HttpAttributes.HttpResponseStatusCode.maybe(responseStatusCode.map(_.code.toLong))
       b ++= ErrorAttributes.ErrorType.maybe(errorType)
-
-      b ++= customAttributes(request)
 
       b.result()
     }

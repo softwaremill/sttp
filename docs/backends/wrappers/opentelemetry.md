@@ -227,7 +227,8 @@ replaces the previous value, so to add to attributes set elsewhere, read and mer
 
 Each distinct combination of attribute values creates a separate time series, so only low-cardinality values should be
 used; for the same reason, prefer setting the same attribute keys on all requests sent using a given backend.
-Attributes with keys that clash with the ones added by the backend override them.
+Attributes with keys that clash with the semantic convention ones added by the backend (such as `http.request.method`
+or `http.response.status_code`) are ignored, so that the recorded metrics always follow the conventions.
 
 ## Tracing (cats-effect, otel4s)
 
