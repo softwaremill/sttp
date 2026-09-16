@@ -4,6 +4,7 @@ import cats.effect.IO
 import cats.effect.unsafe.implicits.global
 import org.scalatest.freespec.AsyncFreeSpec
 import org.scalatest.matchers.should.Matchers
+import org.typelevel.otel4s.{Attribute, Attributes}
 import org.typelevel.otel4s.metrics.MeterProvider
 import org.typelevel.otel4s.sdk.metrics.data.MetricData
 import org.typelevel.otel4s.sdk.testkit.metrics.{MetricExpectation, MetricExpectations}
@@ -34,14 +35,8 @@ class Otel4sMetricsBackendTest extends AsyncFreeSpec with Matchers with AsyncExe
         .use { testkit =>
           implicit val meterProvider: MeterProvider[IO] = testkit.meterProvider
 
-          def stub = BackendStub(new CatsMonadAsyncError[IO]).whenRequestMatchesPartial {
-            case r if r.uri.toString.contains("success") =>
-              val body = "body"
-              ResponseStub(StubBody.Adjust(body), StatusCode.Ok, Seq(Header.contentLength(body.length.toLong)))
-          }
-
           val makeBackend = Otel4sMetricsBackend(
-            delegate = stub,
+            delegate = successStub,
             config = Otel4sMetricsConfig.default
           )
 
@@ -56,6 +51,53 @@ class Otel4sMetricsBackendTest extends AsyncFreeSpec with Matchers with AsyncExe
         }
         .unsafeToFuture()
     }
+
+    "should add the attributes set on the request to all recorded metrics" in {
+      val metricNames = List(
+        "http.client.request.duration",
+        "http.client.request.body.size",
+        "http.client.response.body.size",
+        "http.client.active_requests"
+      )
+
+      MetricsTestkit
+        .inMemory[IO]()
+        .use { testkit =>
+          implicit val meterProvider: MeterProvider[IO] = testkit.meterProvider
+
+          val makeBackend = Otel4sMetricsBackend(delegate = successStub, config = Otel4sMetricsConfig.default)
+
+          makeBackend.use { backend =>
+            for {
+              _ <- backend.send(
+                basicRequest
+                  .post(uri"http://localhost:8080/success")
+                  .body("payload")
+                  .attribute(Otel4sMetricsBackend.AttributesKey, Attributes(Attribute("flow", "checkout")))
+              )
+              // we use `.unsafeRunAndForget()` in the backend and JS could be slow
+              _ <- IO.sleep(1.second)
+              metrics <- testkit.collectMetrics
+            } yield {
+              val flowPerMetric = metrics
+                .filter(metric => metricNames.contains(metric.name))
+                .map(metric =>
+                  metric.name -> metric.data.points.iterator.map(_.attributes.get[String]("flow").map(_.value)).toSet
+                )
+                .toMap
+
+              flowPerMetric shouldBe metricNames.map(name => name -> Set(Option("checkout"))).toMap
+            }
+          }
+        }
+        .unsafeToFuture()
+    }
+  }
+
+  private def successStub = BackendStub(new CatsMonadAsyncError[IO]).whenRequestMatchesPartial {
+    case r if r.uri.toString.contains("success") =>
+      val body = "body"
+      ResponseStub(StubBody.Adjust(body), StatusCode.Ok, Seq(Header.contentLength(body.length.toLong)))
   }
 
   private def metricExpectation(spec: MetricSpec): MetricExpectation = {
