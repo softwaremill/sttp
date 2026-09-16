@@ -18,7 +18,6 @@ import org.typelevel.otel4s.semconv.attributes.{
   ServerAttributes,
   UrlAttributes
 }
-import sttp.attributes.AttributeKey
 import sttp.client4.listener.{ListenerBackend, RequestListener}
 import sttp.client4._
 import sttp.model.{HttpVersion, ResponseMetadata, StatusCode}
@@ -28,9 +27,6 @@ import scala.concurrent.duration.FiniteDuration
 import scala.util.chaining._
 
 object Otel4sMetricsBackend {
-
-  val AttributesKey: AttributeKey[Attributes] =
-    new AttributeKey[Attributes]("sttp.client4.opentelemetry.otel4s.Otel4sMetricsBackend.attributes")
 
   def apply[F[_]: Async: MeterProvider](
       delegate: Backend[F],
@@ -108,7 +104,8 @@ object Otel4sMetricsBackend {
       responseBodySize,
       activeRequests,
       dispatcher,
-      config.urlTemplate
+      config.urlTemplate,
+      config.extraAttributes
     )
 
   private final case class State(start: FiniteDuration, activeRequestsAttributes: Attributes)
@@ -119,7 +116,8 @@ object Otel4sMetricsBackend {
       responseBodySize: Histogram[F, Long],
       activeRequests: UpDownCounter[F, Long],
       dispatcher: Dispatcher[F],
-      urlTemplate: GenericRequest[_, _] => Option[String]
+      urlTemplate: GenericRequest[_, _] => Option[String],
+      extraAttributes: GenericRequest[_, _] => Attributes
   ) extends RequestListener[F, State] {
     def before(request: GenericRequest[_, _]): F[State] =
       for {
@@ -172,13 +170,10 @@ object Otel4sMetricsBackend {
         _ <- activeRequests.dec(state.activeRequestsAttributes)
       } yield ()
 
-    private def customAttributes(request: GenericRequest[_, _]): Attributes =
-      request.attribute(AttributesKey).getOrElse(Attributes.empty)
-
     private def activeRequestAttributes(request: GenericRequest[_, _]): Attributes = {
       val b = Attributes.newBuilder
 
-      b ++= customAttributes(request)
+      b ++= extraAttributes(request)
 
       b += HttpAttributes.HttpRequestMethod(request.method.method)
       b ++= ServerAttributes.ServerAddress.maybe(request.uri.host)
@@ -203,7 +198,7 @@ object Otel4sMetricsBackend {
     ): Attributes = {
       val b = Attributes.newBuilder
 
-      b ++= customAttributes(request)
+      b ++= extraAttributes(request)
 
       b += HttpAttributes.HttpRequestMethod(request.method.method)
       b ++= ServerAttributes.ServerAddress.maybe(request.uri.host)

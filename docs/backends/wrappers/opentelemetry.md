@@ -157,7 +157,7 @@ The following metrics are available by default:
 - [http.client.response.body.size](https://opentelemetry.io/docs/specs/semconv/http/http-metrics/#metric-httpclientresponsebodysize)
 - [http.client.active_requests](https://opentelemetry.io/docs/specs/semconv/http/http-metrics/#metric-httpclientactive_requests)
 
-You can customize histogram buckets and URL template behavior by providing a custom `Otel4sMetricsConfig`.
+You can customize histogram buckets, the URL template behavior and the attributes attached to the recorded measurements by providing a custom `Otel4sMetricsConfig`.
 
 ### URL template
 
@@ -204,29 +204,38 @@ Otel4sMetricsBackend(
 ### Custom attributes
 
 Apart from the attributes defined by the semantic conventions, you can attach arbitrary attributes to the recorded
-measurements, e.g. to label them with a business dimension. Set them on the request, using the
-`Otel4sMetricsBackend.AttributesKey` request attribute; they are added to all four metrics recorded for that request:
+measurements, e.g. to label them with a business dimension. Provide a `GenericRequest[_, _] => Attributes` function via
+the `extraAttributes` config field; the returned attributes are added to all four metrics. Because the function receives
+the full request, the attributes can either be derived from it, or passed from the call site using a request attribute.
 
 ```scala mdoc:compile-only
 import cats.effect.*
 import org.typelevel.otel4s.{Attribute, Attributes}
+import org.typelevel.otel4s.metrics.MeterProvider
+import sttp.attributes.AttributeKey
 import sttp.client4.*
 import sttp.client4.opentelemetry.otel4s.*
 
-val backend: Backend[IO] = ???
+implicit val meterProvider: MeterProvider[IO] = ???
+val catsBackend: Backend[IO] = ???
 
-basicRequest
-  .get(uri"https://example.com/orders/42")
-  .attribute(Otel4sMetricsBackend.AttributesKey, Attributes(Attribute("flow", "checkout")))
-  .send(backend)
+val FlowKey = new AttributeKey[String]("FlowKey")
+
+Otel4sMetricsBackend(
+  catsBackend,
+  Otel4sMetricsConfig(
+    requestDurationHistogramBuckets = Otel4sMetricsConfig.DefaultDurationBuckets,
+    requestBodySizeHistogramBuckets = None,
+    responseBodySizeHistogramBuckets = None,
+    extraAttributes = req => Attributes(Attribute("flow", req.attribute(FlowKey).getOrElse("unknown")))
+  )
+)
+// Then, at the call site:
+// basicRequest.get(uri"...").attribute(FlowKey, "checkout")
 ```
 
-Multiple attributes can be set at once, as `Attributes` accepts any number of them; setting the request attribute again
-replaces the previous value, so to add to attributes set elsewhere, read and merge them first:
-`req.attribute(key, req.attribute(key).getOrElse(Attributes.empty) ++ more)`.
-
 Each distinct combination of attribute values creates a separate time series, so only low-cardinality values should be
-used; for the same reason, prefer setting the same attribute keys on all requests sent using a given backend.
+used; for the same reason, prefer returning the same attribute keys for all requests sent using a given backend.
 Attributes with keys that clash with the semantic convention ones added by the backend (such as `http.request.method`
 or `http.response.status_code`) are ignored, so that the recorded metrics always follow the conventions.
 

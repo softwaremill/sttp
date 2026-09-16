@@ -12,6 +12,7 @@ import org.typelevel.otel4s.sdk.testkit.metrics.MetricsTestkit
 import org.typelevel.otel4s.semconv.metrics.HttpMetrics
 import org.typelevel.otel4s.semconv.experimental.metrics.HttpExperimentalMetrics
 import org.typelevel.otel4s.semconv.{MetricSpec, Requirement}
+import sttp.attributes.AttributeKey
 import sttp.model.{Header, StatusCode}
 import sttp.client4._
 import sttp.client4.impl.cats.CatsMonadAsyncError
@@ -52,20 +53,27 @@ class Otel4sMetricsBackendTest extends AsyncFreeSpec with Matchers with AsyncExe
         .unsafeToFuture()
     }
 
-    "should add the attributes set on the request to all recorded metrics" in {
+    "should add the configured extra attributes to all recorded metrics" in {
       val metricNames = List(
         "http.client.request.duration",
         "http.client.request.body.size",
         "http.client.response.body.size",
         "http.client.active_requests"
       )
+      val flowKey = new AttributeKey[String]("flow")
 
       MetricsTestkit
         .inMemory[IO]()
         .use { testkit =>
           implicit val meterProvider: MeterProvider[IO] = testkit.meterProvider
 
-          val makeBackend = Otel4sMetricsBackend(delegate = successStub, config = Otel4sMetricsConfig.default)
+          val makeBackend = Otel4sMetricsBackend(
+            delegate = successStub,
+            config = Otel4sMetricsConfig.default.copy(
+              extraAttributes =
+                request => request.attribute(flowKey).fold(Attributes.empty)(f => Attributes(Attribute("flow", f)))
+            )
+          )
 
           makeBackend.use { backend =>
             for {
@@ -73,7 +81,7 @@ class Otel4sMetricsBackendTest extends AsyncFreeSpec with Matchers with AsyncExe
                 basicRequest
                   .post(uri"http://localhost:8080/success")
                   .body("payload")
-                  .attribute(Otel4sMetricsBackend.AttributesKey, Attributes(Attribute("flow", "checkout")))
+                  .attribute(flowKey, "checkout")
               )
               // we use `.unsafeRunAndForget()` in the backend and JS could be slow
               _ <- IO.sleep(1.second)
@@ -93,13 +101,22 @@ class Otel4sMetricsBackendTest extends AsyncFreeSpec with Matchers with AsyncExe
         .unsafeToFuture()
     }
 
-    "should not let the attributes set on the request override semantic convention ones" in {
+    "should not let the configured extra attributes override semantic convention ones" in {
       MetricsTestkit
         .inMemory[IO]()
         .use { testkit =>
           implicit val meterProvider: MeterProvider[IO] = testkit.meterProvider
 
-          val makeBackend = Otel4sMetricsBackend(delegate = successStub, config = Otel4sMetricsConfig.default)
+          val makeBackend = Otel4sMetricsBackend(
+            delegate = successStub,
+            config = Otel4sMetricsConfig.default.copy(
+              extraAttributes = _ =>
+                Attributes(
+                  Attribute("http.request.method", "OVERRIDDEN"),
+                  Attribute("http.response.status_code", "OVERRIDDEN")
+                )
+            )
+          )
 
           makeBackend.use { backend =>
             for {
@@ -107,13 +124,6 @@ class Otel4sMetricsBackendTest extends AsyncFreeSpec with Matchers with AsyncExe
                 basicRequest
                   .post(uri"http://localhost:8080/success")
                   .body("payload")
-                  .attribute(
-                    Otel4sMetricsBackend.AttributesKey,
-                    Attributes(
-                      Attribute("http.request.method", "OVERRIDDEN"),
-                      Attribute("http.response.status_code", "OVERRIDDEN")
-                    )
-                  )
               )
               // we use `.unsafeRunAndForget()` in the backend and JS could be slow
               _ <- IO.sleep(1.second)
