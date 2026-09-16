@@ -201,6 +201,34 @@ Otel4sMetricsBackend(
 // basicRequest.get(uri"...").attribute(UrlTemplateKey, "/users/{id}")
 ```
 
+### Custom attributes
+
+Apart from the attributes defined by the semantic conventions, you can attach arbitrary attributes to the recorded
+measurements, e.g. to label them with a business dimension. Set them on the request, using the
+`Otel4sMetricsBackend.AttributesKey` request attribute; they are added to all four metrics recorded for that request:
+
+```scala mdoc:compile-only
+import cats.effect.*
+import org.typelevel.otel4s.{Attribute, Attributes}
+import sttp.client4.*
+import sttp.client4.opentelemetry.otel4s.*
+
+val backend: Backend[IO] = ???
+
+basicRequest
+  .get(uri"https://example.com/orders/42")
+  .attribute(Otel4sMetricsBackend.AttributesKey, Attributes(Attribute("flow", "checkout")))
+  .send(backend)
+```
+
+Multiple attributes can be set at once, as `Attributes` accepts any number of them; setting the request attribute again
+replaces the previous value, so to add to attributes set elsewhere, read and merge them first:
+`req.attribute(key, req.attribute(key).getOrElse(Attributes.empty) ++ more)`.
+
+Each distinct combination of attribute values creates a separate time series, so only low-cardinality values should be
+used; for the same reason, prefer setting the same attribute keys on all requests sent using a given backend.
+Attributes with keys that clash with the ones added by the backend override them.
+
 ## Tracing (cats-effect, otel4s)
 
 Add the following dependency to your project:

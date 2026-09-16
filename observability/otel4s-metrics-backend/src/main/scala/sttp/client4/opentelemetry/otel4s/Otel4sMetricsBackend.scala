@@ -18,6 +18,7 @@ import org.typelevel.otel4s.semconv.attributes.{
   ServerAttributes,
   UrlAttributes
 }
+import sttp.attributes.AttributeKey
 import sttp.client4.listener.{ListenerBackend, RequestListener}
 import sttp.client4._
 import sttp.model.{HttpVersion, ResponseMetadata, StatusCode}
@@ -27,6 +28,9 @@ import scala.concurrent.duration.FiniteDuration
 import scala.util.chaining._
 
 object Otel4sMetricsBackend {
+
+  val AttributesKey: AttributeKey[Attributes] =
+    new AttributeKey[Attributes]("sttp.client4.opentelemetry.otel4s.Otel4sMetricsBackend.attributes")
 
   def apply[F[_]: Async: MeterProvider](
       delegate: Backend[F],
@@ -168,6 +172,9 @@ object Otel4sMetricsBackend {
         _ <- activeRequests.dec(state.activeRequestsAttributes)
       } yield ()
 
+    private def customAttributes(request: GenericRequest[_, _]): Attributes =
+      request.attribute(AttributesKey).getOrElse(Attributes.empty)
+
     private def activeRequestAttributes(request: GenericRequest[_, _]): Attributes = {
       val b = Attributes.newBuilder
 
@@ -176,6 +183,7 @@ object Otel4sMetricsBackend {
       b ++= ServerAttributes.ServerPort.maybe(request.uri.port.map(_.toLong))
       b ++= UrlAttributes.UrlScheme.maybe(request.uri.scheme)
       b ++= UrlExperimentalAttributes.UrlTemplate.maybe(urlTemplate(request))
+      b ++= customAttributes(request)
 
       b.result()
     }
@@ -204,6 +212,8 @@ object Otel4sMetricsBackend {
       // response
       b ++= HttpAttributes.HttpResponseStatusCode.maybe(responseStatusCode.map(_.code.toLong))
       b ++= ErrorAttributes.ErrorType.maybe(errorType)
+
+      b ++= customAttributes(request)
 
       b.result()
     }
