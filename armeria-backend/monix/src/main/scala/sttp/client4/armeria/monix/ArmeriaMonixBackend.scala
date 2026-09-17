@@ -55,16 +55,16 @@ object ArmeriaMonixBackend {
     apply(newClient(options), closeFactory = true)
 
   /** @param scheduler The scheduler used for streaming request bodies. Defaults to the global scheduler. */
-  def usingClient(client: WebClient)(implicit
+  def usingClient(client: WebClient, closeFactory: Boolean = false)(implicit
       scheduler: Scheduler = Scheduler.global
   ): StreamBackend[Task, MonixStreams] =
-    apply(client, closeFactory = false)
+    apply(client, closeFactory = closeFactory)
 
   /** @param scheduler The scheduler used for streaming request bodies. Defaults to the global scheduler. */
-  def usingDefaultClient()(implicit
+  def usingDefaultClient(closeFactory: Boolean = false)(implicit
       scheduler: Scheduler = Scheduler.global
   ): StreamBackend[Task, MonixStreams] =
-    apply(newClient(), closeFactory = false)
+    apply(newClient(), closeFactory = closeFactory)
 
   private def apply(client: WebClient, closeFactory: Boolean)(implicit
       scheduler: Scheduler

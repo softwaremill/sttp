@@ -48,11 +48,11 @@ object ArmeriaFutureBackend {
   def apply(options: BackendOptions = BackendOptions.Default): Backend[Future] =
     apply(newClient(options), closeFactory = true)
 
-  def usingClient(client: WebClient): Backend[Future] =
-    apply(client, closeFactory = false)
+  def usingClient(client: WebClient, closeFactory: Boolean = false): Backend[Future] =
+    apply(client, closeFactory = closeFactory)
 
-  def usingDefaultClient(): Backend[Future] =
-    apply(newClient(), closeFactory = false)
+  def usingDefaultClient(closeFactory: Boolean = false): Backend[Future] =
+    apply(newClient(), closeFactory = closeFactory)
 
   private def apply(client: WebClient, closeFactory: Boolean): Backend[Future] =
     FollowRedirectsBackend(new ArmeriaFutureBackend(client, closeFactory))
