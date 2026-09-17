@@ -23,6 +23,7 @@ val ideScalaVersion = scala3
 lazy val testServerPort = settingKey[Int]("Port to run the http test server on")
 lazy val startTestServer = taskKey[Unit]("Start a http server used by tests")
 lazy val verifyExamplesCompileUsingScalaCli = taskKey[Unit]("Verify that each example compiles using Scala CLI")
+lazy val javaOutputVersion = settingKey[String]("Java version to emit Scala 3 bytecode for")
 
 // slow down for CI
 parallelExecution in Global := false
@@ -46,8 +47,10 @@ val commonSettings = commonSmlBuildSettings ++ ossPublishSettings ++ Seq(
 )
 
 val commonJvmSettings = commonSettings ++ Seq(
+  javaOutputVersion := "11",
   scalacOptions ++=
-    (if (ScalaArtifacts.isScala3(scalaVersion.value)) Seq("-Yfuture-lazy-vals", "-java-output-version", "11")
+    (if (ScalaArtifacts.isScala3(scalaVersion.value))
+       Seq("-Yfuture-lazy-vals", "-java-output-version", javaOutputVersion.value)
      else Seq.empty),
   Test / testOptions += Tests.Argument("-oD") // add test timings; js build specify other options which conflict
 )
@@ -508,6 +511,7 @@ lazy val ox = (projectMatrix in file("effects/ox"))
   .settings(commonJvmSettings)
   .settings(
     name := "ox",
+    javaOutputVersion := "21", // ox requires JDK 21
     libraryDependencies ++= Seq(
       "com.softwaremill.ox" %% "core" % oxVersion
     )
