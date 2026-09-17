@@ -46,6 +46,9 @@ val commonSettings = commonSmlBuildSettings ++ ossPublishSettings ++ Seq(
 )
 
 val commonJvmSettings = commonSettings ++ Seq(
+  scalacOptions ++=
+    (if (ScalaArtifacts.isScala3(scalaVersion.value)) Seq("-Yfuture-lazy-vals", "-java-output-version", "11")
+     else Seq.empty),
   Test / testOptions += Tests.Argument("-oD") // add test timings; js build specify other options which conflict
 )
 
@@ -665,7 +668,6 @@ lazy val http4sCe2Backend = (projectMatrix in file("http4s-ce2-backend"))
   .dependsOn(catsCe2 % compileAndTest, core % compileAndTest, fs2Ce2 % compileAndTest)
 
 lazy val http4sBackend = (projectMatrix in file("http4s-backend"))
-  .settings(commonJvmSettings)
   .settings(testServerSettings)
   .settings(
     name := "http4s-backend",
@@ -1019,7 +1021,6 @@ lazy val otel4sTracingBackend = (projectMatrix in file("observability/otel4s-tra
   .dependsOn(core % compileAndTest)
 
 lazy val scribeBackend = (projectMatrix in file("logging/scribe"))
-  .settings(commonJvmSettings)
   .settings(
     name := "scribe-backend",
     libraryDependencies ++= Seq(
