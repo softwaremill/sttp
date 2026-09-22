@@ -171,7 +171,7 @@ val tethysVersion = "0.29.8"
 val openTelemetryVersion = "1.66.0"
 val openTelemetrySemconvVersion = "1.44.0"
 val otel4s = "1.1.0"
-val otel4sSdk = "0.19.2"
+val otel4sSdk = "0.19.3"
 val slf4jVersion = "1.7.36"
 
 val compileAndTest = "compile->compile;test->test"
