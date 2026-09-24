@@ -10,7 +10,8 @@ import sttp.model.sse.ServerSentEvent
 import sttp.client4.testing.ConvertToFuture
 import sttp.client4.testing.streaming.StreamingTest
 
-import scala.concurrent.Future
+import scala.concurrent.duration._
+import scala.concurrent.{Await, Future}
 
 class PekkoHttpStreamingTest extends StreamingTest[Future, PekkoStreams] {
   override val streams: PekkoStreams = PekkoStreams
@@ -19,6 +20,11 @@ class PekkoHttpStreamingTest extends StreamingTest[Future, PekkoStreams] {
 
   override val backend: StreamBackend[Future, PekkoStreams] =
     PekkoHttpBackend.usingActorSystem(actorSystem)
+
+  override protected def afterAll(): Unit = {
+    super.afterAll()
+    Await.result(actorSystem.terminate(), 5.seconds)
+  }
 
   override implicit val convertToFuture: ConvertToFuture[Future] =
     ConvertToFuture.future

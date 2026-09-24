@@ -9,7 +9,8 @@ import sttp.model.sse.ServerSentEvent
 import sttp.client4.testing.ConvertToFuture
 import sttp.client4.testing.streaming.StreamingTest
 
-import scala.concurrent.Future
+import scala.concurrent.duration._
+import scala.concurrent.{Await, Future}
 
 class AkkaHttpStreamingTest extends StreamingTest[Future, AkkaStreams] {
   override val streams: AkkaStreams = AkkaStreams
@@ -18,6 +19,11 @@ class AkkaHttpStreamingTest extends StreamingTest[Future, AkkaStreams] {
 
   override val backend: StreamBackend[Future, AkkaStreams] =
     AkkaHttpBackend.usingActorSystem(actorSystem)
+
+  override protected def afterAll(): Unit = {
+    super.afterAll()
+    Await.result(actorSystem.terminate(), 5.seconds)
+  }
 
   override implicit val convertToFuture: ConvertToFuture[Future] =
     ConvertToFuture.future

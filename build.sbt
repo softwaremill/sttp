@@ -3,8 +3,8 @@ import com.softwaremill.SbtSoftwareMillCommon.commonSmlBuildSettings
 import com.softwaremill.UpdateVersionInDocs
 import sbt.Keys.publishArtifact
 import sbt.Reference.display
-import sbt.internal.ProjectMatrix
 import complete.DefaultParsers._
+import org.scalajs.jsenv.Input
 // run JS tests inside Chrome, due to jsdom not supporting fetch
 import com.softwaremill.SbtSoftwareMillBrowserTestJS._
 
@@ -23,12 +23,13 @@ val ideScalaVersion = scala3
 lazy val testServerPort = settingKey[Int]("Port to run the http test server on")
 lazy val startTestServer = taskKey[Unit]("Start a http server used by tests")
 lazy val verifyExamplesCompileUsingScalaCli = taskKey[Unit]("Verify that each example compiles using Scala CLI")
+lazy val compileDocs = taskKey[Unit]("Compiles docs module throwing away its output")
 
 // slow down for CI
-parallelExecution in Global := false
-concurrentRestrictions in Global += Tags.limit(Tags.Test, 1)
+Global / parallelExecution := false
+Global / concurrentRestrictions += Tags.limit(Tags.Test, 1)
 
-excludeLintKeys in Global ++= Set(ideSkipProject, reStartArgs)
+Global / excludeLintKeys ++= Set(ideSkipProject)
 val scopesDescription = "Scala version can be: 2.12, 2.13, 3; platform: JVM, JS, Native"
 val compileScoped =
   inputKey[Unit](
@@ -37,26 +38,28 @@ val compileScoped =
 val testScoped =
   inputKey[Unit](s"Run tests in the given scope. Usage: testScoped [scala version] [platform]. $scopesDescription")
 
-val commonSettings = commonSmlBuildSettings ++ ossPublishSettings ++ Seq(
-  organization := "com.softwaremill.sttp.client4",
-  ideSkipProject := (scalaVersion.value != ideScalaVersion)
-    || thisProjectRef.value.project.contains("JS") || thisProjectRef.value.project.contains("Native"),
-  bspEnabled := !ideSkipProject.value,
-  mimaPreviousArtifacts := Set.empty // we only use MiMa for `core` for now, using enableMimaSettings
-)
+commonSmlBuildSettings
+ossPublishSettings
 
-val commonJvmSettings = commonSettings ++ Seq(
+organization := "com.softwaremill.sttp.client4"
+ideSkipProject := (scalaVersion.value != ideScalaVersion) ||
+  thisProjectRef.value.project.contains("JS") ||
+  thisProjectRef.value.project.contains("Native")
+bspEnabled := !ideSkipProject.value
+mimaPreviousArtifacts := Set.empty // we only use MiMa for `core` for now, using enableMimaSettings
+
+val commonJvmSettings = Seq(
   scalacOptions ++=
     (if (ScalaArtifacts.isScala3(scalaVersion.value)) Seq("-Yfuture-lazy-vals", "-java-output-version", "11")
-     else Seq.empty),
+     else Seq("-release", "11")),
   Test / testOptions += Tests.Argument("-oD") // add test timings; js build specify other options which conflict
 )
 
-val commonJsSettings = commonSettings ++ Seq(
+val commonJsSettings = Seq(
   scalaJSLinkerConfig ~= {
     _.withBatchMode(true).withParallel(false)
   },
-  libraryDependencies += ("org.scala-js" %%% "scalajs-java-securerandom" % "1.0.0").cross(CrossVersion.for3Use2_13),
+  libraryDependencies += ("org.scala-js" %% "scalajs-java-securerandom" % "1.0.0").cross(CrossVersion.for3Use2_13),
   Compile / scalacOptions ++= {
     if (isSnapshot.value) Seq.empty
     else
@@ -73,20 +76,22 @@ val commonJsSettings = commonSettings ++ Seq(
   }
 )
 
-val commonJsBackendSettings = JSDependenciesPlugin.projectSettings ++ List(
-  jsDependencies ++= Seq(
-    "org.webjars.npm" % "spark-md5" % "3.0.2" % Test / "spark-md5.js" minified "spark-md5.min.js"
-  )
-)
-
-val commonNativeSettings = commonSettings ++ Seq(
-  Test / test := {
-    // TODO: re-enable after scala-native release > 0.4.0-M2
-    if (sys.env.isDefinedAt("RELEASE_VERSION")) {
-      println("[info] Release build, skipping sttp native tests")
-    } else { (Test / test).value }
+// spark-md5 is used by the JS MD5 digest implementation, and must be loaded before running the tests
+val commonJsBackendSettings = List(
+  libraryDependencies += "org.webjars.npm" % "spark-md5" % "3.0.2" % Test,
+  Test / jsEnvInput := Def.uncached {
+    val converter = fileConverter.value
+    val classpath = (Test / dependencyClasspath).value.map(a => converter.toPath(a.data).toFile)
+    val sparkMd5 = JsTestScripts.extract(
+      classpath,
+      "META-INF/resources/webjars/spark-md5/3.0.2/spark-md5.min.js",
+      target.value / "js-test-scripts"
+    )
+    Input.Script(sparkMd5.toPath) +: (Test / jsEnvInput).value
   }
 )
+
+val commonNativeSettings: Seq[Def.Setting[?]] = Seq.empty
 
 val versioningSchemeSettings = Seq(versionScheme := Some("early-semver"))
 
@@ -111,13 +116,18 @@ val enableMimaSettings = Seq(
 val testServerSettings = Seq(
   Test / test := (Test / test)
     .dependsOn(testServer2_13 / startTestServer)
-    .value,
+    .evaluated,
+  Test / testFull := Def.uncached(
+    (Test / testFull)
+      .dependsOn(testServer2_13 / startTestServer)
+      .value
+  ),
   Test / testOnly := (Test / testOnly)
     .dependsOn(testServer2_13 / startTestServer)
     .evaluated,
   Test / testOptions += Tests.Setup { () =>
     val port = (testServer2_13 / testServerPort).value
-    PollingUtils.waitUntilServerAvailable(url(s"http://localhost:$port"))
+    PollingUtils.waitUntilServerAvailable(uri(s"http://localhost:$port").toURL)
   }
 )
 
@@ -145,7 +155,7 @@ val pekkoStreamVersion = "1.7.0"
 val pekkoStreams = "org.apache.pekko" %% "pekko-stream" % pekkoStreamVersion
 
 val scalaTest = libraryDependencies ++= Seq("freespec", "funsuite", "flatspec", "wordspec", "shouldmatchers").map(m =>
-  "org.scalatest" %%% s"scalatest-$m" % "3.2.20" % Test
+  "org.scalatest" %% s"scalatest-$m" % "3.2.20" % Test
 )
 val scalaTestPlusScalaCheck = libraryDependencies += "org.scalatestplus" %% "scalacheck-1-19" % "3.2.20.0" % Test
 
@@ -176,8 +186,8 @@ val slf4jVersion = "1.7.36"
 
 val compileAndTest = "compile->compile;test->test"
 
-lazy val loomProjects: Seq[String] = Seq(ox, examples, zioJson).flatMap(_.projectRefs).flatMap(projectId)
-lazy val zioProjects: Seq[String] = Seq(zioJson).flatMap(_.projectRefs).flatMap(projectId)
+lazy val loomProjects: Seq[String] = Seq[ProjectMatrix](ox, examples, zioJson).flatMap(_.projectRefs).flatMap(projectId)
+lazy val zioProjects: Seq[String] = Seq[ProjectMatrix](zioJson).flatMap(_.projectRefs).flatMap(projectId)
 
 def projectId(projectRef: ProjectReference): Option[String] =
   projectRef match {
@@ -268,15 +278,16 @@ lazy val rawAllAggregates =
     testServer.projectRefs
 
 def filterProject(p: String => Boolean) =
-  ScopeFilter(inProjects(allAggregates.filter(pr => p(display(pr.project))): _*))
+  ScopeFilter(inProjects(allAggregates.filter(pr => p(display(pr.project)))*))
 
 def filterByVersionAndPlatform(scalaVersionFilter: String, platformFilter: String) = filterProject { projectName =>
   val byPlatform =
     if (platformFilter == "JVM") !projectName.contains("JS") && !projectName.contains("Native")
     else projectName.contains(platformFilter)
+  // in sbt 2, Scala 3 projects have no suffix, while Scala 2 ones are suffixed with 2_12/2_13
   val byVersion = scalaVersionFilter match {
-    case "3"    => projectName.contains("3")
-    case "2.13" => !projectName.contains("2_12") && !projectName.contains("3")
+    case "3"    => !projectName.contains("2_12") && !projectName.contains("2_13")
+    case "2.13" => projectName.contains("2_13")
     case "2.12" => projectName.contains("2_12")
   }
 
@@ -284,7 +295,6 @@ def filterByVersionAndPlatform(scalaVersionFilter: String, platformFilter: Strin
 }
 
 lazy val rootProject = (project in file("."))
-  .settings(commonSettings)
   .settings(
     publish / skip := true,
     name := "sttp",
@@ -294,11 +304,11 @@ lazy val rootProject = (project in file("."))
     }.evaluated,
     testScoped := Def.inputTaskDyn {
       val args = spaceDelimited("<arg>").parsed
-      Def.taskDyn((Test / test).all(filterByVersionAndPlatform(args.head, args(1))))
+      Def.taskDyn((Test / testFull).all(filterByVersionAndPlatform(args.head, args(1))))
     }.evaluated,
     ideSkipProject := false,
     scalaVersion := scala2_13,
-    updateDocs := Def.taskDyn {
+    updateDocs := Def.uncached(Def.taskDyn {
       val files1 = UpdateVersionInDocs(sLog.value, organization.value, version.value, List(file("README.md")))
       Def.task {
         (docs.jvm(scala3) / mdoc).toTask("").value
@@ -307,9 +317,11 @@ lazy val rootProject = (project in file("."))
         GenerateListOfExamples(sLog.value, sourceDirectory.value.getParentFile)
         files1 ++ Seq(file("generated-docs/out"))
       }
-    }.value
+    }.value),
+    // TODO this should be invoked by compilation process, see #https://github.com/scalameta/mdoc/issues/355
+    compileDocs := (docs.jvm(scala3) / mdoc).toTask(" --out target/sttp-docs").value
   )
-  .aggregate(allAggregates: _*)
+  .aggregate(allAggregates*)
 
 lazy val testServer = (projectMatrix in file("testing/server"))
   .settings(commonJvmSettings)
@@ -321,11 +333,18 @@ lazy val testServer = (projectMatrix in file("testing/server"))
       akkaStreams
     ),
     // the test server needs to be started before running any backend tests
-    reStart / mainClass := Some("sttp.client4.testing.server.HttpServer"),
-    reStart / reStartArgs := Seq(s"${(Test / testServerPort).value}"),
-    reStart / fullClasspath := (Test / fullClasspath).value,
     testServerPort := 51823,
-    startTestServer := reStart.toTask("").value
+    startTestServer := Def.uncached {
+      val converter = fileConverter.value
+      TestServer.start(
+        javaHome.value,
+        (Test / fullClasspath).value.map(a => converter.toPath(a.data).toFile),
+        "sttp.client4.testing.server.HttpServer",
+        Seq(testServerPort.value.toString),
+        target.value / "test-server.log",
+        streams.value.log
+      )
+    }
   )
   .jvmPlatform(scalaVersions = scala2)
 
@@ -335,9 +354,9 @@ lazy val core = (projectMatrix in file("core"))
   .settings(
     name := "core",
     libraryDependencies ++= Seq(
-      "com.softwaremill.sttp.model" %%% "core" % sttpModelVersion,
-      "com.softwaremill.sttp.shared" %%% "core" % sttpSharedVersion,
-      "com.softwaremill.sttp.shared" %%% "ws" % sttpSharedVersion
+      "com.softwaremill.sttp.model" %% "core" % sttpModelVersion,
+      "com.softwaremill.sttp.shared" %% "core" % sttpSharedVersion,
+      "com.softwaremill.sttp.shared" %% "ws" % sttpSharedVersion
     ),
     scalaTest,
     scalaTestPlusScalaCheck
@@ -383,7 +402,7 @@ lazy val catsCe2 = (projectMatrix in file("effects/cats-ce2"))
     name := "catsCe2",
     Test / publishArtifact := true,
     libraryDependencies ++= Seq(
-      "org.typelevel" %%% "cats-effect" % catsEffect_2_version
+      "org.typelevel" %% "cats-effect" % catsEffect_2_version
     )
   )
   .dependsOn(core % compileAndTest)
@@ -398,9 +417,9 @@ lazy val catsCe2 = (projectMatrix in file("effects/cats-ce2"))
 
 lazy val catsEffect = Def.setting {
   Seq(
-    "org.typelevel" %%% "cats-effect-kernel" % catsEffect_3_version,
-    "org.typelevel" %%% "cats-effect-std" % catsEffect_3_version,
-    "org.typelevel" %%% "cats-effect" % catsEffect_3_version % Test
+    "org.typelevel" %% "cats-effect-kernel" % catsEffect_3_version,
+    "org.typelevel" %% "cats-effect-std" % catsEffect_3_version,
+    "org.typelevel" %% "cats-effect" % catsEffect_3_version % Test
   )
 }
 
@@ -430,9 +449,10 @@ lazy val fs2Ce2 = (projectMatrix in file("effects/fs2-ce2"))
     name := "fs2Ce2",
     Test / publishArtifact := true,
     libraryDependencies ++= Seq(
-      "co.fs2" %%% "fs2-core" % fs2_2_version
+      "co.fs2" %% "fs2-core" % fs2_2_version
     ),
-    libraryDependencies += "com.softwaremill.sttp.shared" %% "fs2-ce2" % sttpSharedVersion
+    // the JVM artifact is used on all platforms (as with sbt 1's %%, which wasn't platform-aware)
+    libraryDependencies += ("com.softwaremill.sttp.shared" %% "fs2-ce2" % sttpSharedVersion).platform(Platform.jvm)
   )
   .settings(testServerSettings)
   .dependsOn(core % compileAndTest, catsCe2 % compileAndTest)
@@ -440,8 +460,8 @@ lazy val fs2Ce2 = (projectMatrix in file("effects/fs2-ce2"))
     scalaVersions = scala2And3,
     settings = commonJvmSettings ++ Seq(
       libraryDependencies ++= Seq(
-        "co.fs2" %%% "fs2-reactive-streams" % fs2_2_version,
-        "co.fs2" %%% "fs2-io" % fs2_2_version
+        "co.fs2" %% "fs2-reactive-streams" % fs2_2_version,
+        "co.fs2" %% "fs2-io" % fs2_2_version
       )
     )
   )
@@ -452,8 +472,8 @@ lazy val fs2 = (projectMatrix in file("effects/fs2"))
     name := "fs2",
     Test / publishArtifact := true,
     libraryDependencies ++= Seq(
-      "co.fs2" %%% "fs2-core" % fs2_3_version,
-      "com.softwaremill.sttp.shared" %%% "fs2" % sttpSharedVersion
+      "co.fs2" %% "fs2-core" % fs2_3_version,
+      "com.softwaremill.sttp.shared" %% "fs2" % sttpSharedVersion
     )
   )
   .settings(testServerSettings)
@@ -462,8 +482,8 @@ lazy val fs2 = (projectMatrix in file("effects/fs2"))
     scalaVersions = scala2And3,
     settings = commonJvmSettings ++ Seq(
       libraryDependencies ++= Seq(
-        "co.fs2" %%% "fs2-reactive-streams" % fs2_3_version,
-        "co.fs2" %%% "fs2-io" % fs2_3_version
+        "co.fs2" %% "fs2-reactive-streams" % fs2_3_version,
+        "co.fs2" %% "fs2-io" % fs2_3_version
       ),
       Compile / unmanagedSourceDirectories += (ThisBuild / baseDirectory).value / "effects" / "fs2" / "src" / "main" / "scalajvmnative"
     )
@@ -476,7 +496,7 @@ lazy val fs2 = (projectMatrix in file("effects/fs2"))
     scalaVersions = scala2And3,
     settings = commonNativeSettings ++ testServerSettings ++ Seq(
       libraryDependencies ++= Seq(
-        "co.fs2" %%% "fs2-io" % fs2_3_version
+        "co.fs2" %% "fs2-io" % fs2_3_version
       ),
       Compile / unmanagedSourceDirectories += (ThisBuild / baseDirectory).value / "effects" / "fs2" / "src" / "main" / "scalajvmnative"
     )
@@ -487,8 +507,8 @@ lazy val monix = (projectMatrix in file("effects/monix"))
     name := "monix",
     Test / publishArtifact := true,
     libraryDependencies ++= Seq(
-      "io.monix" %%% "monix" % "3.4.1",
-      "com.softwaremill.sttp.shared" %%% "monix" % sttpSharedVersion
+      "io.monix" %% "monix" % "3.4.1",
+      "com.softwaremill.sttp.shared" %% "monix" % sttpSharedVersion
     )
   )
   .settings(testServerSettings)
@@ -521,9 +541,9 @@ lazy val zio1 = (projectMatrix in file("effects/zio1"))
     name := "zio1",
     Test / publishArtifact := true,
     libraryDependencies ++= Seq(
-      "dev.zio" %%% "zio-streams" % zio1Version,
-      "dev.zio" %%% "zio" % zio1Version,
-      "com.softwaremill.sttp.shared" %%% "zio1" % sttpSharedVersion
+      "dev.zio" %% "zio-streams" % zio1Version,
+      "dev.zio" %% "zio" % zio1Version,
+      "com.softwaremill.sttp.shared" %% "zio1" % sttpSharedVersion
     )
   )
   .settings(testServerSettings)
@@ -547,9 +567,9 @@ lazy val zio = (projectMatrix in file("effects/zio"))
     name := "zio",
     Test / publishArtifact := true,
     libraryDependencies ++= Seq(
-      "dev.zio" %%% "zio-streams" % zio2Version,
-      "dev.zio" %%% "zio" % zio2Version,
-      "com.softwaremill.sttp.shared" %%% "zio" % sttpSharedVersion
+      "dev.zio" %% "zio-streams" % zio2Version,
+      "dev.zio" %% "zio" % zio2Version,
+      "com.softwaremill.sttp.shared" %% "zio" % sttpSharedVersion
     )
   )
   .settings(testServerSettings)
@@ -570,7 +590,7 @@ lazy val zio = (projectMatrix in file("effects/zio"))
     scalaVersions = List(scala3),
     settings = commonNativeSettings ++ Seq(
       libraryDependencies ++= Seq(
-        "io.github.cquiroz" %%% "scala-java-time" % "2.6.0"
+        "io.github.cquiroz" %% "scala-java-time" % "2.6.0"
       )
     )
   )
@@ -642,7 +662,7 @@ lazy val okhttpBackend = (projectMatrix in file("okhttp-backend"))
   .dependsOn(core % compileAndTest)
 
 def okhttpBackendProject(proj: String) =
-  ProjectMatrix(s"okhttpBackend${proj.capitalize}", file(s"okhttp-backend/$proj"))
+  ProjectMatrix(s"okhttpBackend${proj.capitalize}", file(s"okhttp-backend/$proj"), getClass.getClassLoader)
     .settings(commonJvmSettings)
     .settings(testServerSettings)
     .settings(name := s"okhttp-backend-$proj")
@@ -672,8 +692,8 @@ lazy val http4sBackend = (projectMatrix in file("http4s-backend"))
   .settings(
     name := "http4s-backend",
     libraryDependencies ++= Seq(
-      "org.http4s" %%% "http4s-client" % http4s_ce3_version,
-      "org.http4s" %%% "http4s-ember-client" % http4s_ce3_version % Optional
+      "org.http4s" %% "http4s-client" % http4s_ce3_version,
+      "org.http4s" %% "http4s-ember-client" % http4s_ce3_version % Optional
     ),
     evictionErrorLevel := Level.Info
   )
@@ -715,7 +735,7 @@ lazy val armeriaBackend = (projectMatrix in file("armeria-backend"))
   .dependsOn(core % compileAndTest)
 
 def armeriaBackendProject(proj: String, includeScala3: Boolean = true) =
-  ProjectMatrix(s"armeriaBackend${proj.capitalize}", file(s"armeria-backend/$proj"))
+  ProjectMatrix(s"armeriaBackend${proj.capitalize}", file(s"armeria-backend/$proj"), getClass.getClassLoader)
     .settings(commonJvmSettings)
     .settings(testServerSettings)
     .settings(name := s"armeria-backend-$proj")
@@ -790,9 +810,9 @@ lazy val circe = (projectMatrix in file("json/circe"))
   .settings(
     name := "circe",
     libraryDependencies ++= Seq(
-      "io.circe" %%% "circe-core" % circeVersion,
-      "io.circe" %%% "circe-parser" % circeVersion,
-      "io.circe" %%% "circe-generic" % circeVersion % Test
+      "io.circe" %% "circe-core" % circeVersion,
+      "io.circe" %% "circe-parser" % circeVersion,
+      "io.circe" %% "circe-generic" % circeVersion % Test
     ),
     scalaTest
   )
@@ -808,8 +828,8 @@ lazy val jsoniter = (projectMatrix in file("json/jsoniter"))
   .settings(
     name := "jsoniter",
     libraryDependencies ++= Seq(
-      "com.github.plokhotnyuk.jsoniter-scala" %%% "jsoniter-scala-core" % jsoniterVersion,
-      "com.github.plokhotnyuk.jsoniter-scala" %%% "jsoniter-scala-macros" % jsoniterVersion % Test
+      "com.github.plokhotnyuk.jsoniter-scala" %% "jsoniter-scala-core" % jsoniterVersion,
+      "com.github.plokhotnyuk.jsoniter-scala" %% "jsoniter-scala-macros" % jsoniterVersion % Test
     ),
     scalaTest
   )
@@ -825,8 +845,8 @@ lazy val zioJson = (projectMatrix in file("json/zio-json"))
   .settings(
     name := "zio-json",
     libraryDependencies ++= Seq(
-      "dev.zio" %%% "zio-json" % "1.0.0",
-      "com.softwaremill.sttp.shared" %%% "zio" % sttpSharedVersion
+      "dev.zio" %% "zio-json" % "1.0.0",
+      "com.softwaremill.sttp.shared" %% "zio" % sttpSharedVersion
     ),
     scalaTest
   )
@@ -841,8 +861,8 @@ lazy val zio1Json = (projectMatrix in file("json/zio1-json"))
   .settings(
     name := "zio1-json",
     libraryDependencies ++= Seq(
-      "dev.zio" %%% "zio-json" % "0.2.0",
-      "com.softwaremill.sttp.shared" %%% "zio1" % sttpSharedVersion
+      "dev.zio" %% "zio-json" % "0.2.0",
+      "com.softwaremill.sttp.shared" %% "zio1" % sttpSharedVersion
     ),
     scalaTest
   )
@@ -873,7 +893,7 @@ lazy val upickle = (projectMatrix in file("json/upickle"))
   .settings(
     name := "upickle",
     libraryDependencies ++= Seq(
-      "com.lihaoyi" %%% "upickle" % "4.4.3"
+      "com.lihaoyi" %% "upickle" % "4.4.3"
     ),
     scalaTest,
     // using macroRW causes a "match may not be exhaustive" error
@@ -920,7 +940,7 @@ lazy val play29Json = (projectMatrix in file("json/play29-json"))
     Compile / unmanagedSourceDirectories += (ThisBuild / baseDirectory).value / "json" / "play-json" / "src" / "main" / "scala",
     Test / unmanagedSourceDirectories += (ThisBuild / baseDirectory).value / "json" / "play-json" / "src" / "test" / "scala",
     libraryDependencies ++= Seq(
-      "com.typesafe.play" %%% "play-json" % play29JsonVersion
+      "com.typesafe.play" %% "play-json" % play29JsonVersion
     ),
     scalaTest
   )
@@ -935,7 +955,7 @@ lazy val playJson = (projectMatrix in file("json/play-json"))
   .settings(
     name := "play-json",
     libraryDependencies ++= Seq(
-      "org.playframework" %%% "play-json" % playJsonVersion
+      "org.playframework" %% "play-json" % playJsonVersion
     ),
     scalaTest
   )
@@ -991,11 +1011,11 @@ lazy val otel4sMetricsBackend = (projectMatrix in file("observability/otel4s-met
   .settings(
     name := "opentelemetry-otel4s-metrics-backend",
     libraryDependencies ++= Seq(
-      "org.typelevel" %%% "otel4s-core-metrics" % otel4s,
-      "org.typelevel" %%% "otel4s-semconv" % otel4s,
-      "org.typelevel" %%% "otel4s-semconv-experimental" % otel4s % Test,
-      "org.typelevel" %%% "otel4s-semconv-metrics-experimental" % otel4s % Test,
-      "org.typelevel" %%% "otel4s-sdk-metrics-testkit" % otel4sSdk % Test
+      "org.typelevel" %% "otel4s-core-metrics" % otel4s,
+      "org.typelevel" %% "otel4s-semconv" % otel4s,
+      "org.typelevel" %% "otel4s-semconv-experimental" % otel4s % Test,
+      "org.typelevel" %% "otel4s-semconv-metrics-experimental" % otel4s % Test,
+      "org.typelevel" %% "otel4s-sdk-metrics-testkit" % otel4sSdk % Test
     )
   )
   .jvmPlatform(scalaVersions = scala2_13And3, settings = commonJvmSettings)
@@ -1008,10 +1028,10 @@ lazy val otel4sTracingBackend = (projectMatrix in file("observability/otel4s-tra
   .settings(
     name := "opentelemetry-otel4s-tracing-backend",
     libraryDependencies ++= Seq(
-      "org.typelevel" %%% "otel4s-core-trace" % otel4s,
-      "org.typelevel" %%% "otel4s-semconv" % otel4s,
-      "org.typelevel" %%% "otel4s-sdk-trace-testkit" % otel4sSdk % Test,
-      "org.typelevel" %%% "cats-effect-testkit" % catsEffect_3_version % Test
+      "org.typelevel" %% "otel4s-core-trace" % otel4s,
+      "org.typelevel" %% "otel4s-semconv" % otel4s,
+      "org.typelevel" %% "otel4s-sdk-trace-testkit" % otel4sSdk % Test,
+      "org.typelevel" %% "cats-effect-testkit" % catsEffect_3_version % Test
     )
   )
   .jvmPlatform(scalaVersions = scala2_13And3, settings = commonJvmSettings)
@@ -1024,7 +1044,7 @@ lazy val scribeBackend = (projectMatrix in file("logging/scribe"))
   .settings(
     name := "scribe-backend",
     libraryDependencies ++= Seq(
-      "com.outr" %%% "scribe" % "3.15.2"
+      "com.outr" %% "scribe" % "3.15.2"
     ),
     scalaTest
   )
@@ -1051,7 +1071,7 @@ lazy val cachingBackend = (projectMatrix in file("caching"))
     name := "caching-backend",
     libraryDependencies ++= Seq(
       "org.slf4j" % "slf4j-api" % slf4jVersion,
-      "com.github.plokhotnyuk.jsoniter-scala" %%% "jsoniter-scala-macros" % jsoniterVersion % Compile
+      "com.github.plokhotnyuk.jsoniter-scala" %% "jsoniter-scala-macros" % jsoniterVersion % Compile
     ),
     scalaTest
   )
@@ -1066,7 +1086,9 @@ lazy val examplesCe2 = (projectMatrix in file("examples-ce2"))
     libraryDependencies ++= Seq(
       "io.circe" %% "circe-generic" % circeVersion
     ),
-    verifyExamplesCompileUsingScalaCli := VerifyExamplesCompileUsingScalaCli(sLog.value, sourceDirectory.value)
+    verifyExamplesCompileUsingScalaCli := Def.uncached(
+      VerifyExamplesCompileUsingScalaCli(sLog.value, sourceDirectory.value)
+    )
   )
   .jvmPlatform(scalaVersions = List(scala2_13))
   .dependsOn(circe, monix)
@@ -1079,7 +1101,7 @@ lazy val examples = (projectMatrix in file("examples"))
     libraryDependencies ++= Seq(
       "io.circe" %% "circe-generic" % circeVersion,
       "io.github.json4s" %% "json4s-native" % json4sVersion,
-      "com.github.plokhotnyuk.jsoniter-scala" %%% "jsoniter-scala-macros" % jsoniterVersion,
+      "com.github.plokhotnyuk.jsoniter-scala" %% "jsoniter-scala-macros" % jsoniterVersion,
       "io.github.resilience4j" % "resilience4j-circuitbreaker" % resilience4jVersion,
       "io.github.resilience4j" % "resilience4j-ratelimiter" % resilience4jVersion,
       "com.lihaoyi" %% "os-lib" % osLibVersion,
@@ -1089,7 +1111,9 @@ lazy val examples = (projectMatrix in file("examples"))
       pekkoStreams,
       logback
     ),
-    verifyExamplesCompileUsingScalaCli := VerifyExamplesCompileUsingScalaCli(sLog.value, sourceDirectory.value)
+    verifyExamplesCompileUsingScalaCli := Def.uncached(
+      VerifyExamplesCompileUsingScalaCli(sLog.value, sourceDirectory.value)
+    )
   )
   .jvmPlatform(scalaVersions = List(examplesScalaVersion))
   .dependsOn(
@@ -1109,15 +1133,8 @@ lazy val examples = (projectMatrix in file("examples"))
     openTelemetryBackend
   )
 
-//TODO this should be invoked by compilation process, see #https://github.com/scalameta/mdoc/issues/355
-val compileDocs: TaskKey[Unit] = taskKey[Unit]("Compiles docs module throwing away its output")
-compileDocs := {
-  (docs.jvm(scala3) / mdoc).toTask(" --out target/sttp-docs").value
-}
-
 lazy val docs: ProjectMatrix = (projectMatrix in file("generated-docs")) // important: it must not be docs/
   .enablePlugins(MdocPlugin)
-  .settings(commonSettings)
   .settings(
     mdocIn := file("docs"),
     moduleName := "sttp-docs",

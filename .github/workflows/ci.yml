@@ -22,7 +22,7 @@ jobs:
       matrix:
         scala-version: [ "2.12", "2.13", "3" ]
         target-platform: [ "JVM", "JS", "Native" ]
-        java: [ "11", "21" ]
+        java: [ "17", "21" ]
     steps:
     - name: Checkout
       uses: actions/checkout@v2
@@ -32,7 +32,7 @@ jobs:
         distribution: 'temurin'
         cache: 'sbt'
         java-version: ${{ matrix.java }}
-    - uses: sbt/setup-sbt@3e125ece5c3e5248e18da9ed8d2cce3d335ec8dd # v1, specifically v1.1.14
+    - uses: sbt/setup-sbt@ce95da69b39609ea153bad087708da5f37366897 # v1, specifically v1.5.10
     - name: Install libidn2-dev libcurl3-dev
       if: matrix.target-platform == 'Native'
       run: |
@@ -61,18 +61,18 @@ jobs:
     - name: Compile
       run: sbt -v "compileScoped ${{ matrix.scala-version }} ${{ matrix.target-platform }}"
     - name: Compile documentation
-      if: matrix.target-platform == 'JVM' && matrix.java == '11'
+      if: matrix.target-platform == 'JVM' && matrix.java == '17'
       run: sbt -v compileDocs
     - name: Verify that examples compile using Scala CLI
       if: matrix.target-platform == 'JVM' && matrix.java == '21' && matrix.scala-version == '3'
-      run: sbt $SBT_JAVA_OPTS -v "project examples3" verifyExamplesCompileUsingScalaCli      
+      run: sbt $SBT_JAVA_OPTS -v "project examples" verifyExamplesCompileUsingScalaCli      
     - name: Verify that examples-ce2 compile using Scala CLI
-      if: matrix.target-platform == 'JVM' && matrix.java == '11' && matrix.scala-version == '2.13'
-      run: sbt $SBT_JAVA_OPTS -v "project examplesCe2" verifyExamplesCompileUsingScalaCli        
+      if: matrix.target-platform == 'JVM' && matrix.java == '17' && matrix.scala-version == '2.13'
+      run: sbt $SBT_JAVA_OPTS -v "project examplesCe22_13" verifyExamplesCompileUsingScalaCli        
     - name: Test
       run: sbt -v "testScoped ${{ matrix.scala-version }} ${{ matrix.target-platform }}"        
     - name: Prepare release notes
-      if: matrix.java == '11'
+      if: matrix.java == '17'
       uses: release-drafter/release-drafter@b1476f6e6eb133afa41ed8589daba6dc69b4d3f5 # v6, specifically v6.1.0
       with:
         config-name: release-drafter.yml
@@ -89,7 +89,7 @@ jobs:
     runs-on: ubuntu-24.04
     strategy:
       matrix: 
-        java: [ "11", "21" ]
+        java: [ "17", "21" ]
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -99,7 +99,7 @@ jobs:
           distribution: 'temurin'
           java-version: ${{ matrix.java }}
           cache: 'sbt'
-      - uses: sbt/setup-sbt@3e125ece5c3e5248e18da9ed8d2cce3d335ec8dd # v1, specifically v1.1.14
+      - uses: sbt/setup-sbt@ce95da69b39609ea153bad087708da5f37366897 # v1, specifically v1.5.10
       - name: Install libidn2-dev libcurl3-dev
         run: |
           sudo apt-get update
@@ -112,7 +112,7 @@ jobs:
           cmake --build build -j $(nproc)
           sudo cmake --install build
       - name: Enable Native-specific modules
-        if: matrix.java == '11'
+        if: matrix.java == '17'
         run: echo "STTP_NATIVE=1" >> $GITHUB_ENV
       - name: Enable ZIO and Loom-specific modules
         if: matrix.java == '21'
@@ -120,7 +120,7 @@ jobs:
           echo "WITH_ZIO=1" >> $GITHUB_ENV
           echo "ONLY_LOOM=1" >> $GITHUB_ENV
       - name: Compile
-        run: sbt compile
+        run: sbt "compile ; shutdown"
       - name: Publish artifacts
         run: sbt ci-release
         env:
@@ -129,14 +129,14 @@ jobs:
           SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
           SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
       - name: Extract version from commit message
-        if: matrix.java == '11'
+        if: matrix.java == '17'
         run: |
           version=${GITHUB_REF/refs\/tags\/v/}
           echo "VERSION=$version" >> $GITHUB_ENV
         env:
           COMMIT_MSG: ${{ github.event.head_commit.message }}
       - name: Publish release notes
-        if: matrix.java == '11'
+        if: matrix.java == '17'
         uses: release-drafter/release-drafter@b1476f6e6eb133afa41ed8589daba6dc69b4d3f5 # v6, specifically v6.1.0
         with:
           config-name: release-drafter.yml
