@@ -16,17 +16,19 @@ class Http4sBackendCancellationTest extends AsyncFlatSpec with Matchers {
 
   it should "cancel the underlying request fiber when the caller cancels" in {
     val test = for {
+      started <- Deferred[IO, Unit]
       cancelled <- Deferred[IO, Unit]
-      // A client whose request never completes, but records when it is cancelled
+      // A client whose request never completes, but records when it starts and when it is cancelled
       client = Client[IO] { _ =>
-        IO.never[Http4sResponse[IO]]
+        (started.complete(()) >> IO.never[Http4sResponse[IO]])
           .onCancel(cancelled.complete(()).void)
           .toResource
       }
       backend = Http4sBackend.usingClient[IO](client)
       req = basicRequest.get(uri"http://localhost/test").response(asString)
-      // Send the request, then cancel it after a short delay
-      _ <- req.send(backend).void.timeoutTo(50.millis, IO.unit)
+      fiber <- req.send(backend).start
+      _ <- started.get.timeout(3.seconds)
+      _ <- fiber.cancel
       // If the fiber was properly cancelled, onCancel will have signalled
       _ <- cancelled.get.timeout(3.seconds)
     } yield succeed
