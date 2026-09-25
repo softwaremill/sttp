@@ -80,10 +80,9 @@ object OkHttpFutureBackend {
   def usingClient(
       client: OkHttpClient,
       compressionHandlers: CompressionHandlers[Any, InputStream] = DefaultCompressionHandlers,
-      webSocketBufferCapacity: Option[Int] = OkHttpBackend.DefaultWebSocketBufferCapacity,
-      closeClient: Boolean = false
+      webSocketBufferCapacity: Option[Int] = OkHttpBackend.DefaultWebSocketBufferCapacity
   )(implicit ec: ExecutionContext = ExecutionContext.global): WebSocketBackend[Future] =
-    OkHttpFutureBackend(client, closeClient = closeClient, compressionHandlers, webSocketBufferCapacity)
+    OkHttpFutureBackend(client, closeClient = false, compressionHandlers, webSocketBufferCapacity)
 
   /** Create a stub backend for testing, which uses the [[Future]] response wrapper, and doesn't support streaming.
     *

@@ -61,18 +61,26 @@ object ArmeriaZioBackend {
   def layer(options: BackendOptions = BackendOptions.Default): Layer[Throwable, SttpClient] =
     ZLayer.fromManaged(managed(options))
 
-  def usingClient(client: WebClient, closeFactory: Boolean = false): Task[StreamBackend[Task, ZioStreams]] =
+  /** Creates a backend using the given client. The client's factory is closed when the managed resource is released. */
+  def managedUsingClient(client: WebClient): TaskManaged[StreamBackend[Task, ZioStreams]] =
+    ZManaged.make(
+      ZIO
+        .runtime[Any]
+        .map(runtime => apply(runtime, client, closeFactory = true))
+    )(_.close().ignore)
+
+  def usingClient(client: WebClient): Task[StreamBackend[Task, ZioStreams]] =
     ZIO
       .runtime[Any]
-      .map(runtime => apply(runtime, client, closeFactory = closeFactory))
+      .map(runtime => apply(runtime, client, closeFactory = false))
 
-  def usingClient[R](runtime: Runtime[R], client: WebClient, closeFactory: Boolean = false): StreamBackend[Task, ZioStreams] =
-    apply(runtime, client, closeFactory = closeFactory)
+  def usingClient[R](runtime: Runtime[R], client: WebClient): StreamBackend[Task, ZioStreams] =
+    apply(runtime, client, closeFactory = false)
 
-  def usingDefaultClient(closeFactory: Boolean = false): Task[StreamBackend[Task, ZioStreams]] =
+  def usingDefaultClient(): Task[StreamBackend[Task, ZioStreams]] =
     ZIO
       .runtime[Any]
-      .map(runtime => apply(runtime, newClient(), closeFactory = closeFactory))
+      .map(runtime => apply(runtime, newClient(), closeFactory = false))
 
   private def apply[R](runtime: Runtime[R], client: WebClient, closeFactory: Boolean): StreamBackend[Task, ZioStreams] =
     wrappers.FollowRedirectsBackend(new ArmeriaZioBackend(runtime, client, closeFactory))

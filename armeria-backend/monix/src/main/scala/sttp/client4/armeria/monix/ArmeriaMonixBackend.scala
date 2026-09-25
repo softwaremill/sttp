@@ -14,7 +14,7 @@ import sttp.client4.impl.monix.TaskMonadAsyncError
 import sttp.client4.wrappers.FollowRedirectsBackend
 import sttp.client4.{wrappers, BackendOptions, StreamBackend}
 import sttp.monad.MonadAsyncError
-import cats.effect.ExitCase
+import cats.effect.{ExitCase, Resource}
 
 private final class ArmeriaMonixBackend(client: WebClient, closeFactory: Boolean)(implicit scheduler: Scheduler)
     extends AbstractArmeriaBackend[Task, MonixStreams](client, closeFactory, TaskMonadAsyncError) {
@@ -55,16 +55,31 @@ object ArmeriaMonixBackend {
     apply(newClient(options), closeFactory = true)
 
   /** @param scheduler The scheduler used for streaming request bodies. Defaults to the global scheduler. */
-  def usingClient(client: WebClient, closeFactory: Boolean = false)(implicit
+  def resource(options: BackendOptions = BackendOptions.Default)(implicit
       scheduler: Scheduler = Scheduler.global
-  ): StreamBackend[Task, MonixStreams] =
-    apply(client, closeFactory = closeFactory)
+  ): Resource[Task, StreamBackend[Task, MonixStreams]] =
+    Resource.make(Task.eval(apply(options)))(_.close())
+
+  /** Creates a backend using the given client. The client's factory is closed when the resource is released.
+    * @param scheduler
+    *   The scheduler used for streaming request bodies. Defaults to the global scheduler.
+    */
+  def resourceUsingClient(client: WebClient)(implicit
+      scheduler: Scheduler = Scheduler.global
+  ): Resource[Task, StreamBackend[Task, MonixStreams]] =
+    Resource.make(Task.eval(apply(client, closeFactory = true)))(_.close())
 
   /** @param scheduler The scheduler used for streaming request bodies. Defaults to the global scheduler. */
-  def usingDefaultClient(closeFactory: Boolean = false)(implicit
+  def usingClient(client: WebClient)(implicit
       scheduler: Scheduler = Scheduler.global
   ): StreamBackend[Task, MonixStreams] =
-    apply(newClient(), closeFactory = closeFactory)
+    apply(client, closeFactory = false)
+
+  /** @param scheduler The scheduler used for streaming request bodies. Defaults to the global scheduler. */
+  def usingDefaultClient()(implicit
+      scheduler: Scheduler = Scheduler.global
+  ): StreamBackend[Task, MonixStreams] =
+    apply(newClient(), closeFactory = false)
 
   private def apply(client: WebClient, closeFactory: Boolean)(implicit
       scheduler: Scheduler
