@@ -24,6 +24,7 @@ class ToRfc2616ConverterTest extends AnyFlatSpec with Matchers {
     basicRequest.patch(localhost).toRfc2616Format should startWith("PATCH")
     basicRequest.head(localhost).toRfc2616Format should startWith("HEAD")
     basicRequest.options(localhost).toRfc2616Format should startWith("OPTIONS")
+    basicRequest.query(localhost).toRfc2616Format should startWith("QUERY")
   }
 
   it should "convert request with sensitive query param" in {

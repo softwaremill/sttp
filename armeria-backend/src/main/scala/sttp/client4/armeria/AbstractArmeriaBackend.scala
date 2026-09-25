@@ -173,16 +173,17 @@ abstract class AbstractArmeriaBackend[F[_], S <: Streams[S]](
 
   private def methodToArmeria(method: Method): HttpMethod =
     method match {
-      case Method.GET     => HttpMethod.GET
-      case Method.HEAD    => HttpMethod.HEAD
-      case Method.POST    => HttpMethod.POST
-      case Method.PUT     => HttpMethod.PUT
-      case Method.DELETE  => HttpMethod.DELETE
-      case Method.OPTIONS => HttpMethod.OPTIONS
-      case Method.PATCH   => HttpMethod.PATCH
-      case Method.CONNECT => HttpMethod.CONNECT
-      case Method.TRACE   => HttpMethod.TRACE
-      case _              => HttpMethod.UNKNOWN
+      case Method.GET             => HttpMethod.GET
+      case Method.HEAD            => HttpMethod.HEAD
+      case Method.POST            => HttpMethod.POST
+      case Method.PUT             => HttpMethod.PUT
+      case Method.DELETE          => HttpMethod.DELETE
+      case Method.OPTIONS         => HttpMethod.OPTIONS
+      case Method.PATCH           => HttpMethod.PATCH
+      case Method.CONNECT         => HttpMethod.CONNECT
+      case Method.TRACE           => HttpMethod.TRACE
+      case m if m == Method.QUERY => HttpMethod.QUERY
+      case _                      => HttpMethod.UNKNOWN
     }
 
   private def toArmeriaBodyPart(bodyPart: Part[BodyPart[_]]): ArmeriaBodyPart = {
