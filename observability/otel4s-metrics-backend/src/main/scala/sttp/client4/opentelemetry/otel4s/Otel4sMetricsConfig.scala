@@ -1,5 +1,6 @@
 package sttp.client4.opentelemetry.otel4s
 
+import org.typelevel.otel4s.Attributes
 import org.typelevel.otel4s.metrics.BucketBoundaries
 import sttp.client4.GenericRequest
 
@@ -7,7 +8,8 @@ final case class Otel4sMetricsConfig(
     requestDurationHistogramBuckets: BucketBoundaries,
     requestBodySizeHistogramBuckets: Option[BucketBoundaries],
     responseBodySizeHistogramBuckets: Option[BucketBoundaries],
-    urlTemplate: GenericRequest[_, _] => Option[String] = (_) => None
+    urlTemplate: GenericRequest[_, _] => Option[String] = (_) => None,
+    extraAttributes: GenericRequest[_, _] => Attributes = (_) => Attributes.empty
 )
 
 object Otel4sMetricsConfig {
@@ -19,6 +21,7 @@ object Otel4sMetricsConfig {
     requestDurationHistogramBuckets = DefaultDurationBuckets,
     requestBodySizeHistogramBuckets = None,
     responseBodySizeHistogramBuckets = None,
-    urlTemplate = _ => None
+    urlTemplate = _ => None,
+    extraAttributes = _ => Attributes.empty
   )
 }
