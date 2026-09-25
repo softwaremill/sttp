@@ -236,8 +236,9 @@ Otel4sMetricsBackend(
 
 Each distinct combination of attribute values creates a separate time series, so only low-cardinality values should be
 used; for the same reason, prefer returning the same attribute keys for all requests sent using a given backend.
-Attributes with keys that clash with the semantic convention ones added by the backend (such as `http.request.method`
-or `http.response.status_code`) are ignored, so that the recorded metrics always follow the conventions.
+Extra attributes cannot override the semantic convention attributes set by the backend (such as `http.request.method`).
+Some of those are only set in certain cases (e.g. `error.type` only for failed requests), and otherwise an extra
+attribute with the same key is recorded as-is. Hence, avoid using semantic convention keys for extra attributes.
 
 ## Tracing (cats-effect, otel4s)
 
