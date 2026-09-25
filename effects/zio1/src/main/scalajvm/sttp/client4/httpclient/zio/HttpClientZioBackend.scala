@@ -171,6 +171,16 @@ object HttpClientZioBackend {
       _.close().ignore
     )
 
+  /** Creates a backend using the given client. The client is closed when the managed resource is released. */
+  def managedUsingClient(
+      client: HttpClient,
+      customizeRequest: HttpRequest => HttpRequest = identity,
+      compressionHandlers: CompressionHandlers[ZioStreams, ZioStreams.BinaryStream] = DefaultCompressionHandlers
+  ): ZManaged[Any, Throwable, WebSocketStreamBackend[Task, ZioStreams]] =
+    ZManaged.make(
+      ZIO.effect(HttpClientZioBackend(client, closeClient = true, customizeRequest, compressionHandlers))
+    )(_.close().ignore)
+
   def layer(
       options: BackendOptions = BackendOptions.Default,
       customizeRequest: HttpRequest => HttpRequest = identity,
@@ -204,18 +214,6 @@ object HttpClientZioBackend {
       compressionHandlers: CompressionHandlers[ZioStreams, ZioStreams.BinaryStream] = DefaultCompressionHandlers
   ): ZLayer[Any, Throwable, SttpClient] =
     ZLayer.fromManaged(managedUsingClient(client, customizeRequest, compressionHandlers))
-
-  /** Creates a backend using the given client. The client's executor is shut down when the managed resource is
-    * released.
-    */
-  def managedUsingClient(
-      client: HttpClient,
-      customizeRequest: HttpRequest => HttpRequest = identity,
-      compressionHandlers: CompressionHandlers[ZioStreams, ZioStreams.BinaryStream] = DefaultCompressionHandlers
-  ): ZManaged[Any, Throwable, WebSocketStreamBackend[Task, ZioStreams]] =
-    ZManaged.make(
-      ZIO.effect(HttpClientZioBackend(client, closeClient = true, customizeRequest, compressionHandlers))
-    )(_.close().ignore)
 
   /** Create a stub backend for testing, which uses the [[Task]] response wrapper, and supports `Stream[Throwable,
     * ByteBuffer]` streaming.

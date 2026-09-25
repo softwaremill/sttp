@@ -93,6 +93,9 @@ create client:
 import monix.execution.Scheduler.Implicits.global
 val backend = ArmeriaMonixBackend()
 
+// or, if you'd like the backend to be wrapped in cats-effect Resource:
+ArmeriaMonixBackend.resource().use { backend => ??? }
+
 // You can use the default client which reuses the connection pool of ClientFactory.ofDefault()
 ArmeriaMonixBackend.usingDefaultClient()
 ```

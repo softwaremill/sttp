@@ -176,6 +176,7 @@ object HttpClientZioBackend {
       _.close().ignore
     )
 
+  /** Creates a backend using the given client. The client is closed when the scope is closed. */
   def scopedUsingClient(
       client: HttpClient,
       customizeRequest: HttpRequest => HttpRequest = identity,

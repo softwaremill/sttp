@@ -60,6 +60,7 @@ object ArmeriaFs2Backend {
   ): Resource[F, StreamBackend[F, Fs2Streams[F]]] =
     Resource.make(Sync[F].delay(apply(newClient(options), closeFactory = true)))(_.close())
 
+  /** Creates a backend using the given client. The client's `ClientFactory` is closed when the resource is released. */
   def resourceUsingClient[F[_]: ConcurrentEffect](client: WebClient): Resource[F, StreamBackend[F, Fs2Streams[F]]] =
     Resource.make(Sync[F].delay(apply(client, closeFactory = true)))(_.close())
 

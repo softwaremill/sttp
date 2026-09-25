@@ -60,7 +60,7 @@ object ArmeriaMonixBackend {
   ): Resource[Task, StreamBackend[Task, MonixStreams]] =
     Resource.make(Task.eval(apply(options)))(_.close())
 
-  /** Creates a backend using the given client. The client's factory is closed when the resource is released.
+  /** Creates a backend using the given client. The client's `ClientFactory` is closed when the resource is released.
     * @param scheduler
     *   The scheduler used for streaming request bodies. Defaults to the global scheduler.
     */

@@ -161,7 +161,7 @@ object OkHttpMonixBackend {
   ): Resource[Task, WebSocketStreamBackend[Task, MonixStreams]] =
     Resource.make(apply(options, compressionHandlers, webSocketBufferCapacity))(_.close())
 
-  /** Creates a backend using the given client. The client's dispatcher is shut down when the resource is released. */
+  /** Creates a backend using the given client. The client is closed when the resource is released. */
   def resourceUsingClient(
       client: OkHttpClient,
       compressionHandlers: CompressionHandlers[Any, InputStream] = DefaultCompressionHandlers,
