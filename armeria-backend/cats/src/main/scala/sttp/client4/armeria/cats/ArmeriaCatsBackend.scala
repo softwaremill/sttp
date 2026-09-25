@@ -53,6 +53,7 @@ object ArmeriaCatsBackend {
   ): Resource[F, Backend[F]] =
     Resource.make(Sync[F].delay(apply(newClient(options), closeFactory = true)))(_.close())
 
+  /** Creates a backend using the given client. The client's `ClientFactory` is closed when the resource is released. */
   def resourceUsingClient[F[_]: Async](client: WebClient): Resource[F, Backend[F]] =
     Resource.make(Sync[F].delay(apply(client, closeFactory = true)))(_.close())
 

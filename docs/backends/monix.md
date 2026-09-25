@@ -66,6 +66,9 @@ OkHttpMonixBackend.resource().use { backend => ??? }
 import okhttp3._
 val okHttpClient: OkHttpClient = ???
 val backend = OkHttpMonixBackend.usingClient(okHttpClient)
+
+// or, obtain a cats-effect Resource with a custom instance of the OkHttpClient:
+OkHttpMonixBackend.resourceUsingClient(okHttpClient).use { backend => ??? }
 ```
 
 This backend depends on [OkHttp](http://square.github.io/okhttp/) and fully supports HTTP/2.
@@ -90,6 +93,9 @@ create client:
 import monix.execution.Scheduler.Implicits.global
 val backend = ArmeriaMonixBackend()
 
+// or, if you'd like the backend to be wrapped in cats-effect Resource:
+ArmeriaMonixBackend.resource().use { backend => ??? }
+
 // You can use the default client which reuses the connection pool of ClientFactory.ofDefault()
 ArmeriaMonixBackend.usingDefaultClient()
 ```
@@ -108,6 +114,9 @@ val client = WebClient.builder("https://my-service.com")
              .build()
              
 val backend = ArmeriaMonixBackend.usingClient(client)
+
+// or, obtain a cats-effect Resource with a custom instance of the WebClient:
+ArmeriaMonixBackend.resourceUsingClient(client).use { backend => ??? }
 ```
 
 ```{note}

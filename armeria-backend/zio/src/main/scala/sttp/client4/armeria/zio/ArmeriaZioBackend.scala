@@ -67,6 +67,7 @@ object ArmeriaZioBackend {
   ): ZIO[Scope, Throwable, StreamBackend[Task, ZioStreams]] =
     ZIO.acquireRelease(apply(options))(_.close().ignore)
 
+  /** Creates a backend using the given client. The client's `ClientFactory` is closed when the scope is closed. */
   def scopedUsingClient(client: WebClient): ZIO[Scope, Throwable, StreamBackend[Task, ZioStreams]] =
     ZIO.acquireRelease(
       ZIO
