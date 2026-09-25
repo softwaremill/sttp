@@ -111,14 +111,15 @@ private[http4s] abstract class Http4sBackendBase[F[_]](implicit protected val as
             }
             .recoverWith { case t: Throwable => responseVar.complete(Left(t)).as(()) }
 
-          sendRequest.start.flatMap { fiber =>
-            responseVar.get
-              .onCancel(fiber.cancel)
-              .flatMap {
-                case Left(t)  => implicitly[cats.ApplicativeError[F, Throwable]].raiseError(t)
-                case Right(r) => r.pure[F]
-              }
-          }
+          // uncancelable, so that a cancel between starting the fiber and installing onCancel doesn't leak the fiber
+          asyncF
+            .uncancelable { poll =>
+              sendRequest.start.flatMap(fiber => poll(responseVar.get).onCancel(fiber.cancel))
+            }
+            .flatMap {
+              case Left(t)  => asyncF.raiseError[Response[T]](t)
+              case Right(r) => r.pure[F]
+            }
         }
       }
     }
