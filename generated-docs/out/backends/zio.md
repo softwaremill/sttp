@@ -9,8 +9,8 @@ The `*-zio` modules depend on ZIO 2.x. For ZIO 1.x support, use modules with the
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client4" %% "zio" % "4.0.26"  // for ZIO 2.x
-"com.softwaremill.sttp.client4" %% "zio1" % "4.0.26" // for ZIO 1.x
+"com.softwaremill.sttp.client4" %% "zio" % "4.0.27"  // for ZIO 2.x
+"com.softwaremill.sttp.client4" %% "zio1" % "4.0.27" // for ZIO 1.x
 ```
 
 Create the backend using:
@@ -45,8 +45,8 @@ Host header override is supported in environments running Java 12 onwards, but i
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client4" %% "armeria-backend-zio" % "4.0.26"  // for ZIO 2.x
-"com.softwaremill.sttp.client4" %% "armeria-backend-zio1" % "4.0.26" // for ZIO 1.x
+"com.softwaremill.sttp.client4" %% "armeria-backend-zio" % "4.0.27"  // for ZIO 2.x
+"com.softwaremill.sttp.client4" %% "armeria-backend-zio1" % "4.0.27" // for ZIO 1.x
 ```
 
 add imports:
@@ -108,6 +108,8 @@ The `CurlZioBackend` companion object contains methods to create the backend dir
 ## ZIO layers + constructors
 
 When using constructors to express service dependencies, ZIO layers can be used to provide the `SttpBackend` instance, instead of creating one by hand. In this scenario, the lifecycle of a `SttpBackend` service is described by `ZLayer`s, which can be created using the `.layer`/`.layerUsingConfig`/... methods on `HttpClientZioBackend` / `ArmeriaZioBackend`.
+
+A layer created with `.layerUsingClient` closes the given client when the layer is released.
 
 The layers can be used to provide an implementation of the `SttpBackend` dependency when creating services. For example:
 
