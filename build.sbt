@@ -123,7 +123,7 @@ val testServerSettings = Seq(
 
 val circeVersion: String = "0.14.16"
 
-val jsoniterVersion = "2.41.0"
+val jsoniterVersion = "2.41.2"
 
 val play29JsonVersion = "2.10.8"
 
@@ -171,7 +171,7 @@ val tethysVersion = "0.29.8"
 val openTelemetryVersion = "1.66.0"
 val openTelemetrySemconvVersion = "1.44.0"
 val otel4s = "1.1.0"
-val otel4sSdk = "0.19.3"
+val otel4sSdk = "0.19.4"
 val slf4jVersion = "1.7.36"
 
 val compileAndTest = "compile->compile;test->test"
