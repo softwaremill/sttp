@@ -61,7 +61,7 @@ private[client4] class DigestAuthenticator private (
     if (isFirstOrShouldRetry) {
       val qualityOfProtection = selectQop(wwwAuthHeader.qop)
       val algorithm = wwwAuthHeader.algorithm.getOrElse("MD5")
-      val messageDigest = new MessageDigestCompatibility(algorithm)
+      val messageDigest = new MessageDigestCompatibility(baseDigestAlgorithm(algorithm))
       val digestUri =
         (Option(request.uri.toJavaUri.getPath), Option(request.uri.toJavaUri.getQuery)) match {
           case (Some(p), Some(q)) if p.trim.nonEmpty && q.trim.nonEmpty => s"$p?$q"
@@ -224,6 +224,10 @@ private[client4] object DigestAuthenticator {
   val QualityOfProtectionAuth = "auth"
   val QualityOfProtectionAuthInt = "auth-int"
   case class DigestAuthData(username: String, password: String)
+
+  private def baseDigestAlgorithm(algorithm: String): String =
+    if (algorithm.toUpperCase.endsWith("-SESS")) algorithm.substring(0, algorithm.length - "-sess".length)
+    else algorithm
 
   private def md5HexString(text: String, messageDigest: MessageDigestCompatibility) =
     byteArrayToHexString(messageDigest.digest(text.getBytes(Charset.forName("UTF-8"))))

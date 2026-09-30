@@ -12,7 +12,9 @@ class Http4sNativeHttpStreamingTest extends Fs2StreamingTest {
       Http4sBackend.usingDefaultEmberClientBuilder[IO]().allocated.unsafeRunSync()._1
     } catch {
       case e: Throwable =>
-        Console.err.println(s"[Http4sNativeHttpStreamingTest] Failed to create backend: $e ${e.getMessage()} ${e.getCause()}")
+        Console.err.println(
+          s"[Http4sNativeHttpStreamingTest] Failed to create backend: $e ${e.getMessage()} ${e.getCause()}"
+        )
         e.printStackTrace(Console.err)
         throw e
     }

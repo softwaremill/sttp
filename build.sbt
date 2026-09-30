@@ -46,6 +46,9 @@ val commonSettings = commonSmlBuildSettings ++ ossPublishSettings ++ Seq(
 )
 
 val commonJvmSettings = commonSettings ++ Seq(
+  scalacOptions ++=
+    (if (ScalaArtifacts.isScala3(scalaVersion.value)) Seq("-Yfuture-lazy-vals", "-java-output-version", "11")
+     else Seq.empty),
   Test / testOptions += Tests.Argument("-oD") // add test timings; js build specify other options which conflict
 )
 
@@ -118,16 +121,16 @@ val testServerSettings = Seq(
   }
 )
 
-val circeVersion: String = "0.14.15"
+val circeVersion: String = "0.14.16"
 
-val jsoniterVersion = "2.38.14"
+val jsoniterVersion = "2.41.2"
 
 val play29JsonVersion = "2.10.8"
 
 val playJsonVersion = "3.0.6"
 
-val catsEffect_3_version = "3.7.0"
-val fs2_3_version = "3.13.0"
+val catsEffect_3_version = "3.7.1"
+val fs2_3_version = "3.14.0"
 
 val catsEffect_2_version = "2.5.5"
 
@@ -137,14 +140,14 @@ val akkaHttp = "com.typesafe.akka" %% "akka-http" % "10.2.10"
 val akkaStreamVersion = "2.6.20"
 val akkaStreams = "com.typesafe.akka" %% "akka-stream" % akkaStreamVersion
 
-val pekkoHttp = "org.apache.pekko" %% "pekko-http" % "1.3.0"
-val pekkoStreamVersion = "1.6.0"
+val pekkoHttp = "org.apache.pekko" %% "pekko-http" % "1.4.0"
+val pekkoStreamVersion = "1.7.0"
 val pekkoStreams = "org.apache.pekko" %% "pekko-stream" % pekkoStreamVersion
 
 val scalaTest = libraryDependencies ++= Seq("freespec", "funsuite", "flatspec", "wordspec", "shouldmatchers").map(m =>
   "org.scalatest" %%% s"scalatest-$m" % "3.2.20" % Test
 )
-val scalaTestPlusScalaCheck = libraryDependencies += "org.scalatestplus" %% "scalacheck-1-18" % "3.2.19.0" % Test
+val scalaTestPlusScalaCheck = libraryDependencies += "org.scalatestplus" %% "scalacheck-1-19" % "3.2.20.0" % Test
 
 val zio1Version = "1.0.18"
 val zio2Version = "2.1.26"
@@ -152,8 +155,8 @@ val zio1InteropRsVersion = "1.3.12"
 val zio2InteropRsVersion = "2.0.2"
 
 val oxVersion = "0.6.1"
-val sttpModelVersion = "1.7.17"
-val sttpSharedVersion = "1.5.2"
+val sttpModelVersion = "1.8.2"
+val sttpSharedVersion = "1.5.3"
 
 val logback = "ch.qos.logback" % "logback-classic" % "1.5.14"
 
@@ -162,13 +165,13 @@ val braveOpentracingVersion = "1.0.1"
 val zipkinSenderOkHttpVersion = "3.5.3"
 val resilience4jVersion = "2.4.0"
 val http4s_ce2_version = "0.22.15"
-val http4s_ce3_version = "0.23.34"
+val http4s_ce3_version = "0.23.37"
 val osLibVersion = "0.11.4"
 val tethysVersion = "0.29.8"
-val openTelemetryVersion = "1.63.0"
-val openTelemetrySemconvVersion = "1.41.1"
-val otel4s = "1.0.0"
-val otel4sSdk = "0.19.0"
+val openTelemetryVersion = "1.66.0"
+val openTelemetrySemconvVersion = "1.44.0"
+val otel4s = "1.1.0"
+val otel4sSdk = "0.19.4"
 val slf4jVersion = "1.7.36"
 
 val compileAndTest = "compile->compile;test->test"
@@ -632,7 +635,7 @@ lazy val okhttpBackend = (projectMatrix in file("okhttp-backend"))
     libraryDependencies ++= Seq(
       // okhttp 5 is published as a Kotlin Multiplatform library; the JVM classes live in the `okhttp-jvm` artifact
       // (the plain `okhttp` artifact only carries Gradle module metadata, which sbt/coursier doesn't resolve).
-      "com.squareup.okhttp3" % "okhttp-jvm" % "5.4.0"
+      "com.squareup.okhttp3" % "okhttp-jvm" % "5.5.0"
     )
   )
   .jvmPlatform(scalaVersions = scala2And3)
@@ -665,7 +668,6 @@ lazy val http4sCe2Backend = (projectMatrix in file("http4s-ce2-backend"))
   .dependsOn(catsCe2 % compileAndTest, core % compileAndTest, fs2Ce2 % compileAndTest)
 
 lazy val http4sBackend = (projectMatrix in file("http4s-backend"))
-  .settings(commonJvmSettings)
   .settings(testServerSettings)
   .settings(
     name := "http4s-backend",
@@ -679,7 +681,7 @@ lazy val http4sBackend = (projectMatrix in file("http4s-backend"))
     scalaVersions = scala2And3,
     settings = commonJvmSettings ++ Seq(
       libraryDependencies ++= Seq(
-        "org.http4s" %% "http4s-blaze-client" % "0.23.17" % Optional
+        "org.http4s" %% "http4s-blaze-client" % "0.23.18" % Optional
       )
     )
   )
@@ -707,7 +709,7 @@ lazy val armeriaBackend = (projectMatrix in file("armeria-backend"))
   .settings(testServerSettings)
   .settings(
     name := "armeria-backend",
-    libraryDependencies += "com.linecorp.armeria" % "armeria" % "1.39.1"
+    libraryDependencies += "com.linecorp.armeria" % "armeria" % "1.41.1"
   )
   .jvmPlatform(scalaVersions = scala2And3)
   .dependsOn(core % compileAndTest)
@@ -823,7 +825,7 @@ lazy val zioJson = (projectMatrix in file("json/zio-json"))
   .settings(
     name := "zio-json",
     libraryDependencies ++= Seq(
-      "dev.zio" %%% "zio-json" % "0.9.0",
+      "dev.zio" %%% "zio-json" % "1.0.0",
       "com.softwaremill.sttp.shared" %%% "zio" % sttpSharedVersion
     ),
     scalaTest
@@ -949,7 +951,7 @@ lazy val prometheusBackend = (projectMatrix in file("observability/prometheus-ba
   .settings(
     name := "prometheus-backend",
     libraryDependencies ++= Seq(
-      "io.prometheus" % "prometheus-metrics-core" % "1.8.0"
+      "io.prometheus" % "prometheus-metrics-core" % "1.9.0"
     ),
     scalaTest
   )
@@ -975,7 +977,7 @@ lazy val openTelemetryTracingZioBackend = (projectMatrix in file("observability/
   .settings(
     name := "opentelemetry-tracing-zio-backend",
     libraryDependencies ++= Seq(
-      "dev.zio" %% "zio-opentelemetry" % "3.1.17",
+      "dev.zio" %% "zio-opentelemetry" % "3.1.19",
       "io.opentelemetry.semconv" % "opentelemetry-semconv" % openTelemetrySemconvVersion,
       "io.opentelemetry" % "opentelemetry-api" % openTelemetryVersion,
       "io.opentelemetry" % "opentelemetry-sdk-testing" % openTelemetryVersion % Test
@@ -1019,7 +1021,6 @@ lazy val otel4sTracingBackend = (projectMatrix in file("observability/otel4s-tra
   .dependsOn(core % compileAndTest)
 
 lazy val scribeBackend = (projectMatrix in file("logging/scribe"))
-  .settings(commonJvmSettings)
   .settings(
     name := "scribe-backend",
     libraryDependencies ++= Seq(
@@ -1082,7 +1083,7 @@ lazy val examples = (projectMatrix in file("examples"))
       "io.github.resilience4j" % "resilience4j-circuitbreaker" % resilience4jVersion,
       "io.github.resilience4j" % "resilience4j-ratelimiter" % resilience4jVersion,
       "com.lihaoyi" %% "os-lib" % osLibVersion,
-      "redis.clients" % "jedis" % "6.0.0",
+      "redis.clients" % "jedis" % "8.0.1",
       "io.opentelemetry" % "opentelemetry-exporter-otlp" % openTelemetryVersion,
       "io.opentelemetry" % "opentelemetry-sdk-extension-autoconfigure" % openTelemetryVersion,
       pekkoStreams,

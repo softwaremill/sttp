@@ -1,13 +1,13 @@
 // {cat=Backend wrapper; effects=Synchronous; backend=HttpClient}: Use the caching backend wrapper with Redis
 
-//> using dep com.softwaremill.sttp.client4::core:4.0.25
-//> using dep com.softwaremill.sttp.client4::caching-backend:4.0.25
-//> using dep redis.clients:jedis:7.5.0
+//> using dep com.softwaremill.sttp.client4::core:4.0.27
+//> using dep com.softwaremill.sttp.client4::caching-backend:4.0.27
+//> using dep redis.clients:jedis:8.0.1
 //> using dep ch.qos.logback:logback-classic:1.5.15
 
 package sttp.client4.examples.wrapper
 
-import redis.clients.jedis.UnifiedJedis
+import redis.clients.jedis.{RedisClient, UnifiedJedis}
 import sttp.client4.*
 import sttp.client4.caching.Cache
 import sttp.client4.caching.CachingBackend
@@ -31,7 +31,7 @@ class RedisCache(jedis: UnifiedJedis) extends Cache[Identity]:
 
 @main def redisCachingBackend(): Unit =
   val backend: WebSocketSyncBackend =
-    CachingBackend(DefaultSyncBackend(), new RedisCache(new UnifiedJedis("redis://localhost:6379")))
+    CachingBackend(DefaultSyncBackend(), new RedisCache(RedisClient.create("redis://localhost:6379")))
 
   // returns a response with a max-age of 3 seconds
   val request = basicRequest.get(uri"https://httpbin.org/cache/3")

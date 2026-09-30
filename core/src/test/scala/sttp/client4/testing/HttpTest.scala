@@ -37,6 +37,7 @@ trait HttpTest[F[_]]
 
   protected def postEcho: Request[Either[String, String]] = basicRequest.post(uri"$endpoint/echo")
   protected def postEchoExact: Request[Either[String, String]] = basicRequest.post(uri"$endpoint/echo/exact")
+  protected def queryEcho: Request[Either[String, String]] = basicRequest.query(uri"$endpoint/echo")
   protected val testBody = "this is the body"
   protected val testBodyBytes: Array[Byte] = testBody.getBytes("UTF-8")
   protected val testBodySignedBytes: Array[Byte] = Array[Byte](-1)
@@ -60,6 +61,7 @@ trait HttpTest[F[_]]
   protected def supportsEmptyContentEncoding = true
   protected def supportsNonAsciiHeaderValues = true
   protected def supportsMaxResponseBodyLength = true
+  protected def supportsQuery = true
 
   "request parsing" - {
     "Inf timeout should not throw exception" in {
@@ -73,6 +75,14 @@ trait HttpTest[F[_]]
     "as string" in {
       postEcho.body(testBody).send(backend).toFuture().map { response =>
         response.body should be(Right(expectedPostEchoResponse))
+      }
+    }
+
+    if (supportsQuery) {
+      "as query" in {
+        queryEcho.body(testBody).send(backend).toFuture().map { response =>
+          response.body should be(Right(s"QUERY /echo $testBody"))
+        }
       }
     }
 

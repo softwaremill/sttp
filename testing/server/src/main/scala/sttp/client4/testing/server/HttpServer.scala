@@ -54,6 +54,13 @@ private class HttpServer(port: Int, info: String => Unit) extends AutoCloseable 
   private val textWithSpecialCharacters = "Żółć!"
   private val retryTestCache = new ConcurrentHashMap[String, Int]()
 
+  private val QUERY = HttpMethod.custom(
+    name = "QUERY",
+    safe = true,
+    idempotent = true,
+    requestEntityAcceptance = RequestEntityAcceptance.Expected
+  )
+
   private val serverRoutes: Route =
     pathPrefix("echo") {
       pathPrefix("form_params") {
@@ -112,6 +119,16 @@ private class HttpServer(port: Int, info: String => Unit) extends AutoCloseable 
             entity(as[String]) { (body: String) =>
               complete(
                 List("PUT", "/echo", paramsToString(params), body)
+                  .filter(_.nonEmpty)
+                  .mkString(" ")
+              )
+            }
+          }
+        } ~ method(QUERY) {
+          parameterMap { params =>
+            entity(as[String]) { (body: String) =>
+              complete(
+                List("QUERY", "/echo", paramsToString(params), body)
                   .filter(_.nonEmpty)
                   .mkString(" ")
               )
@@ -413,6 +430,21 @@ private class HttpServer(port: Int, info: String => Unit) extends AutoCloseable 
             get(complete(s"GET")) ~
               entity(as[String])((body: String) => post(complete(s"POST$body")))
           }
+        } ~ pathPrefix("get_after_query") {
+          path("r301") {
+            discardEntity(redirect("/redirect/get_after_query/result", StatusCodes.MovedPermanently))
+          } ~ path("r302") {
+            discardEntity(redirect("/redirect/get_after_query/result", StatusCodes.Found))
+          } ~ path("r303") {
+            discardEntity(redirect("/redirect/get_after_query/result", StatusCodes.SeeOther))
+          } ~ path("r307") {
+            discardEntity(redirect("/redirect/get_after_query/result", StatusCodes.TemporaryRedirect))
+          } ~ path("r308") {
+            discardEntity(redirect("/redirect/get_after_query/result", StatusCodes.PermanentRedirect))
+          } ~ path("result") {
+            get(complete(s"GET")) ~
+              entity(as[String])((body: String) => method(QUERY)(complete(s"QUERY$body")))
+          }
         } ~ pathPrefix("strip_sensitive_headers") {
           path("r1") {
             discardEntity(redirect("/redirect/strip_sensitive_headers/result", StatusCodes.PermanentRedirect))
@@ -554,7 +586,10 @@ private class HttpServer(port: Int, info: String => Unit) extends AutoCloseable 
 
   def start(): Future[Http.ServerBinding] =
     unbindServer().flatMap { _ =>
-      val server = Http().bindAndHandle(corsServerRoutes, "localhost", port)
+      import akka.http.scaladsl.settings.{ParserSettings, ServerSettings}
+      val parserSettings = ParserSettings.forServer(actorSystem).withCustomMethods(QUERY)
+      val serverSettings = ServerSettings(actorSystem).withParserSettings(parserSettings)
+      val server = Http().bindAndHandle(corsServerRoutes, "localhost", port, settings = serverSettings)
       this.server = Some(server)
       server
     }

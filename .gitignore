@@ -42,3 +42,7 @@ work.txt
 # TraceVault — local only, do not commit
 .tracevault/
 .claude/settings.local.json
+
+# Local Sphinx build artifacts
+generated-docs/out/.venv/
+generated-docs/out/_build/

@@ -31,6 +31,7 @@ class ToCurlConverterTest extends AnyFlatSpec with Matchers with ToCurlConverter
     basicRequest.patch(localhost).toCurl should include("--request PATCH")
     basicRequest.head(localhost).toCurl should include("--request HEAD")
     basicRequest.options(localhost).toCurl should include("--request OPTIONS")
+    basicRequest.query(localhost).toCurl should include("--request QUERY")
   }
 
   it should "convert request with header" in {

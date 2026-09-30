@@ -176,6 +176,7 @@ object HttpClientZioBackend {
       _.close().ignore
     )
 
+  /** Creates a backend using the given client. The client is closed when the scope is closed. */
   def scopedUsingClient(
       client: HttpClient,
       customizeRequest: HttpRequest => HttpRequest = identity,
@@ -217,18 +218,7 @@ object HttpClientZioBackend {
       customizeRequest: HttpRequest => HttpRequest = identity,
       compressionHandlers: CompressionHandlers[ZioStreams, ZioStreams.BinaryStream] = DefaultCompressionHandlers
   ): ZLayer[Any, Throwable, SttpClient] =
-    ZLayer.scoped(
-      ZIO
-        .acquireRelease(
-          ZIO.attempt(
-            usingClient(
-              client,
-              customizeRequest,
-              compressionHandlers
-            )
-          )
-        )(_.close().ignore)
-    )
+    ZLayer.scoped(scopedUsingClient(client, customizeRequest, compressionHandlers))
 
   /** Create a stub backend for testing, which uses the [[Task]] response wrapper, and supports `Stream[Throwable,
     * ByteBuffer]` streaming.

@@ -1,9 +1,9 @@
 // {cat=JSON; effects=cats-effect; backend=HttpClient}: Receive & parse JSON using circe
 
-//> using dep com.softwaremill.sttp.client4::circe:4.0.25
-//> using dep com.softwaremill.sttp.client4::cats:4.0.25
+//> using dep com.softwaremill.sttp.client4::circe:4.0.27
+//> using dep com.softwaremill.sttp.client4::cats:4.0.27
 //> using dep org.typelevel::cats-effect:3.5.7
-//> using dep io.circe::circe-generic:0.14.15
+//> using dep io.circe::circe-generic:0.14.16
 
 package sttp.client4.examples.json
 
