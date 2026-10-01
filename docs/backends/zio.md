@@ -109,6 +109,8 @@ The `CurlZioBackend` companion object contains methods to create the backend dir
 
 When using constructors to express service dependencies, ZIO layers can be used to provide the `SttpBackend` instance, instead of creating one by hand. In this scenario, the lifecycle of a `SttpBackend` service is described by `ZLayer`s, which can be created using the `.layer`/`.layerUsingConfig`/... methods on `HttpClientZioBackend` / `ArmeriaZioBackend`.
 
+A layer created with `.layerUsingClient` closes the given client when the layer is released.
+
 The layers can be used to provide an implementation of the `SttpBackend` dependency when creating services. For example:
 
 ```scala mdoc:compile-only

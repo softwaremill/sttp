@@ -182,6 +182,7 @@ object HttpClientFs2Backend {
         Resource.make(apply(dispatcher, options, customizeRequest, compressionHandlers))(_.close())
       )
 
+  /** Creates a backend using the given client. The client is closed when the resource is released. */
   def resourceUsingClient[F[_]: Async](
       client: HttpClient,
       customizeRequest: HttpRequest => HttpRequest = identity,

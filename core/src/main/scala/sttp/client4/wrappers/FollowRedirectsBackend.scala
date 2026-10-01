@@ -112,11 +112,15 @@ abstract class FollowRedirectsBackend[F[_], P] private (
     )
 
   private def changePostPutToGet[T](r: GenericRequest[T, R], statusCode: StatusCode): GenericRequest[T, R] = {
-    val applicable = r.method == Method.POST || r.method == Method.PUT
+    val isPostPut = r.method == Method.POST || r.method == Method.PUT
+    val isQuery = r.method == Method.QUERY
     val alwaysChanged = statusCode == StatusCode.SeeOther
     val neverChanged = statusCode == StatusCode.TemporaryRedirect || statusCode == StatusCode.PermanentRedirect
-    if (applicable && (r.options.redirectToGet || alwaysChanged) && !neverChanged) {
-      // when transforming POST or PUT into a get, content is dropped, also filter out content-related request headers
+    val shouldRedirectToGet =
+      (isPostPut && (r.options.redirectToGet || alwaysChanged) && !neverChanged) ||
+        (isQuery && alwaysChanged)
+    if (shouldRedirectToGet) {
+      // when transforming POST, PUT or QUERY into a get, content is dropped, also filter out content-related request headers
       r.method(Method.GET, r.uri)
         .body(NoBody)
         .withHeaders(r.headers.filterNot(header => config.contentHeaders.contains(header.name.toLowerCase())))

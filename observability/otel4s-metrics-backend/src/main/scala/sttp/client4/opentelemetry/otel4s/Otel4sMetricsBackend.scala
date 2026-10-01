@@ -104,7 +104,8 @@ object Otel4sMetricsBackend {
       responseBodySize,
       activeRequests,
       dispatcher,
-      config.urlTemplate
+      config.urlTemplate,
+      config.extraAttributes
     )
 
   private final case class State(start: FiniteDuration, activeRequestsAttributes: Attributes)
@@ -115,7 +116,8 @@ object Otel4sMetricsBackend {
       responseBodySize: Histogram[F, Long],
       activeRequests: UpDownCounter[F, Long],
       dispatcher: Dispatcher[F],
-      urlTemplate: GenericRequest[_, _] => Option[String]
+      urlTemplate: GenericRequest[_, _] => Option[String],
+      extraAttributes: GenericRequest[_, _] => Attributes
   ) extends RequestListener[F, State] {
     def before(request: GenericRequest[_, _]): F[State] =
       for {
@@ -171,6 +173,8 @@ object Otel4sMetricsBackend {
     private def activeRequestAttributes(request: GenericRequest[_, _]): Attributes = {
       val b = Attributes.newBuilder
 
+      b ++= extraAttributes(request)
+
       b += HttpAttributes.HttpRequestMethod(request.method.method)
       b ++= ServerAttributes.ServerAddress.maybe(request.uri.host)
       b ++= ServerAttributes.ServerPort.maybe(request.uri.port.map(_.toLong))
@@ -193,6 +197,8 @@ object Otel4sMetricsBackend {
         errorType: Option[String]
     ): Attributes = {
       val b = Attributes.newBuilder
+
+      b ++= extraAttributes(request)
 
       b += HttpAttributes.HttpRequestMethod(request.method.method)
       b ++= ServerAttributes.ServerAddress.maybe(request.uri.host)

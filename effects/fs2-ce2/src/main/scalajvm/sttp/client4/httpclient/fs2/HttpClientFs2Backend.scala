@@ -187,6 +187,7 @@ object HttpClientFs2Backend {
   ): Resource[F, WebSocketStreamBackend[F, Fs2Streams[F]]] =
     Resource.make(apply(blocker, options, customizeRequest, compressionHandlers))(_.close())
 
+  /** Creates a backend using the given client. The client is closed when the resource is released. */
   def resourceUsingClient[F[_]: ConcurrentEffect: ContextShift](
       client: HttpClient,
       blocker: Blocker,

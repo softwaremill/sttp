@@ -127,7 +127,7 @@ val testServerSettings = Seq(
 
 val circeVersion: String = "0.14.16"
 
-val jsoniterVersion = "2.41.0"
+val jsoniterVersion = "2.41.2"
 
 val play29JsonVersion = "2.10.8"
 
@@ -159,7 +159,7 @@ val zio1InteropRsVersion = "1.3.12"
 val zio2InteropRsVersion = "2.0.2"
 
 val oxVersion = "0.6.1"
-val sttpModelVersion = "1.8.1"
+val sttpModelVersion = "1.8.2"
 val sttpSharedVersion = "1.5.3"
 
 val logback = "ch.qos.logback" % "logback-classic" % "1.5.14"
@@ -175,7 +175,7 @@ val tethysVersion = "0.29.8"
 val openTelemetryVersion = "1.66.0"
 val openTelemetrySemconvVersion = "1.44.0"
 val otel4s = "1.1.0"
-val otel4sSdk = "0.19.3"
+val otel4sSdk = "0.19.4"
 val slf4jVersion = "1.7.36"
 
 val compileAndTest = "compile->compile;test->test"
@@ -1097,7 +1097,7 @@ lazy val examples = (projectMatrix in file("examples"))
       "io.github.resilience4j" % "resilience4j-circuitbreaker" % resilience4jVersion,
       "io.github.resilience4j" % "resilience4j-ratelimiter" % resilience4jVersion,
       "com.lihaoyi" %% "os-lib" % osLibVersion,
-      "redis.clients" % "jedis" % "6.0.0",
+      "redis.clients" % "jedis" % "8.0.1",
       "io.opentelemetry" % "opentelemetry-exporter-otlp" % openTelemetryVersion,
       "io.opentelemetry" % "opentelemetry-sdk-extension-autoconfigure" % openTelemetryVersion,
       pekkoStreams,

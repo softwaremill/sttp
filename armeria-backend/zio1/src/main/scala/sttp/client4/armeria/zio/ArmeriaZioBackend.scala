@@ -58,6 +58,16 @@ object ArmeriaZioBackend {
   def managed(options: BackendOptions = BackendOptions.Default): TaskManaged[StreamBackend[Task, ZioStreams]] =
     ZManaged.make(apply(options))(_.close().ignore)
 
+  /** Creates a backend using the given client. The client's `ClientFactory` is closed when the managed resource is
+    * released.
+    */
+  def managedUsingClient(client: WebClient): TaskManaged[StreamBackend[Task, ZioStreams]] =
+    ZManaged.make(
+      ZIO
+        .runtime[Any]
+        .map(runtime => apply(runtime, client, closeFactory = true))
+    )(_.close().ignore)
+
   def layer(options: BackendOptions = BackendOptions.Default): Layer[Throwable, SttpClient] =
     ZLayer.fromManaged(managed(options))
 

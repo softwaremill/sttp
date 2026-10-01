@@ -13,7 +13,7 @@ The backend depends only on [opentelemetry-api](https://github.com/open-telemetr
 following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client4" %% "opentelemetry-backend" % "4.0.26"
+"com.softwaremill.sttp.client4" %% "opentelemetry-backend" % "4.0.27"
 ```
 
 Then an instance can be obtained as follows:
@@ -56,7 +56,7 @@ OpenTelemetryMetricsBackend(
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client4" %% "opentelemetry-backend" % "4.0.26"
+"com.softwaremill.sttp.client4" %% "opentelemetry-backend" % "4.0.27"
 ```
 
 The backend records traces corresponding to HTTP client calls. The default span name is the HTTP method (e.g. `POST`),
@@ -101,7 +101,7 @@ OpenTelemetryTracingBackend(
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client4" %% "opentelemetry-tracing-zio-backend" % "4.0.26"  // for ZIO 2.x
+"com.softwaremill.sttp.client4" %% "opentelemetry-tracing-zio-backend" % "4.0.27"  // for ZIO 2.x
 ```
 
 This backend depends on [zio-opentelemetry](https://github.com/zio/zio-telemetry).
@@ -130,7 +130,7 @@ You can override these defaults by supplying a custom `OpenTelemetryZioTracer`.
 
 Add the following dependency to your project:
 ```scala
-"com.softwaremill.sttp.client4" %% "opentelemetry-otel4s-metrics-backend" % "4.0.26"
+"com.softwaremill.sttp.client4" %% "opentelemetry-otel4s-metrics-backend" % "4.0.27"
 ```
 
 This backend depends on [otel4s](https://github.com/typelevel/otel4s).
@@ -157,7 +157,7 @@ The following metrics are available by default:
 - [http.client.response.body.size](https://opentelemetry.io/docs/specs/semconv/http/http-metrics/#metric-httpclientresponsebodysize)
 - [http.client.active_requests](https://opentelemetry.io/docs/specs/semconv/http/http-metrics/#metric-httpclientactive_requests)
 
-You can customize histogram buckets and URL template behavior by providing a custom `Otel4sMetricsConfig`.
+You can customize histogram buckets, the URL template behavior and the attributes attached to the recorded measurements by providing a custom `Otel4sMetricsConfig`.
 
 ### URL template
 
@@ -201,11 +201,50 @@ Otel4sMetricsBackend(
 // basicRequest.get(uri"...").attribute(UrlTemplateKey, "/users/{id}")
 ```
 
+### Custom attributes
+
+Apart from the attributes defined by the semantic conventions, you can attach arbitrary attributes to the recorded
+measurements, e.g. to label them with a business dimension. Provide a `GenericRequest[_, _] => Attributes` function via
+the `extraAttributes` config field; the returned attributes are added to all four metrics. Because the function receives
+the full request, the attributes can either be derived from it, or passed from the call site using a request attribute.
+
+```scala
+import cats.effect.*
+import org.typelevel.otel4s.{Attribute, Attributes}
+import org.typelevel.otel4s.metrics.MeterProvider
+import sttp.attributes.AttributeKey
+import sttp.client4.*
+import sttp.client4.opentelemetry.otel4s.*
+
+implicit val meterProvider: MeterProvider[IO] = ???
+val catsBackend: Backend[IO] = ???
+
+val FlowKey = new AttributeKey[String]("FlowKey")
+
+Otel4sMetricsBackend(
+  catsBackend,
+  Otel4sMetricsConfig(
+    requestDurationHistogramBuckets = Otel4sMetricsConfig.DefaultDurationBuckets,
+    requestBodySizeHistogramBuckets = None,
+    responseBodySizeHistogramBuckets = None,
+    extraAttributes = req => Attributes(Attribute("flow", req.attribute(FlowKey).getOrElse("unknown")))
+  )
+)
+// Then, at the call site:
+// basicRequest.get(uri"...").attribute(FlowKey, "checkout")
+```
+
+Each distinct combination of attribute values creates a separate time series, so only low-cardinality values should be
+used; for the same reason, prefer returning the same attribute keys for all requests sent using a given backend.
+Extra attributes cannot override the semantic convention attributes set by the backend (such as `http.request.method`).
+Some of those are only set in certain cases (e.g. `error.type` only for failed requests), and otherwise an extra
+attribute with the same key is recorded as-is. Hence, avoid using semantic convention keys for extra attributes.
+
 ## Tracing (cats-effect, otel4s)
 
 Add the following dependency to your project:
 ```scala
-"com.softwaremill.sttp.client4" %% "opentelemetry-otel4s-tracing-backend" % "4.0.26"
+"com.softwaremill.sttp.client4" %% "opentelemetry-otel4s-tracing-backend" % "4.0.27"
 ```
 
 This backend depends on [otel4s](https://github.com/typelevel/otel4s).
