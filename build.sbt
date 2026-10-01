@@ -288,7 +288,7 @@ def filterByVersionAndPlatform(scalaVersionFilter: String, platformFilter: Strin
   byPlatform && byVersion
 }
 
-lazy val rootProject = (project in file("."))
+lazy val root = rootProject
   .settings(
     publish / skip := true,
     name := "sttp",
