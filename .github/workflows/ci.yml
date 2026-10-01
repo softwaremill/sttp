@@ -65,10 +65,10 @@ jobs:
       run: sbt -v compileDocs
     - name: Verify that examples compile using Scala CLI
       if: matrix.target-platform == 'JVM' && matrix.java == '21' && matrix.scala-version == '3'
-      run: sbt -v "project examples" verifyExamplesCompileUsingScalaCli      
+      run: sbt -v examples/verifyExamplesCompileUsingScalaCli      
     - name: Verify that examples-ce2 compile using Scala CLI
       if: matrix.target-platform == 'JVM' && matrix.java == '17' && matrix.scala-version == '2.13'
-      run: sbt -v "project examplesCe22_13" verifyExamplesCompileUsingScalaCli        
+      run: sbt -v examplesCe22_13/verifyExamplesCompileUsingScalaCli        
     - name: Test
       run: sbt -v "testScoped ${{ matrix.scala-version }} ${{ matrix.target-platform }}"        
     - name: Prepare release notes
