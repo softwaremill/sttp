@@ -3,7 +3,7 @@
 ## Build commands
 - Compile all: `sbt compile`
 - Compile specific Scala version/platform: `sbt "compileScoped 3 JVM"` (options: 2.12, 2.13, 3 / JVM, JS, Native)
-- Test all: `sbt test`
+- Test all: `sbt testFull` (in sbt 2, `test` is incremental)
 - Test specific: `sbt "testScoped 3 JVM"`
 - Compile docs: `sbt compileDocs`
 
@@ -21,4 +21,4 @@
 
 ## Code style
 - Follow existing patterns in the codebase
-- Use `%%%` for cross-platform dependencies, `%%` for JVM-only
+- Use `%%` for Scala dependencies (in sbt 2 it is platform-aware, so there's no need for `%%%`)
