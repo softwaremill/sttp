@@ -328,9 +328,8 @@ lazy val testServer = (projectMatrix in file("testing/server"))
     ),
     // the test server needs to be started before running any backend tests
     testServerPort := 51823,
-    // started as an sbt background job (see `bgList`, `bgStop`), which is stopped when sbt exits; if a server is already
-    // listening on the port (e.g. started by a previous test run in the same sbt session), it's reused
-    // bgRunMain uses `run / runner`, so forking is configured on `run`
+    // started as an sbt background job, stopped when sbt exits; if a server is already
+    // listening on the port, it's reused
     Compile / run / fork := true,
     startTestServer := Def.uncached(Def.taskDyn {
       val port = testServerPort.value
