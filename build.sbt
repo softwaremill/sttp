@@ -10,7 +10,7 @@ import com.softwaremill.SbtSoftwareMillBrowserTestJS._
 
 val scala2_12 = "2.12.21"
 val scala2_13 = "2.13.18"
-val scala3 = "3.3.8"
+val scala3 = "3.9.0"
 
 val scala2 = List(scala2_12, scala2_13)
 val scala2And3 = scala2 ++ List(scala3)
@@ -50,7 +50,7 @@ mimaPreviousArtifacts := Set.empty // we only use MiMa for `core` for now, using
 
 val commonJvmSettings = Seq(
   scalacOptions ++=
-    (if (ScalaArtifacts.isScala3(scalaVersion.value)) Seq("-Yfuture-lazy-vals", "-java-output-version", "11")
+    (if (ScalaArtifacts.isScala3(scalaVersion.value)) Seq("-java-output-version", "17")
      else Seq("-release", "11")),
   Test / testOptions += Tests.Argument("-oD") // add test timings; js build specify other options which conflict
 )
