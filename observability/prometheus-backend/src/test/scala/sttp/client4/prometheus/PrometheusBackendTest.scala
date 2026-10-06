@@ -457,13 +457,13 @@ class PrometheusBackendTest
     ).map(_.getValue) shouldBe Some(1)
   }
 
-  private[this] def getMetricSnapshot[T](name: String): Option[T] =
+  private def getMetricSnapshot[T](name: String): Option[T] =
     Option(PrometheusRegistry.defaultRegistry.scrape((s: String) => s.equals(name)))
       .filter(_.size() > 0)
       .map(_.get(0).getDataPoints.get(0))
       .map(_.asInstanceOf[T])
 
-  private[this] def getMetricValue[T <: DataPointSnapshot](name: String, labels: List[(String, String)]): Option[T] = {
+  private def getMetricValue[T <: DataPointSnapshot](name: String, labels: List[(String, String)]): Option[T] = {
     val condition = Labels.of(labels.map(_._1).toArray, labels.map(_._2).toArray)
     Option(PrometheusRegistry.defaultRegistry.scrape((s: String) => s.equals(name)))
       .filter(_.size() > 0)

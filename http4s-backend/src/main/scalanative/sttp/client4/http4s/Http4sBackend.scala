@@ -19,7 +19,9 @@ class Http4sBackend[F[_]: Async](
 
 object Http4sBackend {
 
-  def defaultCompressionHandlers[F[_]: Async]: CompressionHandlers[Fs2Streams[F], Stream[F, Byte]] =
+  // not a context bound: the instance is also passed explicitly (`defaultCompressionHandlers[F](_: Async[F])`), which
+  // since Scala 3.6 requires `using` for context bounds (unavailable in Scala 2)
+  def defaultCompressionHandlers[F[_]](implicit ev: Async[F]): CompressionHandlers[Fs2Streams[F], Stream[F, Byte]] =
     Http4sBackendBase.defaultCompressionHandlers[F]
 
   def usingClient[F[_]: Async](

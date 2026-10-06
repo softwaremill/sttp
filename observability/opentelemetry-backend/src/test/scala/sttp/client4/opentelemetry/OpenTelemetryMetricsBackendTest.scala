@@ -253,7 +253,7 @@ class OpenTelemetryMetricsBackendTest extends AnyFlatSpec with Matchers with Opt
     specTest(metrics, expectedMetricName)
   }
 
-  private[this] def getMetricValue(reader: InMemoryMetricReader, name: String): Option[Long] =
+  private def getMetricValue(reader: InMemoryMetricReader, name: String): Option[Long] =
     reader
       .collectAllMetrics()
       .asScala
@@ -261,7 +261,7 @@ class OpenTelemetryMetricsBackendTest extends AnyFlatSpec with Matchers with Opt
       .map(_.getLongSumData)
       .map(_.getPoints.asScala.head.getValue)
 
-  private[this] def getHistogramValue(reader: InMemoryMetricReader, name: String): Option[HistogramPointData] =
+  private def getHistogramValue(reader: InMemoryMetricReader, name: String): Option[HistogramPointData] =
     reader
       .collectAllMetrics()
       .asScala
@@ -269,7 +269,7 @@ class OpenTelemetryMetricsBackendTest extends AnyFlatSpec with Matchers with Opt
       .map(_.getHistogramData)
       .map(_.getPoints.asScala.head)
 
-  private[this] def getMetricResource(reader: InMemoryMetricReader, name: String): MetricData =
+  private def getMetricResource(reader: InMemoryMetricReader, name: String): MetricData =
     reader
       .collectAllMetrics()
       .asScala
@@ -312,7 +312,7 @@ class OpenTelemetryMetricsBackendTest extends AnyFlatSpec with Matchers with Opt
     }
   }
 
-  private[this] def specTest(metrics: List[MetricData], expectedMetricName: String): Unit = {
+  private def specTest(metrics: List[MetricData], expectedMetricName: String): Unit = {
     val metric = metrics.find(_.getName == expectedMetricName)
     assert(
       metric.isDefined,

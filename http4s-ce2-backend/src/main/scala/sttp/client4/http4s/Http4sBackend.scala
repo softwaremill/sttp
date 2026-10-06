@@ -302,7 +302,9 @@ class Http4sBackend[F[_]: ConcurrentEffect: ContextShift](
 }
 
 object Http4sBackend {
-  def defaultCompressionHandlers[F[_]: Sync]: CompressionHandlers[Fs2Streams[F], Stream[F, Byte]] =
+  // not a context bound: the instance is also passed explicitly (`defaultCompressionHandlers[F](_: Sync[F])`), which
+  // since Scala 3.6 requires `using` for context bounds (unavailable in Scala 2)
+  def defaultCompressionHandlers[F[_]](implicit ev: Sync[F]): CompressionHandlers[Fs2Streams[F], Stream[F, Byte]] =
     CompressionHandlers(
       Compressor.default[Fs2Streams[F]],
       List(new GZipFs2Decompressor, new DeflateFs2Decompressor)

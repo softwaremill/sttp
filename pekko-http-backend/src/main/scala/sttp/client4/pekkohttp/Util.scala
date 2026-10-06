@@ -13,11 +13,10 @@ import scala.util.{Failure, Success, Try}
 private[pekkohttp] object Util {
   def traverseTry[T](l: Seq[Try[T]]): Try[Seq[T]] = {
     // https://stackoverflow.com/questions/15495678/flatten-scala-try
-    val (ss: Seq[Success[T]] @unchecked, fs: Seq[Failure[T]] @unchecked) =
-      l.partition(_.isSuccess)
+    val (ss, fs) = l.partition(_.isSuccess)
 
     if (fs.isEmpty) Success(ss.map(_.get))
-    else Failure[Seq[T]](fs.head.exception)
+    else Failure[Seq[T]](fs.head.failed.get)
   }
 
   def parseContentTypeOrOctetStream(r: GenericRequest[_, _]): Try[ContentType] =
