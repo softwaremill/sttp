@@ -8,23 +8,23 @@ import sttp.client4._
 package object zio {
 
   implicit class BackendExtendEnv[R0](delegate: Backend[RIO[R0, *]]) {
-    def extendEnv[R1]: Backend[RIO[R0 with R1, *]] =
-      new ExtendedEnvBackend[R0, R1, Any](delegate) with Backend[RIO[R0 with R1, *]] {}
+    def extendEnv[R1]: Backend[RIO[R0 & R1, *]] =
+      new ExtendedEnvBackend[R0, R1, Any](delegate) with Backend[RIO[R0 & R1, *]] {}
   }
 
   implicit class WebSocketBackendExtendEnv[R0](delegate: WebSocketBackend[RIO[R0, *]]) {
-    def extendEnv[R1]: WebSocketBackend[RIO[R0 with R1, *]] =
-      new ExtendedEnvBackend[R0, R1, WebSockets](delegate) with WebSocketBackend[RIO[R0 with R1, *]] {}
+    def extendEnv[R1]: WebSocketBackend[RIO[R0 & R1, *]] =
+      new ExtendedEnvBackend[R0, R1, WebSockets](delegate) with WebSocketBackend[RIO[R0 & R1, *]] {}
   }
 
   implicit class StreamBackendExtendEnv[R0, S](delegate: StreamBackend[RIO[R0, *], S]) {
-    def extendEnv[R1]: StreamBackend[RIO[R0 with R1, *], S] =
-      new ExtendedEnvBackend[R0, R1, S](delegate) with StreamBackend[RIO[R0 with R1, *], S] {}
+    def extendEnv[R1]: StreamBackend[RIO[R0 & R1, *], S] =
+      new ExtendedEnvBackend[R0, R1, S](delegate) with StreamBackend[RIO[R0 & R1, *], S] {}
   }
 
   implicit class WebSocketStreamBackendExtendEnv[R0, S](delegate: WebSocketStreamBackend[RIO[R0, *], S]) {
-    def extendEnv[R1]: WebSocketStreamBackend[RIO[R0 with R1, *], S] =
-      new ExtendedEnvBackend[R0, R1, S with WebSockets](delegate) with WebSocketStreamBackend[RIO[R0 with R1, *], S] {}
+    def extendEnv[R1]: WebSocketStreamBackend[RIO[R0 & R1, *], S] =
+      new ExtendedEnvBackend[R0, R1, S & WebSockets](delegate) with WebSocketStreamBackend[RIO[R0 & R1, *], S] {}
   }
 
   /** Type alias to be used as the sttp ZIO service (mainly in ZIO environment). */
@@ -55,7 +55,7 @@ package object zio {
     *   [[Request.response]]). Or a failed effect, if an exception occurred when connecting to the target host, writing
     *   the request or reading the response.
     */
-  def send[T, C >: ZioStreams with Effect[Task]](
+  def send[T, C >: ZioStreams & Effect[Task]](
       request: StreamRequest[T, C]
   ): ZIO[SttpClient, Throwable, Response[T]] =
     ZIO.serviceWithZIO[SttpClient](request.send[Task, ZioStreams])
@@ -63,9 +63,9 @@ package object zio {
   /** A variant of [[send]] which allows the effects that are part of the response handling specification (when using
     * resource-safe streaming) to use an `R` environment.
     */
-  def sendR[T, C >: ZioStreams with Effect[RIO[R, *]], R](
+  def sendR[T, C >: ZioStreams & Effect[RIO[R, *]], R](
       request: StreamRequest[T, C]
-  ): ZIO[SttpClient with R, Throwable, Response[T]] = {
+  ): ZIO[SttpClient & R, Throwable, Response[T]] = {
     import sttp.client4.impl.zio.StreamBackendExtendEnv
     ZIO.serviceWithZIO[SttpClient](b => request.send[RIO[R, *], ZioStreams](b.extendEnv[R]))
   }
@@ -87,7 +87,7 @@ package object zio {
   /** A variant of [[send]] which allows the effects that are part of the response handling specification (when using
     * websockets or resource-safe streaming) to use an `R` environment.
     */
-  def sendR[T, R](request: WebSocketRequest[RIO[R, *], T]): ZIO[SttpClient with R, Throwable, Response[T]] = {
+  def sendR[T, R](request: WebSocketRequest[RIO[R, *], T]): ZIO[SttpClient & R, Throwable, Response[T]] = {
     import sttp.client4.impl.zio.WebSocketBackendExtendEnv
     ZIO.serviceWithZIO[SttpClient](b => request.send(b.extendEnv[R]))
   }

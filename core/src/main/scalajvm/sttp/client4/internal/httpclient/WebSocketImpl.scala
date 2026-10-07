@@ -75,27 +75,27 @@ private[client4] class AddToQueueListener[F[_]](
     webSocket.request(1)
   }
 
-  override def onText(webSocket: JWebSocket, data: CharSequence, last: Boolean): CompletionStage[_] = {
+  override def onText(webSocket: JWebSocket, data: CharSequence, last: Boolean): CompletionStage[?] = {
     onFrame(WebSocketFrame.Text(data.toString, last, None))
     null
   }
 
-  override def onBinary(webSocket: JWebSocket, data: ByteBuffer, last: Boolean): CompletionStage[_] = {
+  override def onBinary(webSocket: JWebSocket, data: ByteBuffer, last: Boolean): CompletionStage[?] = {
     onFrame(WebSocketFrame.Binary(data.safeRead(), last, None))
     null
   }
 
-  override def onPing(webSocket: JWebSocket, message: ByteBuffer): CompletionStage[_] = {
+  override def onPing(webSocket: JWebSocket, message: ByteBuffer): CompletionStage[?] = {
     onFrame(WebSocketFrame.Ping(message.safeRead()))
     null
   }
 
-  override def onPong(webSocket: JWebSocket, message: ByteBuffer): CompletionStage[_] = {
+  override def onPong(webSocket: JWebSocket, message: ByteBuffer): CompletionStage[?] = {
     onFrame(WebSocketFrame.Pong(message.safeRead()))
     null
   }
 
-  override def onClose(webSocket: JWebSocket, statusCode: Int, reason: String): CompletionStage[_] = {
+  override def onClose(webSocket: JWebSocket, statusCode: Int, reason: String): CompletionStage[?] = {
     isOpen.set(false)
     queue.offer(WebSocketEvent.Frame(WebSocketFrame.Close(statusCode, reason)))
     super.onClose(webSocket, statusCode, reason)

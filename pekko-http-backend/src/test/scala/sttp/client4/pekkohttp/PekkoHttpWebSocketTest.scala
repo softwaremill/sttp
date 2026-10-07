@@ -23,17 +23,17 @@ class PekkoHttpWebSocketTest
   override implicit val monad: MonadError[Future] = new FutureMonad
 
   override def functionToPipe(
-      f: WebSocketFrame.Data[_] => Option[WebSocketFrame]
-  ): Flow[WebSocketFrame.Data[_], WebSocketFrame, Any] =
-    Flow.fromFunction(f).mapConcat(_.toList): Flow[WebSocketFrame.Data[_], WebSocketFrame, Any]
+      f: WebSocketFrame.Data[?] => Option[WebSocketFrame]
+  ): Flow[WebSocketFrame.Data[?], WebSocketFrame, Any] =
+    Flow.fromFunction(f).mapConcat(_.toList): Flow[WebSocketFrame.Data[?], WebSocketFrame, Any]
 
   override def prepend(
       item: WebSocketFrame.Text
-  )(to: Flow[WebSocketFrame.Data[_], WebSocketFrame, Any]): Flow[WebSocketFrame.Data[_], WebSocketFrame, Any] =
+  )(to: Flow[WebSocketFrame.Data[?], WebSocketFrame, Any]): Flow[WebSocketFrame.Data[?], WebSocketFrame, Any] =
     to.prepend(Source(List(item)))
 
-  override def fromTextPipe(function: String => WebSocketFrame): Flow[WebSocketFrame.Data[_], WebSocketFrame, Any] =
-    Flow[WebSocketFrame.Data[_]].collect { case tf: WebSocketFrame.Text => function(tf.payload) }
+  override def fromTextPipe(function: String => WebSocketFrame): Flow[WebSocketFrame.Data[?], WebSocketFrame, Any] =
+    Flow[WebSocketFrame.Data[?]].collect { case tf: WebSocketFrame.Text => function(tf.payload) }
 
   override def concurrently[T](fs: List[() => Future[T]]): Future[List[T]] = Future.sequence(fs.map(_()))
 }

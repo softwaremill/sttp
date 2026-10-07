@@ -20,7 +20,7 @@ class CachingBackendTest extends AnyFlatSpec with Matchers {
     def timePassed(seconds: Int): Unit
   }
 
-  def newInMemoryCache = new StubCache[Identity] {
+  def newInMemoryCache: StubCache[Identity] = new StubCache[Identity] {
     var storage = new collection.mutable.HashMap[List[Byte], (Array[Byte], Long)]()
     var now = 0L // how many seconds have passed till the dawn of time
 

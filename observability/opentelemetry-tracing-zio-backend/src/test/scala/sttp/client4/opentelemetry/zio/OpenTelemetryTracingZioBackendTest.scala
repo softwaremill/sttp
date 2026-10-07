@@ -19,7 +19,7 @@ import scala.collection.mutable
 
 class OpenTelemetryTracingZioBackendTest extends AnyFlatSpec with Matchers with BeforeAndAfter with ZioTestBase {
 
-  private val recordedRequests = mutable.ListBuffer[GenericRequest[_, _]]()
+  private val recordedRequests = mutable.ListBuffer[GenericRequest[?, ?]]()
 
   private val spanExporter = InMemorySpanExporter.create()
 

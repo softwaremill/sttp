@@ -429,7 +429,7 @@ class PrometheusBackendTest
     val HostLabel = "Host"
     def addHostLabel[T <: BaseCollectorConfig](
         config: T,
-        req: GenericRequest[_, _],
+        req: GenericRequest[?, ?],
         resp: ResponseMetadata
     ): config.T = {
       val hostLabel: Option[(String, String)] =
@@ -442,7 +442,7 @@ class PrometheusBackendTest
     val backend = PrometheusBackend(
       backendStub,
       PrometheusConfig.Default.copy(
-        responseToErrorCounterMapper = (req: GenericRequest[_, _], resp: ResponseMetadata) =>
+        responseToErrorCounterMapper = (req: GenericRequest[?, ?], resp: ResponseMetadata) =>
           Some(addHostLabel(addMethodLabel(CollectorConfig(PrometheusBackend.DefaultErrorCounterName), req), req, resp))
       )
     )

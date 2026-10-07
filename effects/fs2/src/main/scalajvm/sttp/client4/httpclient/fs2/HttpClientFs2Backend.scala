@@ -134,13 +134,16 @@ class HttpClientFs2Backend[F[_]: Async] private (
 }
 
 object HttpClientFs2Backend {
-  // not a context bound: the instance is also passed explicitly (`defaultCompressionHandlers[F](_: Async[F])`), which
-  // since Scala 3.6 requires `using` for context bounds (unavailable in Scala 2)
-  def defaultCompressionHandlers[F[_]](implicit ev: Async[F]): CompressionHandlers[Fs2Streams[F], Stream[F, Byte]] =
+  def defaultCompressionHandlers[F[_]: Async]: CompressionHandlers[Fs2Streams[F], Stream[F, Byte]] =
     CompressionHandlers(
       List(new PlatformGZipFs2Compressor[F, Fs2Streams[F]], new PlatformDeflateFs2Compressor[F, Fs2Streams[F]]),
       List(new GZipFs2Decompressor, new DeflateFs2Decompressor)
     )
+
+  private def defaultCompressionHandlersFor[F[_]](F: Async[F]): CompressionHandlers[Fs2Streams[F], Stream[F, Byte]] = {
+    implicit val ev: Async[F] = F
+    defaultCompressionHandlers[F]
+  }
 
   private def apply[F[_]: Async](
       client: HttpClient,
@@ -158,7 +161,7 @@ object HttpClientFs2Backend {
       options: BackendOptions = BackendOptions.Default,
       customizeRequest: HttpRequest => HttpRequest = identity,
       compressionHandlers: Async[F] => CompressionHandlers[Fs2Streams[F], Stream[F, Byte]] =
-        defaultCompressionHandlers[F](_: Async[F])
+        defaultCompressionHandlersFor[F](_)
   ): F[WebSocketStreamBackend[F, Fs2Streams[F]]] =
     Async[F].executor.flatMap(executor =>
       Sync[F].delay(
@@ -176,7 +179,7 @@ object HttpClientFs2Backend {
       options: BackendOptions = BackendOptions.Default,
       customizeRequest: HttpRequest => HttpRequest = identity,
       compressionHandlers: Async[F] => CompressionHandlers[Fs2Streams[F], Stream[F, Byte]] =
-        defaultCompressionHandlers[F](_: Async[F])
+        defaultCompressionHandlersFor[F](_)
   ): Resource[F, WebSocketStreamBackend[F, Fs2Streams[F]]] =
     Dispatcher
       .parallel[F]
@@ -189,7 +192,7 @@ object HttpClientFs2Backend {
       client: HttpClient,
       customizeRequest: HttpRequest => HttpRequest = identity,
       compressionHandlers: Async[F] => CompressionHandlers[Fs2Streams[F], Stream[F, Byte]] =
-        defaultCompressionHandlers[F](_: Async[F])
+        defaultCompressionHandlersFor[F](_)
   ): Resource[F, WebSocketStreamBackend[F, Fs2Streams[F]]] =
     Dispatcher
       .parallel[F]
@@ -205,7 +208,7 @@ object HttpClientFs2Backend {
       dispatcher: Dispatcher[F],
       customizeRequest: HttpRequest => HttpRequest = identity,
       compressionHandlers: Async[F] => CompressionHandlers[Fs2Streams[F], Stream[F, Byte]] =
-        defaultCompressionHandlers[F](_: Async[F])
+        defaultCompressionHandlersFor[F](_)
   ): WebSocketStreamBackend[F, Fs2Streams[F]] =
     HttpClientFs2Backend(client, closeClient = false, customizeRequest, compressionHandlers(implicitly), dispatcher)
 

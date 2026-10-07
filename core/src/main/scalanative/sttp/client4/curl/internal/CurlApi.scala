@@ -44,7 +44,7 @@ private[client4] object CurlApi {
     def option(option: CurlOption, parameter: Boolean): CurlCode =
       this.option(option, if (parameter) 1 else 0)
 
-    def option(option: CurlOption, parameter: Ptr[_]): CurlCode =
+    def option(option: CurlOption, parameter: Ptr[?]): CurlCode =
       CurlCode(CCurl.setoptPtr(handle, option.id, parameter))
 
     def option(option: CurlOption, parameter: CFuncPtr): CurlCode =
@@ -59,11 +59,11 @@ private[client4] object CurlApi {
     def info(curlInfo: CurlInfo, parameter: String)(implicit z: Zone): CurlCode =
       getInfo(handle, curlInfo, toCString(parameter, StandardCharsets.UTF_8))
 
-    def info(curlInfo: CurlInfo, parameter: Ptr[_]): CurlCode =
+    def info(curlInfo: CurlInfo, parameter: Ptr[?]): CurlCode =
       getInfo(handle, curlInfo, parameter)
   }
 
-  private def getInfo(handle: CurlHandle, curlInfo: CurlInfo, parameter: Ptr[_]): CurlCode =
+  private def getInfo(handle: CurlHandle, curlInfo: CurlInfo, parameter: Ptr[?]): CurlCode =
     CurlCode(CCurl.getInfo(handle, curlInfo.id, parameter))
 
   implicit class MimeHandleOps(handle: MimeHandle) {
@@ -114,7 +114,7 @@ private[client4] object CurlApi {
 
   implicit class SlistHandleOps(handle: SlistHandle) {
     def append(string: String)(implicit z: Zone): Ptr[CurlSlist] =
-      CCurl.slistAppend(handle, toCString(string)(z))
+      CCurl.slistAppend(handle, toCString(string))
 
     def free(): Unit =
       CCurl.slistFree(handle)

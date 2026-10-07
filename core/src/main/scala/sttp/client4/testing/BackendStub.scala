@@ -23,13 +23,13 @@ import scala.concurrent.ExecutionContext
   */
 class BackendStub[F[_]](
     monad: MonadError[F],
-    matchers: PartialFunction[GenericRequest[_, _], F[Response[StubBody]]],
+    matchers: PartialFunction[GenericRequest[?, ?], F[Response[StubBody]]],
     fallback: Option[Backend[F]]
 ) extends AbstractBackendStub[F, Any](monad, matchers, fallback)
     with Backend[F] {
 
   type Self = BackendStub[F]
-  override protected def withMatchers(matchers: PartialFunction[GenericRequest[_, _], F[Response[StubBody]]]) =
+  override protected def withMatchers(matchers: PartialFunction[GenericRequest[?, ?], F[Response[StubBody]]]) =
     new BackendStub(monad, matchers, fallback)
 }
 

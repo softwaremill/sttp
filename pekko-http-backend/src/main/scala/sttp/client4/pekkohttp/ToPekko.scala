@@ -10,7 +10,7 @@ import scala.collection.immutable.Seq
 import scala.util.{Failure, Success, Try}
 
 private[pekkohttp] object ToPekko {
-  def request(r: GenericRequest[_, _]): Try[HttpRequest] = {
+  def request(r: GenericRequest[?, ?]): Try[HttpRequest] = {
     val ar = HttpRequest(uri = r.uri.toString, method = method(r.method))
     ToPekko.headers(r.headers).map(ar.withHeaders)
   }

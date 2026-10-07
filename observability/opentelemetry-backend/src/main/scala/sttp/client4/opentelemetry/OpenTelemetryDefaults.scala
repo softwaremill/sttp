@@ -12,26 +12,26 @@ import sttp.model.ResponseMetadata
 object OpenTelemetryDefaults {
 
   /** @see https://opentelemetry.io/docs/specs/semconv/http/http-spans/#name */
-  def spanName(request: GenericRequest[_, _]): String = s"${request.method.method}"
+  def spanName(request: GenericRequest[?, ?]): String = s"${request.method.method}"
 
   /** @see https://opentelemetry.io/docs/specs/semconv/http/http-metrics/#http-client */
-  def requestAttributes(request: GenericRequest[_, _]): Attributes = requestAttributesBuilder(request).build()
+  def requestAttributes(request: GenericRequest[?, ?]): Attributes = requestAttributesBuilder(request).build()
 
   /** @see
     *   https://opentelemetry.io/docs/specs/semconv/http/http-spans/#http-client (full url is required for tracing, but
     *   not for metrics)
     */
-  def requestAttributesWithFullUrl(request: GenericRequest[_, _]): Attributes =
+  def requestAttributesWithFullUrl(request: GenericRequest[?, ?]): Attributes =
     requestAttributesBuilder(request).put(UrlAttributes.URL_FULL, request.uri.toString()).build()
 
-  private def requestAttributesBuilder(request: GenericRequest[_, _]): AttributesBuilder =
+  private def requestAttributesBuilder(request: GenericRequest[?, ?]): AttributesBuilder =
     Attributes.builder
       .put(HttpAttributes.HTTP_REQUEST_METHOD, request.method.method)
       .put(ServerAttributes.SERVER_ADDRESS, request.uri.host.getOrElse("unknown"))
       .put(ServerAttributes.SERVER_PORT, request.uri.port.getOrElse(80))
 
   /** @see https://opentelemetry.io/docs/specs/semconv/http/http-metrics/#http-client */
-  def responseAttributes(request: GenericRequest[_, _], response: ResponseMetadata): Attributes =
+  def responseAttributes(request: GenericRequest[?, ?], response: ResponseMetadata): Attributes =
     Attributes.builder
       .put(HttpAttributes.HTTP_RESPONSE_STATUS_CODE, response.code.code.toLong: java.lang.Long)
       .build()

@@ -72,7 +72,7 @@ class HttpClientCatsBackend[F[_]: Async] private (
       override implicit def monad: MonadError[F] = self.monad
       override def compileWebSocketPipe(
           ws: WebSocket[F],
-          pipe: streams.Pipe[WebSocketFrame.Data[_], WebSocketFrame]
+          pipe: streams.Pipe[WebSocketFrame.Data[?], WebSocketFrame]
       ): F[Unit] = pipe
     }
 

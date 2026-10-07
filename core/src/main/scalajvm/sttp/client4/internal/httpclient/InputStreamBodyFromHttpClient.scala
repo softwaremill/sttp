@@ -44,7 +44,7 @@ private[client4] trait InputStreamBodyFromHttpClient[F[_], S] extends BodyFromHt
       override protected def regularAsInputStream(response: InputStream): F[InputStream] = monad.unit(response)
 
       override protected def handleWS[T](
-          responseAs: GenericWebSocketResponseAs[T, _],
+          responseAs: GenericWebSocketResponseAs[T, ?],
           meta: ResponseMetadata,
           ws: WebSocket[F]
       ): F[T] = bodyFromWs(responseAs, ws, meta)

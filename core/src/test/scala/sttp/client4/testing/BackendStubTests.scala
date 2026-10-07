@@ -304,8 +304,9 @@ class BackendStubTests extends AnyFlatSpec with Matchers with ScalaFutures {
   }
 
   it should "return a web socket, given a web socket, for a safe websocket-always request" in {
+    implicit val monad: MonadError[Identity] = IdentityMonad
     val backend: WebSocketSyncBackend = WebSocketBackendStub.synchronous.whenAnyRequest
-      .thenRespondAdjust(WebSocketStub.initialReceive(List(WebSocketFrame.text("hello"))).build(IdentityMonad))
+      .thenRespondAdjust(WebSocketStub.initialReceive(List(WebSocketFrame.text("hello"))).build[Identity])
 
     val frame = basicRequest
       .get(uri"ws://example.org")
@@ -317,9 +318,10 @@ class BackendStubTests extends AnyFlatSpec with Matchers with ScalaFutures {
   }
 
   it should "return a web socket, given a web socket, for a safe websocket request" in {
+    implicit val monad: MonadError[Identity] = IdentityMonad
     val backend: WebSocketSyncBackend = WebSocketBackendStub.synchronous.whenAnyRequest
       .thenRespondAdjust(
-        WebSocketStub.initialReceive(List(WebSocketFrame.text("hello"))).build(IdentityMonad),
+        WebSocketStub.initialReceive(List(WebSocketFrame.text("hello"))).build[Identity],
         if (TestPlatform.Current == TestPlatform.JS) StatusCode.Ok else StatusCode.SwitchingProtocols
       )
 
@@ -333,9 +335,10 @@ class BackendStubTests extends AnyFlatSpec with Matchers with ScalaFutures {
   }
 
   it should "return a web socket, given a web socket, for a safe websocket request using the Try monad" in {
+    implicit val monad: MonadError[Try] = TryMonad
     val backend: WebSocketBackend[Try] = WebSocketBackendStub(TryMonad).whenAnyRequest
       .thenRespondAdjust(
-        WebSocketStub.initialReceive(List(WebSocketFrame.text("hello"))).build(TryMonad),
+        WebSocketStub.initialReceive(List(WebSocketFrame.text("hello"))).build[Try],
         if (TestPlatform.Current == TestPlatform.JS) StatusCode.Ok else StatusCode.SwitchingProtocols
       )
 
@@ -493,7 +496,7 @@ class BackendStubTests extends AnyFlatSpec with Matchers with ScalaFutures {
   }
 
   private val s = "Hello, world!"
-  private val adjustTestData = List[(Any, ResponseAs[_], Any)](
+  private val adjustTestData = List[(Any, ResponseAs[?], Any)](
     (s, sttp.client4.ignore, Some(())),
     (s, asString(Utf8), Some(Right(s))),
     (s.getBytes(Utf8), asString(Utf8), Some(Right(s))),

@@ -63,20 +63,20 @@ abstract class AbstractFetchBackend[F[_], S <: Streams[S]](
     options: FetchOptions,
     customizeRequest: FetchRequest => FetchRequest,
     _monad: MonadError[F]
-) extends GenericBackend[F, S with WebSockets]
+) extends GenericBackend[F, S & WebSockets]
     with WebSocketBackend[F] {
   override implicit def monad: MonadError[F] = _monad
 
   val streams: Streams[S]
 
-  type R = S with WebSockets with Effect[F]
+  type R = S & WebSockets & Effect[F]
 
   override def send[T](request: GenericRequest[T, R]): F[Response[T]] =
     adjustExceptions(request) {
       if (request.isWebSocket) sendWebSocket(request) else sendRegular(request)
     }
 
-  private def adjustExceptions[T](request: GenericRequest[_, _])(t: => F[T]): F[T] =
+  private def adjustExceptions[T](request: GenericRequest[?, ?])(t: => F[T]): F[T] =
     SttpClientException.adjustExceptions(monad)(t)(
       SttpClientException.defaultExceptionToSttpClientException(request, _)
     )
@@ -322,7 +322,7 @@ abstract class AbstractFetchBackend[F[_], S <: Streams[S]](
       handleResponseAsStream(response)
 
     override protected def handleWS[T](
-        responseAs: GenericWebSocketResponseAs[T, _],
+        responseAs: GenericWebSocketResponseAs[T, ?],
         meta: ResponseMetadata,
         ws: WebSocket[F]
     ): F[T] =
@@ -331,7 +331,7 @@ abstract class AbstractFetchBackend[F[_], S <: Streams[S]](
           f.asInstanceOf[(WebSocket[F], ResponseMetadata) => F[T]].apply(ws, meta)
         case ResponseAsWebSocketUnsafe()        => ws.unit.asInstanceOf[F[T]]
         case ResponseAsWebSocketStream(_, pipe) =>
-          compileWebSocketPipe(ws, pipe.asInstanceOf[streams.Pipe[WebSocketFrame.Data[_], WebSocketFrame]])
+          compileWebSocketPipe(ws, pipe.asInstanceOf[streams.Pipe[WebSocketFrame.Data[?], WebSocketFrame]])
       }
 
     override protected def cleanupWhenNotAWebSocket(response: FetchResponse, e: NotAWebSocketException): F[Unit] =
@@ -345,7 +345,7 @@ abstract class AbstractFetchBackend[F[_], S <: Streams[S]](
 
   protected def compileWebSocketPipe(
       ws: WebSocket[F],
-      pipe: streams.Pipe[WebSocketFrame.Data[_], WebSocketFrame]
+      pipe: streams.Pipe[WebSocketFrame.Data[?], WebSocketFrame]
   ): F[Unit]
 
   override def close(): F[Unit] = monad.unit(())

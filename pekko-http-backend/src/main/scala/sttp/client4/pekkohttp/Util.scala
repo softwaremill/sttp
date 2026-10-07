@@ -19,7 +19,7 @@ private[pekkohttp] object Util {
     else Failure[Seq[T]](fs.head.failed.get)
   }
 
-  def parseContentTypeOrOctetStream(r: GenericRequest[_, _]): Try[ContentType] =
+  def parseContentTypeOrOctetStream(r: GenericRequest[?, ?]): Try[ContentType] =
     parseContentTypeOrOctetStream(
       r.headers
         .find(isContentType)

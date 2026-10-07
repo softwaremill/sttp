@@ -222,5 +222,5 @@ object HttpClientZioBackend {
     */
   def stub: WebSocketStreamBackendStub[Task, ZioStreams] = WebSocketStreamBackendStub(new RIOMonadAsyncError[Any])
 
-  val stubLayer: ZLayer[Any, Nothing, SttpClientStubbing with SttpClient] = SttpClientStubbing.layer
+  val stubLayer: ZLayer[Any, Nothing, SttpClientStubbing & SttpClient] = SttpClientStubbing.layer
 }

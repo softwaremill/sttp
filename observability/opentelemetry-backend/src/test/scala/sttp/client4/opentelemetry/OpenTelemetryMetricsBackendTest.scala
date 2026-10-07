@@ -297,7 +297,7 @@ class OpenTelemetryMetricsBackendTest extends AnyFlatSpec with Matchers with Opt
     val reader = InMemoryMetricReader.create()
     val config = OpenTelemetryMetricsConfig(
       spawnNewOpenTelemetry(reader),
-      requestAttributes = OpenTelemetryDefaults.requestAttributesWithFullUrl _
+      requestAttributes = OpenTelemetryDefaults.requestAttributesWithFullUrl
     )
     val backend = OpenTelemetryMetricsBackend(stubAlwaysOk, config)
 

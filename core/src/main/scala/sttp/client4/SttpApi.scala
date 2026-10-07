@@ -281,7 +281,7 @@ trait SttpApi extends SttpExtensions with UriInterpolator {
     */
   def asStream[F[_], T, S](s: Streams[S])(
       f: s.BinaryStream => F[T]
-  ): StreamResponseAs[Either[String, T], S with Effect[F]] =
+  ): StreamResponseAs[Either[String, T], S & Effect[F]] =
     asEither(asStringAlways, asStreamAlways(s)(f))
 
   /** Handles the response body by providing a stream with the response's data to `f`, if the status code is 2xx.
@@ -296,7 +296,7 @@ trait SttpApi extends SttpExtensions with UriInterpolator {
     */
   def asStreamOrFail[F[_], T, S](s: Streams[S])(
       f: s.BinaryStream => F[T]
-  ): StreamResponseAs[T, S with Effect[F]] = asStream(s)(f).orFail.showAs("as stream or fail")
+  ): StreamResponseAs[T, S & Effect[F]] = asStream(s)(f).orFail.showAs("as stream or fail")
 
   /** Handles the response body by either reading a string (for non-2xx responses), or otherwise providing a stream with
     * the response's data, along with the response metadata, to `f`. The effect type used by `f` must be compatible with
@@ -306,7 +306,7 @@ trait SttpApi extends SttpExtensions with UriInterpolator {
     */
   def asStreamWithMetadata[F[_], T, S](s: Streams[S])(
       f: (s.BinaryStream, ResponseMetadata) => F[T]
-  ): StreamResponseAs[Either[String, T], S with Effect[F]] =
+  ): StreamResponseAs[Either[String, T], S & Effect[F]] =
     asEither(asStringAlways, asStreamAlwaysWithMetadata(s)(f))
 
   /** Handles the response body by providing a stream with the response's data to `f`, regardless of the status code.
@@ -315,7 +315,7 @@ trait SttpApi extends SttpExtensions with UriInterpolator {
     *
     * A non-blocking, asynchronous streaming implementation must be provided as the [[Streams]] parameter.
     */
-  def asStreamAlways[F[_], T, S](s: Streams[S])(f: s.BinaryStream => F[T]): StreamResponseAs[T, S with Effect[F]] =
+  def asStreamAlways[F[_], T, S](s: Streams[S])(f: s.BinaryStream => F[T]): StreamResponseAs[T, S & Effect[F]] =
     asStreamAlwaysWithMetadata(s)((s, _) => f(s))
 
   /** Handles the response body by providing a stream with the response's data, along with the response metadata, to
@@ -326,7 +326,7 @@ trait SttpApi extends SttpExtensions with UriInterpolator {
     */
   def asStreamAlwaysWithMetadata[F[_], T, S](s: Streams[S])(
       f: (s.BinaryStream, ResponseMetadata) => F[T]
-  ): StreamResponseAs[T, S with Effect[F]] = StreamResponseAs(ResponseAsStream(s)(f))
+  ): StreamResponseAs[T, S & Effect[F]] = StreamResponseAs(ResponseAsStream(s)(f))
 
   /** Handles the response body by either reading a string (for non-2xx responses), or otherwise returning a stream with
     * the response's data. It's the responsibility of the caller to consume & close the stream.

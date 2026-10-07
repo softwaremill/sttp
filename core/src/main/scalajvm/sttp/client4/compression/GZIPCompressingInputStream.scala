@@ -37,7 +37,7 @@ class GZIPCompressingInputStream(
   deflater.setLevel(compressionLevel)
 
   private val crc = new CRC32()
-  private var trailer: ByteArrayInputStream = _
+  private var trailer: ByteArrayInputStream = null
   private val header = new ByteArrayInputStream(HEADER_DATA)
 
   private var deflationBuffer: Array[Byte] = new Array[Byte](INITIAL_BUFFER_SIZE)

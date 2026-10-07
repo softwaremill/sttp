@@ -46,7 +46,7 @@ private[okhttp] trait BodyToOkHttp[F[_], S] {
     }
   }
 
-  private def addMultipart(builder: OkHttpMultipartBody.Builder, mp: Part[GenericRequestBody[_]]): Unit = {
+  private def addMultipart(builder: OkHttpMultipartBody.Builder, mp: Part[GenericRequestBody[?]]): Unit = {
     val allHeaders = mp.headers :+ Header(HeaderNames.ContentDisposition, mp.contentDispositionHeaderValue)
     val headers =
       OkHttpHeaders.of(allHeaders.filterNot(_.is(HeaderNames.ContentType)).map(h => (h.name, h.value)).toMap.asJava)

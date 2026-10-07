@@ -10,7 +10,7 @@ object UrlTemplates {
   /** URL template function that replaces numeric IDs and UUIDs in path segments and query values with `{id}`. Always
     * returns `Some` — the template equals the original URL when no IDs are found.
     */
-  val replaceIds: GenericRequest[_, _] => Option[String] = request => {
+  val replaceIds: GenericRequest[?, ?] => Option[String] = request => {
     val uri = request.uri
     val templatedSegments = uri.pathSegments.segments.map(s => if (IdRegex.matches(s.v)) IdPlaceholder else s.v)
 

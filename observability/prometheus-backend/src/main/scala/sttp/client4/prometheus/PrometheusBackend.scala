@@ -65,13 +65,13 @@ object PrometheusBackend {
 
   private def listener(config: PrometheusConfig): PrometheusListener =
     new PrometheusListener(
-      (req: GenericRequest[_, _]) => config.requestToHistogramNameMapper(req),
-      (req: GenericRequest[_, _]) => config.requestToInProgressGaugeNameMapper(req),
-      (rr: (GenericRequest[_, _], ResponseMetadata)) => config.responseToSuccessCounterMapper(rr._1, rr._2),
-      (rr: (GenericRequest[_, _], ResponseMetadata)) => config.responseToErrorCounterMapper(rr._1, rr._2),
-      (r: (GenericRequest[_, _], Throwable)) => config.requestToFailureCounterMapper(r._1, r._2),
-      (req: GenericRequest[_, _]) => config.requestToSizeSummaryMapper(req),
-      (rr: (GenericRequest[_, _], ResponseMetadata)) => config.responseToSizeSummaryMapper(rr._1, rr._2),
+      (req: GenericRequest[?, ?]) => config.requestToHistogramNameMapper(req),
+      (req: GenericRequest[?, ?]) => config.requestToInProgressGaugeNameMapper(req),
+      (rr: (GenericRequest[?, ?], ResponseMetadata)) => config.responseToSuccessCounterMapper(rr._1, rr._2),
+      (rr: (GenericRequest[?, ?], ResponseMetadata)) => config.responseToErrorCounterMapper(rr._1, rr._2),
+      (r: (GenericRequest[?, ?], Throwable)) => config.requestToFailureCounterMapper(r._1, r._2),
+      (req: GenericRequest[?, ?]) => config.requestToSizeSummaryMapper(req),
+      (rr: (GenericRequest[?, ?], ResponseMetadata)) => config.responseToSizeSummaryMapper(rr._1, rr._2),
       config.prometheusRegistry,
       cacheFor(histograms, config.prometheusRegistry),
       cacheFor(gauges, config.prometheusRegistry),
@@ -86,7 +86,7 @@ object PrometheusBackend {
     * @return
     *   The modified collector config. The config can be used when configuring the backend using [[apply]].
     */
-  def addMethodLabel[T <: BaseCollectorConfig](config: T, req: GenericRequest[_, _]): config.T = {
+  def addMethodLabel[T <: BaseCollectorConfig](config: T, req: GenericRequest[?, ?]): config.T = {
     val methodLabel: Option[(String, String)] =
       if (config.labels.map(_._1.toLowerCase).contains(DefaultMethodLabel)) {
         None
@@ -168,13 +168,13 @@ object PrometheusBackend {
 }
 
 class PrometheusListener(
-    histogramNameMapper: GenericRequest[_, _] => Option[HistogramCollectorConfig],
-    inProgressGaugeNameMapper: GenericRequest[_, _] => Option[CollectorConfig],
-    successCounterMapper: ((GenericRequest[_, _], ResponseMetadata)) => Option[CollectorConfig],
-    errorCounterMapper: ((GenericRequest[_, _], ResponseMetadata)) => Option[CollectorConfig],
-    failureCounterMapper: ((GenericRequest[_, _], Throwable)) => Option[CollectorConfig],
-    requestToSizeSummaryMapper: GenericRequest[_, _] => Option[CollectorConfig],
-    responseToSizeSummaryMapper: ((GenericRequest[_, _], ResponseMetadata)) => Option[CollectorConfig],
+    histogramNameMapper: GenericRequest[?, ?] => Option[HistogramCollectorConfig],
+    inProgressGaugeNameMapper: GenericRequest[?, ?] => Option[CollectorConfig],
+    successCounterMapper: ((GenericRequest[?, ?], ResponseMetadata)) => Option[CollectorConfig],
+    errorCounterMapper: ((GenericRequest[?, ?], ResponseMetadata)) => Option[CollectorConfig],
+    failureCounterMapper: ((GenericRequest[?, ?], Throwable)) => Option[CollectorConfig],
+    requestToSizeSummaryMapper: GenericRequest[?, ?] => Option[CollectorConfig],
+    responseToSizeSummaryMapper: ((GenericRequest[?, ?], ResponseMetadata)) => Option[CollectorConfig],
     prometheusRegistry: PrometheusRegistry,
     histogramsCache: ConcurrentHashMap[String, Histogram],
     gaugesCache: ConcurrentHashMap[String, Gauge],
@@ -182,15 +182,15 @@ class PrometheusListener(
     summariesCache: ConcurrentHashMap[String, Summary]
 ) extends RequestListener[Identity, RequestCollectors] {
 
-  override def before(request: GenericRequest[_, _]): RequestCollectors = {
+  override def before(request: GenericRequest[?, ?]): RequestCollectors = {
     val requestTimer: Option[Timer] = for {
       histogramData <- histogramNameMapper(request)
       histogram: Histogram = getOrCreateMetric(histogramsCache, histogramData, createNewHistogram)
-    } yield histogram.labelValues(histogramData.labelValues: _*).startTimer()
+    } yield histogram.labelValues(histogramData.labelValues*).startTimer()
 
     val gauge: Option[GaugeDataPoint] = for {
       gaugeData <- inProgressGaugeNameMapper(request)
-    } yield getOrCreateMetric(gaugesCache, gaugeData, createNewGauge).labelValues(gaugeData.labelValues: _*)
+    } yield getOrCreateMetric(gaugesCache, gaugeData, createNewGauge).labelValues(gaugeData.labelValues*)
 
     observeRequestContentLengthSummaryIfMapped(request, requestToSizeSummaryMapper)
 
@@ -200,7 +200,7 @@ class PrometheusListener(
   }
 
   private def captureResponseMetrics(
-      request: GenericRequest[_, _],
+      request: GenericRequest[?, ?],
       response: ResponseMetadata,
       requestCollectors: RequestCollectors
   ): Unit = {
@@ -216,16 +216,16 @@ class PrometheusListener(
   }
 
   override def responseBodyReceived(
-      request: GenericRequest[_, _],
+      request: GenericRequest[?, ?],
       response: ResponseMetadata,
       requestCollectors: RequestCollectors
   ): Unit = captureResponseMetrics(request, response, requestCollectors)
 
   override def responseHandled(
-      request: GenericRequest[_, _],
+      request: GenericRequest[?, ?],
       response: ResponseMetadata,
       requestCollectors: RequestCollectors,
-      e: Option[ResponseException[_]]
+      e: Option[ResponseException[?]]
   ): Unit = {
     // responseBodyReceived is not called for WebSocket requests
     // ignoring the timer as there's no point in capturing timing information for WebSockets
@@ -233,7 +233,7 @@ class PrometheusListener(
   }
 
   override def exception(
-      request: GenericRequest[_, _],
+      request: GenericRequest[?, ?],
       requestCollectors: RequestCollectors,
       e: Throwable,
       responseBodyReceivedCalled: Boolean
@@ -250,27 +250,27 @@ class PrometheusListener(
       mapper: T => Option[BaseCollectorConfig]
   ): Unit =
     mapper(request).foreach { data =>
-      getOrCreateMetric(countersCache, data, createNewCounter).labelValues(data.labelValues: _*).inc()
+      getOrCreateMetric(countersCache, data, createNewCounter).labelValues(data.labelValues*).inc()
     }
 
   private def observeResponseContentLengthSummaryIfMapped(
-      request: GenericRequest[_, _],
+      request: GenericRequest[?, ?],
       response: ResponseMetadata,
-      mapper: ((GenericRequest[_, _], ResponseMetadata)) => Option[BaseCollectorConfig]
+      mapper: ((GenericRequest[?, ?], ResponseMetadata)) => Option[BaseCollectorConfig]
   ): Unit =
     mapper((request, response)).foreach { data =>
       response.contentLength.map(_.toDouble).foreach { size =>
-        getOrCreateMetric(summariesCache, data, createNewSummary).labelValues(data.labelValues: _*).observe(size)
+        getOrCreateMetric(summariesCache, data, createNewSummary).labelValues(data.labelValues*).observe(size)
       }
     }
 
   private def observeRequestContentLengthSummaryIfMapped(
-      request: GenericRequest[_, _],
-      mapper: GenericRequest[_, _] => Option[BaseCollectorConfig]
+      request: GenericRequest[?, ?],
+      mapper: GenericRequest[?, ?] => Option[BaseCollectorConfig]
   ): Unit =
     mapper(request).foreach { data =>
       (request.contentLength: Option[Long]).map(_.toDouble).foreach { size =>
-        getOrCreateMetric(summariesCache, data, createNewSummary).labelValues(data.labelValues: _*).observe(size)
+        getOrCreateMetric(summariesCache, data, createNewSummary).labelValues(data.labelValues*).observe(size)
       }
     }
 
@@ -290,9 +290,9 @@ class PrometheusListener(
     Histogram
       .builder()
       .unit(data.unit)
-      .classicUpperBounds(data.buckets: _*)
+      .classicUpperBounds(data.buckets*)
       .name(data.collectorName)
-      .labelNames(data.labelNames: _*)
+      .labelNames(data.labelNames*)
       .help(data.help)
       .register(prometheusRegistry)
 
@@ -300,7 +300,7 @@ class PrometheusListener(
     Gauge
       .builder()
       .name(data.collectorName)
-      .labelNames(data.labelNames: _*)
+      .labelNames(data.labelNames*)
       .help(data.help)
       .register(prometheusRegistry)
 
@@ -308,7 +308,7 @@ class PrometheusListener(
     Counter
       .builder()
       .name(data.collectorName)
-      .labelNames(data.labelNames: _*)
+      .labelNames(data.labelNames*)
       .help(data.help)
       .register(prometheusRegistry)
 
@@ -316,7 +316,7 @@ class PrometheusListener(
     Summary
       .builder()
       .name(data.collectorName)
-      .labelNames(data.labelNames: _*)
+      .labelNames(data.labelNames*)
       .help(data.help)
       .register(prometheusRegistry)
 }

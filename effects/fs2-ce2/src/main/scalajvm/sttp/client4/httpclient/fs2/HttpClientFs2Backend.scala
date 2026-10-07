@@ -144,13 +144,16 @@ class HttpClientFs2Backend[F[_]: ConcurrentEffect: ContextShift] private (
 }
 
 object HttpClientFs2Backend {
-  // not a context bound: the instance is also passed explicitly (`defaultCompressionHandlers[F](_: Sync[F])`), which
-  // since Scala 3.6 requires `using` for context bounds (unavailable in Scala 2)
-  def defaultCompressionHandlers[F[_]](implicit ev: Sync[F]): CompressionHandlers[Fs2Streams[F], Stream[F, Byte]] =
+  def defaultCompressionHandlers[F[_]: Sync]: CompressionHandlers[Fs2Streams[F], Stream[F, Byte]] =
     CompressionHandlers(
       Compressor.default[Fs2Streams[F]],
       List(new GZipFs2Decompressor, new DeflateFs2Decompressor)
     )
+
+  private def defaultCompressionHandlersFor[F[_]](F: Sync[F]): CompressionHandlers[Fs2Streams[F], Stream[F, Byte]] = {
+    implicit val ev: Sync[F] = F
+    defaultCompressionHandlers[F]
+  }
 
   private def apply[F[_]: ConcurrentEffect: ContextShift](
       client: HttpClient,
@@ -168,7 +171,7 @@ object HttpClientFs2Backend {
       options: BackendOptions = BackendOptions.Default,
       customizeRequest: HttpRequest => HttpRequest = identity,
       compressionHandlers: Sync[F] => CompressionHandlers[Fs2Streams[F], Stream[F, Byte]] =
-        defaultCompressionHandlers[F](_: Sync[F])
+        defaultCompressionHandlersFor[F](_)
   ): F[WebSocketStreamBackend[F, Fs2Streams[F]]] =
     Sync[F].delay(
       HttpClientFs2Backend(
@@ -185,7 +188,7 @@ object HttpClientFs2Backend {
       options: BackendOptions = BackendOptions.Default,
       customizeRequest: HttpRequest => HttpRequest = identity,
       compressionHandlers: Sync[F] => CompressionHandlers[Fs2Streams[F], Stream[F, Byte]] =
-        defaultCompressionHandlers[F](_: Sync[F])
+        defaultCompressionHandlersFor[F](_)
   ): Resource[F, WebSocketStreamBackend[F, Fs2Streams[F]]] =
     Resource.make(apply(blocker, options, customizeRequest, compressionHandlers))(_.close())
 
@@ -195,7 +198,7 @@ object HttpClientFs2Backend {
       blocker: Blocker,
       customizeRequest: HttpRequest => HttpRequest = identity,
       compressionHandlers: Sync[F] => CompressionHandlers[Fs2Streams[F], Stream[F, Byte]] =
-        defaultCompressionHandlers[F](_: Sync[F])
+        defaultCompressionHandlersFor[F](_)
   ): Resource[F, WebSocketStreamBackend[F, Fs2Streams[F]]] =
     Resource.make(
       Sync[F].delay(
@@ -208,7 +211,7 @@ object HttpClientFs2Backend {
       blocker: Blocker,
       customizeRequest: HttpRequest => HttpRequest = identity,
       compressionHandlers: Sync[F] => CompressionHandlers[Fs2Streams[F], Stream[F, Byte]] =
-        defaultCompressionHandlers[F](_: Sync[F])
+        defaultCompressionHandlersFor[F](_)
   ): WebSocketStreamBackend[F, Fs2Streams[F]] =
     HttpClientFs2Backend(client, blocker, closeClient = false, customizeRequest, compressionHandlers(implicitly))
 

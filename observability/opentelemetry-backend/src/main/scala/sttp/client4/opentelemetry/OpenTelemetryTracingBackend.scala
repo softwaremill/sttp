@@ -48,7 +48,7 @@ class OpenTelemetryTracingBackend[F[_], P](delegate: GenericBackend[F, P], confi
     }
   }
 
-  override def send[T](request: GenericRequest[T, P with Effect[F]]): F[Response[T]] = {
+  override def send[T](request: GenericRequest[T, P & Effect[F]]): F[Response[T]] = {
     monad
       .eval {
         config.tracer

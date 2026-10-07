@@ -78,7 +78,7 @@ import sttp.monad.MonadError
 abstract class MyWrapper[F[_], P] private (delegate: GenericBackend[F, P])
   extends GenericBackend[F, P]:
 
-  def send[T](request: GenericRequest[T, P with Effect[F]]): F[Response[T]] = ???
+  def send[T](request: GenericRequest[T, P & Effect[F]]): F[Response[T]] = ???
 
   def close(): F[Unit] = ???
 

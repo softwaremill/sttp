@@ -35,7 +35,7 @@ abstract class OkHttpBackend[F[_], S <: Streams[S], P](
     with Backend[F] {
 
   val streams: Streams[S]
-  type R = P with Effect[F]
+  type R = P & Effect[F]
 
   override def send[T](request: GenericRequest[T, R]): F[Response[T]] =
     adjustExceptions(request.isWebSocket, request) {
@@ -49,7 +49,7 @@ abstract class OkHttpBackend[F[_], S <: Streams[S], P](
   protected def sendRegular[T](request: GenericRequest[T, R]): F[Response[T]]
   protected def sendWebSocket[T](request: GenericRequest[T, R]): F[Response[T]]
 
-  private def adjustExceptions[T](isWebsocket: Boolean, request: GenericRequest[_, _])(t: => F[T]): F[T] =
+  private def adjustExceptions[T](isWebsocket: Boolean, request: GenericRequest[?, ?])(t: => F[T]): F[T] =
     SttpClientException.adjustExceptions(monad)(t)(
       OkHttpBackend.exceptionToSttpClientException(isWebsocket, request, _)
     )
@@ -85,7 +85,7 @@ abstract class OkHttpBackend[F[_], S <: Streams[S], P](
 
   private[okhttp] def readResponse[T](
       res: OkHttpResponse,
-      request: GenericRequest[_, R],
+      request: GenericRequest[?, R],
       responseAs: ResponseAsDelegate[T, R],
       isWebSocket: Boolean
   ): F[Response[T]] = {
@@ -179,7 +179,7 @@ object OkHttpBackend {
 
   private[okhttp] def exceptionToSttpClientException(
       isWebsocket: Boolean,
-      request: GenericRequest[_, _],
+      request: GenericRequest[?, ?],
       e: Exception
   ): Option[Exception] =
     e match {

@@ -15,7 +15,7 @@ import scala.concurrent.duration.FiniteDuration
 import sttp.monad.syntax._
 import sttp.ws.WebSocket
 
-trait WebSocketBufferOverflowTest[F[_]] { outer: Suite with AsyncFlatSpecLike with WebSocketTest[F] =>
+trait WebSocketBufferOverflowTest[F[_]] { outer: Suite & AsyncFlatSpecLike & WebSocketTest[F] =>
   implicit def monad: MonadError[F]
   implicit val convertToFuture: ConvertToFuture[F]
   def bufferCapacity: Int

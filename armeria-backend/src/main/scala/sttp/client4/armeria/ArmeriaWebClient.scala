@@ -13,7 +13,7 @@ object ArmeriaWebClient {
       .build()
 
   /** Create a new [[WebClient]] which is adjusted for sttp client's needs. */
-  def newClient(): WebClient = newClient(identity[WebClientBuilder] _)
+  def newClient(): WebClient = newClient(identity[WebClientBuilder](_))
 
   /** Create a new [[WebClient]] which is adjusted for sttp client's needs. */
   def newClient(customizeWebClient: WebClientBuilder => WebClientBuilder): WebClient =

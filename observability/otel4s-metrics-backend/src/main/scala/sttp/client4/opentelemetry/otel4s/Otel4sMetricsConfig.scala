@@ -8,8 +8,8 @@ final case class Otel4sMetricsConfig(
     requestDurationHistogramBuckets: BucketBoundaries,
     requestBodySizeHistogramBuckets: Option[BucketBoundaries],
     responseBodySizeHistogramBuckets: Option[BucketBoundaries],
-    urlTemplate: GenericRequest[_, _] => Option[String] = (_) => None,
-    extraAttributes: GenericRequest[_, _] => Attributes = (_) => Attributes.empty
+    urlTemplate: GenericRequest[?, ?] => Option[String] = (_) => None,
+    extraAttributes: GenericRequest[?, ?] => Attributes = (_) => Attributes.empty
 )
 
 object Otel4sMetricsConfig {
