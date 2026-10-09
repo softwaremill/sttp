@@ -20,8 +20,8 @@ import scala.scalanative.unsigned._
   * wait on and for how long, and the backend delegates the waiting to the cats-effect runtime's polling system
   * (epoll on Linux, kqueue on macOS), so curl shares the event loop with the rest of the application.
   *
-  * libcurl multi handles aren't thread-safe, so each handle is guarded by a lock which is only held for the short,
-  * non-blocking libcurl calls. In multi-threaded mode, requests are spread over `parallelism` multi handles to avoid
+  * libcurl multi handles aren't thread-safe, so each handle is guarded by a fiber-aware mutex (waiting fibers are
+  * suspended, no thread is blocked), which is only held for the short, non-blocking libcurl calls. In multi-threaded mode, requests are spread over `parallelism` multi handles to avoid
   * contention; in single-threaded mode, a single handle is used.
   *
   * If the runtime has no [[FileDescriptorPoller]] (e.g. a custom `IORuntime` with the default sleep-based polling

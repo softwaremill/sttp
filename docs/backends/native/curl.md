@@ -101,7 +101,8 @@ for you.
 
 ### Threading
 
-libcurl multi handles are not thread-safe, so each one is guarded by a lock, held only for the short, non-blocking
+libcurl multi handles are not thread-safe, so each one is guarded by a fiber-aware mutex (fibers waiting for it are suspended, no thread is
+blocked), held only for the short, non-blocking
 libcurl calls. When Scala Native multithreading is enabled, requests are spread over several multi handles to avoid
 contention; the number can be set with the `parallelism` parameter (defaults to the number of available processors, or
 `1` in single-threaded mode):
