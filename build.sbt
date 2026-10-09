@@ -432,7 +432,10 @@ lazy val cats = (projectMatrix in file("effects/cats"))
   )
   .nativePlatform(
     scalaVersions = scala2And3,
-    settings = commonNativeSettings ++ testServerSettings
+    settings = commonNativeSettings ++ testServerSettings ++ Seq(
+      // the async curl backend uses IO and the runtime's FileDescriptorPoller (epoll/kqueue)
+      libraryDependencies += "org.typelevel" %% "cats-effect" % catsEffect_3_version
+    )
   )
 
 lazy val fs2Ce2 = (projectMatrix in file("effects/fs2-ce2"))

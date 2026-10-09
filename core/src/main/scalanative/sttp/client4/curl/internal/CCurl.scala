@@ -118,4 +118,17 @@ private[curl] trait CCurl {
   // Via C wrapper (union extraction) — see ffi.c
   @name("sttp_curl_multi_info_read_result")
   def multiInfoReadResult(multi: Ptr[CurlM], easy_out: Ptr[Ptr[Curl]]): CInt = extern
+
+  // Multi socket interface
+  @name("curl_multi_socket_action")
+  def multiSocketAction(multi: Ptr[CurlM], sockfd: CInt, evBitmask: CInt, runningHandles: Ptr[CInt]): CInt = extern
+
+  @name("sttp_curl_multi_setopt_pointer")
+  def multiSetoptPtr(multi: Ptr[CurlM], option: CInt, parameter: Ptr[_]): CInt = extern
+
+  @name("sttp_curl_multi_setopt_long")
+  def multiSetoptLong(multi: Ptr[CurlM], option: CInt, parameter: Long): CInt = extern
+
+  @name("sttp_curl_fd_ready")
+  def fdReady(fd: CInt, want: CInt): CInt = extern
 }
