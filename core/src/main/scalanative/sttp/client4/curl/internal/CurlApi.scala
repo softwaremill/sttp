@@ -114,7 +114,7 @@ private[client4] object CurlApi {
 
   implicit class SlistHandleOps(handle: SlistHandle) {
     def append(string: String)(implicit z: Zone): Ptr[CurlSlist] =
-      CCurl.slistAppend(handle, toCString(string))
+      CCurl.slistAppend(handle, toCString(string)(using z))
 
     def free(): Unit =
       CCurl.slistFree(handle)

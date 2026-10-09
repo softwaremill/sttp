@@ -151,8 +151,7 @@ private[http4s] abstract class Http4sBackendBase[F[_]](implicit protected val as
   private def basicBodyToHttp4s(body: BasicBodyPart): http4s.Entity[F] =
     body match {
       case StringBody(b, encoding, _) =>
-        implicit val charset: http4s.Charset = charsetToHttp4s(encoding)
-        http4s.EntityEncoder.stringEncoder.toEntity(b)
+        http4s.EntityEncoder.stringEncoder(using charsetToHttp4s(encoding)).toEntity(b)
 
       case ByteArrayBody(b, _) =>
         http4s.EntityEncoder.byteArrayEncoder.toEntity(b)

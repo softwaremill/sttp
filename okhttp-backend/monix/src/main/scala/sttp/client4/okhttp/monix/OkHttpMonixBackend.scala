@@ -133,7 +133,7 @@ object OkHttpMonixBackend {
       s: Scheduler
   ): WebSocketStreamBackend[Task, MonixStreams] =
     FollowRedirectsBackend(
-      new OkHttpMonixBackend(client, closeClient, compressionHandlers, webSocketBufferCapacity)
+      new OkHttpMonixBackend(client, closeClient, compressionHandlers, webSocketBufferCapacity)(using s)
     )
 
   def apply(
@@ -149,7 +149,7 @@ object OkHttpMonixBackend {
         closeClient = true,
         compressionHandlers,
         webSocketBufferCapacity
-      )
+      )(using s)
     )
 
   def resource(
@@ -170,7 +170,7 @@ object OkHttpMonixBackend {
       s: Scheduler = Scheduler.global
   ): Resource[Task, WebSocketStreamBackend[Task, MonixStreams]] =
     Resource.make(
-      Task.eval(OkHttpMonixBackend(client, closeClient = true, compressionHandlers, webSocketBufferCapacity))
+      Task.eval(OkHttpMonixBackend(client, closeClient = true, compressionHandlers, webSocketBufferCapacity)(using s))
     )(_.close())
 
   def usingClient(
@@ -178,7 +178,7 @@ object OkHttpMonixBackend {
       compressionHandlers: CompressionHandlers[Any, InputStream] = DefaultCompressionHandlers,
       webSocketBufferCapacity: Option[Int] = OkHttpBackend.DefaultWebSocketBufferCapacity
   )(implicit s: Scheduler = Scheduler.global): WebSocketStreamBackend[Task, MonixStreams] =
-    OkHttpMonixBackend(client, closeClient = false, compressionHandlers, webSocketBufferCapacity)
+    OkHttpMonixBackend(client, closeClient = false, compressionHandlers, webSocketBufferCapacity)(using s)
 
   /** Create a stub backend for testing, which uses the [[Task]] response wrapper, and supports `Observable[ByteBuffer]`
     * streaming.

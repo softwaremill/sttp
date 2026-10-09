@@ -56,9 +56,8 @@ abstract class AbstractBackendStub[F[_], P](
             r.body match {
               case StubBody.Exact(v)  => monad.unit(r.copy(body = v.asInstanceOf[T]))
               case StubBody.Adjust(v) =>
-                implicit val m: MonadError[F] = monad
-                monad.map(adjustResponseBody(request.response.delegate, v, r.asInstanceOf[Response[T]]))(b =>
-                  r.copy(body = b)
+                monad.map(adjustResponseBody(request.response.delegate, v, r.asInstanceOf[Response[T]])(using monad))(
+                  b => r.copy(body = b)
                 )
             }
           }
@@ -194,7 +193,7 @@ object AbstractBackendStub {
       case ResponseAsWebSocket(f) =>
         b match {
           case wss: WebSocketStub[_] =>
-            f.asInstanceOf[(WebSocket[F], ResponseMetadata) => F[T]](wss.build[F], meta)
+            f.asInstanceOf[(WebSocket[F], ResponseMetadata) => F[T]](wss.build[F](using monad), meta)
           case ws: WebSocket[_] =>
             f.asInstanceOf[(WebSocket[F], ResponseMetadata) => F[T]](ws.asInstanceOf[WebSocket[F]], meta)
           case _ =>
@@ -206,7 +205,7 @@ object AbstractBackendStub {
         }
       case ResponseAsWebSocketUnsafe() =>
         b match {
-          case wss: WebSocketStub[_] => wss.build[F].unit.asInstanceOf[F[T]]
+          case wss: WebSocketStub[_] => wss.build[F](using monad).unit.asInstanceOf[F[T]]
           case ws: WebSocket[_]      => ws.asInstanceOf[WebSocket[F]].unit.asInstanceOf[F[T]]
           case _                     =>
             monad.error(

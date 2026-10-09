@@ -38,7 +38,7 @@ private[client4] trait BodyToHttpClient[F[_], S, R] {
       case StreamBody(s)         => streamToPublisher(s.asInstanceOf[streams.BinaryStream])
       case m: MultipartBody[_]   =>
         val baseContentType = contentType.getOrElse("multipart/form-data")
-        val (body, boundary) = multiPartBodyBuilder(m.parts)
+        val (body, boundary) = multiPartBodyBuilder(m.parts)(using monad)
         builder.header(HeaderNames.ContentType, s"$baseContentType; boundary=$boundary")
         body
     }

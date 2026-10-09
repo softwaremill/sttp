@@ -9,7 +9,7 @@ import sttp.client4._
 class PlatformGZipFs2Compressor[F[_]: Sync: Files, R <: Fs2Streams[F]] extends GZipFs2Compressor[F, R] {
 
   override protected def compressInputStreamBody(b: java.io.InputStream): GenericRequestBody[R] =
-    StreamBody(Fs2Streams[F])(compressStream(fs2.io.readInputStream(fSync.delay(b), 1024)))
+    StreamBody(Fs2Streams[F])(compressStream(fs2.io.readInputStream(fSync.delay(b), 1024)(using fSync)))
 
   override protected def compressFileBody(fb: FileBody): GenericRequestBody[R] =
     StreamBody(Fs2Streams[F])(compressStream(Files[F].readAll(fb.f.toPath, 1024)))
@@ -18,7 +18,7 @@ class PlatformGZipFs2Compressor[F[_]: Sync: Files, R <: Fs2Streams[F]] extends G
 class PlatformDeflateFs2Compressor[F[_]: Sync: Files, R <: Fs2Streams[F]] extends DeflateFs2Compressor[F, R] {
 
   override protected def compressInputStreamBody(b: java.io.InputStream): GenericRequestBody[R] =
-    StreamBody(Fs2Streams[F])(compressStream(fs2.io.readInputStream(fSync.delay(b), 1024)))
+    StreamBody(Fs2Streams[F])(compressStream(fs2.io.readInputStream(fSync.delay(b), 1024)(using fSync)))
 
   override protected def compressFileBody(fb: FileBody): GenericRequestBody[R] =
     StreamBody(Fs2Streams[F])(compressStream(Files[F].readAll(fb.f.toPath, 1024)))

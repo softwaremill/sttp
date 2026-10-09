@@ -304,9 +304,8 @@ class BackendStubTests extends AnyFlatSpec with Matchers with ScalaFutures {
   }
 
   it should "return a web socket, given a web socket, for a safe websocket-always request" in {
-    implicit val monad: MonadError[Identity] = IdentityMonad
     val backend: WebSocketSyncBackend = WebSocketBackendStub.synchronous.whenAnyRequest
-      .thenRespondAdjust(WebSocketStub.initialReceive(List(WebSocketFrame.text("hello"))).build[Identity])
+      .thenRespondAdjust(WebSocketStub.initialReceive(List(WebSocketFrame.text("hello"))).build(using IdentityMonad))
 
     val frame = basicRequest
       .get(uri"ws://example.org")
@@ -318,10 +317,9 @@ class BackendStubTests extends AnyFlatSpec with Matchers with ScalaFutures {
   }
 
   it should "return a web socket, given a web socket, for a safe websocket request" in {
-    implicit val monad: MonadError[Identity] = IdentityMonad
     val backend: WebSocketSyncBackend = WebSocketBackendStub.synchronous.whenAnyRequest
       .thenRespondAdjust(
-        WebSocketStub.initialReceive(List(WebSocketFrame.text("hello"))).build[Identity],
+        WebSocketStub.initialReceive(List(WebSocketFrame.text("hello"))).build(using IdentityMonad),
         if (TestPlatform.Current == TestPlatform.JS) StatusCode.Ok else StatusCode.SwitchingProtocols
       )
 
@@ -335,10 +333,9 @@ class BackendStubTests extends AnyFlatSpec with Matchers with ScalaFutures {
   }
 
   it should "return a web socket, given a web socket, for a safe websocket request using the Try monad" in {
-    implicit val monad: MonadError[Try] = TryMonad
     val backend: WebSocketBackend[Try] = WebSocketBackendStub(TryMonad).whenAnyRequest
       .thenRespondAdjust(
-        WebSocketStub.initialReceive(List(WebSocketFrame.text("hello"))).build[Try],
+        WebSocketStub.initialReceive(List(WebSocketFrame.text("hello"))).build(using TryMonad),
         if (TestPlatform.Current == TestPlatform.JS) StatusCode.Ok else StatusCode.SwitchingProtocols
       )
 

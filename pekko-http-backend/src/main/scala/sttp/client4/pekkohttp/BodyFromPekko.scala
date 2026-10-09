@@ -191,7 +191,7 @@ private[pekkohttp] class BodyFromPekko()(implicit ec: ExecutionContext, mat: Mat
 
       override def isOpen(): Future[Boolean] = Future.successful(open.get())
 
-      override implicit def monad: MonadError[Future] = new FutureMonad()
+      override implicit def monad: MonadError[Future] = new FutureMonad()(using ec)
     }
 
     (flow, ws)

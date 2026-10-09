@@ -146,8 +146,7 @@ class Http4sBackend[F[_]: ConcurrentEffect: ContextShift](
   private def basicBodyToHttp4s(body: BasicBodyPart): http4s.Entity[F] =
     body match {
       case StringBody(b, encoding, _) =>
-        implicit val charset: http4s.Charset = charsetToHttp4s(encoding)
-        http4s.EntityEncoder.stringEncoder.toEntity(b)
+        http4s.EntityEncoder.stringEncoder(using charsetToHttp4s(encoding)).toEntity(b)
 
       case ByteArrayBody(b, _) =>
         http4s.EntityEncoder.byteArrayEncoder.toEntity(b)
@@ -309,17 +308,12 @@ object Http4sBackend {
       List(new GZipFs2Decompressor, new DeflateFs2Decompressor)
     )
 
-  private def defaultCompressionHandlersFor[F[_]](F: Sync[F]): CompressionHandlers[Fs2Streams[F], Stream[F, Byte]] = {
-    implicit val ev: Sync[F] = F
-    defaultCompressionHandlers[F]
-  }
-
   def usingClient[F[_]: ConcurrentEffect: ContextShift](
       client: Client[F],
       blocker: Blocker,
       customizeRequest: Http4sRequest[F] => Http4sRequest[F] = identity[Http4sRequest[F]](_),
-      compressionHandlers: Sync[F] => CompressionHandlers[Fs2Streams[F], EntityBody[F]] =
-        defaultCompressionHandlersFor[F](_)
+      compressionHandlers: Sync[F] => CompressionHandlers[Fs2Streams[F], EntityBody[F]] = (F: Sync[F]) =>
+        defaultCompressionHandlers[F](using F)
   ): StreamBackend[F, Fs2Streams[F]] =
     FollowRedirectsBackend(new Http4sBackend[F](client, blocker, customizeRequest, compressionHandlers(implicitly)))
 
@@ -327,8 +321,8 @@ object Http4sBackend {
       blazeClientBuilder: BlazeClientBuilder[F],
       blocker: Blocker,
       customizeRequest: Http4sRequest[F] => Http4sRequest[F] = identity[Http4sRequest[F]](_),
-      compressionHandlers: Sync[F] => CompressionHandlers[Fs2Streams[F], EntityBody[F]] =
-        defaultCompressionHandlersFor[F](_)
+      compressionHandlers: Sync[F] => CompressionHandlers[Fs2Streams[F], EntityBody[F]] = (F: Sync[F]) =>
+        defaultCompressionHandlers[F](using F)
   ): Resource[F, StreamBackend[F, Fs2Streams[F]]] =
     blazeClientBuilder.resource.map(c => usingClient(c, blocker, customizeRequest, compressionHandlers))
 
@@ -336,8 +330,8 @@ object Http4sBackend {
       blocker: Blocker,
       clientExecutionContext: ExecutionContext = ExecutionContext.global,
       customizeRequest: Http4sRequest[F] => Http4sRequest[F] = identity[Http4sRequest[F]](_),
-      compressionHandlers: Sync[F] => CompressionHandlers[Fs2Streams[F], EntityBody[F]] =
-        defaultCompressionHandlersFor[F](_)
+      compressionHandlers: Sync[F] => CompressionHandlers[Fs2Streams[F], EntityBody[F]] = (F: Sync[F]) =>
+        defaultCompressionHandlers[F](using F)
   ): Resource[F, StreamBackend[F, Fs2Streams[F]]] =
     usingBlazeClientBuilder(
       BlazeClientBuilder[F](clientExecutionContext),

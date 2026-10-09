@@ -17,6 +17,7 @@ import org.apache.pekko.http.scaladsl.model.ws.ValidUpgrade
 import org.apache.pekko.http.scaladsl.model.ws.WebSocketRequest
 import org.apache.pekko.http.scaladsl.model.{StatusCode => _, _}
 import org.apache.pekko.http.scaladsl.settings.ConnectionPoolSettings
+import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.scaladsl.Flow
 import org.apache.pekko.stream.scaladsl.Sink
 import org.apache.pekko.util.ByteString
@@ -114,7 +115,7 @@ class PekkoHttpBackend private (
         .recoverWith { case _ => Future.failed(t) }
   }
 
-  override val monad: MonadError[Future] = new FutureMonad()
+  override val monad: MonadError[Future] = new FutureMonad()(using ec)
 
   private def connectionSettings(r: GenericRequest[?, ?]): ConnectionPoolSettings = {
     val connectionPoolSettingsWithProxy = opts.proxy match {
@@ -134,10 +135,7 @@ class PekkoHttpBackend private (
       .withUpdatedConnectionSettings(_.withIdleTimeout(r.options.readTimeout))
   }
 
-  private lazy val bodyFromPekko = {
-    implicit val m: MonadError[Future] = monad
-    new BodyFromPekko()
-  }
+  private lazy val bodyFromPekko = new BodyFromPekko()(using ec, implicitly[Materializer], monad)
 
   private def responseFromPekko[T](
       r: GenericRequest[T, R],

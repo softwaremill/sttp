@@ -33,7 +33,7 @@ object PekkoHttpClient {
       customLog: Option[LoggingAdapter]
   ): PekkoHttpClient =
     new PekkoHttpClient {
-      private val http = Http(system)
+      private val http = Http()(using system)
 
       override def singleRequest(
           request: HttpRequest,

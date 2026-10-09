@@ -133,7 +133,7 @@ abstract class AbstractCurlBackend[F[_]](_monad: MonadError[F], verbose: Boolean
         }
       }
 
-      Context.evaluateUsing { implicit ctx => perform }
+      Context.evaluateUsing(ctx => perform(using ctx))
     }
 
   private def adjustExceptions[T](request: GenericRequest[?, ?])(t: => F[T]): F[T] =
