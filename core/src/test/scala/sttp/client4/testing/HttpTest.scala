@@ -139,7 +139,7 @@ trait HttpTest[F[_]]
       val params = List("a" -> "b", "c" -> "d", "e=" -> "&f")
       basicRequest
         .post(uri"$endpoint/echo/form_params/as_params")
-        .body(params: _*)
+        .body(params*)
         .response(asParams)
         .send(backend)
         .toFuture()

@@ -70,7 +70,7 @@ private[armeria] trait BodyFromStreamMessage[F[_], S] {
     }
 
   def bytesToPublisher(b: Array[Byte]): F[StreamMessage[HttpData]] =
-    StreamMessage.of(Array(HttpData.wrap(b)): _*).unit
+    StreamMessage.of(Array(HttpData.wrap(b))*).unit
 
   def pathToPublisher(f: Path): F[StreamMessage[HttpData]] =
     (StreamMessage.of(f): StreamMessage[HttpData]).unit
@@ -109,7 +109,7 @@ private[armeria] trait BodyFromStreamMessage[F[_], S] {
         (publisherToStream(response), () => monad.eval(response.abort())).unit
 
       override protected def handleWS[T](
-          responseAs: GenericWebSocketResponseAs[T, _],
+          responseAs: GenericWebSocketResponseAs[T, ?],
           meta: ResponseMetadata,
           ws: Nothing
       ): F[T] = ws

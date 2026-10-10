@@ -5,7 +5,7 @@ This also includes [synchronous](backends/synchronous.md) and [`Future`-based](b
 
 To integrate with other parts of your application and various effect systems, you'll often need to use an alternate backend, or backend wrappers (but what's important is that the API remains the same!). See the section on [backends](backends/summary.md) for a short guide on which backend to choose, and a list of all implementations.
 
-sttp client is available for Scala 2.12, 2.13 and 3, on the JVM (Java 11+), Scala.JS and Scala Native platforms. Note that not all modules are compatible with these platforms, and that each has its own dedicated set of backends.
+sttp client is available for Scala 2.12, 2.13 and 3, on the JVM (Java 11+ for Scala 2, Java 17+ for Scala 3), Scala.JS and Scala Native platforms. Note that not all modules are compatible with these platforms, and that each has its own dedicated set of backends.
 
 ## Using sbt
 

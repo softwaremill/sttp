@@ -6,24 +6,24 @@ import sttp.client4.prometheus.PrometheusBackend._
 import sttp.model.ResponseMetadata
 
 final case class PrometheusConfig(
-    requestToHistogramNameMapper: GenericRequest[_, _] => Option[HistogramCollectorConfig] =
-      (req: GenericRequest[_, _]) => Some(addMethodLabel(HistogramCollectorConfig(DefaultHistogramName), req)),
-    requestToInProgressGaugeNameMapper: GenericRequest[_, _] => Option[CollectorConfig] = (req: GenericRequest[_, _]) =>
+    requestToHistogramNameMapper: GenericRequest[?, ?] => Option[HistogramCollectorConfig] =
+      (req: GenericRequest[?, ?]) => Some(addMethodLabel(HistogramCollectorConfig(DefaultHistogramName), req)),
+    requestToInProgressGaugeNameMapper: GenericRequest[?, ?] => Option[CollectorConfig] = (req: GenericRequest[?, ?]) =>
       Some(addMethodLabel(CollectorConfig(DefaultRequestsActiveGaugeName), req)),
-    responseToSuccessCounterMapper: (GenericRequest[_, _], ResponseMetadata) => Option[CollectorConfig] =
-      (req: GenericRequest[_, _], resp: ResponseMetadata) =>
+    responseToSuccessCounterMapper: (GenericRequest[?, ?], ResponseMetadata) => Option[CollectorConfig] =
+      (req: GenericRequest[?, ?], resp: ResponseMetadata) =>
         Some(addStatusLabel(addMethodLabel(CollectorConfig(DefaultSuccessCounterName), req), resp)),
-    responseToErrorCounterMapper: (GenericRequest[_, _], ResponseMetadata) => Option[CollectorConfig] =
-      (req: GenericRequest[_, _], resp: ResponseMetadata) =>
+    responseToErrorCounterMapper: (GenericRequest[?, ?], ResponseMetadata) => Option[CollectorConfig] =
+      (req: GenericRequest[?, ?], resp: ResponseMetadata) =>
         Some(addStatusLabel(addMethodLabel(CollectorConfig(DefaultErrorCounterName), req), resp)),
-    requestToFailureCounterMapper: (GenericRequest[_, _], Throwable) => Option[CollectorConfig] = (
-        req: GenericRequest[_, _],
+    requestToFailureCounterMapper: (GenericRequest[?, ?], Throwable) => Option[CollectorConfig] = (
+        req: GenericRequest[?, ?],
         _: Throwable
     ) => Some(addMethodLabel(CollectorConfig(DefaultFailureCounterName), req)),
-    requestToSizeSummaryMapper: GenericRequest[_, _] => Option[CollectorConfig] = (req: GenericRequest[_, _]) =>
+    requestToSizeSummaryMapper: GenericRequest[?, ?] => Option[CollectorConfig] = (req: GenericRequest[?, ?]) =>
       Some(addMethodLabel(CollectorConfig(DefaultRequestSizeName), req)),
-    responseToSizeSummaryMapper: (GenericRequest[_, _], ResponseMetadata) => Option[CollectorConfig] =
-      (req: GenericRequest[_, _], resp: ResponseMetadata) =>
+    responseToSizeSummaryMapper: (GenericRequest[?, ?], ResponseMetadata) => Option[CollectorConfig] =
+      (req: GenericRequest[?, ?], resp: ResponseMetadata) =>
         Some(addStatusLabel(addMethodLabel(CollectorConfig(DefaultResponseSizeName), req), resp)),
     prometheusRegistry: PrometheusRegistry = PrometheusRegistry.defaultRegistry
 )

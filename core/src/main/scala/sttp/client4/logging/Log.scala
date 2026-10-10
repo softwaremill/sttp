@@ -9,20 +9,20 @@ import sttp.client4.ResponseException
 
 /** Performs logging before requests are sent and after requests complete successfully or with an exception. */
 trait Log[F[_]] {
-  def beforeRequestSend(request: GenericRequest[_, _]): F[Unit]
+  def beforeRequestSend(request: GenericRequest[?, ?]): F[Unit]
 
   /** @param exception
     *   A [[ResponseException]] that might occur when handling the response (e.g. parsing).
     */
   def response(
-      request: GenericRequest[_, _],
+      request: GenericRequest[?, ?],
       response: ResponseMetadata,
       responseBody: Option[String],
       timings: Option[ResponseTimings],
-      exception: Option[ResponseException[_]]
+      exception: Option[ResponseException[?]]
   ): F[Unit]
 
-  def requestException(request: GenericRequest[_, _], timing: Option[Duration], exception: Throwable): F[Unit]
+  def requestException(request: GenericRequest[?, ?], timing: Option[Duration], exception: Throwable): F[Unit]
 }
 
 object Log {
@@ -44,7 +44,7 @@ object Log {
   */
 class DefaultLog[F[_]](logger: Logger[F], config: LogConfig, logContext: LogContext) extends Log[F] {
 
-  def beforeRequestSend(request: GenericRequest[_, _]): F[Unit] = {
+  def beforeRequestSend(request: GenericRequest[?, ?]): F[Unit] = {
     val _logRequestBody = request.loggingOptions.logRequestBody.getOrElse(config.logRequestBody)
     val _logRequestHeaders = request.loggingOptions.logRequestHeaders.getOrElse(config.logRequestHeaders)
     val _message =
@@ -61,11 +61,11 @@ class DefaultLog[F[_]](logger: Logger[F], config: LogConfig, logContext: LogCont
   }
 
   override def response(
-      request: GenericRequest[_, _],
+      request: GenericRequest[?, ?],
       response: ResponseMetadata,
       responseBody: Option[String],
       timings: Option[ResponseTimings],
-      exception: Option[ResponseException[_]]
+      exception: Option[ResponseException[?]]
   ): F[Unit] = {
     val responseWithBody = Response(
       responseBody.getOrElse(""),
@@ -92,7 +92,7 @@ class DefaultLog[F[_]](logger: Logger[F], config: LogConfig, logContext: LogCont
   }
 
   override def requestException(
-      request: GenericRequest[_, _],
+      request: GenericRequest[?, ?],
       timing: Option[Duration],
       exception: Throwable
   ): F[Unit] =

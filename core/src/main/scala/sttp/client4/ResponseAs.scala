@@ -264,8 +264,8 @@ case class StreamResponseAs[+T, S](delegate: GenericResponseAs[T, S]) extends Re
   * @see
   *   [[ResponseAs]]
   */
-case class WebSocketResponseAs[F[_], +T](delegate: GenericResponseAs[T, Effect[F] with WebSockets])
-    extends ResponseAsDelegate[T, Effect[F] with WebSockets] {
+case class WebSocketResponseAs[F[_], +T](delegate: GenericResponseAs[T, Effect[F] & WebSockets])
+    extends ResponseAsDelegate[T, Effect[F] & WebSockets] {
 
   /** Applies the given function `f` to the deserialized value `T`. */
   def map[T2](f: T => T2): WebSocketResponseAs[F, T2] =
@@ -305,8 +305,8 @@ case class WebSocketResponseAs[F[_], +T](delegate: GenericResponseAs[T, Effect[F
   * @see
   *   [[ResponseAs]]
   */
-case class WebSocketStreamResponseAs[+T, S](delegate: GenericResponseAs[T, S with WebSockets])
-    extends ResponseAsDelegate[T, S with WebSockets] {
+case class WebSocketStreamResponseAs[+T, S](delegate: GenericResponseAs[T, S & WebSockets])
+    extends ResponseAsDelegate[T, S & WebSockets] {
 
   /** Applies the given function `f` to the deserialized value `T`. */
   def map[T2](f: T => T2): WebSocketStreamResponseAs[T2, S] =
@@ -380,7 +380,7 @@ object GenericResponseAs {
         }
       )
 
-  def isWebSocket(ra: GenericResponseAs[_, _]): Boolean =
+  def isWebSocket(ra: GenericResponseAs[?, ?]): Boolean =
     ra match {
       case _: GenericWebSocketResponseAs[_, _]         => true
       case ResponseAsFromMetadata(conditions, default) =>
@@ -402,13 +402,13 @@ case object ResponseAsByteArray extends GenericResponseAs[Array[Byte], Any] {
 // fact that `BinaryStream =:= s.BinaryStream`. We have to rely on correct construction via the companion object and
 // perform typecasts when the request is deconstructed.
 case class ResponseAsStream[F[_], T, Stream, S] private (s: Streams[S], f: (Stream, ResponseMetadata) => F[T])
-    extends GenericResponseAs[T, S with Effect[F]] {
+    extends GenericResponseAs[T, S & Effect[F]] {
   override def show: String = "as stream"
 }
 object ResponseAsStream {
   def apply[F[_], T, S](s: Streams[S])(
       f: (s.BinaryStream, ResponseMetadata) => F[T]
-  ): GenericResponseAs[T, S with Effect[F]] =
+  ): GenericResponseAs[T, S & Effect[F]] =
     new ResponseAsStream(s, f)
 }
 
@@ -432,15 +432,14 @@ case class ResponseAsFile(output: SttpFile) extends GenericResponseAs[SttpFile, 
 
 sealed trait GenericWebSocketResponseAs[T, -R] extends GenericResponseAs[T, R]
 case class ResponseAsWebSocket[F[_], T](f: (WebSocket[F], ResponseMetadata) => F[T])
-    extends GenericWebSocketResponseAs[T, WebSockets with Effect[F]] {
+    extends GenericWebSocketResponseAs[T, WebSockets & Effect[F]] {
   override def show: String = "as web socket"
 }
-case class ResponseAsWebSocketUnsafe[F[_]]()
-    extends GenericWebSocketResponseAs[WebSocket[F], WebSockets with Effect[F]] {
+case class ResponseAsWebSocketUnsafe[F[_]]() extends GenericWebSocketResponseAs[WebSocket[F], WebSockets & Effect[F]] {
   override def show: String = "as web socket unsafe"
 }
-case class ResponseAsWebSocketStream[S, Pipe[_, _]](s: Streams[S], p: Pipe[WebSocketFrame.Data[_], WebSocketFrame])
-    extends GenericWebSocketResponseAs[Unit, S with WebSockets] {
+case class ResponseAsWebSocketStream[S, Pipe[_, _]](s: Streams[S], p: Pipe[WebSocketFrame.Data[?], WebSocketFrame])
+    extends GenericWebSocketResponseAs[Unit, S & WebSockets] {
   override def show: String = "as web socket stream"
 }
 

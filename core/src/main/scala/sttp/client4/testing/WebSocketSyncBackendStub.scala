@@ -24,13 +24,13 @@ import sttp.shared.Identity
   * Predicates can match requests basing on the URI or headers.
   */
 class WebSocketSyncBackendStub(
-    matchers: PartialFunction[GenericRequest[_, _], Response[StubBody]],
+    matchers: PartialFunction[GenericRequest[?, ?], Response[StubBody]],
     fallback: Option[WebSocketSyncBackend]
 ) extends AbstractBackendStub[Identity, WebSockets](IdentityMonad, matchers, fallback)
     with WebSocketSyncBackend {
 
   type Self = WebSocketSyncBackendStub
-  override protected def withMatchers(matchers: PartialFunction[GenericRequest[_, _], Response[StubBody]]) =
+  override protected def withMatchers(matchers: PartialFunction[GenericRequest[?, ?], Response[StubBody]]) =
     new WebSocketSyncBackendStub(matchers, fallback)
 }
 

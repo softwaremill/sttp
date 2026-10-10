@@ -8,7 +8,7 @@ import scala.collection.mutable
 private final class StreamMessageAggregator extends Subscriber[HttpData] {
   private val contentList: mutable.Buffer[HttpData] = new mutable.ArrayBuffer()
   private var contentLength: Int = 0
-  private var subscription: Subscription = _
+  private var subscription: Subscription = null
 
   val future: CompletableFuture[HttpData] = new CompletableFuture()
 

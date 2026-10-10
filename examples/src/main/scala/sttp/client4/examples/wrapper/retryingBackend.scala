@@ -10,10 +10,10 @@ import sttp.client4.wrappers.DelegateBackend
 
 class RetryingBackendWrapper[F[_], P](delegate: GenericBackend[F, P], shouldRetry: RetryWhen, maxRetries: Int)
     extends DelegateBackend(delegate):
-  override def send[T](request: GenericRequest[T, P with Effect[F]]): F[Response[T]] =
+  override def send[T](request: GenericRequest[T, P & Effect[F]]): F[Response[T]] =
     sendWithRetryCounter(request, 0)
 
-  private def sendWithRetryCounter[T](request: GenericRequest[T, P with Effect[F]], retries: Int): F[Response[T]] =
+  private def sendWithRetryCounter[T](request: GenericRequest[T, P & Effect[F]], retries: Int): F[Response[T]] =
 
     val r = monad.handleError(delegate.send(request)):
       case t if shouldRetry(request, Left(t)) && retries < maxRetries =>

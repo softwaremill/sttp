@@ -7,14 +7,14 @@ import zio.{Ref, ZIO}
 object ZioWebSockets {
   def compilePipe[R](
       ws: WebSocket[ZIO[R, Throwable, *]],
-      pipe: ZStream[R, Throwable, WebSocketFrame.Data[_]] => ZStream[R, Throwable, WebSocketFrame]
+      pipe: ZStream[R, Throwable, WebSocketFrame.Data[?]] => ZStream[R, Throwable, WebSocketFrame]
   ): ZIO[R, Throwable, Unit] =
     for {
       closeRef <- Ref.make(Option.empty[WebSocketFrame.Close])
       closeSent <- Ref.make(false)
       // set the close to echo (a received Close) or none (the connection is already gone), then terminate the stream
       onClose = (close: Option[WebSocketFrame.Close]) =>
-        Stream.fromEffect(closeRef.set(close).as(Option.empty[WebSocketFrame.Data[_]]))
+        Stream.fromEffect(closeRef.set(close).as(Option.empty[WebSocketFrame.Data[?]]))
       _ <-
         pipe(
           Stream

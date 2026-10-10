@@ -10,13 +10,13 @@ import java.io.InputStream
 
 abstract class BodyFromResponseAs[F[_], RegularResponse, WSResponse, Stream](implicit m: MonadError[F]) {
   def apply[T](
-      responseAs: ResponseAsDelegate[T, _],
+      responseAs: ResponseAsDelegate[T, ?],
       meta: ResponseMetadata,
       response: Either[RegularResponse, WSResponse]
   ): F[T] = doApply(responseAs.delegate, meta, response).map(_._1)
 
   private def doApply[T](
-      responseAs: GenericResponseAs[T, _],
+      responseAs: GenericResponseAs[T, ?],
       meta: ResponseMetadata,
       response: Either[RegularResponse, WSResponse]
   ): F[(T, ReplayableBody)] =
@@ -71,7 +71,7 @@ abstract class BodyFromResponseAs[F[_], RegularResponse, WSResponse, Stream](imp
         regularAsFile(regular, file).map(f => (f, replayableBody(f)))
 
       case (wsr: GenericWebSocketResponseAs[_, _], Right(ws)) =>
-        handleWS(wsr.asInstanceOf[GenericWebSocketResponseAs[T, _]], meta, ws)
+        handleWS(wsr.asInstanceOf[GenericWebSocketResponseAs[T, ?]], meta, ws)
           .map(w => (w, nonReplayableBody))
 
       case (_: GenericWebSocketResponseAs[_, _], Left(regular)) =>
@@ -93,7 +93,7 @@ abstract class BodyFromResponseAs[F[_], RegularResponse, WSResponse, Stream](imp
   protected def regularAsStream(response: RegularResponse): F[(Stream, () => F[Unit])]
   protected def regularAsInputStream(response: RegularResponse): F[InputStream] =
     throw new UnsupportedOperationException("Responses as a java.io.InputStream are not supported")
-  protected def handleWS[T](responseAs: GenericWebSocketResponseAs[T, _], meta: ResponseMetadata, ws: WSResponse): F[T]
+  protected def handleWS[T](responseAs: GenericWebSocketResponseAs[T, ?], meta: ResponseMetadata, ws: WSResponse): F[T]
   protected def cleanupWhenNotAWebSocket(response: RegularResponse, e: NotAWebSocketException): F[Unit]
   protected def cleanupWhenGotWebSocket(response: WSResponse, e: GotAWebSocketException): F[Unit]
 }

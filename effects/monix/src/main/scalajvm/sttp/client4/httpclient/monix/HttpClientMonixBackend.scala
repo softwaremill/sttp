@@ -132,7 +132,7 @@ object HttpClientMonixBackend {
       s: Scheduler
   ): WebSocketStreamBackend[Task, MonixStreams] =
     wrappers.FollowRedirectsBackend(
-      new HttpClientMonixBackend(client, closeClient, customizeRequest, compressionHandlers)(s)
+      new HttpClientMonixBackend(client, closeClient, customizeRequest, compressionHandlers)(using s)
     )
 
   def apply(
@@ -148,7 +148,7 @@ object HttpClientMonixBackend {
         closeClient = false, // we don't want to close Monix's scheduler
         customizeRequest,
         compressionHandlers
-      )(s)
+      )(using s)
     )
 
   def resource(
@@ -169,7 +169,7 @@ object HttpClientMonixBackend {
       s: Scheduler = Scheduler.global
   ): Resource[Task, WebSocketStreamBackend[Task, MonixStreams]] =
     Resource.make(
-      Task.eval(HttpClientMonixBackend(client, closeClient = true, customizeRequest, compressionHandlers)(s))
+      Task.eval(HttpClientMonixBackend(client, closeClient = true, customizeRequest, compressionHandlers)(using s))
     )(_.close())
 
   def usingClient(
@@ -177,7 +177,7 @@ object HttpClientMonixBackend {
       customizeRequest: HttpRequest => HttpRequest = identity,
       compressionHandlers: CompressionHandlers[MonixStreams, MonixStreams.BinaryStream] = DefaultCompressionHandlers
   )(implicit s: Scheduler = Scheduler.global): WebSocketStreamBackend[Task, MonixStreams] =
-    HttpClientMonixBackend(client, closeClient = false, customizeRequest, compressionHandlers)(s)
+    HttpClientMonixBackend(client, closeClient = false, customizeRequest, compressionHandlers)(using s)
 
   /** Create a stub backend for testing, which uses the [[Task]] response wrapper, and supports `Observable[ByteBuffer]`
     * streaming.

@@ -16,7 +16,7 @@ import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicReference
 import scala.collection.JavaConverters._
 
-trait WebSocketStreamingTest[F[_], S] extends ToFutureWrapper { outer: Suite with AsyncFlatSpecLike with Matchers =>
+trait WebSocketStreamingTest[F[_], S] extends ToFutureWrapper { outer: Suite & AsyncFlatSpecLike & Matchers =>
   val streams: Streams[S]
   val backend: WebSocketStreamBackend[F, S]
   implicit def monad: MonadError[F]
@@ -24,7 +24,7 @@ trait WebSocketStreamingTest[F[_], S] extends ToFutureWrapper { outer: Suite wit
 
   def webSocketPipeTerminatedByServerTest(
       postfix: String
-  )(pipe: ConcurrentLinkedQueue[String] => streams.Pipe[WebSocketFrame.Data[_], WebSocketFrame]) =
+  )(pipe: ConcurrentLinkedQueue[String] => streams.Pipe[WebSocketFrame.Data[?], WebSocketFrame]) =
     it should s"use pipe to process websocket messages - server-terminated - $postfix" in {
       val received = new ConcurrentLinkedQueue[String]()
       basicRequest
@@ -39,7 +39,7 @@ trait WebSocketStreamingTest[F[_], S] extends ToFutureWrapper { outer: Suite wit
 
   def webSocketPipeClientTerminated(
       postfix: String
-  )(pipe: ConcurrentLinkedQueue[String] => streams.Pipe[WebSocketFrame.Data[_], WebSocketFrame]) =
+  )(pipe: ConcurrentLinkedQueue[String] => streams.Pipe[WebSocketFrame.Data[?], WebSocketFrame]) =
     it should s"use pipe to process websocket messages - client-terminated - $postfix" in {
       val received = new ConcurrentLinkedQueue[String]()
       basicRequest
@@ -106,12 +106,12 @@ trait WebSocketStreamingTest[F[_], S] extends ToFutureWrapper { outer: Suite wit
   }
 
   def prepend(item: WebSocketFrame.Text)(
-      to: streams.Pipe[WebSocketFrame.Data[_], WebSocketFrame]
-  ): streams.Pipe[WebSocketFrame.Data[_], WebSocketFrame]
+      to: streams.Pipe[WebSocketFrame.Data[?], WebSocketFrame]
+  ): streams.Pipe[WebSocketFrame.Data[?], WebSocketFrame]
 
-  def fromTextPipe(function: String => WebSocketFrame): streams.Pipe[WebSocketFrame.Data[_], WebSocketFrame]
+  def fromTextPipe(function: String => WebSocketFrame): streams.Pipe[WebSocketFrame.Data[?], WebSocketFrame]
 
   def functionToPipe(
-      f: WebSocketFrame.Data[_] => Option[WebSocketFrame]
-  ): streams.Pipe[WebSocketFrame.Data[_], WebSocketFrame]
+      f: WebSocketFrame.Data[?] => Option[WebSocketFrame]
+  ): streams.Pipe[WebSocketFrame.Data[?], WebSocketFrame]
 }

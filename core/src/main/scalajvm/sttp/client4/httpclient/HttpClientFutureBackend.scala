@@ -63,7 +63,7 @@ class HttpClientFutureBackend private (
       override implicit def monad: MonadError[Future] = new FutureMonad()
       override def compileWebSocketPipe(
           ws: WebSocket[Future],
-          pipe: streams.Pipe[WebSocketFrame.Data[_], WebSocketFrame]
+          pipe: streams.Pipe[WebSocketFrame.Data[?], WebSocketFrame]
       ): Future[Unit] = pipe
     }
 

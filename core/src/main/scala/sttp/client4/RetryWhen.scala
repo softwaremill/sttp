@@ -3,7 +3,7 @@ package sttp.client4
 import sttp.model.Method
 
 object RetryWhen {
-  def isBodyRetryable(body: GenericRequestBody[_]): Boolean =
+  def isBodyRetryable(body: GenericRequestBody[?]): Boolean =
     body match {
       case NoBody              => true
       case _: StringBody       => true

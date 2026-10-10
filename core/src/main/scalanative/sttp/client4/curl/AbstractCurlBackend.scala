@@ -34,7 +34,7 @@ abstract class AbstractCurlBackend[F[_]](_monad: MonadError[F], verbose: Boolean
   /** Same as [[performCurl]], but also checks and throws runtime exceptions on bad [[CurlCode]]s. */
   private final def perform(c: CurlHandle) = performCurl(c).flatMap(lift)
 
-  type R = Any with Effect[F]
+  type R = Any & Effect[F]
 
   override def close(): F[Unit] = monad.unit(())
 
@@ -97,7 +97,7 @@ abstract class AbstractCurlBackend[F[_]](_monad: MonadError[F], verbose: Boolean
           return monad.error(new UnsupportedOperationException("Attributes are not supported"))
         }
 
-        val reqHeaders = collection.mutable.ListBuffer[Header](request.headers: _*)
+        val reqHeaders = collection.mutable.ListBuffer[Header](request.headers*)
 
         request.body match {
           case _: MultipartBody[_] =>
@@ -133,10 +133,10 @@ abstract class AbstractCurlBackend[F[_]](_monad: MonadError[F], verbose: Boolean
         }
       }
 
-      Context.evaluateUsing(ctx => perform(ctx))
+      Context.evaluateUsing(ctx => perform(using ctx))
     }
 
-  private def adjustExceptions[T](request: GenericRequest[_, _])(t: => F[T]): F[T] =
+  private def adjustExceptions[T](request: GenericRequest[?, ?])(t: => F[T]): F[T] =
     SttpClientException.adjustExceptions(monad)(t)(
       SttpClientException.defaultExceptionToSttpClientException(request, _)
     )
@@ -220,7 +220,7 @@ abstract class AbstractCurlBackend[F[_]](_monad: MonadError[F], verbose: Boolean
       * MappedResponseAs, ResponseAsFromMetadata conditions, and ResponseAsBoth. Returns true if ANY branch might
       * produce an InputStream response.
       */
-    def containsInputStreamResponse(delegate: GenericResponseAs[_, _]): Boolean =
+    def containsInputStreamResponse(delegate: GenericResponseAs[?, ?]): Boolean =
       delegate match {
         case ResponseAsInputStream(_) | ResponseAsInputStreamUnsafe => true
         case MappedResponseAs(raw, _, _)                            => containsInputStreamResponse(raw)
@@ -411,16 +411,16 @@ abstract class AbstractCurlBackend[F[_]](_monad: MonadError[F], verbose: Boolean
     * evaluating metadata conditions along the way.
     */
   private def resolveResponseAs[T](
-      delegate: GenericResponseAs[T, _],
+      delegate: GenericResponseAs[T, ?],
       meta: ResponseMetadata
-  ): GenericResponseAs[_, _] = delegate match {
+  ): GenericResponseAs[?, ?] = delegate match {
     case rfm: ResponseAsFromMetadata[_, _] => resolveResponseAs(rfm(meta), meta)
     case MappedResponseAs(raw, _, _)       => resolveResponseAs(raw, meta)
     case other                             => other
   }
 
   /** Checks whether a resolved (leaf) response type is a direct InputStream response. */
-  private def isDirectInputStreamResponse(resolved: GenericResponseAs[_, _]): Boolean =
+  private def isDirectInputStreamResponse(resolved: GenericResponseAs[?, ?]): Boolean =
     resolved match {
       case ResponseAsInputStream(_) | ResponseAsInputStreamUnsafe => true
       case _                                                      => false
@@ -431,7 +431,7 @@ abstract class AbstractCurlBackend[F[_]](_monad: MonadError[F], verbose: Boolean
     * of a pre-buffered String.
     */
   private def dispatchInputStreamResponse[T](
-      delegate: GenericResponseAs[T, _],
+      delegate: GenericResponseAs[T, ?],
       is: InputStream,
       meta: ResponseMetadata
   ): F[T] =
@@ -535,7 +535,7 @@ abstract class AbstractCurlBackend[F[_]](_monad: MonadError[F], verbose: Boolean
     }
   }
 
-  private def basicBodyToString(body: BodyPart[_]): String =
+  private def basicBodyToString(body: BodyPart[?]): String =
     body match {
       case StringBody(b, _, _)   => b
       case ByteArrayBody(b, _)   => new String(b)
@@ -580,7 +580,7 @@ abstract class AbstractCurlBackend[F[_]](_monad: MonadError[F], verbose: Boolean
       }
     }
 
-    val headers = Seq(lines.tail: _*).map { line =>
+    val headers = Seq(lines.tail*).map { line =>
       val split = line.split(":", 2)
       if (split.size == 2)
         Header(split(0).trim, split(1).trim)
@@ -613,7 +613,7 @@ abstract class AbstractCurlBackend[F[_]](_monad: MonadError[F], verbose: Boolean
       throw new IllegalStateException("CurlBackend does not support streaming responses")
 
     override protected def handleWS[T](
-        responseAs: GenericWebSocketResponseAs[T, _],
+        responseAs: GenericWebSocketResponseAs[T, ?],
         meta: ResponseMetadata,
         ws: Nothing
     ): F[T] = ws

@@ -13,8 +13,7 @@ import sttp.client4.ResponseException.UnexpectedStatusCode
 import sttp.client4.ResponseException.DeserializationException
 
 trait SttpZioJsonApiExtensions { this: SttpZioJsonApi =>
-  def asJsonStream[B: JsonDecoder]
-      : StreamResponseAs[Either[ResponseException[String], B], ZioStreams with Effect[Task]] =
+  def asJsonStream[B: JsonDecoder]: StreamResponseAs[Either[ResponseException[String], B], ZioStreams & Effect[Task]] =
     asStreamWithMetadata(ZioStreams)((s, meta) =>
       JsonDecoder[B]
         .decodeJsonStream(ZPipeline.utf8Decode.apply(s).mapChunks(_.flatMap(_.toCharArray)))

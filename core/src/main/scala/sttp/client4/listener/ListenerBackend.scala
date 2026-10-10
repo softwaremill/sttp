@@ -13,7 +13,7 @@ abstract class ListenerBackend[F[_], P, L](
     delegate: GenericBackend[F, P],
     listener: RequestListener[F, L]
 ) extends DelegateBackend(delegate) {
-  override def send[T](request: GenericRequest[T, P with Effect[F]]): F[Response[T]] =
+  override def send[T](request: GenericRequest[T, P & Effect[F]]): F[Response[T]] =
     listener.before(request).flatMap { case tag =>
       val onBodyReceivedCalled = new AtomicBoolean
       // #2669. It would be best to either:

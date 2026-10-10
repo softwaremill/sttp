@@ -35,7 +35,7 @@ package object zio {
     *   [[Request.response]]). Or a failed effect, if an exception occurred when connecting to the target host, writing
     *   the request or reading the response.
     */
-  def send[T, C >: ZioStreams with Effect[Task]](
+  def send[T, C >: ZioStreams & Effect[Task]](
       request: StreamRequest[T, C]
   ): ZIO[SttpClient, Throwable, Response[T]] =
     ZIO.serviceWithZIO[SttpClient](request.send[Task, ZioStreams])
@@ -43,9 +43,9 @@ package object zio {
   /** A variant of [[send]] which allows the effects that are part of the response handling specification (when using
     * resource-safe streaming) to use an `R` environment.
     */
-  def sendR[T, C >: ZioStreams with Effect[RIO[R, *]], R](
+  def sendR[T, C >: ZioStreams & Effect[RIO[R, *]], R](
       request: StreamRequest[T, C]
-  ): ZIO[SttpClient with R, Throwable, Response[T]] = {
+  ): ZIO[SttpClient & R, Throwable, Response[T]] = {
     import sttp.client4.impl.zio.StreamBackendExtendEnv
     ZIO.serviceWithZIO[SttpClient](b => request.send[RIO[R, *], ZioStreams](b.extendEnv[R]))
   }

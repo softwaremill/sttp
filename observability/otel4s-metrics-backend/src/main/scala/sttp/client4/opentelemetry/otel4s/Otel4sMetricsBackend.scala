@@ -116,24 +116,24 @@ object Otel4sMetricsBackend {
       responseBodySize: Histogram[F, Long],
       activeRequests: UpDownCounter[F, Long],
       dispatcher: Dispatcher[F],
-      urlTemplate: GenericRequest[_, _] => Option[String],
-      extraAttributes: GenericRequest[_, _] => Attributes
+      urlTemplate: GenericRequest[?, ?] => Option[String],
+      extraAttributes: GenericRequest[?, ?] => Attributes
   ) extends RequestListener[F, State] {
-    def before(request: GenericRequest[_, _]): F[State] =
+    def before(request: GenericRequest[?, ?]): F[State] =
       for {
         start <- Clock[F].realTime
         attributes <- Monad[F].pure(activeRequestAttributes(request))
         _ <- activeRequests.inc(attributes)
       } yield State(start, attributes)
 
-    def responseBodyReceived(request: GenericRequest[_, _], response: ResponseMetadata, state: State): Unit =
+    def responseBodyReceived(request: GenericRequest[?, ?], response: ResponseMetadata, state: State): Unit =
       dispatcher.unsafeRunAndForget(captureResponseMetrics(request, response, state))
 
     def responseHandled(
-        request: GenericRequest[_, _],
+        request: GenericRequest[?, ?],
         response: ResponseMetadata,
         state: State,
-        exception: Option[ResponseException[_]]
+        exception: Option[ResponseException[?]]
     ): F[Unit] = {
       // responseBodyReceived is not called for WebSocket requests
       // ignoring the tag as there's no point in capturing timing information for WebSockets
@@ -141,7 +141,7 @@ object Otel4sMetricsBackend {
     }
 
     def exception(
-        request: GenericRequest[_, _],
+        request: GenericRequest[?, ?],
         state: State,
         e: Throwable,
         responseBodyReceivedCalled: Boolean
@@ -157,7 +157,7 @@ object Otel4sMetricsBackend {
       }
 
     private def captureResponseMetrics(
-        request: GenericRequest[_, _],
+        request: GenericRequest[?, ?],
         response: ResponseMetadata,
         state: State
     ): F[Unit] =
@@ -170,7 +170,7 @@ object Otel4sMetricsBackend {
         _ <- activeRequests.dec(state.activeRequestsAttributes)
       } yield ()
 
-    private def activeRequestAttributes(request: GenericRequest[_, _]): Attributes = {
+    private def activeRequestAttributes(request: GenericRequest[?, ?]): Attributes = {
       val b = Attributes.newBuilder
 
       b ++= extraAttributes(request)
@@ -184,7 +184,7 @@ object Otel4sMetricsBackend {
       b.result()
     }
 
-    private def fullAttributes(request: GenericRequest[_, _], response: ResponseMetadata): Attributes =
+    private def fullAttributes(request: GenericRequest[?, ?], response: ResponseMetadata): Attributes =
       fullAttributes(
         request,
         Some(response.code),
@@ -192,7 +192,7 @@ object Otel4sMetricsBackend {
       )
 
     private def fullAttributes(
-        request: GenericRequest[_, _],
+        request: GenericRequest[?, ?],
         responseStatusCode: Option[StatusCode],
         errorType: Option[String]
     ): Attributes = {

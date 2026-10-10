@@ -65,7 +65,7 @@ class FetchMonixBackend private (fetchOptions: FetchOptions, customizeRequest: F
 
   override protected def compileWebSocketPipe(
       ws: WebSocket[Task],
-      pipe: Observable[WebSocketFrame.Data[_]] => Observable[WebSocketFrame]
+      pipe: Observable[WebSocketFrame.Data[?]] => Observable[WebSocketFrame]
   ): Task[Unit] =
     MonixWebSockets.compilePipe(ws, pipe)
 

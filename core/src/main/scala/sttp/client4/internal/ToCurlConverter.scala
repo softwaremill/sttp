@@ -6,7 +6,7 @@ import sttp.model._
 private[client4] object ToCurlConverter {
 
   def apply(
-      request: GenericRequest[_, _],
+      request: GenericRequest[?, ?],
       omitAcceptEncoding: Boolean = false,
       sensitiveHeaders: Set[String] = HeaderNames.SensitiveHeaders,
       sensitiveQueryParams: Set[String] = Set.empty
@@ -19,20 +19,20 @@ private[client4] object ToCurlConverter {
       extractOptions(_)
     )
       .map(addSpaceIfNotEmpty)
-      .reduce((acc, item) => (r: GenericRequest[_, _]) => acc(r) + item(r))
+      .reduce((acc, item) => (r: GenericRequest[?, ?]) => acc(r) + item(r))
       .apply(request)
 
     s"""curl$params"""
   }
 
-  private def extractMethod(r: GenericRequest[_, _]): String =
+  private def extractMethod(r: GenericRequest[?, ?]): String =
     s"--request ${r.method.method}"
 
-  private def extractUrl(sensitiveQueryParams: Set[String])(r: GenericRequest[_, _]): String =
+  private def extractUrl(sensitiveQueryParams: Set[String])(r: GenericRequest[?, ?]): String =
     s"--url '${r.uri.toStringSafe(sensitiveQueryParams)}'"
 
   private def extractHeaders(sensitiveHeaders: Set[String], omitAcceptEncoding: Boolean)(
-      r: GenericRequest[_, _]
+      r: GenericRequest[?, ?]
   ): String =
     (if (!omitAcceptEncoding) {
        r.headers
@@ -43,7 +43,7 @@ private[client4] object ToCurlConverter {
       .map(h => s"--header '${h.toStringSafe(sensitiveHeaders)}'")
       .mkString(newline)
 
-  private def extractBody(r: GenericRequest[_, _]): String =
+  private def extractBody(r: GenericRequest[?, ?]): String =
     r.body match {
       case StringBody(text, _, _) => s"""--data-raw '${text.replace("'", "\\'")}'"""
       case ByteArrayBody(_, _)    => s"--data-binary <PLACEHOLDER>"
@@ -55,7 +55,7 @@ private[client4] object ToCurlConverter {
       case NoBody                 => ""
     }
 
-  def handleMultipartBody(parts: Seq[Part[GenericRequestBody[_]]]): String =
+  def handleMultipartBody(parts: Seq[Part[GenericRequestBody[?]]]): String =
     parts
       .map { p =>
         val formValue = p.body match {
@@ -67,7 +67,7 @@ private[client4] object ToCurlConverter {
       }
       .mkString(newline)
 
-  private def partMetadata(p: Part[GenericRequestBody[_]]): String = {
+  private def partMetadata(p: Part[GenericRequestBody[?]]): String = {
     val fileName = p.fileName.fold("")(n => s";filename=${escapeSingleQuotes(n)}")
     val contentType = p.contentType.fold("")(ct => s";type=${escapeSingleQuotes(ct)}")
     // Content-Type is already emitted via ;type= so it is filtered out here to avoid duplication.
@@ -80,14 +80,14 @@ private[client4] object ToCurlConverter {
 
   private def escapeSingleQuotes(text: String): String = text.replace("'", "\\'")
 
-  private def extractOptions(r: GenericRequest[_, _]): String =
+  private def extractOptions(r: GenericRequest[?, ?]): String =
     if (r.options.followRedirects) {
       s"--location${newline}--max-redirs ${r.options.maxRedirects}"
     } else {
       ""
     }
 
-  private def addSpaceIfNotEmpty(fInput: GenericRequest[_, _] => String): GenericRequest[_, _] => String =
+  private def addSpaceIfNotEmpty(fInput: GenericRequest[?, ?] => String): GenericRequest[?, ?] => String =
     t => if (fInput(t).isEmpty) "" else s"${newline}${fInput(t)}"
 
   private def newline: String = " \\\n  "

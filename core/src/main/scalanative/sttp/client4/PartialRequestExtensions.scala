@@ -5,7 +5,7 @@ import java.nio.file.Path
 
 import sttp.client4.internal._
 
-trait PartialRequestExtensions[+R <: PartialRequestBuilder[R, _]] { self: R =>
+trait PartialRequestExtensions[+R <: PartialRequestBuilder[R, ?]] { self: R =>
 
   /** If content type is not yet specified, will be set to `application/octet-stream`.
     *

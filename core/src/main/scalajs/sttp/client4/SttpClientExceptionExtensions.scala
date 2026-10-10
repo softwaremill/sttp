@@ -9,7 +9,7 @@ import sttp.client4.SttpClientException.ResponseHandlingException
 
 trait SttpClientExceptionExtensions {
   @tailrec
-  final def defaultExceptionToSttpClientException(request: GenericRequest[_, _], e: Exception): Option[Exception] =
+  final def defaultExceptionToSttpClientException(request: GenericRequest[?, ?], e: Exception): Option[Exception] =
     e match {
       case e: java.net.MalformedURLException        => Some(new ConnectException(request, e))
       case e: java.net.URISyntaxException           => Some(new ConnectException(request, e))

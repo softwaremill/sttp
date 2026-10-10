@@ -27,14 +27,14 @@ import sttp.capabilities.WebSockets
   */
 class WebSocketBackendStub[F[_]](
     monad: MonadError[F],
-    matchers: PartialFunction[GenericRequest[_, _], F[Response[StubBody]]],
+    matchers: PartialFunction[GenericRequest[?, ?], F[Response[StubBody]]],
     fallback: Option[WebSocketBackend[F]]
 ) extends AbstractBackendStub[F, WebSockets](monad, matchers, fallback)
     with WebSocketBackend[F] {
 
   type Self = WebSocketBackendStub[F]
   override protected def withMatchers(
-      matchers: PartialFunction[GenericRequest[_, _], F[Response[StubBody]]]
+      matchers: PartialFunction[GenericRequest[?, ?], F[Response[StubBody]]]
   ): WebSocketBackendStub[F] =
     new WebSocketBackendStub(monad, matchers, fallback)
 }

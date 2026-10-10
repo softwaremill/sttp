@@ -10,7 +10,7 @@ import com.softwaremill.SbtSoftwareMillBrowserTestJS._
 
 val scala2_12 = "2.12.21"
 val scala2_13 = "2.13.18"
-val scala3 = "3.3.8"
+val scala3 = "3.9.0"
 
 val scala2 = List(scala2_12, scala2_13)
 val scala2And3 = scala2 ++ List(scala3)
@@ -48,14 +48,30 @@ ideSkipProject := (scalaVersion.value != ideScalaVersion) ||
 bspEnabled := !ideSkipProject.value
 mimaPreviousArtifacts := Set.empty // we only use MiMa for `core` for now, using enableMimaSettings
 
-val commonJvmSettings = Seq(
+val commonSettings = Seq(
+  scalacOptions ++= {
+    if (ScalaArtifacts.isScala3(scalaVersion.value)) Nil
+    else if (scalaVersion.value.startsWith("2.12")) Seq("-Xsource:3")
+    else Seq("-Xsource:3", "-Wconf:cat=scala3-migration:w")
+  }
+)
+
+// scalac 2.12 overflows the stack when compiling the http4s backend tests with -Xsource:3
+val http4sTestSettings = Seq(
+  Test / scalacOptions := {
+    val options = (Test / scalacOptions).value
+    if (scalaVersion.value.startsWith("2.12")) options.filterNot(_ == "-Xsource:3") else options
+  }
+)
+
+val commonJvmSettings = commonSettings ++ Seq(
   scalacOptions ++=
-    (if (ScalaArtifacts.isScala3(scalaVersion.value)) Seq("-Yfuture-lazy-vals", "-java-output-version", "11")
+    (if (ScalaArtifacts.isScala3(scalaVersion.value)) Seq("-java-output-version", "17")
      else Seq("-release", "11")),
   Test / testOptions += Tests.Argument("-oD") // add test timings; js build specify other options which conflict
 )
 
-val commonJsSettings = Seq(
+val commonJsSettings = commonSettings ++ Seq(
   scalaJSLinkerConfig ~= {
     _.withBatchMode(true).withParallel(false)
   },
@@ -85,7 +101,7 @@ val commonJsBackendSettings = List(
   )
 )
 
-val commonNativeSettings: Seq[Def.Setting[?]] = Seq.empty
+val commonNativeSettings: Seq[Def.Setting[?]] = commonSettings
 
 val versioningSchemeSettings = Seq(versionScheme := Some("early-semver"))
 
@@ -668,6 +684,7 @@ lazy val okhttpMonixBackend =
 lazy val http4sCe2Backend = (projectMatrix in file("http4s-ce2-backend"))
   .settings(commonJvmSettings)
   .settings(testServerSettings)
+  .settings(http4sTestSettings)
   .settings(
     name := "http4s-ce2-backend",
     libraryDependencies ++= Seq(
@@ -680,6 +697,7 @@ lazy val http4sCe2Backend = (projectMatrix in file("http4s-ce2-backend"))
 
 lazy val http4sBackend = (projectMatrix in file("http4s-backend"))
   .settings(testServerSettings)
+  .settings(http4sTestSettings)
   .settings(
     name := "http4s-backend",
     libraryDependencies ++= Seq(

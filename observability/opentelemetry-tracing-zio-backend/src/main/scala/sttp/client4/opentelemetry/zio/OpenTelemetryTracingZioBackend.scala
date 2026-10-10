@@ -18,7 +18,7 @@ abstract class OpenTelemetryTracingZioBackend[+P](
     tracing: Tracing
 ) extends DelegateBackend[Task, P](delegate)
     with Backend[Task] {
-  def send[T](request: GenericRequest[T, P with Effect[Task]]): Task[Response[T]] =
+  def send[T](request: GenericRequest[T, P & Effect[Task]]): Task[Response[T]] =
     ZIO.scoped {
       val carrier = OutgoingContextCarrier.default()
       for {

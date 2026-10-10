@@ -10,21 +10,21 @@ import sttp.ws.{WebSocket, WebSocketClosed, WebSocketFrame}
 object MonixWebSockets {
   def compilePipe(
       ws: WebSocket[Task],
-      pipe: Observable[WebSocketFrame.Data[_]] => Observable[WebSocketFrame]
+      pipe: Observable[WebSocketFrame.Data[?]] => Observable[WebSocketFrame]
   ): Task[Unit] =
     Task(BooleanCancelable()).flatMap { wsClosed =>
       Ref.of[Task, Option[WebSocketFrame.Close]](None).flatMap { closeRef =>
         Ref.of[Task, Boolean](false).flatMap { closeSent =>
           // set the close to echo (a received Close) or none (the connection is already gone),
           // then terminate the stream
-          def onClose(close: Option[WebSocketFrame.Close]): Task[Option[WebSocketFrame.Data[_]]] =
+          def onClose(close: Option[WebSocketFrame.Close]): Task[Option[WebSocketFrame.Data[?]]] =
             closeRef.set(close) >> Task {
               wsClosed.cancel()
               None
             }
           pipe(
             Observable
-              .repeatEvalF(ws.receive().flatMap[Option[WebSocketFrame.Data[_]]] {
+              .repeatEvalF(ws.receive().flatMap[Option[WebSocketFrame.Data[?]]] {
                 case WebSocketFrame.Close(code, reason) => onClose(Some(WebSocketFrame.Close(code, reason)))
                 case WebSocketFrame.Ping(payload)       => ws.send(WebSocketFrame.Pong(payload)).map(_ => None)
                 case WebSocketFrame.Pong(_)             => Task.now(None)

@@ -7,7 +7,7 @@ import sttp.client4.internal.SttpFile
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
-trait ToCurlConverterTestExtension { suit: Suite with AnyFlatSpec with Matchers =>
+trait ToCurlConverterTestExtension { suit: Suite & AnyFlatSpec & Matchers =>
   it should "render multipart form data if content is a file" in {
     basicRequest
       .multipartBody(multipartSttpFile("upload", SttpFile.fromPath(new File("myDataSet").toPath)))

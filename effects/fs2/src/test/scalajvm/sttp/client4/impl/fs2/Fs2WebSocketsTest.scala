@@ -41,7 +41,7 @@ class Fs2WebSocketsTest extends AnyFlatSpec with Matchers {
   }
 
   private def sentFrames(incoming: List[WebSocketFrame])(
-      pipe: Pipe[IO, WebSocketFrame.Data[_], WebSocketFrame]
+      pipe: Pipe[IO, WebSocketFrame.Data[?], WebSocketFrame]
   ): List[(WebSocketFrame, Boolean)] =
     (for {
       incomingRef <- Ref.of[IO, List[WebSocketFrame]](incoming)

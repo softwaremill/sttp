@@ -40,12 +40,12 @@ trait PartialRequestBuilder[+PR <: PartialRequestBuilder[PR, R], +R]
   def showBasicSafe(sensitiveQueryParams: Set[String]): String
 
   def headers: Seq[Header]
-  def body: GenericRequestBody[_]
+  def body: GenericRequestBody[?]
 
   /** Description of how the response body should be handled. Needs to be specified upfront so that the response is
     * always consumed and hence there are no requirements on client code to consume it.
     */
-  def response: ResponseAsDelegate[_, _]
+  def response: ResponseAsDelegate[?, ?]
   def options: RequestOptions
 
   /** Request-specific attributes which can be used by backends for logging, metrics, etc. Empty by default. */
@@ -120,7 +120,7 @@ trait PartialRequestBuilder[+PR <: PartialRequestBuilder[PR, R], +R]
   /** Adds the given headers to the headers of this request. If a header with the same name already exists, it's
     * replaced.
     */
-  def headers(hs: Map[String, String]): PR = headers(hs.map(t => Header(t._1, t._2)).toSeq: _*)
+  def headers(hs: Map[String, String]): PR = headers(hs.map(t => Header(t._1, t._2)).toSeq*)
 
   /** Adds the given headers to the headers of this request. If a header with the same name already exists, it's
     * replaced.
@@ -151,10 +151,10 @@ trait PartialRequestBuilder[+PR <: PartialRequestBuilder[PR, R], +R]
   def cookie(n: String, v: String): PR = cookies((n, v))
 
   /** Adds the cookies from the given response. Any previously defined cookies are left intact. */
-  def cookies(r: Response[_]): PR = cookies(r.cookies.collect { case Right(c) => c }.map(c => (c.name, c.value)): _*)
+  def cookies(r: Response[?]): PR = cookies(r.cookies.collect { case Right(c) => c }.map(c => (c.name, c.value))*)
 
   /** Adds the given cookies. Any previously defined cookies are left intact. */
-  def cookies(cs: Iterable[CookieWithMeta]): PR = cookies(cs.map(c => (c.name, c.value)).toSeq: _*)
+  def cookies(cs: Iterable[CookieWithMeta]): PR = cookies(cs.map(c => (c.name, c.value)).toSeq*)
 
   /** Adds the given cookies. Any previously defined cookies are left intact. */
   def cookies(nvs: (String, String)*): PR = header(

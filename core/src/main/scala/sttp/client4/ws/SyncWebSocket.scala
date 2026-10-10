@@ -47,7 +47,7 @@ class SyncWebSocket(val delegate: WebSocket[Identity]) {
     * @param pongOnPing
     *   Should a [[WebSocketFrame.Pong]] be sent when a [[WebSocketFrame.Ping]] is received.
     */
-  def receiveDataFrame(pongOnPing: Boolean = true): WebSocketFrame.Data[_] = delegate.receiveDataFrame(pongOnPing)
+  def receiveDataFrame(pongOnPing: Boolean = true): WebSocketFrame.Data[?] = delegate.receiveDataFrame(pongOnPing)
 
   /** Receive a single text data frame, ignoring others. The frame might be a fragment. To receive whole messages, use
     * [[receiveText]]. Will throw [[WebSocketClosed]] if the web socket is closed, or if a close frame is received.

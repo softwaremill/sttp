@@ -26,14 +26,14 @@ class FetchMonixWebSocketTest extends WebSocketTest[Task] with WebSocketStreamin
   override val streams: MonixStreams = MonixStreams
 
   override def prepend(item: WebSocketFrame.Text)(
-      to: streams.Pipe[WebSocketFrame.Data[_], WebSocketFrame]
-  ): streams.Pipe[WebSocketFrame.Data[_], WebSocketFrame] =
+      to: streams.Pipe[WebSocketFrame.Data[?], WebSocketFrame]
+  ): streams.Pipe[WebSocketFrame.Data[?], WebSocketFrame] =
     to.andThen(rest => Observable.now(item) ++ rest)
 
-  override def fromTextPipe(function: String => WebSocketFrame): streams.Pipe[WebSocketFrame.Data[_], WebSocketFrame] =
+  override def fromTextPipe(function: String => WebSocketFrame): streams.Pipe[WebSocketFrame.Data[?], WebSocketFrame] =
     MonixWebSockets.fromTextPipe(function)
 
   override def functionToPipe(
-      f: WebSocketFrame.Data[_] => Option[WebSocketFrame]
-  ): streams.Pipe[WebSocketFrame.Data[_], WebSocketFrame] = in => in.concatMapIterable(m => f(m).toList)
+      f: WebSocketFrame.Data[?] => Option[WebSocketFrame]
+  ): streams.Pipe[WebSocketFrame.Data[?], WebSocketFrame] = in => in.concatMapIterable(m => f(m).toList)
 }

@@ -15,7 +15,7 @@ import sttp.client4.ws.stream.*
 import sttp.ws.WebSocketFrame
 
 object WebSocketStreamFs2 extends IOApp:
-  def webSocketFramePipe: Pipe[IO, WebSocketFrame.Data[_], WebSocketFrame] = { input =>
+  def webSocketFramePipe: Pipe[IO, WebSocketFrame.Data[?], WebSocketFrame] = { input =>
     Stream.emit(WebSocketFrame.text("1")) ++ input.flatMap {
       case WebSocketFrame.Text("10", _, _) =>
         println("Received 10 messages, sending close frame")

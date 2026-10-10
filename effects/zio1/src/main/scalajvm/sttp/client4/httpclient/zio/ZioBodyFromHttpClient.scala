@@ -22,7 +22,7 @@ private[zio] class ZioBodyFromHttpClient extends BodyFromHttpClient[Task, ZioStr
 
   override def compileWebSocketPipe(
       ws: WebSocket[Task],
-      pipe: ZStream[Any, Throwable, WebSocketFrame.Data[_]] => ZStream[Any, Throwable, WebSocketFrame]
+      pipe: ZStream[Any, Throwable, WebSocketFrame.Data[?]] => ZStream[Any, Throwable, WebSocketFrame]
   ): Task[Unit] = ZioWebSockets.compilePipe(ws, pipe)
 
   override protected def bodyFromResponseAs: BodyFromResponseAs[Task, ZStream[
@@ -88,7 +88,7 @@ private[zio] class ZioBodyFromHttpClient extends BodyFromHttpClient[Task, ZioStr
         Task.succeed((response, () => response.runDrain.catchAll(_ => ZIO.unit)))
 
       override protected def handleWS[T](
-          responseAs: GenericWebSocketResponseAs[T, _],
+          responseAs: GenericWebSocketResponseAs[T, ?],
           meta: ResponseMetadata,
           ws: WebSocket[Task]
       ): Task[T] = bodyFromWs(responseAs, ws, meta)

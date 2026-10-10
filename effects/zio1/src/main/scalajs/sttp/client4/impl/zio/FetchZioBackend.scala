@@ -72,7 +72,7 @@ class FetchZioBackend private (fetchOptions: FetchOptions, customizeRequest: Fet
 
   override protected def compileWebSocketPipe(
       ws: WebSocket[Task],
-      pipe: Observable[WebSocketFrame.Data[_]] => Observable[WebSocketFrame]
+      pipe: Observable[WebSocketFrame.Data[?]] => Observable[WebSocketFrame]
   ): Task[Unit] =
     ZioWebSockets.compilePipe(ws, pipe)
 

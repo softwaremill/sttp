@@ -22,7 +22,7 @@ import sttp.client4.compression.Compressor
 
 private[pekkohttp] object BodyToPekko {
   def apply[R](
-      r: GenericRequest[_, R],
+      r: GenericRequest[?, R],
       ar: HttpRequest,
       compressors: List[Compressor[R]]
   ): Try[HttpRequest] = {
@@ -34,7 +34,7 @@ private[pekkohttp] object BodyToPekko {
 
     val (body, contentLength) = Compressor.compressIfNeeded(r, compressors)
 
-    def toBodyPart(mp: Part[BodyPart[_]]): Try[PekkoMultipart.FormData.BodyPart] = {
+    def toBodyPart(mp: Part[BodyPart[?]]): Try[PekkoMultipart.FormData.BodyPart] = {
       def streamPartEntity(contentType: ContentType, s: PekkoStreams.BinaryStream) =
         mp.contentLength match {
           case None    => HttpEntity.IndefiniteLength(contentType, s)
@@ -82,11 +82,11 @@ private[pekkohttp] object BodyToPekko {
   }
 
   private def multipartEntity(
-      r: GenericRequest[_, _],
+      r: GenericRequest[?, ?],
       bodyParts: Seq[PekkoMultipart.FormData.BodyPart]
   ): Try[RequestEntity] =
     r.headers.find(Util.isContentType) match {
-      case None     => Success(PekkoMultipart.FormData(bodyParts: _*).toEntity)
+      case None     => Success(PekkoMultipart.FormData(bodyParts*).toEntity)
       case Some(ct) =>
         Util.parseContentType(ct.value).map(_.mediaType).flatMap {
           case m: MediaType.Multipart =>

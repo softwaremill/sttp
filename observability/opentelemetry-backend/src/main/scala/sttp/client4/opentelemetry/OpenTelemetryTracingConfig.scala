@@ -12,9 +12,9 @@ case class OpenTelemetryTracingConfig(
     tracer: Tracer,
     propagators: ContextPropagators,
     clock: Clock,
-    spanName: GenericRequest[_, _] => String,
-    requestAttributes: GenericRequest[_, _] => Attributes,
-    responseAttributes: (GenericRequest[_, _], Response[_]) => Attributes,
+    spanName: GenericRequest[?, ?] => String,
+    requestAttributes: GenericRequest[?, ?] => Attributes,
+    responseAttributes: (GenericRequest[?, ?], Response[?]) => Attributes,
     errorAttributes: Throwable => Attributes
 )
 
@@ -22,11 +22,10 @@ object OpenTelemetryTracingConfig {
   def apply(
       openTelemetry: OpenTelemetry,
       clock: Clock = Clock.systemUTC(),
-      spanName: GenericRequest[_, _] => String = OpenTelemetryDefaults.spanName _,
-      requestAttributes: GenericRequest[_, _] => Attributes = OpenTelemetryDefaults.requestAttributesWithFullUrl _,
-      responseAttributes: (GenericRequest[_, _], Response[_]) => Attributes =
-        OpenTelemetryDefaults.responseAttributes _,
-      errorAttributes: Throwable => Attributes = OpenTelemetryDefaults.errorAttributes _
+      spanName: GenericRequest[?, ?] => String = OpenTelemetryDefaults.spanName,
+      requestAttributes: GenericRequest[?, ?] => Attributes = OpenTelemetryDefaults.requestAttributesWithFullUrl,
+      responseAttributes: (GenericRequest[?, ?], Response[?]) => Attributes = OpenTelemetryDefaults.responseAttributes,
+      errorAttributes: Throwable => Attributes = OpenTelemetryDefaults.errorAttributes
   ): OpenTelemetryTracingConfig = usingTracer(
     openTelemetry
       .tracerBuilder(OpenTelemetryDefaults.instrumentationScopeName)
@@ -44,11 +43,10 @@ object OpenTelemetryTracingConfig {
       tracer: Tracer,
       propagators: ContextPropagators,
       clock: Clock = Clock.systemUTC(),
-      spanName: GenericRequest[_, _] => String = OpenTelemetryDefaults.spanName _,
-      requestAttributes: GenericRequest[_, _] => Attributes = OpenTelemetryDefaults.requestAttributesWithFullUrl _,
-      responseAttributes: (GenericRequest[_, _], Response[_]) => Attributes =
-        OpenTelemetryDefaults.responseAttributes _,
-      errorAttributes: Throwable => Attributes = OpenTelemetryDefaults.errorAttributes _
+      spanName: GenericRequest[?, ?] => String = OpenTelemetryDefaults.spanName,
+      requestAttributes: GenericRequest[?, ?] => Attributes = OpenTelemetryDefaults.requestAttributesWithFullUrl,
+      responseAttributes: (GenericRequest[?, ?], Response[?]) => Attributes = OpenTelemetryDefaults.responseAttributes,
+      errorAttributes: Throwable => Attributes = OpenTelemetryDefaults.errorAttributes
   ): OpenTelemetryTracingConfig =
     OpenTelemetryTracingConfig(
       tracer,
