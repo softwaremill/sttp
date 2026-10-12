@@ -39,7 +39,7 @@ class FetchFs2Backend[F[_]: Async] private (fetchOptions: FetchOptions, customiz
 
   override protected def compileWebSocketPipe(
       ws: WebSocket[F],
-      pipe: streams.Pipe[Data[_], WebSocketFrame]
+      pipe: streams.Pipe[Data[?], WebSocketFrame]
   ): F[Unit] = {
     Fs2WebSockets.handleThroughPipe[F](ws)(pipe)
   }

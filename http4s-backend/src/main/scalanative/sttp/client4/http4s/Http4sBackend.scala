@@ -24,9 +24,9 @@ object Http4sBackend {
 
   def usingClient[F[_]: Async](
       client: Client[F],
-      customizeRequest: Http4sRequest[F] => Http4sRequest[F] = identity[Http4sRequest[F]] _
+      customizeRequest: Http4sRequest[F] => Http4sRequest[F] = identity[Http4sRequest[F]](_)
   ): StreamBackend[F, Fs2Streams[F]] =
-    Http4sBackendBase.usingClient(client, customizeRequest, defaultCompressionHandlers[F](_: Async[F]))
+    Http4sBackendBase.usingClient(client, customizeRequest, (F: Async[F]) => defaultCompressionHandlers[F](using F))
 
   def usingClient[F[_]: Async](
       client: Client[F],
@@ -37,9 +37,13 @@ object Http4sBackend {
 
   def usingEmberClientBuilder[F[_]: Async: Network](
       emberClientBuilder: EmberClientBuilder[F],
-      customizeRequest: Http4sRequest[F] => Http4sRequest[F] = identity[Http4sRequest[F]] _
+      customizeRequest: Http4sRequest[F] => Http4sRequest[F] = identity[Http4sRequest[F]](_)
   ): Resource[F, StreamBackend[F, Fs2Streams[F]]] =
-    usingEmberClientBuilder(emberClientBuilder, customizeRequest, defaultCompressionHandlers[F](_: Async[F]))
+    usingEmberClientBuilder(
+      emberClientBuilder,
+      customizeRequest,
+      (F: Async[F]) => defaultCompressionHandlers[F](using F)
+    )
 
   def usingEmberClientBuilder[F[_]: Async: Network](
       emberClientBuilder: EmberClientBuilder[F],
@@ -49,9 +53,9 @@ object Http4sBackend {
     emberClientBuilder.build.map(c => usingClient(c, customizeRequest, compressionHandlers))
 
   def usingDefaultEmberClientBuilder[F[_]: Async: Network](
-      customizeRequest: Http4sRequest[F] => Http4sRequest[F] = identity[Http4sRequest[F]] _,
-      compressionHandlers: Async[F] => CompressionHandlers[Fs2Streams[F], EntityBody[F]] =
-        defaultCompressionHandlers[F](_: Async[F])
+      customizeRequest: Http4sRequest[F] => Http4sRequest[F] = identity[Http4sRequest[F]](_),
+      compressionHandlers: Async[F] => CompressionHandlers[Fs2Streams[F], EntityBody[F]] = (F: Async[F]) =>
+        defaultCompressionHandlers[F](using F)
   ): Resource[F, StreamBackend[F, Fs2Streams[F]]] =
     usingEmberClientBuilder(EmberClientBuilder.default[F], customizeRequest, compressionHandlers)
 

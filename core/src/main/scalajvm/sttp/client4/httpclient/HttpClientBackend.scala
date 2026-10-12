@@ -46,7 +46,7 @@ abstract class HttpClientBackend[F[_], S <: Streams[S], P, B](
     with Backend[F] {
   val streams: Streams[S]
 
-  type R = P with Effect[F]
+  type R = P & Effect[F]
 
   override def send[T](request: GenericRequest[T, R]): F[Response[T]] =
     adjustExceptions(request) {
@@ -57,7 +57,7 @@ abstract class HttpClientBackend[F[_], S <: Streams[S], P, B](
 
   protected def sendWebSocket[T](request: GenericRequest[T, R]): F[Response[T]]
 
-  private def adjustExceptions[T](request: GenericRequest[_, _])(t: => F[T]): F[T] =
+  private def adjustExceptions[T](request: GenericRequest[?, ?])(t: => F[T]): F[T] =
     SttpClientException.adjustExceptions(monad)(t)(
       SttpClientException.defaultExceptionToSttpClientException(request, _)
     )
@@ -106,7 +106,7 @@ abstract class HttpClientBackend[F[_], S <: Streams[S], P, B](
   private implicit val _monad: MonadError[F] = monad
 
   private[client4] def readResponse[T](
-      res: HttpResponse[_],
+      res: HttpResponse[?],
       resBody: Either[B, WebSocket[F]],
       request: GenericRequest[T, R]
   ): F[Response[T]] = {
@@ -157,7 +157,7 @@ abstract class HttpClientBackend[F[_], S <: Streams[S], P, B](
     val wsBuilder = wsSubProtocols match {
       case Nil          => client.newWebSocketBuilder()
       case head :: Nil  => client.newWebSocketBuilder().subprotocols(head)
-      case head :: tail => client.newWebSocketBuilder().subprotocols(head, tail: _*)
+      case head :: tail => client.newWebSocketBuilder().subprotocols(head, tail*)
     }
     client
       .connectTimeout()

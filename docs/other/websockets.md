@@ -71,10 +71,10 @@ import sttp.ws.WebSocketFrame
 
 // when using import sttp.client4.ws.stream._
 
-def asWebSocketStream[S](s: Streams[S])(p: s.Pipe[WebSocketFrame.Data[_], WebSocketFrame]): 
+def asWebSocketStream[S](s: Streams[S])(p: s.Pipe[WebSocketFrame.Data[?], WebSocketFrame]): 
   WebSocketStreamResponseAs[Either[String, Unit], S] = ???
 
-def asWebSocketStreamOrFail[S](s: Streams[S])(p: s.Pipe[WebSocketFrame.Data[_], WebSocketFrame]): 
+def asWebSocketStreamOrFail[S](s: Streams[S])(p: s.Pipe[WebSocketFrame.Data[?], WebSocketFrame]): 
   WebSocketStreamResponseAs[Unit, S] = ???
 ```
 

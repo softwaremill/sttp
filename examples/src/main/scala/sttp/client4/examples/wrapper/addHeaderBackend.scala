@@ -16,7 +16,7 @@ import sttp.model.Header
 
 class AddHeaderBackendWrapper[F[_], P](delegate: GenericBackend[F, P], headers: List[Header])
     extends DelegateBackend(delegate):
-  override def send[T](request: GenericRequest[T, P with Effect[F]]): F[Response[T]] =
+  override def send[T](request: GenericRequest[T, P & Effect[F]]): F[Response[T]] =
     delegate.send(headers.foldLeft(request) { case (r, h) => r.header(h) })
 
 object AddHeaderBackendWrapper:

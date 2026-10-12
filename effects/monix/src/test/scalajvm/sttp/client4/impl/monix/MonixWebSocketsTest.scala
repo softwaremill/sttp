@@ -43,7 +43,7 @@ class MonixWebSocketsTest extends AnyFlatSpec with Matchers {
   }
 
   private def sentFrames(incoming: List[WebSocketFrame])(
-      pipe: Observable[WebSocketFrame.Data[_]] => Observable[WebSocketFrame]
+      pipe: Observable[WebSocketFrame.Data[?]] => Observable[WebSocketFrame]
   ): List[(WebSocketFrame, Boolean)] = {
     val ws = new RecordingWebSocket(incoming)
     MonixWebSockets.compilePipe(ws, pipe).runSyncUnsafe(5.seconds)
@@ -51,8 +51,8 @@ class MonixWebSocketsTest extends AnyFlatSpec with Matchers {
   }
 
   // drains the incoming frames (as compilePipe requires), then emits the given frames
-  private def drainThen(frames: WebSocketFrame*): Observable[WebSocketFrame.Data[_]] => Observable[WebSocketFrame] =
-    in => Observable.fromTask(in.completedL).flatMap(_ => Observable(frames: _*))
+  private def drainThen(frames: WebSocketFrame*): Observable[WebSocketFrame.Data[?]] => Observable[WebSocketFrame] =
+    in => Observable.fromTask(in.completedL).flatMap(_ => Observable(frames*))
 
   it should "mark non-final fragments emitted by the pipe as continuations of the previous frame" in {
     val first = WebSocketFrame.Text("Hel", finalFragment = false, None)

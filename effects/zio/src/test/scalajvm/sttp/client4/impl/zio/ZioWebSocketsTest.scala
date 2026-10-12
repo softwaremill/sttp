@@ -36,7 +36,7 @@ class ZioWebSocketsTest extends AnyFlatSpec with Matchers with ZioTestBase {
   }
 
   private def sentFrames(incoming: List[WebSocketFrame])(
-      pipe: ZStream[Any, Throwable, WebSocketFrame.Data[_]] => ZStream[Any, Throwable, WebSocketFrame]
+      pipe: ZStream[Any, Throwable, WebSocketFrame.Data[?]] => ZStream[Any, Throwable, WebSocketFrame]
   ): List[(WebSocketFrame, Boolean)] =
     unsafeRunSyncOrThrow(for {
       incomingRef <- Ref.make(incoming)

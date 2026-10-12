@@ -3,7 +3,7 @@ package sttp.client4
 import sttp.client4.internal.SttpFile
 import org.scalajs.dom.File
 
-trait PartialRequestExtensions[+R <: PartialRequestBuilder[R, _]] { self: R =>
+trait PartialRequestExtensions[+R <: PartialRequestBuilder[R, ?]] { self: R =>
 
   /** If content type is not yet specified, will be set to `application/octet-stream`.
     *

@@ -48,7 +48,7 @@ class HttpURLConnectionBackend private (
     openConnection: (URL, Option[java.net.Proxy]) => URLConnection,
     compressionHandlers: CompressionHandlers[Any, InputStream]
 ) extends SyncBackend {
-  type R = Any with Effect[Identity]
+  type R = Any & Effect[Identity]
 
   override def send[T](r: GenericRequest[T, R]): Response[T] =
     adjustExceptions(r) {
@@ -114,7 +114,7 @@ class HttpURLConnectionBackend private (
 
   private def writeBody(
       body: GenericRequestBody[R],
-      r: GenericRequest[_, R],
+      r: GenericRequest[?, R],
       c: HttpURLConnection
   ): Option[OutputStream] =
     body match {
@@ -166,7 +166,7 @@ class HttpURLConnectionBackend private (
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789".toCharArray
 
   private def setMultipartBody(
-      r: GenericRequest[_, R],
+      r: GenericRequest[?, R],
       mp: BasicMultipartBody,
       c: HttpURLConnection
   ): Option[OutputStream] = {
@@ -292,7 +292,7 @@ class HttpURLConnectionBackend private (
       throw new IllegalStateException()
     override protected def regularAsInputStream(response: InputStream): Identity[InputStream] = response
     override protected def handleWS[T](
-        responseAs: GenericWebSocketResponseAs[T, _],
+        responseAs: GenericWebSocketResponseAs[T, ?],
         meta: ResponseMetadata,
         ws: Nothing
     ): Identity[T] = ws
@@ -313,7 +313,7 @@ class HttpURLConnectionBackend private (
       case Some(encoding) => Decompressor.decompressIfPossible(is, encoding, compressionHandlers.decompressors)
     }
 
-  private def adjustExceptions[T](request: GenericRequest[_, R])(t: => T): T =
+  private def adjustExceptions[T](request: GenericRequest[?, R])(t: => T): T =
     SttpClientException.adjustExceptions(monad)(t)(
       SttpClientException.defaultExceptionToSttpClientException(request, _)
     )

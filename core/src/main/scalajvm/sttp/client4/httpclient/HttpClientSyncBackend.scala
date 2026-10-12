@@ -150,7 +150,7 @@ class HttpClientSyncBackend private (
       override implicit def monad: MonadError[Identity] = IdentityMonad
       override def compileWebSocketPipe(
           ws: WebSocket[Identity],
-          pipe: streams.Pipe[WebSocketFrame.Data[_], WebSocketFrame]
+          pipe: streams.Pipe[WebSocketFrame.Data[?], WebSocketFrame]
       ): Identity[Unit] = pipe
     }
 

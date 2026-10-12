@@ -17,7 +17,7 @@ private class Otel4sTracingBackend[F[_]: MonadCancelThrow: Tracer, P](
 ) extends DelegateBackend[F, P](delegate)
     with Backend[F] {
 
-  def send[T](request: GenericRequest[T, P with capabilities.Effect[F]]): F[Response[T]] =
+  def send[T](request: GenericRequest[T, P & capabilities.Effect[F]]): F[Response[T]] =
     MonadCancelThrow[F].uncancelable { poll =>
       Tracer[F]
         .spanBuilder(config.spanName(request))

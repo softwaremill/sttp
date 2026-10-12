@@ -53,7 +53,7 @@ class FollowRedirectsBackendTest extends AnyFunSuite with Matchers with EitherVa
     result.body.value shouldBe "All good!"
   }
 
-  private def cookiesIn(r: GenericRequest[_, _]): Set[String] =
+  private def cookiesIn(r: GenericRequest[?, ?]): Set[String] =
     r.header(HeaderNames.Cookie).map(_.split("; ").toSet).getOrElse(Set.empty)
 
   // a redirect chain example.com/0 -> /1 -> ... -> /n, where each hop sets a cookie `c<id>`; records the cookies

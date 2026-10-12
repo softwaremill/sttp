@@ -12,15 +12,15 @@ import sttp.model.ResponseMetadata
 final case class OpenTelemetryMetricsConfig(
     meter: Meter,
     clock: Clock,
-    requestToLatencyHistogramMapper: GenericRequest[_, _] => Option[HistogramCollectorConfig],
-    requestToInProgressCounterMapper: GenericRequest[_, _] => Option[CollectorConfig],
-    responseToSuccessCounterMapper: (GenericRequest[_, _], ResponseMetadata) => Option[CollectorConfig],
-    requestToErrorCounterMapper: (GenericRequest[_, _], ResponseMetadata) => Option[CollectorConfig],
-    requestToFailureCounterMapper: (GenericRequest[_, _], Throwable) => Option[CollectorConfig],
-    requestToSizeHistogramMapper: GenericRequest[_, _] => Option[HistogramCollectorConfig],
-    responseToSizeHistogramMapper: (GenericRequest[_, _], ResponseMetadata) => Option[HistogramCollectorConfig],
-    requestAttributes: GenericRequest[_, _] => Attributes,
-    responseAttributes: (GenericRequest[_, _], ResponseMetadata) => Attributes,
+    requestToLatencyHistogramMapper: GenericRequest[?, ?] => Option[HistogramCollectorConfig],
+    requestToInProgressCounterMapper: GenericRequest[?, ?] => Option[CollectorConfig],
+    responseToSuccessCounterMapper: (GenericRequest[?, ?], ResponseMetadata) => Option[CollectorConfig],
+    requestToErrorCounterMapper: (GenericRequest[?, ?], ResponseMetadata) => Option[CollectorConfig],
+    requestToFailureCounterMapper: (GenericRequest[?, ?], Throwable) => Option[CollectorConfig],
+    requestToSizeHistogramMapper: GenericRequest[?, ?] => Option[HistogramCollectorConfig],
+    responseToSizeHistogramMapper: (GenericRequest[?, ?], ResponseMetadata) => Option[HistogramCollectorConfig],
+    requestAttributes: GenericRequest[?, ?] => Attributes,
+    responseAttributes: (GenericRequest[?, ?], ResponseMetadata) => Attributes,
     errorAttributes: Throwable => Attributes
 )
 
@@ -28,8 +28,8 @@ object OpenTelemetryMetricsConfig {
   def apply(
       openTelemetry: OpenTelemetry,
       clock: Clock = Clock.systemUTC(),
-      requestToLatencyHistogramMapper: GenericRequest[_, _] => Option[HistogramCollectorConfig] =
-        (_: GenericRequest[_, _]) =>
+      requestToLatencyHistogramMapper: GenericRequest[?, ?] => Option[HistogramCollectorConfig] =
+        (_: GenericRequest[?, ?]) =>
           Some(
             HistogramCollectorConfig(
               DefaultLatencyHistogramName,
@@ -37,16 +37,16 @@ object OpenTelemetryMetricsConfig {
               unit = HistogramCollectorConfig.Milliseconds
             )
           ),
-      requestToInProgressCounterMapper: GenericRequest[_, _] => Option[CollectorConfig] = (_: GenericRequest[_, _]) =>
+      requestToInProgressCounterMapper: GenericRequest[?, ?] => Option[CollectorConfig] = (_: GenericRequest[?, ?]) =>
         Some(CollectorConfig(DefaultRequestsActiveCounterName)),
-      responseToSuccessCounterMapper: (GenericRequest[_, _], ResponseMetadata) => Option[CollectorConfig] =
-        (_: GenericRequest[_, _], _: ResponseMetadata) => Some(CollectorConfig(DefaultSuccessCounterName)),
-      responseToErrorCounterMapper: (GenericRequest[_, _], ResponseMetadata) => Option[CollectorConfig] =
-        (_: GenericRequest[_, _], _: ResponseMetadata) => Some(CollectorConfig(DefaultErrorCounterName)),
-      requestToFailureCounterMapper: (GenericRequest[_, _], Throwable) => Option[CollectorConfig] =
-        (_: GenericRequest[_, _], _: Throwable) => Some(CollectorConfig(DefaultFailureCounterName)),
-      requestToSizeHistogramMapper: GenericRequest[_, _] => Option[HistogramCollectorConfig] =
-        (_: GenericRequest[_, _]) =>
+      responseToSuccessCounterMapper: (GenericRequest[?, ?], ResponseMetadata) => Option[CollectorConfig] =
+        (_: GenericRequest[?, ?], _: ResponseMetadata) => Some(CollectorConfig(DefaultSuccessCounterName)),
+      responseToErrorCounterMapper: (GenericRequest[?, ?], ResponseMetadata) => Option[CollectorConfig] =
+        (_: GenericRequest[?, ?], _: ResponseMetadata) => Some(CollectorConfig(DefaultErrorCounterName)),
+      requestToFailureCounterMapper: (GenericRequest[?, ?], Throwable) => Option[CollectorConfig] =
+        (_: GenericRequest[?, ?], _: Throwable) => Some(CollectorConfig(DefaultFailureCounterName)),
+      requestToSizeHistogramMapper: GenericRequest[?, ?] => Option[HistogramCollectorConfig] =
+        (_: GenericRequest[?, ?]) =>
           Some(
             HistogramCollectorConfig(
               DefaultRequestSizeHistogramName,
@@ -54,8 +54,8 @@ object OpenTelemetryMetricsConfig {
               unit = HistogramCollectorConfig.Bytes
             )
           ),
-      responseToSizeHistogramMapper: (GenericRequest[_, _], ResponseMetadata) => Option[HistogramCollectorConfig] =
-        (_: GenericRequest[_, _], _: ResponseMetadata) =>
+      responseToSizeHistogramMapper: (GenericRequest[?, ?], ResponseMetadata) => Option[HistogramCollectorConfig] =
+        (_: GenericRequest[?, ?], _: ResponseMetadata) =>
           Some(
             HistogramCollectorConfig(
               DefaultResponseSizeHistogramName,
@@ -63,11 +63,11 @@ object OpenTelemetryMetricsConfig {
               unit = HistogramCollectorConfig.Bytes
             )
           ),
-      spanName: GenericRequest[_, _] => String = OpenTelemetryDefaults.spanName _,
-      requestAttributes: GenericRequest[_, _] => Attributes = OpenTelemetryDefaults.requestAttributes _,
-      responseAttributes: (GenericRequest[_, _], ResponseMetadata) => Attributes =
-        OpenTelemetryDefaults.responseAttributes _,
-      errorAttributes: Throwable => Attributes = OpenTelemetryDefaults.errorAttributes _
+      spanName: GenericRequest[?, ?] => String = OpenTelemetryDefaults.spanName,
+      requestAttributes: GenericRequest[?, ?] => Attributes = OpenTelemetryDefaults.requestAttributes,
+      responseAttributes: (GenericRequest[?, ?], ResponseMetadata) => Attributes =
+        OpenTelemetryDefaults.responseAttributes,
+      errorAttributes: Throwable => Attributes = OpenTelemetryDefaults.errorAttributes
   ): OpenTelemetryMetricsConfig = usingMeter(
     openTelemetry
       .meterBuilder(OpenTelemetryDefaults.instrumentationScopeName)
@@ -89,8 +89,8 @@ object OpenTelemetryMetricsConfig {
   def usingMeter(
       meter: Meter,
       clock: Clock = Clock.systemUTC(),
-      requestToLatencyHistogramMapper: GenericRequest[_, _] => Option[HistogramCollectorConfig] =
-        (_: GenericRequest[_, _]) =>
+      requestToLatencyHistogramMapper: GenericRequest[?, ?] => Option[HistogramCollectorConfig] =
+        (_: GenericRequest[?, ?]) =>
           Some(
             HistogramCollectorConfig(
               DefaultLatencyHistogramName,
@@ -98,16 +98,16 @@ object OpenTelemetryMetricsConfig {
               unit = HistogramCollectorConfig.Milliseconds
             )
           ),
-      requestToInProgressCounterMapper: GenericRequest[_, _] => Option[CollectorConfig] = (_: GenericRequest[_, _]) =>
+      requestToInProgressCounterMapper: GenericRequest[?, ?] => Option[CollectorConfig] = (_: GenericRequest[?, ?]) =>
         Some(CollectorConfig(DefaultRequestsActiveCounterName)),
-      responseToSuccessCounterMapper: (GenericRequest[_, _], ResponseMetadata) => Option[CollectorConfig] =
-        (_: GenericRequest[_, _], _: ResponseMetadata) => Some(CollectorConfig(DefaultSuccessCounterName)),
-      responseToErrorCounterMapper: (GenericRequest[_, _], ResponseMetadata) => Option[CollectorConfig] =
-        (_: GenericRequest[_, _], _: ResponseMetadata) => Some(CollectorConfig(DefaultErrorCounterName)),
-      requestToFailureCounterMapper: (GenericRequest[_, _], Throwable) => Option[CollectorConfig] =
-        (_: GenericRequest[_, _], _: Throwable) => Some(CollectorConfig(DefaultFailureCounterName)),
-      requestToSizeHistogramMapper: GenericRequest[_, _] => Option[HistogramCollectorConfig] =
-        (_: GenericRequest[_, _]) =>
+      responseToSuccessCounterMapper: (GenericRequest[?, ?], ResponseMetadata) => Option[CollectorConfig] =
+        (_: GenericRequest[?, ?], _: ResponseMetadata) => Some(CollectorConfig(DefaultSuccessCounterName)),
+      responseToErrorCounterMapper: (GenericRequest[?, ?], ResponseMetadata) => Option[CollectorConfig] =
+        (_: GenericRequest[?, ?], _: ResponseMetadata) => Some(CollectorConfig(DefaultErrorCounterName)),
+      requestToFailureCounterMapper: (GenericRequest[?, ?], Throwable) => Option[CollectorConfig] =
+        (_: GenericRequest[?, ?], _: Throwable) => Some(CollectorConfig(DefaultFailureCounterName)),
+      requestToSizeHistogramMapper: GenericRequest[?, ?] => Option[HistogramCollectorConfig] =
+        (_: GenericRequest[?, ?]) =>
           Some(
             HistogramCollectorConfig(
               DefaultRequestSizeHistogramName,
@@ -115,8 +115,8 @@ object OpenTelemetryMetricsConfig {
               unit = HistogramCollectorConfig.Bytes
             )
           ),
-      responseToSizeHistogramMapper: (GenericRequest[_, _], ResponseMetadata) => Option[HistogramCollectorConfig] =
-        (_: GenericRequest[_, _], _: ResponseMetadata) =>
+      responseToSizeHistogramMapper: (GenericRequest[?, ?], ResponseMetadata) => Option[HistogramCollectorConfig] =
+        (_: GenericRequest[?, ?], _: ResponseMetadata) =>
           Some(
             HistogramCollectorConfig(
               DefaultResponseSizeHistogramName,
@@ -124,10 +124,10 @@ object OpenTelemetryMetricsConfig {
               unit = HistogramCollectorConfig.Bytes
             )
           ),
-      requestAttributes: GenericRequest[_, _] => Attributes = OpenTelemetryDefaults.requestAttributes _,
-      responseAttributes: (GenericRequest[_, _], ResponseMetadata) => Attributes =
-        OpenTelemetryDefaults.responseAttributes _,
-      errorAttributes: Throwable => Attributes = OpenTelemetryDefaults.errorAttributes _
+      requestAttributes: GenericRequest[?, ?] => Attributes = OpenTelemetryDefaults.requestAttributes,
+      responseAttributes: (GenericRequest[?, ?], ResponseMetadata) => Attributes =
+        OpenTelemetryDefaults.responseAttributes,
+      errorAttributes: Throwable => Attributes = OpenTelemetryDefaults.errorAttributes
   ): OpenTelemetryMetricsConfig =
     OpenTelemetryMetricsConfig(
       meter,

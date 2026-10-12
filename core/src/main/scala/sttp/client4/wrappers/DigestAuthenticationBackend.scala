@@ -24,7 +24,7 @@ abstract class DigestAuthenticationBackend[F[_], P] private (
     clientNonceGenerator: () => String
 ) extends DelegateBackend(delegate) {
 
-  override def send[T](request: GenericRequest[T, P with Effect[F]]): F[Response[T]] =
+  override def send[T](request: GenericRequest[T, P & Effect[F]]): F[Response[T]] =
     delegate
       .send(request)
       .flatMap { firstResponse =>
@@ -45,7 +45,7 @@ abstract class DigestAuthenticationBackend[F[_], P] private (
       }
 
   private def handleResponse[T](
-      request: GenericRequest[T, P with Effect[F]],
+      request: GenericRequest[T, P & Effect[F]],
       response: Response[T],
       digestAttributeKey: AttributeKey[DigestAuthenticator.DigestAuthData],
       digestAuthenticator: DigestAuthData => DigestAuthenticator
@@ -60,16 +60,18 @@ abstract class DigestAuthenticationBackend[F[_], P] private (
 }
 
 object DigestAuthenticationBackend {
-  def apply(delegate: SyncBackend): SyncBackend = apply(delegate, DigestAuthenticator.defaultClientNonceGenerator _)
-  def apply[F[_]](delegate: Backend[F]): Backend[F] = apply(delegate, DigestAuthenticator.defaultClientNonceGenerator _)
+  def apply(delegate: SyncBackend): SyncBackend =
+    apply(delegate, () => DigestAuthenticator.defaultClientNonceGenerator())
+  def apply[F[_]](delegate: Backend[F]): Backend[F] =
+    apply(delegate, () => DigestAuthenticator.defaultClientNonceGenerator())
   def apply[F[_]](delegate: WebSocketBackend[F]): WebSocketBackend[F] =
-    apply(delegate, DigestAuthenticator.defaultClientNonceGenerator _)
+    apply(delegate, () => DigestAuthenticator.defaultClientNonceGenerator())
   def apply[F[_]](delegate: WebSocketSyncBackend): WebSocketSyncBackend =
-    apply(delegate, DigestAuthenticator.defaultClientNonceGenerator _)
+    apply(delegate, () => DigestAuthenticator.defaultClientNonceGenerator())
   def apply[F[_], S](delegate: StreamBackend[F, S]): StreamBackend[F, S] =
-    apply(delegate, DigestAuthenticator.defaultClientNonceGenerator _)
+    apply(delegate, () => DigestAuthenticator.defaultClientNonceGenerator())
   def apply[F[_], S](delegate: WebSocketStreamBackend[F, S]): WebSocketStreamBackend[F, S] =
-    apply(delegate, DigestAuthenticator.defaultClientNonceGenerator _)
+    apply(delegate, () => DigestAuthenticator.defaultClientNonceGenerator())
   def apply(delegate: SyncBackend, clientNonceGenerator: () => String): SyncBackend =
     new DigestAuthenticationBackend(delegate, clientNonceGenerator) with SyncBackend {}
   def apply[F[_]](delegate: Backend[F], clientNonceGenerator: () => String): Backend[F] =

@@ -4,7 +4,7 @@ Welcome!
 
 sttp client is an open-source HTTP client for Scala, supporting various approaches to writing Scala code: synchronous (direct-style), `Future`-based, and using functional effect systems (cats-effect, ZIO, Monix, Kyo, scalaz).
 
-The library is available for Scala 2.12, 2.13 and 3. Supported platforms are the JVM (Java 11+), Scala.JS and Scala Native.
+The library is available for Scala 2.12, 2.13 and 3. Supported platforms are the JVM (Java 11+ for Scala 2, Java 17+ for Scala 3), Scala.JS and Scala Native.
 
 Here's a quick example of sttp client in action, runnable using [scala-cli](https://scala-cli.virtuslab.org):
 

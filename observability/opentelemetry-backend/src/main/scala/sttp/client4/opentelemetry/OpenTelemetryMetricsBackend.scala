@@ -93,7 +93,7 @@ private class OpenTelemetryMetricsListener(config: OpenTelemetryMetricsConfig)
   private val histograms = new ConcurrentHashMap[String, DoubleHistogram]()
   private val upAndDownCounter = new ConcurrentHashMap[String, LongUpDownCounter]()
 
-  override def before(request: GenericRequest[_, _]): Option[Long] = {
+  override def before(request: GenericRequest[?, ?]): Option[Long] = {
     val attributes = config.requestAttributes(request)
 
     updateInProgressCounter(request, 1, attributes)
@@ -102,16 +102,16 @@ private class OpenTelemetryMetricsListener(config: OpenTelemetryMetricsConfig)
   }
 
   override def responseBodyReceived(
-      request: GenericRequest[_, _],
+      request: GenericRequest[?, ?],
       response: ResponseMetadata,
       tag: Option[Long]
   ): Unit = captureResponseMetrics(request, response, tag)
 
   override def responseHandled(
-      request: GenericRequest[_, _],
+      request: GenericRequest[?, ?],
       response: ResponseMetadata,
       tag: Option[Long],
-      e: Option[ResponseException[_]]
+      e: Option[ResponseException[?]]
   ): Unit = {
     // responseBodyReceived is not called for WebSocket requests
     // ignoring the tag as there's no point in capturing timing information for WebSockets
@@ -119,7 +119,7 @@ private class OpenTelemetryMetricsListener(config: OpenTelemetryMetricsConfig)
   }
 
   private def captureResponseMetrics(
-      request: GenericRequest[_, _],
+      request: GenericRequest[?, ?],
       response: ResponseMetadata,
       tag: Option[Long]
   ): Unit = {
@@ -144,7 +144,7 @@ private class OpenTelemetryMetricsListener(config: OpenTelemetryMetricsConfig)
   }
 
   override def exception(
-      request: GenericRequest[_, _],
+      request: GenericRequest[?, ?],
       tag: Option[Long],
       e: Throwable,
       responseBodyReceivedCalled: Boolean

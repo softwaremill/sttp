@@ -23,14 +23,14 @@ object Fs2WebSockets {
     */
   def handleThroughPipe[F[_]: Concurrent](
       ws: WebSocket[F]
-  )(pipe: Pipe[F, WebSocketFrame.Data[_], WebSocketFrame]): F[Unit] =
+  )(pipe: Pipe[F, WebSocketFrame.Data[?], WebSocketFrame]): F[Unit] =
     Ref.of[F, Boolean](false).flatMap { closeSent =>
       Stream
         .eval(Ref.of[F, Option[WebSocketFrame.Close]](None))
         .flatMap { closeRef =>
           Stream
             .repeatEval(ws.receive()) // read incoming messages
-            .flatMap[F, Option[WebSocketFrame.Data[_]]] {
+            .flatMap[F, Option[WebSocketFrame.Data[?]]] {
               case WebSocketFrame.Close(code, reason) =>
                 Stream.eval(closeRef.set(Some(WebSocketFrame.Close(code, reason)))).as(None)
               case WebSocketFrame.Ping(payload) =>

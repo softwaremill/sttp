@@ -50,7 +50,7 @@ abstract class AbstractArmeriaBackend[F[_], S <: Streams[S]](
 
   val streams: Streams[S]
 
-  type R = S with Effect[F]
+  type R = S & Effect[F]
 
   protected def bodyFromStreamMessage: BodyFromStreamMessage[F, S]
 
@@ -108,7 +108,7 @@ abstract class AbstractArmeriaBackend[F[_], S <: Streams[S]](
     } finally captor.close()
   }
 
-  private def requestToArmeria(request: GenericRequest[_, R]): WebClientRequestPreparation = {
+  private def requestToArmeria(request: GenericRequest[?, R]): WebClientRequestPreparation = {
     val requestPreparation = client
       .prepare()
       .disablePathParams()
@@ -159,7 +159,7 @@ abstract class AbstractArmeriaBackend[F[_], S <: Streams[S]](
       case ByteBufferBody(b, _) =>
         requestPreparation.content(contentType, HttpData.wrap(Unpooled.wrappedBuffer(b)))
       case multipart: MultipartBody[_] =>
-        val armeriaMultipart = Multipart.of(multipart.parts.map(toArmeriaBodyPart): _*)
+        val armeriaMultipart = Multipart.of(multipart.parts.map(toArmeriaBodyPart)*)
         requestPreparation.content(
           contentType.withParameter("boundary", armeriaMultipart.boundary()),
           armeriaMultipart.toStreamMessage
@@ -186,7 +186,7 @@ abstract class AbstractArmeriaBackend[F[_], S <: Streams[S]](
       case _                      => HttpMethod.UNKNOWN
     }
 
-  private def toArmeriaBodyPart(bodyPart: Part[BodyPart[_]]): ArmeriaBodyPart = {
+  private def toArmeriaBodyPart(bodyPart: Part[BodyPart[?]]): ArmeriaBodyPart = {
     val dispositionBuilder = ContentDisposition.builder("form-data")
     dispositionBuilder.name(bodyPart.name)
     bodyPart.fileName.foreach(dispositionBuilder.filename)
@@ -219,7 +219,7 @@ abstract class AbstractArmeriaBackend[F[_], S <: Streams[S]](
     }).build()
   }
 
-  private def adjustExceptions[T](request: GenericRequest[_, _])(execute: => F[T]): F[T] =
+  private def adjustExceptions[T](request: GenericRequest[?, ?])(execute: => F[T]): F[T] =
     SttpClientException.adjustExceptions(monad)(execute) {
       case ex: UnprocessedRequestException =>
         // The cause of an UnprocessedRequestException is always not null

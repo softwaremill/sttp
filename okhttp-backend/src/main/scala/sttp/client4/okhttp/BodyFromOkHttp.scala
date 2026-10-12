@@ -18,20 +18,20 @@ private[okhttp] trait BodyFromOkHttp[F[_], S] {
 
   def responseBodyToStream(inputStream: InputStream): streams.BinaryStream
 
-  private def fromWs[TT](r: GenericWebSocketResponseAs[TT, _], ws: WebSocket[F], meta: ResponseMetadata): F[TT] =
+  private def fromWs[TT](r: GenericWebSocketResponseAs[TT, ?], ws: WebSocket[F], meta: ResponseMetadata): F[TT] =
     r match {
       case ResponseAsWebSocket(f) =>
         f.asInstanceOf[(WebSocket[F], ResponseMetadata) => F[TT]](ws, meta).ensure(ws.close())
       case ResponseAsWebSocketUnsafe()     => ws.unit.asInstanceOf[F[TT]]
       case ResponseAsWebSocketStream(_, p) =>
-        compileWebSocketPipe(ws, p.asInstanceOf[streams.Pipe[WebSocketFrame.Data[_], WebSocketFrame]])
+        compileWebSocketPipe(ws, p.asInstanceOf[streams.Pipe[WebSocketFrame.Data[?], WebSocketFrame]])
     }
 
-  def compileWebSocketPipe(ws: WebSocket[F], pipe: streams.Pipe[WebSocketFrame.Data[_], WebSocketFrame]): F[Unit]
+  def compileWebSocketPipe(ws: WebSocket[F], pipe: streams.Pipe[WebSocketFrame.Data[?], WebSocketFrame]): F[Unit]
 
   def apply[T](
       responseBody: InputStream,
-      responseAs: ResponseAsDelegate[T, _],
+      responseAs: ResponseAsDelegate[T, ?],
       responseMetadata: ResponseMetadata,
       ws: Option[WebSocket[F]]
   ): F[T] = bodyFromResponseAs(responseAs, responseMetadata, ws.toRight(responseBody))
@@ -70,7 +70,7 @@ private[okhttp] trait BodyFromOkHttp[F[_], S] {
       override protected def regularAsInputStream(response: InputStream): F[InputStream] = monad.unit(response)
 
       override protected def handleWS[T](
-          responseAs: GenericWebSocketResponseAs[T, _],
+          responseAs: GenericWebSocketResponseAs[T, ?],
           meta: ResponseMetadata,
           ws: WebSocket[F]
       ): F[T] = fromWs(responseAs, ws, meta)

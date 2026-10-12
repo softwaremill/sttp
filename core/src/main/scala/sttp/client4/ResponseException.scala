@@ -47,7 +47,7 @@ object ResponseException {
 
   //
 
-  @tailrec def find(exception: Throwable): Option[ResponseException[_]] =
+  @tailrec def find(exception: Throwable): Option[ResponseException[?]] =
     Option(exception) match {
       case Some(e: ResponseException[_]) => Some(e)
       case Some(_)                       => find(exception.getCause)

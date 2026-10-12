@@ -23,13 +23,13 @@ import scala.collection.JavaConverters._
 
 trait MultipartBodyBuilder[BinaryStream, F[_]] {
   def apply(
-      parts: Seq[Part[GenericRequestBody[_]]]
+      parts: Seq[Part[GenericRequestBody[?]]]
   )(implicit m: MonadError[F]): (F[HttpRequest.BodyPublisher], String)
 }
 
 trait NonStreamMultipartBodyBuilder[BinaryStream, F[_]] extends MultipartBodyBuilder[BinaryStream, F] {
   override def apply(
-      parts: Seq[Part[GenericRequestBody[_]]]
+      parts: Seq[Part[GenericRequestBody[?]]]
   )(implicit m: MonadError[F]): (F[HttpRequest.BodyPublisher], String) = {
     val multipartBuilder = new MultiPartBodyPublisher()
     parts.foreach { p =>
@@ -72,7 +72,7 @@ trait StreamMultipartBodyBuilder[BinaryStream, F[_]] extends MultipartBodyBuilde
   def inputStreamToStream(stream: InputStream): BinaryStream
 
   override def apply(
-      parts: Seq[Part[GenericRequestBody[_]]]
+      parts: Seq[Part[GenericRequestBody[?]]]
   )(implicit m: MonadError[F]): (F[HttpRequest.BodyPublisher], String) = {
     val boundary: String = UUID.randomUUID.toString
     val resultStream = parts.foldLeft(byteArrayToStream(Array.empty[Byte])) { (accumulatedStream, part) =>

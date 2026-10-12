@@ -20,7 +20,7 @@ private[fs2] class Fs2BodyFromHttpClient[F[_]: Async]() extends BodyFromHttpClie
   override implicit val monad: MonadError[F] = new CatsMonadAsyncError[F]
   override def compileWebSocketPipe(
       ws: WebSocket[F],
-      pipe: Pipe[F, WebSocketFrame.Data[_], WebSocketFrame]
+      pipe: Pipe[F, WebSocketFrame.Data[?], WebSocketFrame]
   ): F[Unit] = Fs2WebSockets.handleThroughPipe(ws)(pipe)
 
   override protected def bodyFromResponseAs: BodyFromResponseAs[F, Stream[F, Byte], WebSocket[F], Stream[F, Byte]] =
@@ -54,7 +54,7 @@ private[fs2] class Fs2BodyFromHttpClient[F[_]: Async]() extends BodyFromHttpClie
         ).unit
 
       override protected def handleWS[T](
-          responseAs: GenericWebSocketResponseAs[T, _],
+          responseAs: GenericWebSocketResponseAs[T, ?],
           meta: ResponseMetadata,
           ws: WebSocket[F]
       ): F[T] = bodyFromWs(responseAs, ws, meta)

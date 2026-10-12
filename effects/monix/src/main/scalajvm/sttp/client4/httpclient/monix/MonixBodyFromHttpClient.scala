@@ -21,7 +21,7 @@ private[monix] trait MonixBodyFromHttpClient extends BodyFromHttpClient[Task, Mo
 
   override def compileWebSocketPipe(
       ws: WebSocket[Task],
-      pipe: Observable[WebSocketFrame.Data[_]] => Observable[WebSocketFrame]
+      pipe: Observable[WebSocketFrame.Data[?]] => Observable[WebSocketFrame]
   ): Task[Unit] =
     MonixWebSockets.compilePipe(ws, pipe)
 
@@ -54,7 +54,7 @@ private[monix] trait MonixBodyFromHttpClient extends BodyFromHttpClient[Task, Mo
         Task.pure((response, () => response.consumeWith(Consumer.complete).onErrorFallbackTo(Task.unit)))
 
       override protected def handleWS[T](
-          responseAs: GenericWebSocketResponseAs[T, _],
+          responseAs: GenericWebSocketResponseAs[T, ?],
           meta: ResponseMetadata,
           ws: WebSocket[Task]
       ): Task[T] = bodyFromWs(responseAs, ws, meta)

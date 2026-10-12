@@ -20,18 +20,18 @@ object MapEffect {
     *   The requirements of this request, without the `Effect[F]` capability.
     */
   def apply[F[_], G[_], T, R0](
-      r: GenericRequest[T, R0 with Effect[F]],
+      r: GenericRequest[T, R0 & Effect[F]],
       fk: FunctionK[F, G],
       gk: FunctionK[G, F],
       fm: MonadError[F],
       gm: MonadError[G]
-  ): GenericRequest[T, R0 with Effect[G]] = {
+  ): GenericRequest[T, R0 & Effect[G]] = {
     def internalResponse[R] = apply[F, G](r.response.delegate, fk, gk, fm, gm)
-      .asInstanceOf[GenericResponseAs[T, R with Effect[G]]]
+      .asInstanceOf[GenericResponseAs[T, R & Effect[G]]]
 
     // Only StreamRequest and WebSocketRequest can have an effectful response
     val newRequest = r match {
-      case srf: StreamRequest[_, R0 with Effect[F]] =>
+      case srf: StreamRequest[_, R0 & Effect[F]] =>
         srf.copy(
           body = srf.body.asInstanceOf[GenericRequestBody[R0]],
           response = new StreamResponseAs(internalResponse[R0])
@@ -40,18 +40,18 @@ object MapEffect {
         wr.copy[G, T](response = new WebSocketResponseAs[G, T](internalResponse[WebSockets]))
       case _ => r
     }
-    newRequest.asInstanceOf[GenericRequest[T, R0 with Effect[G]]]
+    newRequest.asInstanceOf[GenericRequest[T, R0 & Effect[G]]]
   }
 
   // TODO: an even more dumbed-down version of the slightly more type-safe version below, which is needed due to a
   // TODO: bug in Dotty: https://github.com/lampepfl/dotty/issues/9533
   private def apply[F[_], G[_]](
-      r: GenericResponseAs[_, _],
+      r: GenericResponseAs[?, ?],
       fk: FunctionK[F, G],
       gk: FunctionK[G, F],
       fm: MonadError[F],
       gm: MonadError[G]
-  ): GenericResponseAs[_, _] =
+  ): GenericResponseAs[?, ?] =
     r match {
       case IgnoreResponse         => IgnoreResponse
       case ResponseAsByteArray    => ResponseAsByteArray
@@ -81,7 +81,7 @@ object MapEffect {
       case MappedResponseAs(raw, g, showAs) =>
         MappedResponseAs(apply[F, G](raw, fk, gk, fm, gm), g.asInstanceOf[(Any, ResponseMetadata) => Any], showAs)
       case ResponseAsBoth(l, r) =>
-        ResponseAsBoth(apply(l, fk, gk, fm, gm), apply(r, fk, gk, fm, gm).asInstanceOf[GenericResponseAs[_, Any]])
+        ResponseAsBoth(apply(l, fk, gk, fm, gm), apply(r, fk, gk, fm, gm).asInstanceOf[GenericResponseAs[?, Any]])
     }
 
   /* private def apply[TT, R0, F[_], G[_]](

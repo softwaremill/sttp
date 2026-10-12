@@ -25,16 +25,16 @@ class FetchFs2WebSocketTest
   override val streams: Fs2Streams[IO] = Fs2Streams[IO]
 
   override def prepend(item: WebSocketFrame.Text)(
-      to: streams.Pipe[WebSocketFrame.Data[_], WebSocketFrame]
-  ): streams.Pipe[WebSocketFrame.Data[_], WebSocketFrame] =
+      to: streams.Pipe[WebSocketFrame.Data[?], WebSocketFrame]
+  ): streams.Pipe[WebSocketFrame.Data[?], WebSocketFrame] =
     to.andThen(rest => Stream(item) ++ rest)
 
-  override def fromTextPipe(function: String => WebSocketFrame): streams.Pipe[WebSocketFrame.Data[_], WebSocketFrame] =
+  override def fromTextPipe(function: String => WebSocketFrame): streams.Pipe[WebSocketFrame.Data[?], WebSocketFrame] =
     Fs2WebSockets.fromTextPipe(function)
 
   override def functionToPipe(
-      f: WebSocketFrame.Data[_] => Option[WebSocketFrame]
-  ): streams.Pipe[WebSocketFrame.Data[_], WebSocketFrame] = _.map(f).collect { case Some(v) =>
+      f: WebSocketFrame.Data[?] => Option[WebSocketFrame]
+  ): streams.Pipe[WebSocketFrame.Data[?], WebSocketFrame] = _.map(f).collect { case Some(v) =>
     v
   }
 }

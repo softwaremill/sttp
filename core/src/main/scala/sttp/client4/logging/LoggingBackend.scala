@@ -19,7 +19,7 @@ class LoggingBackend[F[_], P](
     includeTimings: Boolean
 ) extends DelegateBackend[F, P](delegate) {
 
-  override def send[T](request: GenericRequest[T, P with Effect[F]]): F[Response[T]] = {
+  override def send[T](request: GenericRequest[T, P & Effect[F]]): F[Response[T]] = {
     if (request.loggingOptions.log) {
       log.beforeRequestSend(request).flatMap { _ =>
         val _includeTimings = request.loggingOptions.includeTimings.getOrElse(includeTimings)
@@ -47,7 +47,7 @@ class LoggingBackend[F[_], P](
   }
 
   private def sendDoNotLogResponseBody[T](
-      request: GenericRequest[T, P with Effect[F]],
+      request: GenericRequest[T, P & Effect[F]],
       tag: Option[LoggingTag]
   ): F[Response[T]] = {
     for {
@@ -57,10 +57,10 @@ class LoggingBackend[F[_], P](
   }
 
   private def sendLogResponseBody[T](
-      request: GenericRequest[T, P with Effect[F]],
+      request: GenericRequest[T, P & Effect[F]],
       tag: Option[LoggingTag]
   ): F[Response[T]] = {
-    def sendAndLog(request: GenericRequest[(T, Option[String]), P with Effect[F]]): F[Response[T]] =
+    def sendAndLog(request: GenericRequest[(T, Option[String]), P & Effect[F]]): F[Response[T]] =
       for {
         r <- delegate.send(request)
         _ <- log.response(request, r, r.body._2, tag.map(toResponseTimings), None)
@@ -69,7 +69,7 @@ class LoggingBackend[F[_], P](
     request match {
       case request: Request[T] @unchecked =>
         sendAndLog(request.response(asBothOption(request.response, asStringAlways)))
-      case request: StreamRequest[T, P with Effect[F]] @unchecked =>
+      case request: StreamRequest[T, P & Effect[F]] @unchecked =>
         sendAndLog(request.response(asBothOption(request.response, asStringAlways)))
       case request =>
         for {

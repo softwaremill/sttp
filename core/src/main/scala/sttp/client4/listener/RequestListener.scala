@@ -15,7 +15,7 @@ import sttp.client4.ResponseException
 trait RequestListener[F[_], L] {
 
   /** Called before a request is sent. */
-  def before(request: GenericRequest[_, _]): F[L]
+  def before(request: GenericRequest[?, ?]): F[L]
 
   /** Called when the response body has been fully received (see [[sttp.client4.Request#onBodyReceived]]), but not yet
     * fully handled (e.g. parsed).
@@ -25,7 +25,7 @@ trait RequestListener[F[_], L] {
     *
     * Note that this method must run any effects immediately, as it returns a `Unit`, without the `F` wrapper.
     */
-  def responseBodyReceived(request: GenericRequest[_, _], response: ResponseMetadata, tag: L): Unit
+  def responseBodyReceived(request: GenericRequest[?, ?], response: ResponseMetadata, tag: L): Unit
 
   /** Called when the request has been handled, as specified by the response description.
     *
@@ -37,10 +37,10 @@ trait RequestListener[F[_], L] {
     *   received via the network, but e.g. a parsing or decompression exception occurs.
     */
   def responseHandled(
-      request: GenericRequest[_, _],
+      request: GenericRequest[?, ?],
       response: ResponseMetadata,
       tag: L,
-      exception: Option[ResponseException[_]]
+      exception: Option[ResponseException[?]]
   ): F[Unit]
 
   /** Called when there's an exception, when receiving the response body or handling the response (decompression,
@@ -56,7 +56,7 @@ trait RequestListener[F[_], L] {
     *   Indicates if [[responseBodyReceivedCalled]] has been called before this method.
     */
   def exception(
-      request: GenericRequest[_, _],
+      request: GenericRequest[?, ?],
       tag: L,
       exception: Throwable,
       responseBodyReceivedCalled: Boolean
@@ -66,22 +66,22 @@ trait RequestListener[F[_], L] {
 object RequestListener {
   def lift[F[_], L](delegate: RequestListener[Identity, L], monadError: MonadError[F]): RequestListener[F, L] =
     new RequestListener[F, L] {
-      override def before(request: GenericRequest[_, _]): F[L] =
+      override def before(request: GenericRequest[?, ?]): F[L] =
         monadError.eval(delegate.before(request))
 
-      override def responseBodyReceived(request: GenericRequest[_, _], response: ResponseMetadata, tag: L): Unit =
+      override def responseBodyReceived(request: GenericRequest[?, ?], response: ResponseMetadata, tag: L): Unit =
         delegate.responseBodyReceived(request, response, tag)
 
       override def responseHandled(
-          request: GenericRequest[_, _],
+          request: GenericRequest[?, ?],
           response: ResponseMetadata,
           tag: L,
-          e: Option[ResponseException[_]]
+          e: Option[ResponseException[?]]
       ): F[Unit] =
         monadError.eval(delegate.responseHandled(request, response, tag, e))
 
       override def exception(
-          request: GenericRequest[_, _],
+          request: GenericRequest[?, ?],
           tag: L,
           e: Throwable,
           responseBodyReceivedCalled: Boolean

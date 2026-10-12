@@ -5,7 +5,7 @@ import sttp.client4.internal.Utf8
 import java.util.Base64
 import sttp.attributes.AttributeKey
 
-class SpecifyAuthScheme[+R <: PartialRequestBuilder[R, _]](
+class SpecifyAuthScheme[+R <: PartialRequestBuilder[R, ?]](
     hn: String,
     req: R,
     digestAttributeKey: AttributeKey[DigestAuthenticator.DigestAuthData]

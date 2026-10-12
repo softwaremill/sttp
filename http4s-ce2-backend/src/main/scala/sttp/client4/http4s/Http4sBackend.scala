@@ -37,7 +37,7 @@ class Http4sBackend[F[_]: ConcurrentEffect: ContextShift](
     customizeRequest: Http4sRequest[F] => Http4sRequest[F],
     compressionHandlers: CompressionHandlers[Fs2Streams[F], EntityBody[F]]
 ) extends StreamBackend[F, Fs2Streams[F]] {
-  type R = Fs2Streams[F] with sttp.capabilities.Effect[F]
+  type R = Fs2Streams[F] & sttp.capabilities.Effect[F]
 
   override def send[T](r: GenericRequest[T, R]): F[Response[T]] =
     adjustExceptions(r) {
@@ -146,7 +146,7 @@ class Http4sBackend[F[_]: ConcurrentEffect: ContextShift](
   private def basicBodyToHttp4s(body: BasicBodyPart): http4s.Entity[F] =
     body match {
       case StringBody(b, encoding, _) =>
-        http4s.EntityEncoder.stringEncoder(charsetToHttp4s(encoding)).toEntity(b)
+        http4s.EntityEncoder.stringEncoder(using charsetToHttp4s(encoding)).toEntity(b)
 
       case ByteArrayBody(b, _) =>
         http4s.EntityEncoder.byteArrayEncoder.toEntity(b)
@@ -179,7 +179,7 @@ class Http4sBackend[F[_]: ConcurrentEffect: ContextShift](
         (http4s.EntityEncoder.multipartEncoder.toEntity(multipart), multipart.headers)
     }
 
-  private def multipartToHttp4s(mp: Part[BodyPart[_]]): http4s.multipart.Part[F] = {
+  private def multipartToHttp4s(mp: Part[BodyPart[?]]): http4s.multipart.Part[F] = {
     val contentDisposition =
       http4s.Header.Raw(CIString(HeaderNames.ContentDisposition), mp.contentDispositionHeaderValue)
     val otherHeaders = mp.headers.map(h => http4s.Header.Raw(CIString(h.name), h.value))
@@ -253,7 +253,7 @@ class Http4sBackend[F[_]: ConcurrentEffect: ContextShift](
         (response.body, () => signalBodyComplete).pure[F]
 
       override protected def handleWS[T](
-          responseAs: GenericWebSocketResponseAs[T, _],
+          responseAs: GenericWebSocketResponseAs[T, ?],
           meta: ResponseMetadata,
           ws: Nothing
       ): F[T] = ws
@@ -266,10 +266,10 @@ class Http4sBackend[F[_]: ConcurrentEffect: ContextShift](
       override protected def cleanupWhenGotWebSocket(response: Nothing, e: GotAWebSocketException): F[Unit] = response
     }
 
-  private def adjustExceptions[T](r: GenericRequest[_, _])(t: => F[T]): F[T] =
+  private def adjustExceptions[T](r: GenericRequest[?, ?])(t: => F[T]): F[T] =
     SttpClientException.adjustExceptions(monad)(t)(http4sExceptionToSttpClientException(r, _))
 
-  private def http4sExceptionToSttpClientException(request: GenericRequest[_, _], e: Exception): Option[Exception] =
+  private def http4sExceptionToSttpClientException(request: GenericRequest[?, ?], e: Exception): Option[Exception] =
     e match {
       case e: org.http4s.client.ConnectionFailure => Some(new SttpClientException.ConnectException(request, e))
       case e: org.http4s.InvalidBodyException     => Some(new SttpClientException.ReadException(request, e))
@@ -311,27 +311,27 @@ object Http4sBackend {
   def usingClient[F[_]: ConcurrentEffect: ContextShift](
       client: Client[F],
       blocker: Blocker,
-      customizeRequest: Http4sRequest[F] => Http4sRequest[F] = identity[Http4sRequest[F]] _,
-      compressionHandlers: Sync[F] => CompressionHandlers[Fs2Streams[F], EntityBody[F]] =
-        defaultCompressionHandlers[F](_: Sync[F])
+      customizeRequest: Http4sRequest[F] => Http4sRequest[F] = identity[Http4sRequest[F]](_),
+      compressionHandlers: Sync[F] => CompressionHandlers[Fs2Streams[F], EntityBody[F]] = (F: Sync[F]) =>
+        defaultCompressionHandlers[F](using F)
   ): StreamBackend[F, Fs2Streams[F]] =
     FollowRedirectsBackend(new Http4sBackend[F](client, blocker, customizeRequest, compressionHandlers(implicitly)))
 
   def usingBlazeClientBuilder[F[_]: ConcurrentEffect: ContextShift](
       blazeClientBuilder: BlazeClientBuilder[F],
       blocker: Blocker,
-      customizeRequest: Http4sRequest[F] => Http4sRequest[F] = identity[Http4sRequest[F]] _,
-      compressionHandlers: Sync[F] => CompressionHandlers[Fs2Streams[F], EntityBody[F]] =
-        defaultCompressionHandlers[F](_: Sync[F])
+      customizeRequest: Http4sRequest[F] => Http4sRequest[F] = identity[Http4sRequest[F]](_),
+      compressionHandlers: Sync[F] => CompressionHandlers[Fs2Streams[F], EntityBody[F]] = (F: Sync[F]) =>
+        defaultCompressionHandlers[F](using F)
   ): Resource[F, StreamBackend[F, Fs2Streams[F]]] =
     blazeClientBuilder.resource.map(c => usingClient(c, blocker, customizeRequest, compressionHandlers))
 
   def usingDefaultBlazeClientBuilder[F[_]: ConcurrentEffect: ContextShift](
       blocker: Blocker,
       clientExecutionContext: ExecutionContext = ExecutionContext.global,
-      customizeRequest: Http4sRequest[F] => Http4sRequest[F] = identity[Http4sRequest[F]] _,
-      compressionHandlers: Sync[F] => CompressionHandlers[Fs2Streams[F], EntityBody[F]] =
-        defaultCompressionHandlers[F](_: Sync[F])
+      customizeRequest: Http4sRequest[F] => Http4sRequest[F] = identity[Http4sRequest[F]](_),
+      compressionHandlers: Sync[F] => CompressionHandlers[Fs2Streams[F], EntityBody[F]] = (F: Sync[F]) =>
+        defaultCompressionHandlers[F](using F)
   ): Resource[F, StreamBackend[F, Fs2Streams[F]]] =
     usingBlazeClientBuilder(
       BlazeClientBuilder[F](clientExecutionContext),

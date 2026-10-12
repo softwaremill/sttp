@@ -20,13 +20,13 @@ import sttp.shared.Identity
   * Predicates can match requests basing on the URI or headers.
   */
 class SyncBackendStub(
-    matchers: PartialFunction[GenericRequest[_, _], Response[StubBody]],
+    matchers: PartialFunction[GenericRequest[?, ?], Response[StubBody]],
     fallback: Option[SyncBackend]
 ) extends AbstractBackendStub[Identity, Any](IdentityMonad, matchers, fallback)
     with SyncBackend {
 
   type Self = SyncBackendStub
-  override protected def withMatchers(matchers: PartialFunction[GenericRequest[_, _], Response[StubBody]]) =
+  override protected def withMatchers(matchers: PartialFunction[GenericRequest[?, ?], Response[StubBody]]) =
     new SyncBackendStub(matchers, fallback)
 }
 
