@@ -127,7 +127,7 @@ val testServerSettings = Seq(
 
 val circeVersion: String = "0.14.16"
 
-val jsoniterVersion = "2.41.4"
+val jsoniterVersion = "2.41.5"
 
 val play29JsonVersion = "2.10.8"
 
