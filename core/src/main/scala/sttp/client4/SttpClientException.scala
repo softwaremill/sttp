@@ -23,25 +23,25 @@ import sttp.monad.MonadError
   * @param cause
   *   The original exception.
   */
-sealed abstract class SttpClientException(val request: GenericRequest[_, _], val cause: Exception)
+sealed abstract class SttpClientException(val request: GenericRequest[?, ?], val cause: Exception)
     extends Exception(s"Exception when sending request: ${request.method} ${request.uri}", cause)
 
 object SttpClientException extends SttpClientExceptionExtensions {
-  class ConnectException(request: GenericRequest[_, _], cause: Exception) extends SttpClientException(request, cause)
+  class ConnectException(request: GenericRequest[?, ?], cause: Exception) extends SttpClientException(request, cause)
 
-  class ReadException(request: GenericRequest[_, _], cause: Exception) extends SttpClientException(request, cause)
+  class ReadException(request: GenericRequest[?, ?], cause: Exception) extends SttpClientException(request, cause)
 
   //
 
-  class TimeoutException(request: GenericRequest[_, _], cause: Exception) extends ReadException(request, cause)
+  class TimeoutException(request: GenericRequest[?, ?], cause: Exception) extends ReadException(request, cause)
 
-  class TooManyRedirectsException(request: GenericRequest[_, _], val redirects: Int)
+  class TooManyRedirectsException(request: GenericRequest[?, ?], val redirects: Int)
       extends ReadException(request, null)
 
   /** Wraps a [[ResponseException]] which occurred during response handling. Enriches the response exception with the
     * context of the request, for which it happened.
     */
-  class ResponseHandlingException[+HE](request: GenericRequest[_, _], val responseException: ResponseException[HE])
+  class ResponseHandlingException[+HE](request: GenericRequest[?, ?], val responseException: ResponseException[HE])
       extends ReadException(request, responseException)
 
   //

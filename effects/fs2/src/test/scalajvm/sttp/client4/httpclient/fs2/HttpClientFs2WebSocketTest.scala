@@ -16,17 +16,17 @@ class HttpClientFs2WebSocketTest
   override val streams: Fs2Streams[IO] = new Fs2Streams[IO] {}
 
   override def functionToPipe(
-      f: WebSocketFrame.Data[_] => Option[WebSocketFrame]
-  ): fs2.Pipe[IO, WebSocketFrame.Data[_], WebSocketFrame] = in => in.mapFilter(f)
+      f: WebSocketFrame.Data[?] => Option[WebSocketFrame]
+  ): fs2.Pipe[IO, WebSocketFrame.Data[?], WebSocketFrame] = in => in.mapFilter(f)
 
   override def fromTextPipe(
       function: String => WebSocketFrame
-  ): Pipe[IO, WebSocketFrame.Data[_], WebSocketFrame] =
+  ): Pipe[IO, WebSocketFrame.Data[?], WebSocketFrame] =
     Fs2WebSockets.fromTextPipe[IO](function)
 
   override def prepend(
       item: WebSocketFrame.Text
-  )(to: Pipe[IO, WebSocketFrame.Data[_], WebSocketFrame]): Pipe[IO, WebSocketFrame.Data[_], WebSocketFrame] =
+  )(to: Pipe[IO, WebSocketFrame.Data[?], WebSocketFrame]): Pipe[IO, WebSocketFrame.Data[?], WebSocketFrame] =
     to.andThen(rest => fs2.Stream.eval(item.pure[IO]) ++ rest)
 
   override def concurrently[T](fs: List[() => IO[T]]): IO[List[T]] = fs.map(_()).parSequence

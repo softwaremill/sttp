@@ -11,7 +11,7 @@ abstract class FollowRedirectsBackend[F[_], P] private (
     config: FollowRedirectsConfig
 ) extends DelegateBackend(delegate) {
 
-  type R = P with Effect[F]
+  type R = P & Effect[F]
 
   override def send[T](request: GenericRequest[T, R]): F[Response[T]] = sendWithCounter(request, 0)
 
@@ -55,7 +55,7 @@ abstract class FollowRedirectsBackend[F[_], P] private (
     request.attribute(CookieStorage.attributeKey) match {
       case Some(storage) =>
         val cookies = storage.cookiesFor(request.uri)
-        if (cookies.isEmpty) request else request.cookies(cookies: _*)
+        if (cookies.isEmpty) request else request.cookies(cookies*)
       case None => request
     }
 

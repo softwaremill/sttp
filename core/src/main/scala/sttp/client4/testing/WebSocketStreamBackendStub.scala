@@ -32,13 +32,13 @@ import sttp.shared.Identity
   */
 class WebSocketStreamBackendStub[F[_], S](
     monad: MonadError[F],
-    matchers: PartialFunction[GenericRequest[_, _], F[Response[StubBody]]],
+    matchers: PartialFunction[GenericRequest[?, ?], F[Response[StubBody]]],
     fallback: Option[WebSocketStreamBackend[F, S]]
-) extends AbstractBackendStub[F, S with WebSockets](monad, matchers, fallback)
+) extends AbstractBackendStub[F, S & WebSockets](monad, matchers, fallback)
     with WebSocketStreamBackend[F, S] {
   type Self = WebSocketStreamBackendStub[F, S]
   override protected def withMatchers(
-      matchers: PartialFunction[GenericRequest[_, _], F[Response[StubBody]]]
+      matchers: PartialFunction[GenericRequest[?, ?], F[Response[StubBody]]]
   ): WebSocketStreamBackendStub[F, S] =
     new WebSocketStreamBackendStub(monad, matchers, fallback)
 }

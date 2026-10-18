@@ -34,10 +34,10 @@ private[curl] trait CCurl {
   def setoptLong(handle: Ptr[Curl], option: CInt, parameter: Long): CInt = extern
 
   @name("sttp_curl_setopt_pointer")
-  def setoptPtr(handle: Ptr[Curl], option: CInt, parameter: Ptr[_]): CInt = extern
+  def setoptPtr(handle: Ptr[Curl], option: CInt, parameter: Ptr[?]): CInt = extern
 
   @name("sttp_curl_getinfo_pointer")
-  def getInfo(handle: Ptr[Curl], info: CInt, parameter: Ptr[_]): CInt = extern
+  def getInfo(handle: Ptr[Curl], info: CInt, parameter: Ptr[?]): CInt = extern
 
   @name("sttp_curl_get_version")
   def getVersion(): CString = extern

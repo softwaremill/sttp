@@ -16,18 +16,18 @@ import sttp.model.StatusText
 
 abstract class AbstractBackendStub[F[_], P](
     _monad: MonadError[F],
-    matchers: PartialFunction[GenericRequest[_, _], F[Response[StubBody]]],
+    matchers: PartialFunction[GenericRequest[?, ?], F[Response[StubBody]]],
     fallback: Option[GenericBackend[F, P]]
 ) extends GenericBackend[F, P] {
   type Self
-  protected def withMatchers(matchers: PartialFunction[GenericRequest[_, _], F[Response[StubBody]]]): Self
+  protected def withMatchers(matchers: PartialFunction[GenericRequest[?, ?], F[Response[StubBody]]]): Self
   override def monad: MonadError[F] = _monad
 
   /** Specify how the stub backend should respond to requests matching the given predicate.
     *
     * Note that the stubs are immutable, and each new specification that is added yields a new stub instance.
     */
-  def whenRequestMatches(p: GenericRequest[_, _] => Boolean): WhenRequest =
+  def whenRequestMatches(p: GenericRequest[?, ?] => Boolean): WhenRequest =
     new WhenRequest(p)
 
   /** Specify how the stub backend should respond to any request (catch-all).
@@ -40,13 +40,13 @@ abstract class AbstractBackendStub[F[_], P](
     *
     * Note that the stubs are immutable, and each new specification that is added yields a new stub instance.
     */
-  def whenRequestMatchesPartial(partial: PartialFunction[GenericRequest[_, _], Response[StubBody]]): Self = {
-    val wrappedPartial: PartialFunction[GenericRequest[_, _], F[Response[StubBody]]] =
+  def whenRequestMatchesPartial(partial: PartialFunction[GenericRequest[?, ?], Response[StubBody]]): Self = {
+    val wrappedPartial: PartialFunction[GenericRequest[?, ?], F[Response[StubBody]]] =
       partial.andThen((r: Response[StubBody]) => monad.unit(r))
     withMatchers(matchers.orElse(wrappedPartial))
   }
 
-  override def send[T](request: GenericRequest[T, P with Effect[F]]): F[Response[T]] = monad.suspend {
+  override def send[T](request: GenericRequest[T, P & Effect[F]]): F[Response[T]] = monad.suspend {
     Try(matchers.lift(request)) match {
       case Success(Some(response)) =>
         adjustExceptions(request) {
@@ -56,8 +56,8 @@ abstract class AbstractBackendStub[F[_], P](
             r.body match {
               case StubBody.Exact(v)  => monad.unit(r.copy(body = v.asInstanceOf[T]))
               case StubBody.Adjust(v) =>
-                monad.map(adjustResponseBody(request.response.delegate, v, r.asInstanceOf[Response[T]])(monad))(b =>
-                  r.copy(body = b)
+                monad.map(adjustResponseBody(request.response.delegate, v, r.asInstanceOf[Response[T]])(using monad))(
+                  b => r.copy(body = b)
                 )
             }
           }
@@ -77,14 +77,14 @@ abstract class AbstractBackendStub[F[_], P](
     }
   }
 
-  private def adjustExceptions[T](request: GenericRequest[_, _])(t: => F[T]): F[T] =
+  private def adjustExceptions[T](request: GenericRequest[?, ?])(t: => F[T]): F[T] =
     SttpClientException.adjustExceptions(monad)(t)(
       SttpClientException.defaultExceptionToSttpClientException(request, _)
     )
 
   override def close(): F[Unit] = monad.unit(())
 
-  class WhenRequest(p: GenericRequest[_, _] => Boolean) {
+  class WhenRequest(p: GenericRequest[?, ?] => Boolean) {
 
     /** Respond with an empty body and the 200 status code */
     def thenRespondOk(): Self = thenRespondWithCode(StatusCode.Ok)
@@ -116,7 +116,7 @@ abstract class AbstractBackendStub[F[_], P](
     def thenRespondExact(body: Any, code: StatusCode): Self = thenRespond(ResponseStub.exact(body, code))
 
     def thenThrow(e: Throwable): Self = {
-      val m: PartialFunction[GenericRequest[_, _], F[Response[StubBody]]] = {
+      val m: PartialFunction[GenericRequest[?, ?], F[Response[StubBody]]] = {
         case r if p(r) => monad.error(e)
       }
       withMatchers(matchers.orElse(m))
@@ -124,7 +124,7 @@ abstract class AbstractBackendStub[F[_], P](
 
     /** Response with the given response (lazily evaluated). To create responses, use [[ResponseStub]]. */
     def thenRespond[T](resp: => Response[StubBody]): Self = {
-      val m: PartialFunction[GenericRequest[_, _], F[Response[StubBody]]] = {
+      val m: PartialFunction[GenericRequest[?, ?], F[Response[StubBody]]] = {
         case r if p(r) => monad.eval(resp.copy(request = r.onlyMetadata))
       }
       withMatchers(matchers.orElse(m))
@@ -138,7 +138,7 @@ abstract class AbstractBackendStub[F[_], P](
 
     /** Response with the given response, given as an F-effect. To create responses, use [[ResponseStub]]. */
     def thenRespondF(resp: => F[Response[StubBody]]): Self = {
-      val m: PartialFunction[GenericRequest[_, _], F[Response[StubBody]]] = {
+      val m: PartialFunction[GenericRequest[?, ?], F[Response[StubBody]]] = {
         case r if p(r) => resp
       }
       withMatchers(matchers.orElse(m))
@@ -147,8 +147,8 @@ abstract class AbstractBackendStub[F[_], P](
     /** Response with the given response, given as an F-effect, created basing on the received request. To create
       * responses, use [[ResponseStub]].
       */
-    def thenRespondF(resp: GenericRequest[_, _] => F[Response[StubBody]]): Self = {
-      val m: PartialFunction[GenericRequest[_, _], F[Response[StubBody]]] = {
+    def thenRespondF(resp: GenericRequest[?, ?] => F[Response[StubBody]]): Self = {
+      val m: PartialFunction[GenericRequest[?, ?], F[Response[StubBody]]] = {
         case r if p(r) => resp(r)
       }
       withMatchers(matchers.orElse(m))
@@ -158,7 +158,7 @@ abstract class AbstractBackendStub[F[_], P](
 
 object AbstractBackendStub {
   private def adjustResponseBody[F[_], T, U](
-      ra: GenericResponseAs[T, _],
+      ra: GenericResponseAs[T, ?],
       b: U,
       meta: ResponseMetadata
   )(implicit monad: MonadError[F]): F[T] = {
@@ -193,7 +193,7 @@ object AbstractBackendStub {
       case ResponseAsWebSocket(f) =>
         b match {
           case wss: WebSocketStub[_] =>
-            f.asInstanceOf[(WebSocket[F], ResponseMetadata) => F[T]](wss.build[F](monad), meta)
+            f.asInstanceOf[(WebSocket[F], ResponseMetadata) => F[T]](wss.build[F](using monad), meta)
           case ws: WebSocket[_] =>
             f.asInstanceOf[(WebSocket[F], ResponseMetadata) => F[T]](ws.asInstanceOf[WebSocket[F]], meta)
           case _ =>
@@ -205,7 +205,7 @@ object AbstractBackendStub {
         }
       case ResponseAsWebSocketUnsafe() =>
         b match {
-          case wss: WebSocketStub[_] => wss.build[F](monad).unit.asInstanceOf[F[T]]
+          case wss: WebSocketStub[_] => wss.build[F](using monad).unit.asInstanceOf[F[T]]
           case ws: WebSocket[_]      => ws.asInstanceOf[WebSocket[F]].unit.asInstanceOf[F[T]]
           case _                     =>
             monad.error(

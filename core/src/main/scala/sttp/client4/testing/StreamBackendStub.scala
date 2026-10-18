@@ -28,14 +28,14 @@ import scala.concurrent.ExecutionContext
   */
 class StreamBackendStub[F[_], S](
     monad: MonadError[F],
-    matchers: PartialFunction[GenericRequest[_, _], F[Response[StubBody]]],
+    matchers: PartialFunction[GenericRequest[?, ?], F[Response[StubBody]]],
     fallback: Option[StreamBackend[F, S]]
 ) extends AbstractBackendStub[F, S](monad, matchers, fallback)
     with StreamBackend[F, S] {
 
   type Self = StreamBackendStub[F, S]
   override protected def withMatchers(
-      matchers: PartialFunction[GenericRequest[_, _], F[Response[StubBody]]]
+      matchers: PartialFunction[GenericRequest[?, ?], F[Response[StubBody]]]
   ): StreamBackendStub[F, S] =
     new StreamBackendStub(monad, matchers, fallback)
 }

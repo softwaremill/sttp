@@ -9,7 +9,7 @@ import sttp.client4.*
 import sttp.client4.wrappers.DelegateBackend
 
 class LogAsStringBackendWrapper[F[_], P](delegate: GenericBackend[F, P]) extends DelegateBackend(delegate):
-  override def send[T](request: GenericRequest[T, P with Effect[F]]): F[Response[T]] =
+  override def send[T](request: GenericRequest[T, P & Effect[F]]): F[Response[T]] =
     request match
       case r: Request[T] @unchecked =>
         request.response match

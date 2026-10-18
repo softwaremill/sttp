@@ -34,8 +34,8 @@ class OkHttpMonixWebSocketTest
   override def bufferCapacity: Int = OkHttpBackend.DefaultWebSocketBufferCapacity.get
 
   override def functionToPipe(
-      f: WebSocketFrame.Data[_] => Option[WebSocketFrame]
-  ): Observable[WebSocketFrame.Data[_]] => Observable[WebSocketFrame] =
+      f: WebSocketFrame.Data[?] => Option[WebSocketFrame]
+  ): Observable[WebSocketFrame.Data[?]] => Observable[WebSocketFrame] =
     in => in.concatMapIterable(m => f(m).toList)
 
   override def eventually[T](interval: FiniteDuration, attempts: Int)(f: => Task[T]): Task[T] =
@@ -43,11 +43,11 @@ class OkHttpMonixWebSocketTest
 
   override def fromTextPipe(
       function: String => WebSocketFrame
-  ): Observable[WebSocketFrame.Data[_]] => Observable[WebSocketFrame] = MonixWebSockets.fromTextPipe(function)
+  ): Observable[WebSocketFrame.Data[?]] => Observable[WebSocketFrame] = MonixWebSockets.fromTextPipe(function)
 
   override def prepend(item: WebSocketFrame.Text)(
-      to: Observable[WebSocketFrame.Data[_]] => Observable[WebSocketFrame]
-  ): Observable[WebSocketFrame.Data[_]] => Observable[WebSocketFrame] =
+      to: Observable[WebSocketFrame.Data[?]] => Observable[WebSocketFrame]
+  ): Observable[WebSocketFrame.Data[?]] => Observable[WebSocketFrame] =
     to.andThen(rest => Observable.now(item) ++ rest)
 
   override def concurrently[T](fs: List[() => Task[T]]): Task[List[T]] = Task.parSequence(fs.map(_()))

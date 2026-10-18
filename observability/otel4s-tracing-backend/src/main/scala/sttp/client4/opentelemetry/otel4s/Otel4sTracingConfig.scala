@@ -4,9 +4,9 @@ import org.typelevel.otel4s.Attributes
 import sttp.client4.{GenericRequest, Response}
 
 final case class Otel4sTracingConfig(
-    spanName: GenericRequest[_, _] => String,
-    requestAttributes: GenericRequest[_, _] => Attributes,
-    responseAttributes: Response[_] => Attributes,
+    spanName: GenericRequest[?, ?] => String,
+    requestAttributes: GenericRequest[?, ?] => Attributes,
+    responseAttributes: Response[?] => Attributes,
     errorAttributes: Throwable => Attributes
 )
 

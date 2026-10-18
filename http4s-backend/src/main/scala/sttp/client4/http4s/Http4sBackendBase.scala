@@ -36,7 +36,7 @@ private[http4s] abstract class Http4sBackendBase[F[_]](implicit protected val as
   protected def customizeRequest: Http4sRequest[F] => Http4sRequest[F]
   protected def compressionHandlers: CompressionHandlers[Fs2Streams[F], EntityBody[F]]
 
-  type R = Fs2Streams[F] with sttp.capabilities.Effect[F]
+  type R = Fs2Streams[F] & sttp.capabilities.Effect[F]
 
   override def send[T](r: GenericRequest[T, R]): F[Response[T]] =
     adjustExceptions(r) {
@@ -151,7 +151,7 @@ private[http4s] abstract class Http4sBackendBase[F[_]](implicit protected val as
   private def basicBodyToHttp4s(body: BasicBodyPart): http4s.Entity[F] =
     body match {
       case StringBody(b, encoding, _) =>
-        http4s.EntityEncoder.stringEncoder(charsetToHttp4s(encoding)).toEntity(b)
+        http4s.EntityEncoder.stringEncoder(using charsetToHttp4s(encoding)).toEntity(b)
 
       case ByteArrayBody(b, _) =>
         http4s.EntityEncoder.byteArrayEncoder.toEntity(b)
@@ -184,7 +184,7 @@ private[http4s] abstract class Http4sBackendBase[F[_]](implicit protected val as
         (http4s.EntityEncoder.multipartEncoder.toEntity(multipart), multipart.headers)
     }
 
-  private def multipartToHttp4s(mp: Part[BodyPart[_]]): http4s.multipart.Part[F] = {
+  private def multipartToHttp4s(mp: Part[BodyPart[?]]): http4s.multipart.Part[F] = {
     val contentDisposition =
       http4s.Header.Raw(CIString(HeaderNames.ContentDisposition), mp.contentDispositionHeaderValue)
     val otherHeaders = mp.headers.map(h => http4s.Header.Raw(CIString(h.name), h.value))
@@ -258,7 +258,7 @@ private[http4s] abstract class Http4sBackendBase[F[_]](implicit protected val as
         (response.body, () => signalBodyComplete).pure[F]
 
       override protected def handleWS[T](
-          responseAs: GenericWebSocketResponseAs[T, _],
+          responseAs: GenericWebSocketResponseAs[T, ?],
           meta: ResponseMetadata,
           ws: Nothing
       ): F[T] = ws
@@ -271,10 +271,10 @@ private[http4s] abstract class Http4sBackendBase[F[_]](implicit protected val as
       override protected def cleanupWhenGotWebSocket(response: Nothing, e: GotAWebSocketException): F[Unit] = response
     }
 
-  private def adjustExceptions[T](r: GenericRequest[_, _])(t: => F[T]): F[T] =
+  private def adjustExceptions[T](r: GenericRequest[?, ?])(t: => F[T]): F[T] =
     SttpClientException.adjustExceptions(monad)(t)(http4sExceptionToSttpClientException(r, _))
 
-  private def http4sExceptionToSttpClientException(request: GenericRequest[_, _], e: Exception): Option[Exception] =
+  private def http4sExceptionToSttpClientException(request: GenericRequest[?, ?], e: Exception): Option[Exception] =
     e match {
       case e: org.http4s.client.ConnectionFailure => Some(new SttpClientException.ConnectException(request, e))
       case e: org.http4s.InvalidBodyException     => Some(new SttpClientException.ReadException(request, e))

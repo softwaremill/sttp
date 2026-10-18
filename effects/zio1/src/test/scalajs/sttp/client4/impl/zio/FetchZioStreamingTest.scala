@@ -17,7 +17,7 @@ class FetchZioStreamingTest extends StreamingTest[Task, ZioStreams] with ZioTest
   override implicit val convertToFuture: ConvertToFuture[Task] = convertZioTaskToFuture
 
   override def bodyProducer(chunks: Iterable[Array[Byte]]): ZStream[Any, Throwable, Byte] =
-    ZStream.fromChunks(chunks.map(Chunk.fromArray).toSeq: _*)
+    ZStream.fromChunks(chunks.map(Chunk.fromArray).toSeq*)
 
   override def bodyConsumer(stream: ZStream[Any, Throwable, Byte]): Task[String] =
     stream.runCollect.map(bytes => new String(bytes.toArray, Utf8))

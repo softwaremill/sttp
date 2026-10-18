@@ -72,7 +72,7 @@ private[pekkohttp] class BodyFromPekko()(implicit ec: ExecutionContext, mat: Mat
         )
 
       override protected def handleWS[T](
-          responseAs: GenericWebSocketResponseAs[T, _],
+          responseAs: GenericWebSocketResponseAs[T, ?],
           meta: ResponseMetadata,
           ws: Promise[Flow[Message, Message, NotUsed]]
       ): Future[T] = wsFromPekko(responseAs, ws, meta)
@@ -109,7 +109,7 @@ private[pekkohttp] class BodyFromPekko()(implicit ec: ExecutionContext, mat: Mat
 
         val flow = Flow[Message]
           .mapAsync(1)(messageToFrame)
-          .via(p.asInstanceOf[PekkoStreams.Pipe[WebSocketFrame.Data[_], WebSocketFrame]])
+          .via(p.asInstanceOf[PekkoStreams.Pipe[WebSocketFrame.Data[?], WebSocketFrame]])
           .takeWhile {
             case WebSocketFrame.Close(_, _) => false
             case _                          => true
@@ -191,7 +191,7 @@ private[pekkohttp] class BodyFromPekko()(implicit ec: ExecutionContext, mat: Mat
 
       override def isOpen(): Future[Boolean] = Future.successful(open.get())
 
-      override implicit def monad: MonadError[Future] = new FutureMonad()(ec)
+      override implicit def monad: MonadError[Future] = new FutureMonad()(using ec)
     }
 
     (flow, ws)
@@ -199,7 +199,7 @@ private[pekkohttp] class BodyFromPekko()(implicit ec: ExecutionContext, mat: Mat
 
   private def messageToFrame(
       m: Message
-  )(implicit ec: ExecutionContext, mat: Materializer): Future[WebSocketFrame.Data[_]] =
+  )(implicit ec: ExecutionContext, mat: Materializer): Future[WebSocketFrame.Data[?]] =
     m match {
       case msg: TextMessage =>
         msg.textStream.runFold("")(_ + _).map(t => WebSocketFrame.text(t))

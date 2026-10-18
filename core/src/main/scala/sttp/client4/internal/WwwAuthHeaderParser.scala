@@ -18,7 +18,7 @@ private[client4] case class WwwAuthHeaderValue(values: Map[String, String]) {
   val opaque = values.get("opaque")
 }
 
-private case class KeyParser private (currentKey: String, parsed: Map[String, String]) extends Parser {
+private case class KeyParser(currentKey: String, parsed: Map[String, String]) extends Parser {
   override def parseNext(input: Char): Parser =
     if (input == '=') {
       ValueParser(currentKey, parsed)
@@ -35,7 +35,7 @@ private object KeyParser {
   def apply(parsed: Map[String, String]) = new KeyParser("", parsed)
 }
 
-private case class ValueParser private (
+private case class ValueParser(
     currentKey: String,
     currentValue: String,
     parsed: Map[String, String]
@@ -54,7 +54,7 @@ private object ValueParser {
   def apply(key: String, parsed: Map[String, String]) = new ValueParser(key, "", parsed)
 }
 
-private case class QuotedValueParser private (
+private case class QuotedValueParser(
     currentKey: String,
     currentValue: String,
     parsed: Map[String, String]

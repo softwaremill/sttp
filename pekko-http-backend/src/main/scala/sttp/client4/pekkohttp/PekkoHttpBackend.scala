@@ -51,7 +51,7 @@ class PekkoHttpBackend private (
     customizeResponse: (HttpRequest, HttpResponse) => HttpResponse,
     compressionHandlers: CompressionHandlers[PekkoStreams, HttpResponse]
 ) extends WebSocketStreamBackend[Future, PekkoStreams] {
-  type R = PekkoStreams with WebSockets with Effect[Future]
+  type R = PekkoStreams & WebSockets & Effect[Future]
 
   private implicit val as: ActorSystem = actorSystem
   private implicit val _ec: ExecutionContext = ec
@@ -115,9 +115,9 @@ class PekkoHttpBackend private (
         .recoverWith { case _ => Future.failed(t) }
   }
 
-  override val monad: MonadError[Future] = new FutureMonad()(ec)
+  override val monad: MonadError[Future] = new FutureMonad()(using ec)
 
-  private def connectionSettings(r: GenericRequest[_, _]): ConnectionPoolSettings = {
+  private def connectionSettings(r: GenericRequest[?, ?]): ConnectionPoolSettings = {
     val connectionPoolSettingsWithProxy = opts.proxy match {
       case Some(p) if r.uri.host.forall(!p.ignoreProxy(_)) =>
         val clientTransport = p.auth match {
@@ -135,7 +135,7 @@ class PekkoHttpBackend private (
       .withUpdatedConnectionSettings(_.withIdleTimeout(r.options.readTimeout))
   }
 
-  private lazy val bodyFromPekko = new BodyFromPekko()(ec, implicitly[Materializer], monad)
+  private lazy val bodyFromPekko = new BodyFromPekko()(using ec, implicitly[Materializer], monad)
 
   private def responseFromPekko[T](
       r: GenericRequest[T, R],
@@ -194,7 +194,7 @@ class PekkoHttpBackend private (
           Decompressor.decompressIfPossible(response, encoding.value, compressionHandlers.decompressors)
       }
 
-  private def adjustExceptions[T](request: GenericRequest[_, _])(t: => Future[T]): Future[T] =
+  private def adjustExceptions[T](request: GenericRequest[?, ?])(t: => Future[T]): Future[T] =
     SttpClientException.adjustExceptions(monad)(t)(FromPekko.exception(request, _))
 
   override def close(): Future[Unit] =
@@ -340,6 +340,6 @@ object PekkoHttpBackend {
     */
   def stub(implicit
       ec: ExecutionContext = ExecutionContext.global
-  ): WebSocketStreamBackendStub[Future, PekkoStreams with WebSockets] =
+  ): WebSocketStreamBackendStub[Future, PekkoStreams & WebSockets] =
     WebSocketStreamBackendStub(new FutureMonad())
 }

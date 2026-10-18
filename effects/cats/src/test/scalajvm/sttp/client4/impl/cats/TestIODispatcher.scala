@@ -8,7 +8,7 @@ import org.scalatest.{BeforeAndAfterAll, Suite}
 trait TestIODispatcher extends BeforeAndAfterAll { this: Suite =>
 
   // use a var to avoid initialization error `scala.UninitializedFieldError`
-  protected var dispatcher: Dispatcher[IO] = _
+  protected var dispatcher: Dispatcher[IO] = null
 
   private val (d, shutdownDispatcher) = Dispatcher.parallel[IO].allocated.unsafeRunSync()
   dispatcher = d

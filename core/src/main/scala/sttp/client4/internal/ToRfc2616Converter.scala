@@ -11,7 +11,7 @@ private[client4] object ToRfc2616Converter {
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789".toCharArray
 
   def apply(
-      request: GenericRequest[_, _],
+      request: GenericRequest[?, ?],
       sensitiveHeaders: Set[String] = HeaderNames.SensitiveHeaders,
       sensitiveQueryParams: Set[String] = Set.empty
   ): String = {
@@ -24,7 +24,7 @@ private[client4] object ToRfc2616Converter {
     if (body.isEmpty) resultWithHeaders else resultWithHeaders + s"\n\n$body"
   }
 
-  private def extractBody(r: GenericRequest[_, _]): String =
+  private def extractBody(r: GenericRequest[?, ?]): String =
     r.body match {
       case StringBody(text, _, _) => s"$text"
       case ByteArrayBody(_, _)    => "<PLACEHOLDER>"
@@ -36,7 +36,7 @@ private[client4] object ToRfc2616Converter {
       case NoBody                 => ""
     }
 
-  def handleMultipartBody(parts: Seq[Part[GenericRequestBody[_]]]): String = {
+  def handleMultipartBody(parts: Seq[Part[GenericRequestBody[?]]]): String = {
     val boundary = generateBoundary()
     parts
       .map { p =>
@@ -57,7 +57,7 @@ private[client4] object ToRfc2616Converter {
       .mkString("") + s"--$boundary--"
   }
 
-  private def extractHeaders(r: GenericRequest[_, _], sensitiveHeaders: Set[String]): String =
+  private def extractHeaders(r: GenericRequest[?, ?], sensitiveHeaders: Set[String]): String =
     r.headers
       // filtering out compression headers so that the results are human-readable, if possible
       .filterNot(_.name.equalsIgnoreCase(HeaderNames.AcceptEncoding))

@@ -16,7 +16,7 @@ object Otel4sTracingDefaults {
 
   /** @see https://opentelemetry.io/docs/specs/semconv/http/http-spans/#name */
   def spanName(
-      request: GenericRequest[_, _],
+      request: GenericRequest[?, ?],
       uriTemplateClassifier: Uri => Option[Uri] = Function.const(None)
   ): String = {
     val method = request.method.method
@@ -30,7 +30,7 @@ object Otel4sTracingDefaults {
     *   https://opentelemetry.io/docs/specs/semconv/http/http-metrics/#http-client
     */
   def requestAttributes(
-      request: GenericRequest[_, _],
+      request: GenericRequest[?, ?],
       uriRedactor: Uri => Option[Uri] = redactedUserInfo,
       headersAsAttributes: Set[String] = Set.empty
   ): Attributes = {
@@ -59,7 +59,7 @@ object Otel4sTracingDefaults {
   }
 
   /** @see https://opentelemetry.io/docs/specs/semconv/http/http-metrics/#http-client */
-  def responseAttributes(response: Response[_], headersAsAttributes: Set[String] = Set.empty): Attributes = {
+  def responseAttributes(response: Response[?], headersAsAttributes: Set[String] = Set.empty): Attributes = {
     val b = Attributes.newBuilder
 
     if (!response.code.isSuccess) {

@@ -26,14 +26,14 @@ class FetchZioWebSocketTest extends WebSocketTest[Task] with WebSocketStreamingT
   override val streams: ZioStreams = ZioStreams
 
   override def prepend(item: WebSocketFrame.Text)(
-      to: streams.Pipe[WebSocketFrame.Data[_], WebSocketFrame]
-  ): streams.Pipe[WebSocketFrame.Data[_], WebSocketFrame] =
+      to: streams.Pipe[WebSocketFrame.Data[?], WebSocketFrame]
+  ): streams.Pipe[WebSocketFrame.Data[?], WebSocketFrame] =
     to.andThen(rest => ZStream.succeed(item) ++ rest)
 
-  override def fromTextPipe(function: String => WebSocketFrame): streams.Pipe[WebSocketFrame.Data[_], WebSocketFrame] =
+  override def fromTextPipe(function: String => WebSocketFrame): streams.Pipe[WebSocketFrame.Data[?], WebSocketFrame] =
     ZioWebSockets.fromTextPipe(function)
 
   override def functionToPipe(
-      f: WebSocketFrame.Data[_] => Option[WebSocketFrame]
-  ): streams.Pipe[WebSocketFrame.Data[_], WebSocketFrame] = in => in.mapConcat(m => f(m).toList)
+      f: WebSocketFrame.Data[?] => Option[WebSocketFrame]
+  ): streams.Pipe[WebSocketFrame.Data[?], WebSocketFrame] = in => in.mapConcat(m => f(m).toList)
 }

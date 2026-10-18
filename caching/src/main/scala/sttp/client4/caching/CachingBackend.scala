@@ -37,7 +37,7 @@ class CachingBackend[F[_], P](delegate: GenericBackend[F, P], cache: Cache[F], c
 
   import sttp.monad.syntax._
 
-  override def send[T](request: GenericRequest[T, P with Effect[F]]): F[Response[T]] = {
+  override def send[T](request: GenericRequest[T, P & Effect[F]]): F[Response[T]] = {
     val cacheableFromConfig = config.eligibleForCaching(request)
 
     // Only requests with "cache-friendly" response-as descriptions can be cached, so that we can convert a cached
@@ -70,7 +70,7 @@ class CachingBackend[F[_], P](delegate: GenericBackend[F, P], cache: Cache[F], c
 
   override def close(): F[Unit] = super.close().ensure(cache.close())
 
-  private def sendNotInCache[T](request: GenericRequest[T, P with Effect[F]], key: Array[Byte]): F[Response[T]] = {
+  private def sendNotInCache[T](request: GenericRequest[T, P & Effect[F]], key: Array[Byte]): F[Response[T]] = {
     // Replacing the original response as with a byte array; we know that response-as is cache-friendly, so we'll be
     // able to obtain a T-body later.
     val byteArrayRequest = requestWithResponseAsByteArray(request)
@@ -93,14 +93,14 @@ class CachingBackend[F[_], P](delegate: GenericBackend[F, P], cache: Cache[F], c
 
   private def adjustResponseReadFromCache[T](
       responseFromCache: Response[Array[Byte]],
-      request: GenericRequest[T, _]
+      request: GenericRequest[T, ?]
   ): Response[T] = {
     // We assume that it has been verified that responseAs is cache-friendly, so this won't throw an UOE.
     val body: T = runResponseAs(request.response.delegate, responseFromCache.body, responseFromCache)
     responseFromCache.copy(body = body)
   }
 
-  private def responseAsCacheFriendly(responseAs: GenericResponseAs[_, _]): Boolean =
+  private def responseAsCacheFriendly(responseAs: GenericResponseAs[?, ?]): Boolean =
     responseAs match {
       case IgnoreResponse                              => true
       case ResponseAsByteArray                         => true
@@ -119,7 +119,7 @@ class CachingBackend[F[_], P](delegate: GenericBackend[F, P], cache: Cache[F], c
     }
 
   private def runResponseAs[T](
-      responseAs: GenericResponseAs[T, _],
+      responseAs: GenericResponseAs[T, ?],
       data: Array[Byte],
       responseMetadata: ResponseMetadata
   ): T =
@@ -146,8 +146,8 @@ class CachingBackend[F[_], P](delegate: GenericBackend[F, P], cache: Cache[F], c
     }
 
   private def requestWithResponseAsByteArray[T](
-      request: GenericRequest[T, P with Effect[F]]
-  ): GenericRequest[Array[Byte], P with Effect[F]] =
+      request: GenericRequest[T, P & Effect[F]]
+  ): GenericRequest[Array[Byte], P & Effect[F]] =
     request match {
       case r: Request[T] @unchecked => r.response(asByteArrayAlways)
       case _ => throw new IllegalStateException("WebSocket/streaming requests are not cacheable!")

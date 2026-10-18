@@ -15,7 +15,7 @@ trait SttpWebSocketStreamApi {
     */
   def asWebSocketStream[S](
       s: Streams[S]
-  )(p: s.Pipe[WebSocketFrame.Data[_], WebSocketFrame]): WebSocketStreamResponseAs[Either[String, Unit], S] =
+  )(p: s.Pipe[WebSocketFrame.Data[?], WebSocketFrame]): WebSocketStreamResponseAs[Either[String, Unit], S] =
     asWebSocketEither(asStringAlways, asWebSocketStreamAlways(s)(p))
 
   /** Handles the response as a web socket, using the given `p` stream processing pipe to handle the incoming & produce
@@ -33,7 +33,7 @@ trait SttpWebSocketStreamApi {
     */
   def asWebSocketStreamOrFail[S](
       s: Streams[S]
-  )(p: s.Pipe[WebSocketFrame.Data[_], WebSocketFrame]): WebSocketStreamResponseAs[Unit, S] =
+  )(p: s.Pipe[WebSocketFrame.Data[?], WebSocketFrame]): WebSocketStreamResponseAs[Unit, S] =
     asWebSocketStream(s)(p).orFail.showAs("as web socket stream or fail")
 
   /** Handles the response body by using the given `p` stream processing pipe to handle the incoming & produce the
@@ -44,7 +44,7 @@ trait SttpWebSocketStreamApi {
     * A non-blocking, asynchronous streaming implementation must be provided as the [[Streams]] parameter.
     */
   def asWebSocketStreamAlways[S](s: Streams[S])(
-      p: s.Pipe[WebSocketFrame.Data[_], WebSocketFrame]
+      p: s.Pipe[WebSocketFrame.Data[?], WebSocketFrame]
   ): WebSocketStreamResponseAs[Unit, S] = WebSocketStreamResponseAs[Unit, S](ResponseAsWebSocketStream(s, p))
 
   /** Uses the [[ResponseAs]] description that matches the condition (using the response's metadata).

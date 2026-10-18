@@ -6,5 +6,5 @@ package object client4 extends SttpApi {
     * @see
     *   [[RetryWhen.Default]]
     */
-  type RetryWhen = (GenericRequest[_, _], Either[Throwable, Response[_]]) => Boolean
+  type RetryWhen = (GenericRequest[?, ?], Either[Throwable, Response[?]]) => Boolean
 }

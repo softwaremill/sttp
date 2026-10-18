@@ -34,7 +34,7 @@ val MetricPrefixAttributeKey = AttributeKey[MetricPrefix]
 abstract class MetricWrapper[P](delegate: GenericBackend[Future, P], metrics: MetricsServer)
     extends DelegateBackend(delegate):
 
-  override def send[T](request: GenericRequest[T, P with Effect[Future]]): Future[Response[T]] =
+  override def send[T](request: GenericRequest[T, P & Effect[Future]]): Future[Response[T]] =
     val start = System.currentTimeMillis()
 
     def report(metricSuffix: String): Future[Unit] =

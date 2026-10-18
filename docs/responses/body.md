@@ -201,21 +201,21 @@ import sttp.client4.*
 import sttp.model.ResponseMetadata
 
 def asStream[F[_], T, S](s: Streams[S])(f: s.BinaryStream => F[T]): 
-  StreamResponseAs[Either[String, T], Effect[F] with S] = ???
+  StreamResponseAs[Either[String, T], Effect[F] & S] = ???
 
 def asStreamOrFail[F[_], T, S](s: Streams[S])(f: s.BinaryStream => F[T]): 
-  StreamResponseAs[T, S with Effect[F]] = ???
+  StreamResponseAs[T, S & Effect[F]] = ???
 
 def asStreamWithMetadata[F[_], T, S](s: Streams[S])(
       f: (s.BinaryStream, ResponseMetadata) => F[T] 
-  ): StreamResponseAs[Either[String, T], Effect[F] with S] = ???
+  ): StreamResponseAs[Either[String, T], Effect[F] & S] = ???
 
 def asStreamAlways[F[_], T, S](s: Streams[S])(f: s.BinaryStream => F[T]): 
-  StreamResponseAs[T, Effect[F] with S] = ???
+  StreamResponseAs[T, Effect[F] & S] = ???
 
 def asStreamAlwaysWithMetadata[F[_], T, S](s: Streams[S])(
       f: (s.BinaryStream, ResponseMetadata) => F[T]
-  ): StreamResponseAs[T, Effect[F] with S] = ???
+  ): StreamResponseAs[T, Effect[F] & S] = ???
 
 def asStreamUnsafe[S](s: Streams[S]): 
   StreamResponseAs[Either[String, s.BinaryStream], S] = ???

@@ -22,18 +22,18 @@ class HttpClientZioWebSocketTest
   override val streams: ZioStreams = ZioStreams
 
   override def functionToPipe(
-      f: WebSocketFrame.Data[_] => Option[WebSocketFrame]
-  ): ZioStreams.Pipe[WebSocketFrame.Data[_], WebSocketFrame] =
+      f: WebSocketFrame.Data[?] => Option[WebSocketFrame]
+  ): ZioStreams.Pipe[WebSocketFrame.Data[?], WebSocketFrame] =
     in => in.mapConcat(m => f(m).toList)
 
   override def fromTextPipe(
       function: String => WebSocketFrame
-  ): ZioStreams.Pipe[WebSocketFrame.Data[_], WebSocketFrame] =
+  ): ZioStreams.Pipe[WebSocketFrame.Data[?], WebSocketFrame] =
     ZioWebSockets.fromTextPipe[Any](function)
 
   override def prepend(item: WebSocketFrame.Text)(
-      to: PipeR[Any, WebSocketFrame.Data[_], WebSocketFrame]
-  ): ZioStreams.Pipe[WebSocketFrame.Data[_], WebSocketFrame] =
+      to: PipeR[Any, WebSocketFrame.Data[?], WebSocketFrame]
+  ): ZioStreams.Pipe[WebSocketFrame.Data[?], WebSocketFrame] =
     to.andThen(rest => ZStream(item) ++ rest)
 
   override def concurrently[T](fs: List[() => Task[T]]): Task[List[T]] = ZIO.collectAllPar(fs.map(_()))

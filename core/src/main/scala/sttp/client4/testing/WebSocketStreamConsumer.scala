@@ -7,7 +7,7 @@ import sttp.ws.WebSocketFrame
   * when creating a [[BackendStub]].
   */
 case class WebSocketStreamConsumer[S, Pipe[_, _], F[_]] private (
-    consume: Pipe[WebSocketFrame.Data[_], WebSocketFrame] => F[Unit]
+    consume: Pipe[WebSocketFrame.Data[?], WebSocketFrame] => F[Unit]
 )
 
 object WebSocketStreamConsumer {
@@ -15,7 +15,7 @@ object WebSocketStreamConsumer {
 
   trait WebSocketStreamConsumerCreator[F[_]] {
     def apply[S <: Streams[S]](s: Streams[S])(
-        consume: s.Pipe[WebSocketFrame.Data[_], WebSocketFrame] => F[Unit]
+        consume: s.Pipe[WebSocketFrame.Data[?], WebSocketFrame] => F[Unit]
     ): WebSocketStreamConsumer[S, s.Pipe, F] = new WebSocketStreamConsumer(consume)
   }
 }

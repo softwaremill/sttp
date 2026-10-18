@@ -62,16 +62,16 @@ class CatsListenerBackendTest extends AnyFlatSpec with Matchers {
   }.unsafeRunSync()
 
   def spyingListener(trail: Ref[IO, List[String]]) = new RequestListener[IO, Unit] {
-    override def before(request: GenericRequest[_, _]): IO[Unit] = trail.update(_ :+ "before")
-    override def responseBodyReceived(request: GenericRequest[_, _], response: ResponseMetadata, tag: Unit): Unit = ()
+    override def before(request: GenericRequest[?, ?]): IO[Unit] = trail.update(_ :+ "before")
+    override def responseBodyReceived(request: GenericRequest[?, ?], response: ResponseMetadata, tag: Unit): Unit = ()
     override def responseHandled(
-        request: GenericRequest[_, _],
+        request: GenericRequest[?, ?],
         response: ResponseMetadata,
         tag: Unit,
-        exception: Option[ResponseException[_]]
+        exception: Option[ResponseException[?]]
     ): IO[Unit] = trail.update(_ :+ "response handled")
     override def exception(
-        request: GenericRequest[_, _],
+        request: GenericRequest[?, ?],
         tag: Unit,
         exception: Throwable,
         responseBodyReceivedCalled: Boolean

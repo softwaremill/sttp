@@ -15,13 +15,13 @@ private[client4] class DigestAuthenticator private (
     unauthorizedStatusCode: StatusCode,
     clientNonceGenerator: () => String
 ) {
-  def authenticate[T](request: GenericRequest[T, _], response: Response[T]): Option[Header] =
+  def authenticate[T](request: GenericRequest[T, ?], response: Response[T]): Option[Header] =
     responseHeaderValue(response.headers(requestHeaderName), request, response.code)
       .map(Header(responseHeaderName, _))
 
   private def responseHeaderValue(
       authHeaderValues: Seq[String],
-      request: GenericRequest[_, _],
+      request: GenericRequest[?, ?],
       statusCode: StatusCode
   ): Option[String] = {
     val wwwAuthRawHeaders = authHeaderValues
@@ -42,7 +42,7 @@ private[client4] class DigestAuthenticator private (
   }
 
   private def responseHeaderValue(
-      request: GenericRequest[_, _],
+      request: GenericRequest[?, ?],
       digestAuthData: DigestAuthData,
       wwwAuthHeader: WwwAuthHeaderValue,
       realmMatch: String,
@@ -116,7 +116,7 @@ private[client4] class DigestAuthenticator private (
     }
 
   private def calculateResponseChallenge(
-      request: GenericRequest[_, _],
+      request: GenericRequest[?, ?],
       digestAuthData: DigestAuthData,
       realm: String,
       qop: Option[String],
@@ -164,7 +164,7 @@ private[client4] class DigestAuthenticator private (
     }
 
   private def calculateHa2(
-      request: GenericRequest[_, _],
+      request: GenericRequest[?, ?],
       qop: Option[String],
       digestUri: String,
       messageDigest: MessageDigestCompatibility

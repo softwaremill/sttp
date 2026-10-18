@@ -79,7 +79,7 @@ trait SyncHttpTest
       val params = List("a" -> "b", "c" -> "d", "e=" -> "&f")
       val response = basicRequest
         .post(uri"$endpoint/echo/form_params/as_params")
-        .body(params: _*)
+        .body(params*)
         .response(asParams)
         .send(backend)
       response.body.right.map(_.toList) should be(Right(params))

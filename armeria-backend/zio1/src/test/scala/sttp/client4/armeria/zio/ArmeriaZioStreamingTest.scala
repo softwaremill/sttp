@@ -27,7 +27,7 @@ class ArmeriaZioStreamingTest extends StreamingTest[Task, ZioStreams] with ZioTe
   override implicit val convertToFuture: ConvertToFuture[Task] = convertZioTaskToFuture
 
   override def bodyProducer(arrays: Iterable[Array[Byte]]): Stream[Throwable, Byte] =
-    Stream.fromChunks(arrays.map(Chunk.fromArray).toSeq: _*)
+    Stream.fromChunks(arrays.map(Chunk.fromArray).toSeq*)
 
   override def bodyConsumer(stream: Stream[Throwable, Byte]): Task[String] =
     stream.runCollect.map(bytes => new String(bytes.toArray, Utf8))

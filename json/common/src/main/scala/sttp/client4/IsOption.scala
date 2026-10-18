@@ -14,7 +14,7 @@ object IsOption {
   }
 
   implicit def optionIsOption[T]: IsOption[Option[T]] = True
-  implicit def leftOptionIsOption[T]: IsOption[Either[Option[T], _]] = True
-  implicit def rightOptionIsOption[T]: IsOption[Either[_, Option[T]]] = True
+  implicit def leftOptionIsOption[T]: IsOption[Either[Option[T], ?]] = True
+  implicit def rightOptionIsOption[T]: IsOption[Either[?, Option[T]]] = True
   implicit def otherIsNotOption[T]: IsOption[T] = False
 }

@@ -15,7 +15,7 @@ import sttp.client4.ResponseException.UnexpectedStatusCode
 
 trait SttpZioJsonApiExtensions { this: SttpZioJsonApi =>
   def asJsonStream[B: JsonDecoder]
-      : StreamResponseAs[Either[ResponseException[String], B], ZioStreams with Effect[RIO[Blocking, *]]] =
+      : StreamResponseAs[Either[ResponseException[String], B], ZioStreams & Effect[RIO[Blocking, *]]] =
     asStreamWithMetadata(ZioStreams)((s, meta) =>
       JsonDecoder[B]
         .decodeJsonStream(s >>> ZTransducer.utf8Decode.mapChunks(_.flatMap(_.toCharArray)))

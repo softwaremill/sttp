@@ -251,13 +251,13 @@ final case class StreamRequest[T, R](
   def response[T2, R2 <: R](ra: StreamResponseAs[T2, R2]): StreamRequest[T2, R2] = copy(response = ra)
 
   /** Specifies that this is a WebSocket request. A [[WebSocketStreamBackend]] will be required to send this request. */
-  def response[T2, F[_]](ra: WebSocketResponseAs[F, T2]): WebSocketStreamRequest[T2, Effect[F] with R] =
+  def response[T2, F[_]](ra: WebSocketResponseAs[F, T2]): WebSocketStreamRequest[T2, Effect[F] & R] =
     WebSocketStreamRequest(
       method,
       uri,
       body,
       headers,
-      WebSocketStreamResponseAs[T2, Effect[F] with R](ra.delegate),
+      WebSocketStreamResponseAs[T2, Effect[F] & R](ra.delegate),
       options,
       attributes
     )
@@ -283,8 +283,8 @@ final case class StreamRequest[T, R](
     * Known exceptions are converted by backends to one of [[SttpClientException]]. Other exceptions are thrown
     * unchanged.
     */
-  def send[F[_], P](backend: StreamBackend[F, P])(implicit ev: P with Effect[F] <:< R): F[Response[T]] =
-    backend.send(this.asInstanceOf[StreamRequest[T, P with Effect[F]]]) // as witnessed by ev
+  def send[F[_], P](backend: StreamBackend[F, P])(implicit ev: (P & Effect[F]) <:< R): F[Response[T]] =
+    backend.send(this.asInstanceOf[StreamRequest[T, P & Effect[F]]]) // as witnessed by ev
 }
 
 //
@@ -313,7 +313,7 @@ final case class WebSocketRequest[F[_], T](
     response: WebSocketResponseAs[F, T],
     options: RequestOptions,
     attributes: AttributeMap
-) extends GenericRequest[T, WebSockets with Effect[F]]
+) extends GenericRequest[T, WebSockets & Effect[F]]
     with RequestBuilder[WebSocketRequest[F, T]] {
 
   override def method(method: Method, uri: Uri): WebSocketRequest[F, T] = copy(method = method, uri = uri)
@@ -322,13 +322,13 @@ final case class WebSocketRequest[F[_], T](
   override def withAttributes(attributes: AttributeMap): WebSocketRequest[F, T] = copy(attributes = attributes)
   override protected def copyWithBody(body: BasicBody): WebSocketRequest[F, T] = copy(body = body)
 
-  def streamBody[S](s: Streams[S])(b: s.BinaryStream): WebSocketStreamRequest[T, Effect[F] with S] =
+  def streamBody[S](s: Streams[S])(b: s.BinaryStream): WebSocketStreamRequest[T, Effect[F] & S] =
     WebSocketStreamRequest(
       method,
       uri,
       StreamBody(s)(b),
       headers,
-      WebSocketStreamResponseAs[T, Effect[F] with S](response.delegate),
+      WebSocketStreamResponseAs[T, Effect[F] & S](response.delegate),
       options,
       attributes
     )
@@ -394,7 +394,7 @@ final case class WebSocketStreamRequest[T, S](
     response: WebSocketStreamResponseAs[T, S],
     options: RequestOptions,
     attributes: AttributeMap
-) extends GenericRequest[T, S with WebSockets]
+) extends GenericRequest[T, S & WebSockets]
     with RequestBuilder[WebSocketStreamRequest[T, S]] {
 
   override def method(method: Method, uri: Uri): WebSocketStreamRequest[T, S] = copy(method = method, uri = uri)

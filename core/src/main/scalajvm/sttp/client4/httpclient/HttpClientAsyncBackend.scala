@@ -43,7 +43,7 @@ abstract class HttpClientAsyncBackend[F[_], S <: Streams[S], BH, B](
     closeClient: Boolean,
     customizeRequest: HttpRequest => HttpRequest,
     compressionHandlers: CompressionHandlers[S, B]
-) extends HttpClientBackend[F, S, S with WebSockets, B](client, closeClient, compressionHandlers)
+) extends HttpClientBackend[F, S, S & WebSockets, B](client, closeClient, compressionHandlers)
     with WebSocketBackend[F] {
   protected def createSimpleQueue[T]: F[SimpleQueue[F, T]]
   protected def createSequencer: F[Sequencer[F]]

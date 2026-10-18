@@ -38,7 +38,7 @@ private[client4] trait BodyToHttpClient[F[_], S, R] {
       case StreamBody(s)         => streamToPublisher(s.asInstanceOf[streams.BinaryStream])
       case m: MultipartBody[_]   =>
         val baseContentType = contentType.getOrElse("multipart/form-data")
-        val (body, boundary) = multiPartBodyBuilder(m.parts)(monad)
+        val (body, boundary) = multiPartBodyBuilder(m.parts)(using monad)
         builder.header(HeaderNames.ContentType, s"$baseContentType; boundary=$boundary")
         body
     }
@@ -61,7 +61,7 @@ private[client4] trait BodyToHttpClient[F[_], S, R] {
   private def withKnownContentLength(delegate: HttpRequest.BodyPublisher, cl: Long): HttpRequest.BodyPublisher =
     new HttpRequest.BodyPublisher {
       override def contentLength(): Long = cl
-      override def subscribe(subscriber: Flow.Subscriber[_ >: ByteBuffer]): Unit = delegate.subscribe(subscriber)
+      override def subscribe(subscriber: Flow.Subscriber[? >: ByteBuffer]): Unit = delegate.subscribe(subscriber)
     }
 
   private def withCallback(
@@ -70,7 +70,7 @@ private[client4] trait BodyToHttpClient[F[_], S, R] {
   ): HttpRequest.BodyPublisher =
     new HttpRequest.BodyPublisher {
       override def contentLength(): Long = delegate.contentLength()
-      override def subscribe(subscriber: Flow.Subscriber[_ >: ByteBuffer]): Unit = {
+      override def subscribe(subscriber: Flow.Subscriber[? >: ByteBuffer]): Unit = {
         delegate.subscribe(new Flow.Subscriber[ByteBuffer] {
           override def onSubscribe(subscription: Subscription): Unit = {
             runCallbackSafe {

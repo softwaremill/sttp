@@ -10,7 +10,7 @@ import sttp.monad.MonadError
 import sttp.monad.syntax._
 import sttp.ws.WebSocket
 
-trait WebSocketConcurrentTest[F[_]] { outer: Suite with AsyncFlatSpecLike with WebSocketTest[F] =>
+trait WebSocketConcurrentTest[F[_]] { outer: Suite & AsyncFlatSpecLike & WebSocketTest[F] =>
   implicit def monad: MonadError[F]
   implicit val convertToFuture: ConvertToFuture[F]
 

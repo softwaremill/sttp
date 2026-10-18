@@ -22,17 +22,17 @@ class HttpClientMonixWebSocketTest
   override val streams: MonixStreams = MonixStreams
 
   override def functionToPipe(
-      f: WebSocketFrame.Data[_] => Option[WebSocketFrame]
-  ): Observable[WebSocketFrame.Data[_]] => Observable[WebSocketFrame] =
+      f: WebSocketFrame.Data[?] => Option[WebSocketFrame]
+  ): Observable[WebSocketFrame.Data[?]] => Observable[WebSocketFrame] =
     in => in.concatMapIterable(m => f(m).toList)
 
   override def fromTextPipe(
       function: String => WebSocketFrame
-  ): Observable[WebSocketFrame.Data[_]] => Observable[WebSocketFrame] = MonixWebSockets.fromTextPipe(function)
+  ): Observable[WebSocketFrame.Data[?]] => Observable[WebSocketFrame] = MonixWebSockets.fromTextPipe(function)
 
   override def prepend(item: WebSocketFrame.Text)(
-      to: Observable[WebSocketFrame.Data[_]] => Observable[WebSocketFrame]
-  ): Observable[WebSocketFrame.Data[_]] => Observable[WebSocketFrame] =
+      to: Observable[WebSocketFrame.Data[?]] => Observable[WebSocketFrame]
+  ): Observable[WebSocketFrame.Data[?]] => Observable[WebSocketFrame] =
     to.andThen(rest => Observable.now(item) ++ rest)
 
   override def concurrently[T](fs: List[() => Task[T]]): Task[List[T]] = Task.parSequence(fs.map(_()))

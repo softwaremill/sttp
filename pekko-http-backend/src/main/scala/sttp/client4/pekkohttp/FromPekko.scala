@@ -17,7 +17,7 @@ private[pekkohttp] object FromPekko {
     ch :: (cl.toList ++ other)
   }
 
-  def exception(request: GenericRequest[_, _], e: Exception): Option[Exception] =
+  def exception(request: GenericRequest[?, ?], e: Exception): Option[Exception] =
     e match {
       case e: pekko.stream.ConnectionException => Some(new SttpClientException.ConnectException(request, e))
       case e: pekko.stream.StreamTcpException  =>
