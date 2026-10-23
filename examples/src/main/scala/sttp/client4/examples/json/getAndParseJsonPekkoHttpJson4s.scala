@@ -1,7 +1,7 @@
 // {cat=JSON; effects=Future; backend=Pekko}: Receive & parse JSON using json4s
 
-//> using dep com.softwaremill.sttp.client4::json4s:4.0.27
-//> using dep com.softwaremill.sttp.client4::pekko-http-backend:4.0.27
+//> using dep com.softwaremill.sttp.client4::json4s:4.1.0
+//> using dep com.softwaremill.sttp.client4::pekko-http-backend:4.1.0
 //> using dep io.github.json4s::json4s-native:4.1.1
 //> using dep org.apache.pekko::pekko-stream:1.1.2
 
