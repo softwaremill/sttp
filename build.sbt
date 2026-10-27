@@ -662,7 +662,7 @@ lazy val okhttpBackend = (projectMatrix in file("okhttp-backend"))
     libraryDependencies ++= Seq(
       // okhttp 5 is published as a Kotlin Multiplatform library; the JVM classes live in the `okhttp-jvm` artifact
       // (the plain `okhttp` artifact only carries Gradle module metadata, which sbt/coursier doesn't resolve).
-      "com.squareup.okhttp3" % "okhttp-jvm" % "5.5.0"
+      "com.squareup.okhttp3" % "okhttp-jvm" % "5.5.1"
     )
   )
   .jvmPlatform(scalaVersions = scala2And3)
