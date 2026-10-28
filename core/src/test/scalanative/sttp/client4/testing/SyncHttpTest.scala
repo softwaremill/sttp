@@ -148,6 +148,16 @@ trait SyncHttpTest
       response.body should be(Right(expectedPostEchoResponse))
     }
 
+    "post and receive binary data" in {
+      val bytes = Array.tabulate[Byte](256)(_.toByte)
+      val response = basicRequest
+        .post(uri"$endpoint/echo/exact")
+        .body(bytes)
+        .response(asByteArrayAlways)
+        .send(backend)
+      response.body.toList shouldBe bytes.toList
+    }
+
     "post an input stream" in {
       val response = postEcho
         .body(new ByteArrayInputStream(testBodyBytes))
@@ -316,6 +326,12 @@ trait SyncHttpTest
 
   "multipart" - {
     def mp = basicRequest.post(uri"$endpoint/multipart")
+
+    "send a multipart message with binary data" in {
+      val req = mp.multipartBody(multipart("p1", Array[Byte](97, 0, 98)))
+      val resp = req.send(backend)
+      resp.body.value should startWith("p1=a\u0000b")
+    }
 
     "send a multipart message" in {
       val req = mp.multipartBody(multipart("p1", "v1"), multipart("p2", "v2"))
