@@ -57,7 +57,7 @@ class HttpURLConnectionBackend private (
       val c = openConnection(r.uri)
       c.setRequestMethod(r.method.method)
       // content-length might have changed due to compression
-      r.headers.foreach(h => if (!h.is(HeaderNames.ContentLength)) c.setRequestProperty(h.name, h.value))
+      r.headers.foreach(h => if (!h.is(HeaderNames.ContentLength)) c.addRequestProperty(h.name, h.value))
       contentLength.foreach(cl => c.setRequestProperty(HeaderNames.ContentLength, cl.toString))
       c.setDoInput(true)
       c.setReadTimeout(timeout(r.options.readTimeout))
