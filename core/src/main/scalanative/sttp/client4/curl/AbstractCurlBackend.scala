@@ -371,6 +371,7 @@ abstract class AbstractCurlBackend[F[_]](_monad: MonadError[F], verbose: Boolean
     !code = 0L
 
     while (!runningHandles > 0) {
+      AbstractCurlBackend.throwIfInterrupted()
       val mc = multi.perform(runningHandles)
       if (mc != CurlMCode.Ok)
         throw new RuntimeException(s"curl_multi_perform failed: $mc")
@@ -382,7 +383,7 @@ abstract class AbstractCurlBackend[F[_]](_monad: MonadError[F], verbose: Boolean
       if (!runningHandles == 0) return // transfer complete (very small response)
 
       // Wait for activity
-      val pc = multi.poll(1000, null)
+      val pc = multi.poll(AbstractCurlBackend.InterruptCheckIntervalMs, null)
       if (pc != CurlMCode.Ok)
         throw new RuntimeException(s"curl_multi_poll failed in driveUntilHeaders: $pc")
     }
@@ -396,11 +397,12 @@ abstract class AbstractCurlBackend[F[_]](_monad: MonadError[F], verbose: Boolean
     !runningHandles = 1
 
     while (!runningHandles > 0) {
+      AbstractCurlBackend.throwIfInterrupted()
       val mc = multi.perform(runningHandles)
       if (mc != CurlMCode.Ok)
         throw new RuntimeException(s"curl_multi_perform failed in driveToCompletion: $mc")
       if (!runningHandles > 0) {
-        val pc = multi.poll(1000, null)
+        val pc = multi.poll(AbstractCurlBackend.InterruptCheckIntervalMs, null)
         if (pc != CurlMCode.Ok)
           throw new RuntimeException(s"curl_multi_poll failed in driveToCompletion: $pc")
       }
@@ -635,13 +637,51 @@ abstract class AbstractCurlBackend[F[_]](_monad: MonadError[F], verbose: Boolean
     }
 }
 
-/** Curl backends that performs the curl operation with a simple `curl_easy_perform`. */
+/** Curl backends that perform the curl operation on the calling thread. Interrupting that thread cancels the request
+  * with an [[InterruptedException]].
+  */
 abstract class AbstractSyncCurlBackend[F[_]](_monad: MonadError[F], verbose: Boolean)
     extends AbstractCurlBackend[F](_monad, verbose) {
-  override def performCurl(c: CurlHandle): F[CurlCode.CurlCode] = monad.unit(c.perform)
+  override def performCurl(c: CurlHandle): F[CurlCode.CurlCode] = monad.unit(performInterruptibly(c))
+
+  // using the multi interface, so that the transfer can be stopped between polls
+  private def performInterruptibly(c: CurlHandle): CurlCode.CurlCode = {
+    val multi = CurlApi.multiInit
+    val addResult = multi.addHandle(c)
+    if (addResult != CurlMCode.Ok) {
+      multi.cleanup()
+      throw new RuntimeException(s"curl_multi_add_handle failed: $addResult")
+    }
+    try {
+      val runningHandles = stackalloc[CInt]()
+      !runningHandles = 1
+      while (!runningHandles > 0) {
+        AbstractCurlBackend.throwIfInterrupted()
+        val mc = multi.perform(runningHandles)
+        if (mc != CurlMCode.Ok) throw new RuntimeException(s"curl_multi_perform failed: $mc")
+        if (!runningHandles > 0) {
+          val pc = multi.poll(AbstractCurlBackend.InterruptCheckIntervalMs, null)
+          if (pc != CurlMCode.Ok) throw new RuntimeException(s"curl_multi_poll failed: $pc")
+        }
+      }
+      val result = multi.infoReadResult(null)
+      if (result < 0) throw new RuntimeException("curl transfer finished without a result")
+      CurlCode(result)
+    } finally {
+      val _ = multi.removeHandle(c)
+      multi.cleanup()
+    }
+  }
 }
 
 object AbstractCurlBackend {
+
+  /** The longest time a request might continue after the thread that sends it is interrupted. */
+  private[curl] val InterruptCheckIntervalMs = 100
+
+  private[curl] def throwIfInterrupted(): Unit =
+    if (Thread.interrupted()) throw new InterruptedException()
+
   val wdFunc: CFuncPtr4[Ptr[Byte], CSize, CSize, Ptr[CurlFetch], CSize] = {
     (ptr: Ptr[CChar], size: CSize, nmemb: CSize, data: Ptr[CurlFetch]) =>
       val index: CSize = (!data)._2
