@@ -35,7 +35,7 @@ abstract class AbstractCurlBackend[F[_]](_monad: MonadError[F], verbose: Boolean
   /** Same as [[performCurl]], but also fails with an exception on bad [[CurlCode]]s. */
   private final def perform(c: CurlHandle): F[CurlCode] = performCurl(c).flatMap[CurlCode] {
     case CurlCode.Ok => monad.unit(CurlCode.Ok)
-    case code        => monad.error(AbstractCurlBackend.transferException(code))
+    case code        => monad.error(AbstractCurlBackend.transferException(code.id))
   }
 
   type R = Any & Effect[F]
@@ -267,7 +267,7 @@ abstract class AbstractCurlBackend[F[_]](_monad: MonadError[F], verbose: Boolean
           // the failure is only visible via httpCode==0 and curl_multi_info_read.
           if (httpCode == StatusCode(0)) {
             val transferResult = multi.infoReadResult(null)
-            if (transferResult > 0) throw AbstractCurlBackend.transferException(CurlCode(transferResult))
+            if (transferResult > 0) throw AbstractCurlBackend.transferException(transferResult)
             else throw new RuntimeException(s"Request to ${request.uri} failed: no HTTP response received")
           }
 
@@ -318,6 +318,8 @@ abstract class AbstractCurlBackend[F[_]](_monad: MonadError[F], verbose: Boolean
             // NON-STREAMING FALLBACK (e.g., error branch of asEither)
             // Drain remaining body, then handle normally
             driveToCompletion(multi)
+            val transferResult = multi.infoReadResult(null)
+            if (transferResult > 0) throw AbstractCurlBackend.transferException(transferResult)
 
             val responseBody = fromCString((!spaces.bodyResp)._1)
             // Clean up multi resources
@@ -648,14 +650,15 @@ object AbstractCurlBackend {
   /** Maps the code of a failed transfer to an exception classified by
     * [[SttpClientException.defaultExceptionToSttpClientException]].
     */
-  private[curl] def transferException(code: CurlCode): Exception = {
-    val msg = s"Command failed with status $code"
-    code match {
-      case CurlCode.OperationTimedOut                                 => new SocketTimeoutException(msg)
-      case CurlCode.CouldntResolveHost | CurlCode.CouldntResolveProxy => new UnknownHostException(msg)
-      case CurlCode.CouldntConnect                                    => new ConnectException(msg)
-      case CurlCode.UnsupportedProtocol | CurlCode.UrlMalformat       => new MalformedURLException(msg)
-      case _                                                          => new IOException(msg)
+  private[curl] def transferException(code: Int): Exception = {
+    val curlCode = CurlCode.values.find(_.id == code)
+    val msg = s"Command failed with status ${curlCode.getOrElse(code)}"
+    curlCode match {
+      case Some(CurlCode.OperationTimedOut)                                 => new SocketTimeoutException(msg)
+      case Some(CurlCode.CouldntResolveHost | CurlCode.CouldntResolveProxy) => new UnknownHostException(msg)
+      case Some(CurlCode.CouldntConnect)                                    => new ConnectException(msg)
+      case Some(CurlCode.UnsupportedProtocol | CurlCode.UrlMalformat)       => new MalformedURLException(msg)
+      case _                                                                => new IOException(msg)
     }
   }
 

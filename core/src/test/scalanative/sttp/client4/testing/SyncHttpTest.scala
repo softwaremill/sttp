@@ -417,6 +417,16 @@ trait SyncHttpTest
       val req = basicRequest.get(uri"http://localhost:7918").response(asInputStreamAlways(_ => ()))
       intercept[SttpClientException.ConnectException](req.send(backend))
     }
+
+    "read exceptions - error" in {
+      val req = basicRequest.get(uri"$endpoint/error").response(asString)
+      intercept[SttpClientException.ReadException](req.send(backend))
+    }
+
+    "timeout exceptions - timeout" in {
+      val req = basicRequest.get(uri"$endpoint/timeout").readTimeout(10.milliseconds).response(asString)
+      intercept[SttpClientException.TimeoutException](req.send(backend))
+    }
   }
 
   "empty response" - {
