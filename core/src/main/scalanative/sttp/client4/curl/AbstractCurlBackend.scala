@@ -15,10 +15,10 @@ import sttp.monad.MonadError
 import sttp.monad.syntax._
 
 import java.io.{ByteArrayInputStream, InputStream}
+import java.nio.file.Files
 
 import scala.collection.immutable.Seq
 import scala.collection.mutable.ArrayBuffer
-import scala.io.Source
 import scala.scalanative.libc.stdio.{fclose, fopen, FILE}
 import scala.scalanative.libc.stdlib._
 import scala.scalanative.libc.string._
@@ -151,10 +151,9 @@ abstract class AbstractCurlBackend[F[_]](_monad: MonadError[F], verbose: Boolean
     curl.option(HeaderData, spaces.headersResp)
     curl.option(Url, request.uri.toString)
     setMethod(curl, request.method)
-    setRequestBody(curl, request.body, request.method)
-    monad.flatMap(perform(curl)) { _ =>
+    setRequestBody(curl, request.body, request.method).flatMap(_ => perform(curl)).flatMap { _ =>
       curl.info(ResponseCode, spaces.httpCode)
-      val responseBody = fromCString((!spaces.bodyResp)._1)
+      val responseBody = fetchedBytes(spaces.bodyResp)
       val (statusText, responseHeaders) = parseHeadersAndStatus(fromCString((!spaces.headersResp)._1))
       val httpCode = StatusCode((!spaces.httpCode).toInt)
       free((!spaces.bodyResp)._1)
@@ -192,15 +191,14 @@ abstract class AbstractCurlBackend[F[_]](_monad: MonadError[F], verbose: Boolean
     curl.option(WriteData, outputFilePtr)
     curl.option(Url, request.uri.toString)
     setMethod(curl, request.method)
-    setRequestBody(curl, request.body, request.method)
-    monad.flatMap(perform(curl)) { _ =>
+    setRequestBody(curl, request.body, request.method).flatMap(_ => perform(curl)).flatMap { _ =>
       curl.info(ResponseCode, spaces.httpCode)
       val httpCode = StatusCode((!spaces.httpCode).toInt)
       free(spaces.httpCode.asInstanceOf[Ptr[CSignedChar]])
       fclose(outputFilePtr)
       curl.cleanup()
       val responseMetadata = ResponseMetadata(httpCode, "", List.empty)
-      val body: F[T] = bodyFromResponseAs(request.response, responseMetadata, Left(outputPath))
+      val body: F[T] = bodyFromResponseAs(request.response, responseMetadata, Left(Array.emptyByteArray))
       monad.map(body) { b =>
         Response[T](
           body = b,
@@ -317,7 +315,7 @@ abstract class AbstractCurlBackend[F[_]](_monad: MonadError[F], verbose: Boolean
             // Drain remaining body, then handle normally
             driveToCompletion(multi)
 
-            val responseBody = fromCString((!spaces.bodyResp)._1)
+            val responseBody = fetchedBytes(spaces.bodyResp)
             // Clean up multi resources
             val _ = multi.removeHandle(curl)
             multi.cleanup()
@@ -464,8 +462,7 @@ abstract class AbstractCurlBackend[F[_]](_monad: MonadError[F], verbose: Boolean
         // Fallback: drain stream to string and use standard path
         val bytes = readInputStreamToByteArray(is)
         is.close()
-        val str = new String(bytes)
-        bodyFromResponseAs(ResponseAs(delegate.asInstanceOf[GenericResponseAs[T, Any]]), meta, Left(str))
+        bodyFromResponseAs(ResponseAs(delegate.asInstanceOf[GenericResponseAs[T, Any]]), meta, Left(bytes))
     }
 
   private def readInputStreamToByteArray(is: InputStream): Array[Byte] = {
@@ -507,15 +504,18 @@ abstract class AbstractCurlBackend[F[_]](_monad: MonadError[F], verbose: Boolean
     implicit val z = ctx.zone
     body match { // todo: assign to monad object
       case b: BasicBodyPart =>
-        val str = basicBodyToString(b)
-        lift(curl.option(PostFields, toCString(str)))
+        val bytes = basicBodyToBytes(b)
+        // PostFieldSize must be set before CopyPostFields, so that the data isn't read up to the first NUL
+        lift(curl.option(PostFieldSize, bytes.length.toLong)).flatMap(_ =>
+          lift(curl.option(Copypostfields, toCBytes(bytes)))
+        )
       case m: MultipartBody[R] =>
         val mime = curl.mime
         m.parts.foreach { case p @ Part(name, partBody, _, headers) =>
           val part = mime.addPart()
           part.withName(name)
-          val str = basicBodyToString(partBody)
-          part.withData(str)
+          val bytes = basicBodyToBytes(partBody)
+          part.withData(toCBytes(bytes), bytes.length.toLong)
           p.fileName.foreach(part.withFileName(_))
           p.contentType.foreach(part.withMimeType(_))
 
@@ -535,15 +535,32 @@ abstract class AbstractCurlBackend[F[_]](_monad: MonadError[F], verbose: Boolean
     }
   }
 
-  private def basicBodyToString(body: BodyPart[?]): String =
+  private def basicBodyToBytes(body: BodyPart[?]): Array[Byte] =
     body match {
-      case StringBody(b, _, _)   => b
-      case ByteArrayBody(b, _)   => new String(b)
-      case ByteBufferBody(b, _)  => new String(b.array)
-      case InputStreamBody(b, _) => Source.fromInputStream(b).mkString
-      case FileBody(f, _)        => Source.fromFile(f.toFile).mkString
+      case StringBody(b, encoding, _) => b.getBytes(encoding)
+      case ByteArrayBody(b, _)        => b
+      case ByteBufferBody(b, _)       =>
+        val bytes = new Array[Byte](b.remaining())
+        b.duplicate().get(bytes)
+        bytes
+      case InputStreamBody(b, _) => readInputStreamToByteArray(b)
+      case FileBody(f, _)        => Files.readAllBytes(f.toPath)
       case _                     => throw new IllegalArgumentException(s"Unsupported body: $body")
     }
+
+  /** Copies the bytes to native memory; the result is valid also when `bytes` is empty. */
+  private def toCBytes(bytes: Array[Byte])(implicit z: Zone): Ptr[Byte] = {
+    val ptr = alloc[Byte](bytes.length + 1)
+    if (bytes.nonEmpty) { val _ = memcpy(ptr, bytes.at(0), bytes.length.toCSize) }
+    ptr
+  }
+
+  /** The bytes written so far to `fetch` by [[AbstractCurlBackend.wdFunc]]. */
+  private def fetchedBytes(fetch: Ptr[CurlFetch]): Array[Byte] = {
+    val bytes = new Array[Byte]((!fetch)._2.toInt)
+    if (bytes.nonEmpty) { val _ = memcpy(bytes.at(0), (!fetch)._1, (!fetch)._2) }
+    bytes
+  }
 
   private def responseSpace: CurlSpaces = {
     val bodyResp = malloc(sizeof[CurlFetch]).asInstanceOf[Ptr[CurlFetch]]
@@ -593,23 +610,23 @@ abstract class AbstractCurlBackend[F[_]](_monad: MonadError[F], verbose: Boolean
 
   private lazy val curlUserAgent = "sttp-curl/" + fromCString(CCurl.getVersion())
 
-  private lazy val bodyFromResponseAs = new BodyFromResponseAs[F, String, Nothing, Nothing] {
+  private lazy val bodyFromResponseAs = new BodyFromResponseAs[F, Array[Byte], Nothing, Nothing] {
     override protected def withReplayableBody(
-        response: String,
+        response: Array[Byte],
         replayableBody: Either[Array[Byte], SttpFile]
-    ): F[String] = response.unit
+    ): F[Array[Byte]] = response.unit
 
-    override protected def regularIgnore(response: String): F[Unit] = ().unit
+    override protected def regularIgnore(response: Array[Byte]): F[Unit] = ().unit
 
-    override protected def regularAsByteArray(response: String): F[Array[Byte]] = toByteArray(response)
+    override protected def regularAsByteArray(response: Array[Byte]): F[Array[Byte]] = response.unit
 
-    override protected def regularAsFile(response: String, file: SttpFile): F[SttpFile] =
+    override protected def regularAsFile(response: Array[Byte], file: SttpFile): F[SttpFile] =
       monad.unit(file)
 
-    override protected def regularAsInputStream(response: String): F[InputStream] =
-      monad.unit(new ByteArrayInputStream(response.getBytes))
+    override protected def regularAsInputStream(response: Array[Byte]): F[InputStream] =
+      monad.unit(new ByteArrayInputStream(response))
 
-    override protected def regularAsStream(response: String): F[(Nothing, () => F[Unit])] =
+    override protected def regularAsStream(response: Array[Byte]): F[(Nothing, () => F[Unit])] =
       throw new IllegalStateException("CurlBackend does not support streaming responses")
 
     override protected def handleWS[T](
@@ -619,14 +636,12 @@ abstract class AbstractCurlBackend[F[_]](_monad: MonadError[F], verbose: Boolean
     ): F[T] = ws
 
     override protected def cleanupWhenNotAWebSocket(
-        response: String,
+        response: Array[Byte],
         e: NotAWebSocketException
     ): F[Unit] = ().unit
 
     override protected def cleanupWhenGotWebSocket(response: Nothing, e: GotAWebSocketException): F[Unit] = response
   }
-
-  private def toByteArray(str: String): F[Array[Byte]] = monad.unit(str.getBytes)
 
   private def lift(code: CurlCode): F[CurlCode] =
     code match {
