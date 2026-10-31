@@ -23,5 +23,27 @@ class CurlBackendHttpTest extends SyncHttpTest {
 
       requestUserAgent should be(Some(s"sttp-curl/${fromCString(CCurl.getVersion())}"))
     }
+
+    // the response to /timeout arrives after 2 seconds
+    def gcTimeWhileWaitingForResponse(request: Request[?]): Long = {
+      val sender = new Thread(() => { val _ = request.send(backend) })
+      sender.start()
+      Thread.sleep(500)
+      val start = System.currentTimeMillis()
+      System.gc()
+      val gcTime = System.currentTimeMillis() - start
+      sender.join()
+      gcTime
+    }
+
+    "not block garbage collection while waiting for a response" in {
+      gcTimeWhileWaitingForResponse(basicRequest.get(uri"$endpoint/timeout")) should be < 500L
+    }
+
+    "not block garbage collection while waiting for a streamed response" in {
+      gcTimeWhileWaitingForResponse(
+        basicRequest.get(uri"$endpoint/timeout").response(asInputStreamAlways(_ => ()))
+      ) should be < 500L
+    }
   }
 }

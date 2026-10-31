@@ -32,6 +32,9 @@ private[client4] object CurlApi {
 
     def cleanup(): Unit = CCurl.cleanup(handle)
 
+    /** Sets a write function, which appends the received data to the [[CurlFetch]] given as the write data. */
+    def writeToBuffer(): CurlCode = CurlCode(CCurl.setoptWriteToBuffer(handle))
+
     def option(option: CurlOption, parameter: String)(implicit z: Zone): CurlCode =
       this.option(option, toCString(parameter, StandardCharsets.UTF_8))
 
