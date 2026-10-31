@@ -400,8 +400,7 @@ trait SyncHttpTest
         .get(uri"$endpoint/timeout")
         .readTimeout(200.milliseconds)
         .response(asString)
-      val caught = intercept[RuntimeException](req.send(backend))
-      caught.getMessage should include("TIMEDOUT")
+      intercept[SttpClientException.TimeoutException](req.send(backend))
     }
 
     "not fail if read timeout is big enough" in {
@@ -412,6 +411,33 @@ trait SyncHttpTest
 
       val response = req.send(backend)
       response.body should be(Right("Done"))
+    }
+  }
+
+  "exceptions" - {
+    "connection exceptions - unknown host" in {
+      val req = basicRequest.get(uri"http://no-such-domain-1234.com").response(asString)
+      intercept[SttpClientException.ConnectException](req.send(backend))
+    }
+
+    "connection exceptions - connection refused" in {
+      val req = basicRequest.get(uri"http://localhost:7918").response(asString)
+      intercept[SttpClientException.ConnectException](req.send(backend))
+    }
+
+    "connection exceptions - connection refused, when streaming the response" in {
+      val req = basicRequest.get(uri"http://localhost:7918").response(asInputStreamAlways(_ => ()))
+      intercept[SttpClientException.ConnectException](req.send(backend))
+    }
+
+    "read exceptions - error" in {
+      val req = basicRequest.get(uri"$endpoint/error").response(asString)
+      intercept[SttpClientException.ReadException](req.send(backend))
+    }
+
+    "timeout exceptions - timeout" in {
+      val req = basicRequest.get(uri"$endpoint/timeout").readTimeout(10.milliseconds).response(asString)
+      intercept[SttpClientException.TimeoutException](req.send(backend))
     }
   }
 

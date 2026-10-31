@@ -95,4 +95,13 @@ private[client4] object CurlCode extends Enumeration {
   val SslPinnedPubKeyNoMatch = Value(90, "SSL_PINNEDPUBKEYNOTMATCH")
   val SslInvalidCertStatus = Value(91, "SSL_INVALIDCERTSTATUS")
   val Http2Stream = Value(92, "HTTP2_STREAM")
+  val RecursiveApiCall = Value(93, "RECURSIVE_API_CALL")
+  val AuthError = Value(94, "AUTH_ERROR")
+  val Http3 = Value(95, "HTTP3")
+  val QuicConnectError = Value(96, "QUIC_CONNECT_ERROR")
+  val Proxy = Value(97, "PROXY")
+  val SslClientCert = Value(98, "SSL_CLIENTCERT")
+  val UnrecoverablePoll = Value(99, "UNRECOVERABLE_POLL")
+  val TooLarge = Value(100, "TOO_LARGE")
+  val EchRequired = Value(101, "ECH_REQUIRED")
 }
