@@ -4,6 +4,7 @@ import java.io.ByteArrayInputStream
 import java.nio.ByteBuffer
 
 import sttp.client4._
+import sttp.client4.internal.{Iso88591, Utf8}
 import org.scalatest._
 import org.scalatest.freespec.AnyFreeSpec
 import sttp.model.StatusCode
@@ -31,9 +32,11 @@ trait SyncHttpTest
   val backend: SyncBackend
 
   protected def postEcho = basicRequest.post(uri"$endpoint/echo")
+  protected def postEchoExact = basicRequest.post(uri"$endpoint/echo/exact")
   protected def putEcho = basicRequest.put(uri"$endpoint/echo")
   protected val testBody = "this is the body"
   protected val testBodyBytes = testBody.getBytes("UTF-8")
+  protected val testBodySignedBytes: Array[Byte] = Array.tabulate[Byte](256)(_.toByte)
   protected val expectedPostEchoResponse = "POST /echo this is the body"
   protected val expectedPutEchoResponse = "PUT /echo this is the body"
 
@@ -73,6 +76,11 @@ trait SyncHttpTest
         .send(backend)
       val fc = new String(response.body, "UTF-8")
       fc should be(expectedPostEchoResponse)
+    }
+
+    "as a byte array exact" in {
+      val response = postEchoExact.body(testBodySignedBytes).response(asByteArrayAlways).send(backend)
+      response.body should be(testBodySignedBytes)
     }
 
     "as parameters" in {
@@ -148,16 +156,6 @@ trait SyncHttpTest
       response.body should be(Right(expectedPostEchoResponse))
     }
 
-    "post and receive binary data" in {
-      val bytes = Array.tabulate[Byte](256)(_.toByte)
-      val response = basicRequest
-        .post(uri"$endpoint/echo/exact")
-        .body(bytes)
-        .response(asByteArrayAlways)
-        .send(backend)
-      response.body.toList shouldBe bytes.toList
-    }
-
     "post an input stream" in {
       val response = postEcho
         .body(new ByteArrayInputStream(testBodyBytes))
@@ -170,6 +168,27 @@ trait SyncHttpTest
         .body(ByteBuffer.wrap(testBodyBytes))
         .send(backend)
       response.body should be(Right(expectedPostEchoResponse))
+    }
+
+    "post a byte buffer with a capacity higher than the limit" in {
+      val b = ByteBuffer.allocate(100)
+      b.put(testBodyBytes)
+      b.flip()
+
+      val response = postEcho.body(b).response(asByteArrayAlways).send(backend)
+      response.body shouldBe expectedPostEchoResponse.getBytes("UTF-8")
+    }
+
+    "post a readonly byte buffer" in {
+      val response = postEcho
+        .body(ByteBuffer.wrap(testBodyBytes).asReadOnlyBuffer())
+        .send(backend)
+      response.body should be(Right(expectedPostEchoResponse))
+    }
+
+    "post a string with a non-utf-8 encoding" in {
+      val response = postEchoExact.body("\u00f6", Iso88591).response(asByteArrayAlways).send(backend)
+      response.body shouldBe Array(0xf6.toByte)
     }
 
     "post form data" in {
@@ -327,12 +346,6 @@ trait SyncHttpTest
   "multipart" - {
     def mp = basicRequest.post(uri"$endpoint/multipart")
 
-    "send a multipart message with binary data" in {
-      val req = mp.multipartBody(multipart("p1", Array[Byte](97, 0, 98)))
-      val resp = req.send(backend)
-      resp.body.value should startWith("p1=a\u0000b")
-    }
-
     "send a multipart message" in {
       val req = mp.multipartBody(multipart("p1", "v1"), multipart("p2", "v2"))
       val resp = req.send(backend)
@@ -343,6 +356,32 @@ trait SyncHttpTest
       val req = mp.multipartBody(multipart("p1", "v1").fileName("f1"), multipart("p2", "v2").fileName("f2"))
       val resp = req.send(backend)
       resp.body should be(Right("p1=v1 (f1), p2=v2 (f2)"))
+    }
+
+    "send a multipart message with binary data and filename" in {
+      val req = mp.multipartBody(multipart("p1", "v\u00001".getBytes).fileName("f1"))
+      val resp = req.send(backend)
+      resp.body.value should include("f1")
+      resp.body.value should include("v\u00001")
+    }
+
+    "send a multipart message containing body parts with explicitly set encodings" in {
+      val utf8Char = "\u00f6" // ö
+      val replacementChar = "\ufffd" // �
+
+      val req = basicRequest
+        .post(uri"$endpoint/multipart/content_type")
+        .response(asStringAlways)
+        .multipartBody(
+          multipart("p1", utf8Char, Utf8),
+          multipart("p2", utf8Char, Iso88591)
+        )
+
+      val resp = req.send(backend)
+      resp.body should be(
+        // replacementChar should be used in place of utf8Char for the part with Iso88591 encoding
+        s"p1=$utf8Char$defaultFileName content-type: text/plain; charset=UTF-8, p2=$replacementChar$defaultFileName content-type: text/plain; charset=ISO-8859-1"
+      )
     }
   }
 

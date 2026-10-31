@@ -14,6 +14,7 @@ import java.net.http.HttpRequest
 import java.net.http.HttpRequest.BodyPublisher
 import java.net.http.HttpRequest.BodyPublishers
 import java.nio.ByteBuffer
+import java.nio.charset.Charset
 import java.util.concurrent.Flow
 import java.util.concurrent.Flow.Subscription
 
@@ -29,7 +30,7 @@ private[client4] trait BodyToHttpClient[F[_], S, R] {
     val (maybeCompressedBody, contentLength) = Compressor.compressIfNeeded(request, compressors)
     val body = maybeCompressedBody match {
       case NoBody               => BodyPublishers.noBody().unit
-      case StringBody(b, _, _)  => BodyPublishers.ofString(b).unit
+      case StringBody(b, e, _)  => BodyPublishers.ofString(b, Charset.forName(e)).unit
       case ByteArrayBody(b, _)  => BodyPublishers.ofByteArray(b).unit
       case ByteBufferBody(b, _) =>
         BodyPublishers.ofByteArray(byteBufferToArray(b)).unit

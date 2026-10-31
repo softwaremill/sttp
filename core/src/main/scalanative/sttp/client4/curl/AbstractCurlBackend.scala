@@ -151,8 +151,7 @@ abstract class AbstractCurlBackend[F[_]](_monad: MonadError[F], verbose: Boolean
     curl.option(HeaderData, spaces.headersResp)
     curl.option(Url, request.uri.toString)
     setMethod(curl, request.method)
-    setRequestBody(curl, request.body, request.method)
-    monad.flatMap(perform(curl)) { _ =>
+    setRequestBody(curl, request.body, request.method).flatMap(_ => perform(curl)).flatMap { _ =>
       curl.info(ResponseCode, spaces.httpCode)
       val responseBody = fetchedBytes(spaces.bodyResp)
       val (statusText, responseHeaders) = parseHeadersAndStatus(fromCString((!spaces.headersResp)._1))
@@ -192,8 +191,7 @@ abstract class AbstractCurlBackend[F[_]](_monad: MonadError[F], verbose: Boolean
     curl.option(WriteData, outputFilePtr)
     curl.option(Url, request.uri.toString)
     setMethod(curl, request.method)
-    setRequestBody(curl, request.body, request.method)
-    monad.flatMap(perform(curl)) { _ =>
+    setRequestBody(curl, request.body, request.method).flatMap(_ => perform(curl)).flatMap { _ =>
       curl.info(ResponseCode, spaces.httpCode)
       val httpCode = StatusCode((!spaces.httpCode).toInt)
       free(spaces.httpCode.asInstanceOf[Ptr[CSignedChar]])

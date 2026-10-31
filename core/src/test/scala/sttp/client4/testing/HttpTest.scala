@@ -40,7 +40,7 @@ trait HttpTest[F[_]]
   protected def queryEcho: Request[Either[String, String]] = basicRequest.query(uri"$endpoint/echo")
   protected val testBody = "this is the body"
   protected val testBodyBytes: Array[Byte] = testBody.getBytes("UTF-8")
-  protected val testBodySignedBytes: Array[Byte] = Array[Byte](-1)
+  protected val testBodySignedBytes: Array[Byte] = Array.tabulate[Byte](256)(_.toByte)
   protected val expectedPostEchoResponse = "POST /echo this is the body"
   protected val customEncoding = "custom"
   protected val customEncodedData = "custom-data"
@@ -299,6 +299,15 @@ trait HttpTest[F[_]]
         .map(response => response.body should be(Right(expectedPostEchoResponse)))
     }
 
+    "post a string with a non-utf-8 encoding" in {
+      postEchoExact
+        .body("\u00f6", Iso88591)
+        .response(asByteArrayAlways)
+        .send(backend)
+        .toFuture()
+        .map(response => response.body shouldBe Array(0xf6.toByte))
+    }
+
     "post form data" in {
       basicRequest
         .post(uri"$endpoint/echo/form_params/as_string")
@@ -539,12 +548,12 @@ trait HttpTest[F[_]]
 
       "send a multipart message with binary data and filename" in {
         val binaryPart =
-          multipart("p1", "v1".getBytes)
+          multipart("p1", "v\u00001".getBytes)
             .fileName("f1")
         val req = mp.multipartBody(binaryPart)
         req.send(backend).toFuture().map { resp =>
           resp.body should include("f1")
-          resp.body should include("v1")
+          resp.body should include("v\u00001")
         }
       }
 
