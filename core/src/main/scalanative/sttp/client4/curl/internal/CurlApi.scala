@@ -32,6 +32,9 @@ private[client4] object CurlApi {
 
     def cleanup(): Unit = CCurl.cleanup(handle)
 
+    /** Sets a write function, which appends the received data to the [[CurlFetch]] given as the write data. */
+    def writeToBuffer(): CurlCode = CurlCode(CCurl.setoptWriteToBuffer(handle))
+
     def option(option: CurlOption, parameter: String)(implicit z: Zone): CurlCode =
       this.option(option, toCString(parameter, StandardCharsets.UTF_8))
 
@@ -81,8 +84,8 @@ private[client4] object CurlApi {
 
     def withEncoding(encoding: String)(implicit zone: Zone): CurlCode = CCurl.mimeEncoder(handle, toCString(encoding))
 
-    def withData(data: String, datasize: Long = CurlZeroTerminated)(implicit zone: Zone): CurlCode =
-      CCurl.mimeData(handle, toCString(data), datasize.toCSize)
+    def withData(data: Ptr[Byte], datasize: Long): CurlCode =
+      CCurl.mimeData(handle, data, datasize.toCSize)
 
     def withFileData(filename: String)(implicit zone: Zone): CurlCode = CCurl.mimeFiledata(handle, toCString(filename))
 
