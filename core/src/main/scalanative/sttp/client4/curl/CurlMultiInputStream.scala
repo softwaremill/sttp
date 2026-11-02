@@ -57,9 +57,7 @@ final class CurlMultiInputStream private[curl] (
       maybeResetBuffer()
       toCopy
     } else if (finished) {
-      transferError.foreach { code =>
-        throw new IOException(s"curl transfer failed with CURLcode $code")
-      }
+      transferError.foreach(code => throw AbstractCurlBackend.transferException(code))
       -1
     } else {
       resetBuffer()
@@ -73,9 +71,7 @@ final class CurlMultiInputStream private[curl] (
         maybeResetBuffer()
         toCopy
       } else {
-        transferError.foreach { code =>
-          throw new IOException(s"curl transfer failed with CURLcode $code")
-        }
+        transferError.foreach(code => throw AbstractCurlBackend.transferException(code))
         -1
       }
     }

@@ -1,13 +1,21 @@
 package sttp.client4
 
+import org.scalatest.BeforeAndAfterAll
+import org.scalatest.freespec.AnyFreeSpec
+import org.scalatest.matchers.should.Matchers
 import sttp.client4.curl.CurlBackend
-import sttp.client4.testing.SyncHttpTest
+import sttp.client4.testing.HttpTest.endpoint
 
 import java.io.IOException
 import scala.concurrent.duration._
 
-class CurlMultiInputStreamTest extends SyncHttpTest {
-  override implicit val backend: SyncBackend = CurlBackend(verbose = false)
+class CurlMultiInputStreamTest extends AnyFreeSpec with Matchers with BeforeAndAfterAll {
+  implicit val backend: SyncBackend = CurlBackend(verbose = false)
+
+  override protected def afterAll(): Unit = {
+    backend.close()
+    super.afterAll()
+  }
 
   "streaming InputStream" - {
     "read response body as InputStream with function" in {
@@ -147,18 +155,6 @@ class CurlMultiInputStreamTest extends SyncHttpTest {
 
     // --- Bug reproduction tests ---
 
-    "connection refused should throw a meaningful error, not NoSuchElementException" in {
-      val thrown = the[Exception] thrownBy {
-        basicRequest
-          .get(uri"http://localhost:1/nope")
-          .response(asInputStreamAlways { is =>
-            is.read()
-          })
-          .send(backend)
-      }
-      thrown shouldNot be(a[NoSuchElementException])
-    }
-
     "asBothOption with InputStream should return a valid tuple" in {
       val response = basicRequest
         .post(uri"$endpoint/echo")
@@ -224,7 +220,7 @@ class CurlMultiInputStreamTest extends SyncHttpTest {
     }
 
     "server closes connection mid-stream" in {
-      val thrown = the[Exception] thrownBy {
+      an[SttpClientException.ReadException] should be thrownBy {
         basicRequest
           .get(uri"$endpoint/error")
           .response(asInputStreamAlways { is =>
@@ -239,15 +235,13 @@ class CurlMultiInputStreamTest extends SyncHttpTest {
           })
           .send(backend)
       }
-      // Should get some kind of error, not hang forever
-      thrown should not be null
     }
 
     "read timeout during streaming" in {
-      val thrown = the[Exception] thrownBy {
+      a[SttpClientException.TimeoutException] should be thrownBy {
         basicRequest
-          .get(uri"$endpoint/timeout")
-          .readTimeout(200.milliseconds)
+          .get(uri"$endpoint/streaming/slow")
+          .readTimeout(500.milliseconds)
           .response(asInputStreamAlways { is =>
             val buf = new Array[Byte](8192)
             var n = is.read(buf)
@@ -257,7 +251,6 @@ class CurlMultiInputStreamTest extends SyncHttpTest {
           })
           .send(backend)
       }
-      thrown should not be null
     }
 
     "trickle server delivers data correctly" in {

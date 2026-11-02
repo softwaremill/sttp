@@ -141,7 +141,7 @@ val testServerSettings = Seq(
   }
 )
 
-val circeVersion: String = "0.14.16"
+val circeVersion: String = "0.14.17"
 
 val jsoniterVersion = "2.41.7"
 
@@ -662,7 +662,7 @@ lazy val okhttpBackend = (projectMatrix in file("okhttp-backend"))
     libraryDependencies ++= Seq(
       // okhttp 5 is published as a Kotlin Multiplatform library; the JVM classes live in the `okhttp-jvm` artifact
       // (the plain `okhttp` artifact only carries Gradle module metadata, which sbt/coursier doesn't resolve).
-      "com.squareup.okhttp3" % "okhttp-jvm" % "5.5.0"
+      "com.squareup.okhttp3" % "okhttp-jvm" % "5.5.1"
     )
   )
   .jvmPlatform(scalaVersions = scala2And3)
@@ -1006,7 +1006,7 @@ lazy val openTelemetryTracingZioBackend = (projectMatrix in file("observability/
   .settings(
     name := "opentelemetry-tracing-zio-backend",
     libraryDependencies ++= Seq(
-      "dev.zio" %% "zio-opentelemetry" % "3.1.19",
+      "dev.zio" %% "zio-opentelemetry" % "3.1.21",
       "io.opentelemetry.semconv" % "opentelemetry-semconv" % openTelemetrySemconvVersion,
       "io.opentelemetry" % "opentelemetry-api" % openTelemetryVersion,
       "io.opentelemetry" % "opentelemetry-sdk-testing" % openTelemetryVersion % Test
