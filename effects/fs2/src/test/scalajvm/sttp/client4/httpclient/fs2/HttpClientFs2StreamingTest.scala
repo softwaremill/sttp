@@ -37,8 +37,25 @@ class HttpClientFs2StreamingTest extends Fs2StreamingTest with HttpClientFs2Test
         .send(backend)
         .start
       _ <- started.get.timeout(5.seconds)
-      _ <- sending.cancel.timeout(5.seconds)
+      _ <- sending.cancel.timeoutAndForget(5.seconds)
       _ <- finalized.get.timeout(5.seconds)
     } yield succeed).toFuture()
+  }
+
+  "fail the request when the request body stream fails" in {
+    val error = new RuntimeException("request body failure")
+    val body = Stream.emit('a'.toByte) ++ Stream.raiseError[IO](error)
+
+    basicRequest
+      .post(uri"$endpoint/streaming/echo")
+      .streamBody(streams)(body)
+      .send(backend)
+      .attempt
+      .timeoutAndForget(10.seconds)
+      .map {
+        case Left(e)  => Iterator.iterate(e)(_.getCause).takeWhile(_ != null).toList should contain(error)
+        case Right(r) => fail(s"Expected the request to fail, got: $r")
+      }
+      .toFuture()
   }
 }
