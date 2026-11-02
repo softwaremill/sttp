@@ -14,7 +14,7 @@ import sttp.model._
 import sttp.monad.MonadError
 import sttp.monad.syntax._
 
-import java.io.{ByteArrayInputStream, IOException, InputStream}
+import java.io.{ByteArrayInputStream, IOException, InputStream, UnsupportedEncodingException}
 import java.net.{ConnectException, MalformedURLException, SocketTimeoutException, UnknownHostException}
 import java.nio.file.Files
 
@@ -150,7 +150,8 @@ abstract class AbstractCurlBackend[F[_]](_monad: MonadError[F], verbose: Boolean
         }
       }
 
-      Context.evaluateUsing(ctx => perform(using ctx))
+      // F may be evaluated many times (e.g. retries); each evaluation needs its own zone
+      monad.suspend(Context.evaluateUsing(ctx => perform(using ctx)))
     }
 
   private def adjustExceptions[T](request: GenericRequest[?, ?])(t: => F[T]): F[T] =
@@ -164,7 +165,7 @@ abstract class AbstractCurlBackend[F[_]](_monad: MonadError[F], verbose: Boolean
     implicit val z = ctx.zone
     curl.writeToBuffer()
     curl.option(WriteData, spaces.bodyResp)
-    curl.option(TimeoutMs, request.options.readTimeout.toMillis)
+    if (request.options.readTimeout.isFinite) curl.option(TimeoutMs, request.options.readTimeout.toMillis)
     curl.option(HeaderData, spaces.headersResp)
     curl.option(Url, request.uri.toString)
     setMethod(curl, request.method)
@@ -259,7 +260,7 @@ abstract class AbstractCurlBackend[F[_]](_monad: MonadError[F], verbose: Boolean
     implicit val z = ctx.zone
     curl.writeToBuffer()
     curl.option(WriteData, spaces.bodyResp)
-    curl.option(TimeoutMs, request.options.readTimeout.toMillis)
+    if (request.options.readTimeout.isFinite) curl.option(TimeoutMs, request.options.readTimeout.toMillis)
     curl.option(HeaderData, spaces.headersResp)
     curl.option(Url, request.uri.toString)
     setMethod(curl, request.method)
@@ -358,13 +359,15 @@ abstract class AbstractCurlBackend[F[_]](_monad: MonadError[F], verbose: Boolean
             }
           }
         } catch {
+          // raised as F errors: ZIO treats exceptions thrown inside flatMap as defects, which skip error handling
           case e: Throwable if !resourcesCleaned =>
             // Clean up multi + curl + spaces on failure before ownership was transferred
             val _ = multi.removeHandle(curl)
             multi.cleanup()
             curl.cleanup()
             freeSpaces(spaces)
-            throw e
+            monad.error(e)
+          case e: Throwable => monad.error(e)
         }
       }
     }
@@ -732,6 +735,7 @@ object AbstractCurlBackend {
       case Some(CurlCode.CouldntResolveHost | CurlCode.CouldntResolveProxy) => new UnknownHostException(msg)
       case Some(CurlCode.CouldntConnect)                                    => new ConnectException(msg)
       case Some(CurlCode.UnsupportedProtocol | CurlCode.UrlMalformat)       => new MalformedURLException(msg)
+      case Some(CurlCode.BadContentEncoding)                                => new UnsupportedEncodingException(msg)
       case _                                                                => new IOException(msg)
     }
   }
