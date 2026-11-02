@@ -347,6 +347,21 @@ trait HttpTest[F[_]]
       }
     }
 
+    // https://github.com/softwaremill/sttp/issues/3044
+    "send all values of a repeated header" in {
+      basicRequest
+        .get(uri"$endpoint/echo/headers")
+        .header("X-Req", "one")
+        .header("X-Req", "two", DuplicateHeaderBehavior.Add)
+        .response(asStringAlways)
+        .send(backend)
+        .toFuture()
+        .map { response =>
+          // the values might be sent as separate headers, or combined into one; header names are case-insensitive
+          response.body.toLowerCase should (include("x-req->one,x-req->two") or include("x-req->one, two"))
+        }
+    }
+
     "should gracefully handle empty GZipped 202 response without Content-Length header" in {
       // A scenario for https://github.com/softwaremill/sttp/issues/1802
       basicRequest

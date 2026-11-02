@@ -107,7 +107,7 @@ abstract class AbstractFetchBackend[F[_], S <: Streams[S]](
         if (!header.value.toLowerCase.startsWith(MediaType.MultipartFormData.toString))
           throw new IllegalArgumentException("Multipart bodies other than multipart/form-data are not supported")
       } else {
-        rheaders.set(header.name, header.value)
+        rheaders.append(header.name, header.value)
       }
     }
 
