@@ -3,15 +3,27 @@ package curl
 
 import sttp.client4.curl.CurlBackend
 import sttp.client4.curl.internal.CCurl
-import sttp.client4.testing.SyncHttpTest
+import sttp.client4.testing.{ConvertToFuture, HttpTest}
+import sttp.client4.testing.HttpTest.endpoint
+import sttp.shared.Identity
 import scalanative.unsafe.fromCString
 
 import java.io.InputStream
 import java.util.concurrent.atomic.AtomicReference
 import scala.util.Try
 
-class CurlBackendHttpTest extends SyncHttpTest {
-  override implicit val backend: SyncBackend = CurlBackend(verbose = true)
+class CurlBackendHttpTest extends HttpTest[Identity] {
+  override val backend: SyncBackend = CurlBackend(verbose = true)
+  override implicit val convertToFuture: ConvertToFuture[Identity] = ConvertToFuture.id
+
+  override def supportsHostHeaderOverride = false
+  override def supportsDeflateWrapperChecking = false
+  // covered by the thread-interruption tests below
+  override def supportsCancellation = false
+  override def supportsMaxResponseBodyLength = false
+
+  override def timeoutToNone[T](t: Identity[T], timeoutMillis: Int): Identity[Option[T]] = Some(t)
+
   "curl backend" - {
     "set user agent in requests" in {
       val response = basicRequest

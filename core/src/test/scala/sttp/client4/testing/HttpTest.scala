@@ -617,7 +617,7 @@ trait HttpTest[F[_]]
   ): Future[Assertion] =
     response.toFuture().map { resp =>
       resp.code shouldBe StatusCode(code)
-      resp.history shouldBe Symbol("empty")
+      resp.history shouldBe empty
     }
 
   "redirect" - {
