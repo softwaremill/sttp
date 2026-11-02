@@ -67,9 +67,6 @@ class FinagleBackend(client: Option[Client] = None) extends Backend[TFuture] {
 
   override implicit val monad: MonadError[TFuture] = TFutureMonadError
 
-  private def headersToMap(headers: Seq[Header]): Map[String, String] =
-    headers.map(header => header.name -> header.value).toMap
-
   private def methodToFinagle(m: Method): FMethod =
     m match {
       case Method.GET     => FMethod.Get
@@ -88,10 +85,9 @@ class FinagleBackend(client: Option[Client] = None) extends Backend[TFuture] {
     val finagleMethod = methodToFinagle(r.method)
     val url = r.uri.toString
     val (body, contentLength) = Compressor.compressIfNeeded(r, compressors)
-    val headers = {
-      val hh = headersToMap(r.headers) - HeaderNames.ContentLength
-      contentLength.fold(hh)(cl => hh.updated(HeaderNames.ContentLength, cl.toString))
-    }
+    val headers =
+      r.headers.filterNot(_.is(HeaderNames.ContentLength)) ++
+        contentLength.map(cl => Header(HeaderNames.ContentLength, cl.toString))
 
     body match {
       case FileBody(f, _) =>
@@ -112,7 +108,7 @@ class FinagleBackend(client: Option[Client] = None) extends Backend[TFuture] {
           r.httpVersion
         )
       case m: MultipartBody[_] =>
-        val requestBuilder = RequestBuilder.create().url(url).addHeaders(headers)
+        val requestBuilder = addHeaders(RequestBuilder.create().url(url), headers)
         val elements = m.parts.map(part => getBasicBodyContent(part))
         requestBuilder.add(elements).buildFormPost(true)
       // requestBuilder.addFormElement(elements: _*).buildFormPost(true)
@@ -142,7 +138,7 @@ class FinagleBackend(client: Option[Client] = None) extends Backend[TFuture] {
 
   private def buildRequest(
       url: String,
-      headers: Map[String, String],
+      headers: Seq[Header],
       method: FMethod,
       content: Option[Buf],
       httpVersion: Option[HttpVersion]
@@ -154,13 +150,19 @@ class FinagleBackend(client: Option[Client] = None) extends Backend[TFuture] {
     // RequestBuilder#url() will set the `Host` Header to the url's hostname. That is not necessarily correct,
     // when the headers parameter overrides that setting, clear the default.
     val updatedHostHeader =
-      if (headers.contains(HeaderNames.Host))
+      if (headers.exists(_.is(HeaderNames.Host)))
         defaultHostHeader.setHeader(HeaderNames.Host, Seq.empty)
       else
         defaultHostHeader
 
-    updatedHostHeader.addHeaders(headers).build(method, content)
+    addHeaders(updatedHostHeader, headers).build(method, content)
   }
+
+  private def addHeaders(
+      builder: RequestBuilder[RequestBuilder.Valid, Nothing],
+      headers: Seq[Header]
+  ): RequestBuilder[RequestBuilder.Valid, Nothing] =
+    headers.foldLeft(builder)((b, h) => b.addHeader(h.name, h.value))
 
   private def bodyFromResponseAs(onBodyReceived: () => Unit) =
     new BodyFromResponseAs[TFuture, FResponse, Nothing, Nothing] {
