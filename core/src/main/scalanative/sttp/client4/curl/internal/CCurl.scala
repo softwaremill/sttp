@@ -39,6 +39,9 @@ private[curl] trait CCurl {
   @name("sttp_curl_getinfo_pointer")
   def getInfo(handle: Ptr[Curl], info: CInt, parameter: Ptr[?]): CInt = extern
 
+  @name("sttp_curl_setopt_write_to_buffer")
+  def setoptWriteToBuffer(handle: Ptr[Curl]): CInt = extern
+
   @name("sttp_curl_get_version")
   def getVersion(): CString = extern
 
@@ -48,7 +51,7 @@ private[curl] trait CCurl {
   @name("curl_easy_cleanup")
   def cleanup(handle: Ptr[Curl]): Unit = extern
 
-  @name("curl_easy_perform")
+  @name("curl_easy_perform") @blocking
   def perform(easy_handle: Ptr[Curl]): CInt = extern
 
   @name("curl_mime_init")
@@ -100,10 +103,10 @@ private[curl] trait CCurl {
   @name("curl_multi_remove_handle")
   def multiRemoveHandle(multi: Ptr[CurlM], easy: Ptr[Curl]): CInt = extern
 
-  @name("curl_multi_perform")
+  @name("curl_multi_perform") @blocking
   def multiPerform(multi: Ptr[CurlM], running_handles: Ptr[CInt]): CInt = extern
 
-  @name("curl_multi_poll")
+  @name("curl_multi_poll") @blocking
   def multiPoll(
       multi: Ptr[CurlM],
       extra_fds: Ptr[Byte],

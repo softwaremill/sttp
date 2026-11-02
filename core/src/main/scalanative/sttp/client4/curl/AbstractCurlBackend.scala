@@ -22,8 +22,7 @@ import scala.collection.immutable.Seq
 import scala.collection.mutable.ArrayBuffer
 import scala.scalanative.libc.stdio.{fclose, fopen, FILE}
 import scala.scalanative.libc.stdlib._
-import scala.scalanative.libc.string._
-import scala.scalanative.unsafe.{CSize, Ptr, _}
+import scala.scalanative.unsafe.{Ptr, _}
 import scala.scalanative.unsigned._
 
 abstract class AbstractCurlBackend[F[_]](_monad: MonadError[F], verbose: Boolean) extends GenericBackend[F, Any] {
@@ -149,7 +148,7 @@ abstract class AbstractCurlBackend[F[_]](_monad: MonadError[F], verbose: Boolean
       ctx: Context
   ) = {
     implicit val z = ctx.zone
-    curl.option(WriteFunction, AbstractCurlBackend.wdFunc)
+    curl.writeToBuffer()
     curl.option(WriteData, spaces.bodyResp)
     curl.option(TimeoutMs, request.options.readTimeout.toMillis)
     curl.option(HeaderData, spaces.headersResp)
@@ -239,7 +238,7 @@ abstract class AbstractCurlBackend[F[_]](_monad: MonadError[F], verbose: Boolean
       ctx: Context
   ): F[Response[T]] = {
     implicit val z = ctx.zone
-    curl.option(WriteFunction, AbstractCurlBackend.wdFunc)
+    curl.writeToBuffer()
     curl.option(WriteData, spaces.bodyResp)
     curl.option(TimeoutMs, request.options.readTimeout.toMillis)
     curl.option(HeaderData, spaces.headersResp)
@@ -675,16 +674,5 @@ object AbstractCurlBackend {
       case Some(CurlCode.UnsupportedProtocol | CurlCode.UrlMalformat)       => new MalformedURLException(msg)
       case _                                                                => new IOException(msg)
     }
-  }
-
-  val wdFunc: CFuncPtr4[Ptr[Byte], CSize, CSize, Ptr[CurlFetch], CSize] = {
-    (ptr: Ptr[CChar], size: CSize, nmemb: CSize, data: Ptr[CurlFetch]) =>
-      val index: CSize = (!data)._2
-      val increment: CSize = size * nmemb
-      (!data)._2 = (!data)._2 + increment
-      (!data)._1 = realloc((!data)._1, (!data)._2 + 1.toUInt)
-      val _ = memcpy((!data)._1 + index, ptr, increment)
-      !(!data)._1.+((!data)._2) = 0.toByte
-      size * nmemb
   }
 }
