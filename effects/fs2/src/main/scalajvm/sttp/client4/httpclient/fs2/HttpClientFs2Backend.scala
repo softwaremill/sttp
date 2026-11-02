@@ -9,7 +9,6 @@ import fs2.Stream
 import fs2.io.file.Files
 import fs2.io.file.Path
 import fs2.compression.Compression
-import fs2.interop.reactivestreams.PublisherOps
 import fs2.interop.reactivestreams.StreamUnicastPublisher
 import org.reactivestreams.FlowAdapters
 import sttp.capabilities.fs2.Fs2Streams
@@ -111,9 +110,8 @@ class HttpClientFs2Backend[F[_]: Async] private (
   override protected def createSequencer: F[Sequencer[F]] = Fs2Sequencer.create
 
   override protected def lowLevelBodyToBody(p: Publisher[util.List[ByteBuffer]]): Stream[F, Byte] =
-    FlowAdapters
-      .toPublisher(p)
-      .toStreamBuffered[F](1)
+    Stream
+      .fromPublisher[F](p, chunkSize = 1)
       .flatMap(data => Stream.emits(data.asScala.map(Chunk.byteBuffer)).flatMap(Stream.chunk))
 
   override protected def cancelLowLevelBody(p: Publisher[ju.List[ByteBuffer]]): Unit = cancelPublisher(p)

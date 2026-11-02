@@ -165,6 +165,19 @@ private class HttpServer(port: Int, info: String => Unit) extends AutoCloseable 
               )
             }
           }
+        } ~
+        path("stall") {
+          get {
+            complete {
+              // sends a single chunk, then keeps the response open without sending anything more
+              HttpResponse(
+                entity = HttpEntity.Chunked.fromData(
+                  ContentTypes.`text/plain(UTF-8)`,
+                  Source.single(ByteString("a")).concat(Source.never)
+                )
+              )
+            }
+          }
         }
     } ~ pathPrefix("sse") {
       path("echo3") {
