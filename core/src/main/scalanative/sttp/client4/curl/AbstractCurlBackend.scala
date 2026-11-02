@@ -89,6 +89,19 @@ abstract class AbstractCurlBackend[F[_]](_monad: MonadError[F], verbose: Boolean
     }
   }
 
+  /* Each request uses a new curl easy handle. Depending on the response description, the transfer is run by one of:
+   *   - handleFile: when the body is saved to a file; curl writes it directly to the file
+   *   - handleBase: in all other cases, except InputStream responses; the body is read into memory
+   *   - handleBaseWithMulti: when the response might be an InputStream; uses curl's multi interface (driveUntilHeaders),
+   *     to read the response metadata before the body; an InputStream response is then streamed by
+   *     CurlMultiInputStream, while any other response is read into memory (driveToCompletion)
+   *
+   * handleFile and handleBase run the whole transfer with perform -> performCurl. In AbstractSyncCurlBackend, this
+   * drives the transfer using the multi interface on the calling thread (performInterruptibly).
+   *
+   * All loops using the multi interface wait for at most InterruptCheckIntervalMs at a time, checking if the thread is
+   * interrupted in between, so that a request can be cancelled by interrupting the thread.
+   */
   override def send[T](request: GenericRequest[T, R]): F[Response[T]] =
     adjustExceptions(request) {
       def perform(implicit ctx: Context): F[Response[T]] = {
@@ -700,7 +713,9 @@ abstract class AbstractSyncCurlBackend[F[_]](_monad: MonadError[F], verbose: Boo
 
 object AbstractCurlBackend {
 
-  /** The longest time a request might continue after the thread that sends it is interrupted. */
+  /** The longest time a request might continue after the thread that sends it is interrupted. Polls return early when
+    * there's network activity, so this only adds wake-ups while a transfer is idle.
+    */
   private[curl] val InterruptCheckIntervalMs = 100
 
   private[curl] def throwIfInterrupted(): Unit =
