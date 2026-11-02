@@ -22,6 +22,7 @@ import scala.collection.immutable.Seq
 import scala.collection.mutable.ArrayBuffer
 import scala.scalanative.libc.stdio.{fclose, fopen, FILE}
 import scala.scalanative.libc.stdlib._
+import scala.scalanative.libc.string.memcpy
 import scala.scalanative.unsafe.{Ptr, _}
 import scala.scalanative.unsigned._
 
@@ -88,6 +89,19 @@ abstract class AbstractCurlBackend[F[_]](_monad: MonadError[F], verbose: Boolean
     }
   }
 
+  /* Each request uses a new curl easy handle. Depending on the response description, the transfer is run by one of:
+   *   - handleFile: when the body is saved to a file; curl writes it directly to the file
+   *   - handleBase: in all other cases, except InputStream responses; the body is read into memory
+   *   - handleBaseWithMulti: when the response might be an InputStream; uses curl's multi interface (driveUntilHeaders),
+   *     to read the response metadata before the body; an InputStream response is then streamed by
+   *     CurlMultiInputStream, while any other response is read into memory (driveToCompletion)
+   *
+   * handleFile and handleBase run the whole transfer with perform -> performCurl. In AbstractSyncCurlBackend, this
+   * drives the transfer using the multi interface on the calling thread (performInterruptibly).
+   *
+   * All loops using the multi interface wait for at most InterruptCheckIntervalMs at a time, checking if the thread is
+   * interrupted in between, so that a request can be cancelled by interrupting the thread.
+   */
   override def send[T](request: GenericRequest[T, R]): F[Response[T]] =
     adjustExceptions(request) {
       def perform(implicit ctx: Context): F[Response[T]] = {
@@ -154,18 +168,16 @@ abstract class AbstractCurlBackend[F[_]](_monad: MonadError[F], verbose: Boolean
     curl.option(HeaderData, spaces.headersResp)
     curl.option(Url, request.uri.toString)
     setMethod(curl, request.method)
-    setRequestBody(curl, request.body, request.method).flatMap(_ => perform(curl)).flatMap { _ =>
-      curl.info(ResponseCode, spaces.httpCode)
-      val responseBody = fetchedBytes(spaces.bodyResp)
-      val (statusText, responseHeaders) = parseHeadersAndStatus(fromCString((!spaces.headersResp)._1))
-      val httpCode = StatusCode((!spaces.httpCode).toInt)
-      free((!spaces.bodyResp)._1)
-      free((!spaces.headersResp)._1)
-      free(spaces.bodyResp.asInstanceOf[Ptr[CSignedChar]])
-      free(spaces.headersResp.asInstanceOf[Ptr[CSignedChar]])
-      free(spaces.httpCode.asInstanceOf[Ptr[CSignedChar]])
-      curl.cleanup()
-
+    val response = setRequestBody(curl, request.body, request.method)
+      .flatMap(_ => perform(curl))
+      .map { _ =>
+        curl.info(ResponseCode, spaces.httpCode)
+        val responseBody = fetchedBytes(spaces.bodyResp)
+        val (statusText, responseHeaders) = parseHeadersAndStatus(fromCString((!spaces.headersResp)._1))
+        (StatusCode((!spaces.httpCode).toInt), statusText, responseHeaders, responseBody)
+      }
+      .ensure(monad.eval { curl.cleanup(); freeSpaces(spaces) })
+    monad.flatMap(response) { case (httpCode, statusText, responseHeaders, responseBody) =>
       val responseMetadata = ResponseMetadata(httpCode, statusText, responseHeaders)
 
       // the response is read into memory
@@ -187,19 +199,26 @@ abstract class AbstractCurlBackend[F[_]](_monad: MonadError[F], verbose: Boolean
 
   private def handleFile[T](request: GenericRequest[T, R], curl: CurlHandle, file: SttpFile, spaces: CurlSpaces)(
       implicit ctx: Context
-  ) = {
+  ): F[Response[T]] = {
     implicit val z = ctx.zone
     val outputPath = file.toPath.toString
     val outputFilePtr: Ptr[FILE] = fopen(toCString(outputPath), toCString("wb"))
+    if (outputFilePtr == null) {
+      curl.cleanup()
+      freeSpaces(spaces)
+      return monad.error(new IOException(s"Cannot open file for writing: $outputPath"))
+    }
     curl.option(WriteData, outputFilePtr)
     curl.option(Url, request.uri.toString)
     setMethod(curl, request.method)
-    setRequestBody(curl, request.body, request.method).flatMap(_ => perform(curl)).flatMap { _ =>
-      curl.info(ResponseCode, spaces.httpCode)
-      val httpCode = StatusCode((!spaces.httpCode).toInt)
-      free(spaces.httpCode.asInstanceOf[Ptr[CSignedChar]])
-      fclose(outputFilePtr)
-      curl.cleanup()
+    val response = setRequestBody(curl, request.body, request.method)
+      .flatMap(_ => perform(curl))
+      .map { _ =>
+        curl.info(ResponseCode, spaces.httpCode)
+        StatusCode((!spaces.httpCode).toInt)
+      }
+      .ensure(monad.eval { fclose(outputFilePtr); curl.cleanup(); freeSpaces(spaces) })
+    monad.flatMap(response) { httpCode =>
       val responseMetadata = ResponseMetadata(httpCode, "", List.empty)
       val body: F[T] = bodyFromResponseAs(request.response, responseMetadata, Left(Array.emptyByteArray))
       monad.map(body) { b =>
@@ -323,11 +342,7 @@ abstract class AbstractCurlBackend[F[_]](_monad: MonadError[F], verbose: Boolean
             val _ = multi.removeHandle(curl)
             multi.cleanup()
             curl.cleanup()
-            free((!spaces.bodyResp)._1)
-            free((!spaces.headersResp)._1)
-            free(spaces.bodyResp.asInstanceOf[Ptr[CSignedChar]])
-            free(spaces.headersResp.asInstanceOf[Ptr[CSignedChar]])
-            free(spaces.httpCode.asInstanceOf[Ptr[CSignedChar]])
+            freeSpaces(spaces)
             resourcesCleaned = true // prevent double-free in outer catch
 
             val body: F[T] = bodyFromResponseAs(request.response, responseMetadata, Left(responseBody))
@@ -348,11 +363,7 @@ abstract class AbstractCurlBackend[F[_]](_monad: MonadError[F], verbose: Boolean
             val _ = multi.removeHandle(curl)
             multi.cleanup()
             curl.cleanup()
-            free((!spaces.bodyResp)._1)
-            free((!spaces.headersResp)._1)
-            free(spaces.bodyResp.asInstanceOf[Ptr[CSignedChar]])
-            free(spaces.headersResp.asInstanceOf[Ptr[CSignedChar]])
-            free(spaces.httpCode.asInstanceOf[Ptr[CSignedChar]])
+            freeSpaces(spaces)
             throw e
         }
       }
@@ -372,6 +383,7 @@ abstract class AbstractCurlBackend[F[_]](_monad: MonadError[F], verbose: Boolean
     !code = 0L
 
     while (!runningHandles > 0) {
+      AbstractCurlBackend.throwIfInterrupted()
       val mc = multi.perform(runningHandles)
       if (mc != CurlMCode.Ok)
         throw new RuntimeException(s"curl_multi_perform failed: $mc")
@@ -383,7 +395,7 @@ abstract class AbstractCurlBackend[F[_]](_monad: MonadError[F], verbose: Boolean
       if (!runningHandles == 0) return // transfer complete (very small response)
 
       // Wait for activity
-      val pc = multi.poll(1000, null)
+      val pc = multi.poll(AbstractCurlBackend.InterruptCheckIntervalMs, null)
       if (pc != CurlMCode.Ok)
         throw new RuntimeException(s"curl_multi_poll failed in driveUntilHeaders: $pc")
     }
@@ -397,11 +409,12 @@ abstract class AbstractCurlBackend[F[_]](_monad: MonadError[F], verbose: Boolean
     !runningHandles = 1
 
     while (!runningHandles > 0) {
+      AbstractCurlBackend.throwIfInterrupted()
       val mc = multi.perform(runningHandles)
       if (mc != CurlMCode.Ok)
         throw new RuntimeException(s"curl_multi_perform failed in driveToCompletion: $mc")
       if (!runningHandles > 0) {
-        val pc = multi.poll(1000, null)
+        val pc = multi.poll(AbstractCurlBackend.InterruptCheckIntervalMs, null)
         if (pc != CurlMCode.Ok)
           throw new RuntimeException(s"curl_multi_poll failed in driveToCompletion: $pc")
       }
@@ -551,6 +564,14 @@ abstract class AbstractCurlBackend[F[_]](_monad: MonadError[F], verbose: Boolean
       case _                     => throw new IllegalArgumentException(s"Unsupported body: $body")
     }
 
+  private def freeSpaces(spaces: CurlSpaces): Unit = {
+    free((!spaces.bodyResp)._1)
+    free((!spaces.headersResp)._1)
+    free(spaces.bodyResp.asInstanceOf[Ptr[CSignedChar]])
+    free(spaces.headersResp.asInstanceOf[Ptr[CSignedChar]])
+    free(spaces.httpCode.asInstanceOf[Ptr[CSignedChar]])
+  }
+
   /** Copies the bytes to native memory; the result is valid also when `bytes` is empty. */
   private def toCBytes(bytes: Array[Byte])(implicit z: Zone): Ptr[Byte] = {
     val ptr = alloc[Byte](bytes.length + 1)
@@ -558,7 +579,7 @@ abstract class AbstractCurlBackend[F[_]](_monad: MonadError[F], verbose: Boolean
     ptr
   }
 
-  /** The bytes written so far to `fetch` by [[AbstractCurlBackend.wdFunc]]. */
+  /** The bytes written so far to `fetch` by the write callback. */
   private def fetchedBytes(fetch: Ptr[CurlFetch]): Array[Byte] = {
     val bytes = new Array[Byte]((!fetch)._2.toInt)
     if (bytes.nonEmpty) { val _ = memcpy(bytes.at(0), (!fetch)._1, (!fetch)._2) }
@@ -653,13 +674,52 @@ abstract class AbstractCurlBackend[F[_]](_monad: MonadError[F], verbose: Boolean
     }
 }
 
-/** Curl backends that performs the curl operation with a simple `curl_easy_perform`. */
+/** Curl backends that perform the curl operation on the calling thread. Interrupting that thread cancels the request
+  * with an [[InterruptedException]].
+  */
 abstract class AbstractSyncCurlBackend[F[_]](_monad: MonadError[F], verbose: Boolean)
     extends AbstractCurlBackend[F](_monad, verbose) {
-  override def performCurl(c: CurlHandle): F[CurlCode.CurlCode] = monad.unit(c.perform)
+  override def performCurl(c: CurlHandle): F[CurlCode.CurlCode] = monad.unit(performInterruptibly(c))
+
+  // using the multi interface, so that the transfer can be stopped between polls
+  private def performInterruptibly(c: CurlHandle): CurlCode.CurlCode = {
+    val multi = CurlApi.multiInit
+    val addResult = multi.addHandle(c)
+    if (addResult != CurlMCode.Ok) {
+      multi.cleanup()
+      throw new RuntimeException(s"curl_multi_add_handle failed: $addResult")
+    }
+    try {
+      val runningHandles = stackalloc[CInt]()
+      !runningHandles = 1
+      while (!runningHandles > 0) {
+        AbstractCurlBackend.throwIfInterrupted()
+        val mc = multi.perform(runningHandles)
+        if (mc != CurlMCode.Ok) throw new RuntimeException(s"curl_multi_perform failed: $mc")
+        if (!runningHandles > 0) {
+          val pc = multi.poll(AbstractCurlBackend.InterruptCheckIntervalMs, null)
+          if (pc != CurlMCode.Ok) throw new RuntimeException(s"curl_multi_poll failed: $pc")
+        }
+      }
+      val result = multi.infoReadResult(null)
+      if (result < 0) throw new RuntimeException("curl transfer finished without a result")
+      CurlCode(result)
+    } finally {
+      val _ = multi.removeHandle(c)
+      multi.cleanup()
+    }
+  }
 }
 
 object AbstractCurlBackend {
+
+  /** The longest time a request might continue after the thread that sends it is interrupted. Polls return early when
+    * there's network activity, so this only adds wake-ups while a transfer is idle.
+    */
+  private[curl] val InterruptCheckIntervalMs = 100
+
+  private[curl] def throwIfInterrupted(): Unit =
+    if (Thread.interrupted()) throw new InterruptedException()
 
   /** Maps the code of a failed transfer to an exception classified by
     * [[SttpClientException.defaultExceptionToSttpClientException]].

@@ -14,6 +14,8 @@ import java.io.{InputStream, IOException}
   * Takes ownership of the multi handle, easy handle, native body buffer, and (optionally) request header slists. All
   * resources are freed on close().
   *
+  * Interrupting the reading thread makes read() throw an [[InterruptedException]].
+  *
   * The headerLists parameter holds curl_slist pointers for request headers (from CURLOPT_HTTPHEADER). Ownership is
   * transferred here so that the slists outlive the entire transfer, as required by libcurl's contract.
   *
@@ -128,6 +130,7 @@ final class CurlMultiInputStream private[curl] (
 
   private def pumpUntilDataOrDone(): Unit = {
     while (writePos == 0 && !finished) {
+      AbstractCurlBackend.throwIfInterrupted()
       val mc = multiHandle.perform(runningHandles)
       if (mc != CurlMCode.Ok) {
         finished = true
@@ -143,7 +146,7 @@ final class CurlMultiInputStream private[curl] (
 
       if (writePos > 0) return
 
-      val pollResult = multiHandle.poll(1000, null)
+      val pollResult = multiHandle.poll(AbstractCurlBackend.InterruptCheckIntervalMs, null)
       if (pollResult != CurlMCode.Ok) {
         finished = true
         transferError = Some(-1)
