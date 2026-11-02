@@ -14,7 +14,7 @@ import sttp.model._
 import sttp.monad.MonadError
 import sttp.monad.syntax._
 
-import java.io.{ByteArrayInputStream, InputStream}
+import java.io.{ByteArrayInputStream, IOException, InputStream}
 
 import scala.collection.immutable.Seq
 import scala.collection.mutable.ArrayBuffer
@@ -152,18 +152,15 @@ abstract class AbstractCurlBackend[F[_]](_monad: MonadError[F], verbose: Boolean
     curl.option(Url, request.uri.toString)
     setMethod(curl, request.method)
     setRequestBody(curl, request.body, request.method)
-    monad.flatMap(perform(curl)) { _ =>
-      curl.info(ResponseCode, spaces.httpCode)
-      val responseBody = fromCString((!spaces.bodyResp)._1)
-      val (statusText, responseHeaders) = parseHeadersAndStatus(fromCString((!spaces.headersResp)._1))
-      val httpCode = StatusCode((!spaces.httpCode).toInt)
-      free((!spaces.bodyResp)._1)
-      free((!spaces.headersResp)._1)
-      free(spaces.bodyResp.asInstanceOf[Ptr[CSignedChar]])
-      free(spaces.headersResp.asInstanceOf[Ptr[CSignedChar]])
-      free(spaces.httpCode.asInstanceOf[Ptr[CSignedChar]])
-      curl.cleanup()
-
+    val response = perform(curl)
+      .map { _ =>
+        curl.info(ResponseCode, spaces.httpCode)
+        val responseBody = fromCString((!spaces.bodyResp)._1)
+        val (statusText, responseHeaders) = parseHeadersAndStatus(fromCString((!spaces.headersResp)._1))
+        (StatusCode((!spaces.httpCode).toInt), statusText, responseHeaders, responseBody)
+      }
+      .ensure(monad.eval { curl.cleanup(); freeSpaces(spaces) })
+    monad.flatMap(response) { case (httpCode, statusText, responseHeaders, responseBody) =>
       val responseMetadata = ResponseMetadata(httpCode, statusText, responseHeaders)
 
       // the response is read into memory
@@ -185,20 +182,26 @@ abstract class AbstractCurlBackend[F[_]](_monad: MonadError[F], verbose: Boolean
 
   private def handleFile[T](request: GenericRequest[T, R], curl: CurlHandle, file: SttpFile, spaces: CurlSpaces)(
       implicit ctx: Context
-  ) = {
+  ): F[Response[T]] = {
     implicit val z = ctx.zone
     val outputPath = file.toPath.toString
     val outputFilePtr: Ptr[FILE] = fopen(toCString(outputPath), toCString("wb"))
+    if (outputFilePtr == null) {
+      curl.cleanup()
+      freeSpaces(spaces)
+      return monad.error(new IOException(s"Cannot open file for writing: $outputPath"))
+    }
     curl.option(WriteData, outputFilePtr)
     curl.option(Url, request.uri.toString)
     setMethod(curl, request.method)
     setRequestBody(curl, request.body, request.method)
-    monad.flatMap(perform(curl)) { _ =>
-      curl.info(ResponseCode, spaces.httpCode)
-      val httpCode = StatusCode((!spaces.httpCode).toInt)
-      free(spaces.httpCode.asInstanceOf[Ptr[CSignedChar]])
-      fclose(outputFilePtr)
-      curl.cleanup()
+    val response = perform(curl)
+      .map { _ =>
+        curl.info(ResponseCode, spaces.httpCode)
+        StatusCode((!spaces.httpCode).toInt)
+      }
+      .ensure(monad.eval { fclose(outputFilePtr); curl.cleanup(); freeSpaces(spaces) })
+    monad.flatMap(response) { httpCode =>
       val responseMetadata = ResponseMetadata(httpCode, "", List.empty)
       val body: F[T] = bodyFromResponseAs(request.response, responseMetadata, Left(outputPath))
       monad.map(body) { b =>
@@ -322,11 +325,7 @@ abstract class AbstractCurlBackend[F[_]](_monad: MonadError[F], verbose: Boolean
             val _ = multi.removeHandle(curl)
             multi.cleanup()
             curl.cleanup()
-            free((!spaces.bodyResp)._1)
-            free((!spaces.headersResp)._1)
-            free(spaces.bodyResp.asInstanceOf[Ptr[CSignedChar]])
-            free(spaces.headersResp.asInstanceOf[Ptr[CSignedChar]])
-            free(spaces.httpCode.asInstanceOf[Ptr[CSignedChar]])
+            freeSpaces(spaces)
             resourcesCleaned = true // prevent double-free in outer catch
 
             val body: F[T] = bodyFromResponseAs(request.response, responseMetadata, Left(responseBody))
@@ -347,11 +346,7 @@ abstract class AbstractCurlBackend[F[_]](_monad: MonadError[F], verbose: Boolean
             val _ = multi.removeHandle(curl)
             multi.cleanup()
             curl.cleanup()
-            free((!spaces.bodyResp)._1)
-            free((!spaces.headersResp)._1)
-            free(spaces.bodyResp.asInstanceOf[Ptr[CSignedChar]])
-            free(spaces.headersResp.asInstanceOf[Ptr[CSignedChar]])
-            free(spaces.httpCode.asInstanceOf[Ptr[CSignedChar]])
+            freeSpaces(spaces)
             throw e
         }
       }
@@ -546,6 +541,14 @@ abstract class AbstractCurlBackend[F[_]](_monad: MonadError[F], verbose: Boolean
       case FileBody(f, _)        => Source.fromFile(f.toFile).mkString
       case _                     => throw new IllegalArgumentException(s"Unsupported body: $body")
     }
+
+  private def freeSpaces(spaces: CurlSpaces): Unit = {
+    free((!spaces.bodyResp)._1)
+    free((!spaces.headersResp)._1)
+    free(spaces.bodyResp.asInstanceOf[Ptr[CSignedChar]])
+    free(spaces.headersResp.asInstanceOf[Ptr[CSignedChar]])
+    free(spaces.httpCode.asInstanceOf[Ptr[CSignedChar]])
+  }
 
   private def responseSpace: CurlSpaces = {
     val bodyResp = malloc(sizeof[CurlFetch]).asInstanceOf[Ptr[CurlFetch]]
