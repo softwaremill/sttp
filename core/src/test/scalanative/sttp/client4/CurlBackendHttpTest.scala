@@ -55,7 +55,8 @@ class CurlBackendHttpTest extends SyncHttpTest {
     }
 
     "a streamed request before any response is received" in {
-      val (e, time) = interruptWhileSending(basicRequest.get(uri"$endpoint/timeout").response(asInputStreamAlways(readAll)))
+      val (e, time) =
+        interruptWhileSending(basicRequest.get(uri"$endpoint/timeout").response(asInputStreamAlways(readAll)))
       e.value shouldBe an[InterruptedException]
       time should be < 500L
     }
