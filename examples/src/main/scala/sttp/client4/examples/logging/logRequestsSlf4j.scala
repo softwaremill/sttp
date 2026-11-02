@@ -2,8 +2,8 @@
 
 //> using dep com.softwaremill.sttp.client4::circe:4.0.27
 //> using dep com.softwaremill.sttp.client4::slf4j-backend:4.0.27
-//> using dep io.circe::circe-generic:0.14.16
-//> using dep ch.qos.logback:logback-classic:1.6.5
+//> using dep io.circe::circe-generic:0.14.17
+//> using dep ch.qos.logback:logback-classic:1.6.6
 
 package sttp.client4.examples.logging
 

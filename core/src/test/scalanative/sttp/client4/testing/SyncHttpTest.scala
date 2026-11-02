@@ -243,6 +243,18 @@ trait SyncHttpTest
       response.contentType should be(Some("text/plain; charset=UTF-8"))
       response.contentLength should be(Some(2L))
     }
+
+    // https://github.com/softwaremill/sttp/issues/3044
+    "send all values of a repeated header" in {
+      val response = basicRequest
+        .get(uri"$endpoint/echo/headers")
+        .header("X-Req", "one")
+        .header("X-Req", "two", DuplicateHeaderBehavior.Add)
+        .response(asStringAlways)
+        .send(backend)
+      // the values might be sent as separate headers, or combined into one; header names are case-insensitive
+      response.body.toLowerCase should (include("x-req->one,x-req->two") or include("x-req->one, two"))
+    }
   }
 
   "errors" - {
