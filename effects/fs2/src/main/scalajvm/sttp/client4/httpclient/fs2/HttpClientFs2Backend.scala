@@ -44,6 +44,7 @@ import java.util
 import java.{util => ju}
 import java.util.concurrent.Flow
 import java.util.concurrent.Flow.Publisher
+import java.util.concurrent.RejectedExecutionException
 import scala.collection.JavaConverters._
 import cats.effect.kernel.Resource.ExitCase
 
@@ -95,15 +96,27 @@ class HttpClientFs2Backend[F[_]: Async] private (
     new Flow.Publisher[ByteBuffer] {
       override def subscribe(subscriber: Flow.Subscriber[_ >: ByteBuffer]): Unit = {
         ju.Objects.requireNonNull(subscriber)
-        dispatcher.unsafeRunAndForget(
-          stream.chunks
-            .map(_.toByteBuffer)
-            .subscribe(subscriber.asInstanceOf[Flow.Subscriber[ByteBuffer]])
-            .compile
-            .drain
-        )
+        try
+          dispatcher.unsafeRunAndForget(
+            stream.chunks
+              .map(_.toByteBuffer)
+              .subscribe(subscriber.asInstanceOf[Flow.Subscriber[ByteBuffer]])
+              .compile
+              .drain
+          )
+        catch {
+          // the dispatcher is closed; the spec (rule 1.9) requires signalling the error instead of throwing
+          case e @ (_: IllegalStateException | _: RejectedExecutionException) =>
+            subscriber.onSubscribe(NoopSubscription)
+            subscriber.onError(e)
+        }
       }
     }
+
+  private object NoopSubscription extends Flow.Subscription {
+    override def request(n: Long): Unit = ()
+    override def cancel(): Unit = ()
+  }
 
   override protected def createBodyHandler: HttpResponse.BodyHandler[Publisher[util.List[ByteBuffer]]] =
     BodyHandlers.ofPublisher()
