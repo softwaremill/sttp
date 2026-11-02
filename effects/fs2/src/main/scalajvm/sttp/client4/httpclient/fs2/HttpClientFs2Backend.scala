@@ -9,8 +9,6 @@ import fs2.Stream
 import fs2.io.file.Files
 import fs2.io.file.Path
 import fs2.compression.Compression
-import fs2.interop.reactivestreams.StreamUnicastPublisher
-import org.reactivestreams.FlowAdapters
 import sttp.capabilities.fs2.Fs2Streams
 import sttp.client4._
 import sttp.client4.compression.CompressionHandlers
@@ -44,6 +42,7 @@ import java.io.File
 import java.io.InputStream
 import java.util
 import java.{util => ju}
+import java.util.concurrent.Flow
 import java.util.concurrent.Flow.Publisher
 import scala.collection.JavaConverters._
 import cats.effect.kernel.Resource.ExitCase
@@ -87,15 +86,23 @@ class HttpClientFs2Backend[F[_]: Async] private (
         }
       override def compressors: List[Compressor[R]] = compressionHandlers.compressors
       override def streamToPublisher(stream: Stream[F, Byte]): F[HttpRequest.BodyPublisher] =
-        monad.eval(
-          BodyPublishers.fromPublisher(
-            FlowAdapters.toFlowPublisher(
-              StreamUnicastPublisher(stream.chunks.map(_.toByteBuffer), dispatcher): org.reactivestreams.Publisher[
-                ByteBuffer
-              ]
-            )
-          )
+        monad.eval(BodyPublishers.fromPublisher(byteBufferPublisher(stream)))
+    }
+
+  /** A publisher of the stream's chunks, which runs the stream once per subscriber using the backend's dispatcher. */
+  // fs2's Stream#toPublisherResource requires a Resource scope, which isn't available when creating the request body
+  private def byteBufferPublisher(stream: Stream[F, Byte]): Flow.Publisher[ByteBuffer] =
+    new Flow.Publisher[ByteBuffer] {
+      override def subscribe(subscriber: Flow.Subscriber[_ >: ByteBuffer]): Unit = {
+        ju.Objects.requireNonNull(subscriber)
+        dispatcher.unsafeRunAndForget(
+          stream.chunks
+            .map(_.toByteBuffer)
+            .subscribe(subscriber.asInstanceOf[Flow.Subscriber[ByteBuffer]])
+            .compile
+            .drain
         )
+      }
     }
 
   override protected def createBodyHandler: HttpResponse.BodyHandler[Publisher[util.List[ByteBuffer]]] =
