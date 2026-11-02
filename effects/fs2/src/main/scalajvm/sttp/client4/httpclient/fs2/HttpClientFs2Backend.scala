@@ -9,9 +9,6 @@ import fs2.Stream
 import fs2.io.file.Files
 import fs2.io.file.Path
 import fs2.compression.Compression
-import fs2.interop.reactivestreams.PublisherOps
-import fs2.interop.reactivestreams.StreamUnicastPublisher
-import org.reactivestreams.FlowAdapters
 import sttp.capabilities.fs2.Fs2Streams
 import sttp.client4._
 import sttp.client4.compression.CompressionHandlers
@@ -45,7 +42,9 @@ import java.io.File
 import java.io.InputStream
 import java.util
 import java.{util => ju}
+import java.util.concurrent.Flow
 import java.util.concurrent.Flow.Publisher
+import java.util.concurrent.RejectedExecutionException
 import scala.collection.JavaConverters._
 import cats.effect.kernel.Resource.ExitCase
 
@@ -88,16 +87,36 @@ class HttpClientFs2Backend[F[_]: Async] private (
         }
       override def compressors: List[Compressor[R]] = compressionHandlers.compressors
       override def streamToPublisher(stream: Stream[F, Byte]): F[HttpRequest.BodyPublisher] =
-        monad.eval(
-          BodyPublishers.fromPublisher(
-            FlowAdapters.toFlowPublisher(
-              StreamUnicastPublisher(stream.chunks.map(_.toByteBuffer), dispatcher): org.reactivestreams.Publisher[
-                ByteBuffer
-              ]
-            )
-          )
-        )
+        monad.eval(BodyPublishers.fromPublisher(byteBufferPublisher(stream)))
     }
+
+  /** A publisher of the stream's chunks, which runs the stream once per subscriber using the backend's dispatcher. */
+  // fs2's Stream#toPublisherResource requires a Resource scope, which isn't available when creating the request body
+  private def byteBufferPublisher(stream: Stream[F, Byte]): Flow.Publisher[ByteBuffer] =
+    new Flow.Publisher[ByteBuffer] {
+      override def subscribe(subscriber: Flow.Subscriber[_ >: ByteBuffer]): Unit = {
+        ju.Objects.requireNonNull(subscriber)
+        try
+          dispatcher.unsafeRunAndForget(
+            stream.chunks
+              .map(_.toByteBuffer)
+              .subscribe(subscriber.asInstanceOf[Flow.Subscriber[ByteBuffer]])
+              .compile
+              .drain
+          )
+        catch {
+          // the dispatcher is closed; the spec (rule 1.9) requires signalling the error instead of throwing
+          case e @ (_: IllegalStateException | _: RejectedExecutionException) =>
+            subscriber.onSubscribe(NoopSubscription)
+            subscriber.onError(e)
+        }
+      }
+    }
+
+  private object NoopSubscription extends Flow.Subscription {
+    override def request(n: Long): Unit = ()
+    override def cancel(): Unit = ()
+  }
 
   override protected def createBodyHandler: HttpResponse.BodyHandler[Publisher[util.List[ByteBuffer]]] =
     BodyHandlers.ofPublisher()
@@ -111,9 +130,8 @@ class HttpClientFs2Backend[F[_]: Async] private (
   override protected def createSequencer: F[Sequencer[F]] = Fs2Sequencer.create
 
   override protected def lowLevelBodyToBody(p: Publisher[util.List[ByteBuffer]]): Stream[F, Byte] =
-    FlowAdapters
-      .toPublisher(p)
-      .toStreamBuffered[F](1)
+    Stream
+      .fromPublisher[F](p, chunkSize = 1)
       .flatMap(data => Stream.emits(data.asScala.map(Chunk.byteBuffer)).flatMap(Stream.chunk))
 
   override protected def cancelLowLevelBody(p: Publisher[ju.List[ByteBuffer]]): Unit = cancelPublisher(p)
