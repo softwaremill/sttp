@@ -14,7 +14,8 @@ import sttp.model._
 import sttp.monad.MonadError
 import sttp.monad.syntax._
 
-import java.io.{ByteArrayInputStream, InputStream}
+import java.io.{ByteArrayInputStream, IOException, InputStream}
+import java.net.{ConnectException, MalformedURLException, SocketTimeoutException, UnknownHostException}
 import java.nio.file.Files
 
 import scala.collection.immutable.Seq
@@ -31,8 +32,11 @@ abstract class AbstractCurlBackend[F[_]](_monad: MonadError[F], verbose: Boolean
   /** Given a [[CurlHandle]], perform the request and return a [[CurlCode]]. */
   protected def performCurl(c: CurlHandle): F[CurlCode]
 
-  /** Same as [[performCurl]], but also checks and throws runtime exceptions on bad [[CurlCode]]s. */
-  private final def perform(c: CurlHandle) = performCurl(c).flatMap(lift)
+  /** Same as [[performCurl]], but also fails with an exception on bad [[CurlCode]]s. */
+  private final def perform(c: CurlHandle): F[CurlCode] = performCurl(c).flatMap[CurlCode] {
+    case CurlCode.Ok => monad.unit(CurlCode.Ok)
+    case code        => monad.error(AbstractCurlBackend.transferException(code.id))
+  }
 
   type R = Any & Effect[F]
 
@@ -261,10 +265,8 @@ abstract class AbstractCurlBackend[F[_]](_monad: MonadError[F], verbose: Boolean
           // the failure is only visible via httpCode==0 and curl_multi_info_read.
           if (httpCode == StatusCode(0)) {
             val transferResult = multi.infoReadResult(null)
-            throw new RuntimeException(
-              s"Request to ${request.uri} failed: no HTTP response received" +
-                (if (transferResult > 0) s" (CURLcode $transferResult)" else "")
-            )
+            if (transferResult > 0) throw AbstractCurlBackend.transferException(transferResult)
+            else throw new RuntimeException(s"Request to ${request.uri} failed: no HTTP response received")
           }
 
           val (statusText, responseHeaders) = parseHeadersAndStatus(fromCString((!spaces.headersResp)._1))
@@ -314,6 +316,8 @@ abstract class AbstractCurlBackend[F[_]](_monad: MonadError[F], verbose: Boolean
             // NON-STREAMING FALLBACK (e.g., error branch of asEither)
             // Drain remaining body, then handle normally
             driveToCompletion(multi)
+            val transferResult = multi.infoReadResult(null)
+            if (transferResult > 0) throw AbstractCurlBackend.transferException(transferResult)
 
             val responseBody = fetchedBytes(spaces.bodyResp)
             // Clean up multi resources
@@ -657,6 +661,22 @@ abstract class AbstractSyncCurlBackend[F[_]](_monad: MonadError[F], verbose: Boo
 }
 
 object AbstractCurlBackend {
+
+  /** Maps the code of a failed transfer to an exception classified by
+    * [[SttpClientException.defaultExceptionToSttpClientException]].
+    */
+  private[curl] def transferException(code: Int): Exception = {
+    val curlCode = CurlCode.values.find(_.id == code)
+    val msg = s"Command failed with status ${curlCode.getOrElse(code)}"
+    curlCode match {
+      case Some(CurlCode.OperationTimedOut)                                 => new SocketTimeoutException(msg)
+      case Some(CurlCode.CouldntResolveHost | CurlCode.CouldntResolveProxy) => new UnknownHostException(msg)
+      case Some(CurlCode.CouldntConnect)                                    => new ConnectException(msg)
+      case Some(CurlCode.UnsupportedProtocol | CurlCode.UrlMalformat)       => new MalformedURLException(msg)
+      case _                                                                => new IOException(msg)
+    }
+  }
+
   val wdFunc: CFuncPtr4[Ptr[Byte], CSize, CSize, Ptr[CurlFetch], CSize] = {
     (ptr: Ptr[CChar], size: CSize, nmemb: CSize, data: Ptr[CurlFetch]) =>
       val index: CSize = (!data)._2
