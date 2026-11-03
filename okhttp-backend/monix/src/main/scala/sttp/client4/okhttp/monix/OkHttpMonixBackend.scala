@@ -42,6 +42,11 @@ class OkHttpMonixBackend private (
     with WebSocketStreamBackend[Task, MonixStreams] {
   override val streams: MonixStreams = MonixStreams
 
+  // writing the request body blocks on socket I/O, so it shouldn't run on the default (compute) scheduler
+  private val requestBodyScheduler = Scheduler.io("sttp-okhttp-monix-request-body")
+
+  override def close(): Task[Unit] = super.close().guarantee(Task.eval(requestBodyScheduler.shutdown()))
+
   override protected val bodyToOkHttp: BodyToOkHttp[Task, MonixStreams] = new BodyToOkHttp[Task, MonixStreams] {
     override val streams: MonixStreams = MonixStreams
 
@@ -55,16 +60,25 @@ class OkHttpMonixBackend private (
 
         override def writeTo(sink: BufferedSink): Unit = {
           val done = Promise[Unit]()
-          val running =
-            stream.foreachL(chunk => { sink.write(chunk); () }).runAsync(r => done.tryComplete(r.toTry): Unit)
+          val running = stream
+            .foreachL(chunk => { sink.write(chunk); () })
+            .executeOn(requestBodyScheduler)
+            .runAsync { r =>
+              val _ = done.tryComplete(r.toTry)
+            }
           cancelled.future.foreach { _ =>
             running.cancel()
-            done.tryFailure(new IOException("Request cancelled")): Unit
+            val _ = done.tryFailure(new IOException("Request cancelled"))
           }
-          Await.result(done.future, Duration.Inf)
+          try Await.result(done.future, Duration.Inf)
+          catch {
+            case e: Throwable =>
+              running.cancel()
+              throw e
+          }
         }
 
-        override def cancel(): Unit = cancelled.trySuccess(()): Unit
+        override def cancel(): Unit = { val _ = cancelled.trySuccess(()) }
         override def contentType(): MediaType = mt
         override def contentLength(): Long = cl.getOrElse(super.contentLength())
       }
