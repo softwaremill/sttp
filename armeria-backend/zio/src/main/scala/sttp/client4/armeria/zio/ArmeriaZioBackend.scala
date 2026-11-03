@@ -1,9 +1,6 @@
 package sttp.client4.armeria.zio
 
-import _root_.zio.interop.reactivestreams.{
-  publisherToStream => publisherToZioStream,
-  streamToPublisher => zioStreamToPublisher
-}
+import _root_.zio.interop.reactivestreams.{publisherToStream => publisherToZioStream}
 import _root_.zio.{Chunk, Task, _}
 import com.linecorp.armeria.client.WebClient
 import com.linecorp.armeria.common.HttpData
@@ -12,6 +9,7 @@ import org.reactivestreams.Publisher
 import sttp.capabilities.zio.ZioStreams
 import sttp.client4.armeria.ArmeriaWebClient.newClient
 import sttp.client4.armeria.{AbstractArmeriaBackend, BodyFromStreamMessage}
+import sttp.client4.impl.zio.InterruptibleStreamPublisher
 import sttp.client4.impl.zio.RIOMonadAsyncError
 import sttp.client4.{wrappers, BackendOptions, StreamBackend}
 import sttp.monad.MonadAsyncError
@@ -39,7 +37,7 @@ private final class ArmeriaZioBackend(runtime: Runtime[Any], client: WebClient, 
   override protected def streamToPublisher(stream: Stream[Throwable, Byte]): Publisher[HttpData] =
     Unsafe.unsafeCompat { implicit u =>
       runtime.unsafe
-        .run(stream.mapChunks(c => Chunk.single(HttpData.wrap(c.toArray))).toPublisher)
+        .run(InterruptibleStreamPublisher(stream.mapChunks(c => Chunk.single(HttpData.wrap(c.toArray)))))
         .getOrThrowFiberFailure()
     }
 

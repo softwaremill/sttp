@@ -39,6 +39,24 @@ abstract class StreamingTest[F[_], S]
 
   protected def supportsStreamingMultipartParts = true
 
+  /** Whether cancelling the effect cancels the request, along with its streamed bodies. Only checked on the JVM. */
+  protected def supportsCancellation = true
+
+  /** Cancels `t` if it doesn't complete within the given time, returning `None` in that case. */
+  def timeoutToNone[T](t: F[T], timeoutMillis: Int): F[Option[T]]
+
+  /** A stream which emits `chunk`, then calls `onStarted`, and then never ends. `onFinalized` is called when the stream
+    * is finalized, e.g. when it's cancelled.
+    */
+  def neverEndingBodyProducer(
+      chunk: Array[Byte],
+      onStarted: () => Unit,
+      onFinalized: () => Unit
+  ): streams.BinaryStream
+
+  /** A stream which emits `chunk`, and then fails with `error`. */
+  def failingBodyProducer(chunk: Array[Byte], error: Throwable): streams.BinaryStream
+
   "stream request body" in {
     basicRequest
       .post(uri"$endpoint/streaming/echo")

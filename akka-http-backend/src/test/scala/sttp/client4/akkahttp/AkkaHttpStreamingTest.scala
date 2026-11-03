@@ -34,6 +34,24 @@ class AkkaHttpStreamingTest extends StreamingTest[Future, AkkaStreams] {
   override def bodyConsumer(stream: Source[ByteString, Any]): Future[String] =
     stream.map(_.utf8String).runReduce(_ + _)
 
+  // a Future can't be cancelled
+  override protected def supportsCancellation: Boolean = false
+
+  override def timeoutToNone[T](t: Future[T], timeoutMillis: Int): Future[Option[T]] = t.map(Some(_))
+
+  override def neverEndingBodyProducer(
+      chunk: Array[Byte],
+      onStarted: () => Unit,
+      onFinalized: () => Unit
+  ): Source[ByteString, Any] =
+    Source
+      .single(ByteString(chunk))
+      .concat(Source.lazySource { () => onStarted(); Source.never[ByteString] })
+      .watchTermination()((_, done) => done.onComplete(_ => onFinalized()))
+
+  override def failingBodyProducer(chunk: Array[Byte], error: Throwable): Source[ByteString, Any] =
+    Source.single(ByteString(chunk)).concat(Source.failed(error))
+
   override def sseConsumer(stream: Source[ByteString, Any]): Future[List[ServerSentEvent]] =
     stream.via(AkkaHttpServerSentEvents.parse).runFold(List.empty[ServerSentEvent]) { case (list, event) =>
       list :+ event

@@ -7,6 +7,9 @@ import sttp.model.sse.ServerSentEvent
 import sttp.client4.testing.ConvertToFuture
 import sttp.client4.testing.streaming.StreamingTest
 
+import java.util.concurrent.TimeoutException
+import scala.concurrent.duration.DurationInt
+
 abstract class MonixStreamingTest extends StreamingTest[Task, MonixStreams] {
   override val streams: MonixStreams = MonixStreams
 
@@ -23,4 +26,22 @@ abstract class MonixStreamingTest extends StreamingTest[Task, MonixStreams] {
     stream.transform(MonixServerSentEvents.parse).foldLeftL(List.empty[ServerSentEvent]) { case (list, event) =>
       list :+ event
     }
+
+  override def timeoutToNone[T](t: Task[T], timeoutMillis: Int): Task[Option[T]] =
+    t.map(Some(_))
+      .timeout(timeoutMillis.milliseconds)
+      .onErrorRecover { case _: TimeoutException =>
+        None
+      }
+
+  override def neverEndingBodyProducer(
+      chunk: Array[Byte],
+      onStarted: () => Unit,
+      onFinalized: () => Unit
+  ): Observable[Array[Byte]] =
+    (Observable.now(chunk) ++ Observable.eval(onStarted()).flatMap(_ => Observable.never[Array[Byte]]))
+      .guarantee(Task(onFinalized()))
+
+  override def failingBodyProducer(chunk: Array[Byte], error: Throwable): Observable[Array[Byte]] =
+    Observable.now(chunk) ++ Observable.raiseError(error)
 }

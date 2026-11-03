@@ -5,9 +5,9 @@ import cats.effect.kernel.{Async, Resource, Sync}
 import com.linecorp.armeria.client.WebClient
 import com.linecorp.armeria.common.HttpData
 import com.linecorp.armeria.common.stream.StreamMessage
-import fs2.interop.reactivestreams._
+import fs2.interop.reactivestreams.StreamUnicastPublisher
 import fs2.{Chunk, Stream}
-import org.reactivestreams.Publisher
+import org.reactivestreams.{FlowAdapters, Publisher}
 import sttp.capabilities.fs2.Fs2Streams
 import sttp.client4.armeria.ArmeriaWebClient.newClient
 import sttp.client4.armeria.{AbstractArmeriaBackend, BodyFromStreamMessage}
@@ -31,7 +31,10 @@ private final class ArmeriaFs2Backend[F[_]: Async](client: WebClient, closeFacto
       override implicit val monad: MonadAsyncError[F] = new CatsMonadAsyncError
 
       override def publisherToStream(streamMessage: StreamMessage[HttpData]): Stream[F, Byte] =
-        streamMessage.toStream[F].flatMap(httpData => Stream.chunk(Chunk.array(httpData.array())))
+        // fs2's reactive-streams interop doesn't support cancellation, see #2963
+        Stream
+          .fromPublisher[F](FlowAdapters.toFlowPublisher(streamMessage), chunkSize = 1)
+          .flatMap(httpData => Stream.chunk(Chunk.array(httpData.array())))
     }
 
   override protected def streamToPublisher(stream: Stream[F, Byte]): Publisher[HttpData] =

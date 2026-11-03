@@ -51,7 +51,13 @@ abstract class OkHttpAsyncBackend[F[_], S <: Streams[S], P](
           }
         })
 
-        Canceler(() => call.cancel())
+        Canceler { () =>
+          call.cancel()
+          nativeRequest.body() match {
+            case b: CancellableRequestBody => b.cancel()
+            case _                         => ()
+          }
+        }
       })
     } {
       monad.eval {

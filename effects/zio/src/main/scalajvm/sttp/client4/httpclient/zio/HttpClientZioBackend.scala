@@ -15,6 +15,7 @@ import sttp.client4.impl.zio.DeflateZioCompressor
 import sttp.client4.impl.zio.DeflateZioDecompressor
 import sttp.client4.impl.zio.GZipZioCompressor
 import sttp.client4.impl.zio.GZipZioDecompressor
+import sttp.client4.impl.zio.InterruptibleStreamPublisher
 import sttp.client4.impl.zio.RIOMonadAsyncError
 import sttp.client4.impl.zio.ZioSimpleQueue
 import sttp.client4.internal._
@@ -100,13 +101,9 @@ class HttpClientZioBackend private (
           ): streams.BinaryStream = stream1.concat(stream2)
           override def toPublisher(stream: streams.BinaryStream): Task[BodyPublisher] = streamToPublisher(stream)
         }
-      override def streamToPublisher(stream: ZStream[Any, Throwable, Byte]): Task[BodyPublisher] = {
-        import _root_.zio.interop.reactivestreams.{streamToPublisher => zioStreamToPublisher}
-        val publisher = stream.mapChunks(byteChunk => Chunk(ByteBuffer.wrap(byteChunk.toArray))).toPublisher
-        publisher.map { pub =>
-          BodyPublishers.fromPublisher(FlowAdapters.toFlowPublisher(pub))
-        }
-      }
+      override def streamToPublisher(stream: ZStream[Any, Throwable, Byte]): Task[BodyPublisher] =
+        InterruptibleStreamPublisher(stream.mapChunks(byteChunk => Chunk(ByteBuffer.wrap(byteChunk.toArray))))
+          .map(pub => BodyPublishers.fromPublisher(FlowAdapters.toFlowPublisher(pub)))
       override def compressors: List[Compressor[R]] = compressionHandlers.compressors
     }
 
