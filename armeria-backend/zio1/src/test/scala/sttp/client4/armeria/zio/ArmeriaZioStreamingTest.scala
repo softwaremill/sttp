@@ -20,4 +20,7 @@ class ArmeriaZioStreamingTest extends ZioStreamingTest with RetryTests {
     )
 
   override protected def supportsStreamingMultipartParts: Boolean = false
+
+  // zio1's reactive-streams interop doesn't interrupt a stream waiting for data when its subscription is cancelled
+  override protected def supportsCancellation: Boolean = false
 }

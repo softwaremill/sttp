@@ -12,7 +12,6 @@ import sttp.client4.compression.CompressionHandlers
 import sttp.client4.compression.Compressor
 import sttp.client4.httpclient.HttpClientAsyncBackend
 import sttp.client4.httpclient.HttpClientBackend
-import sttp.client4.impl.zio.InterruptibleStreamPublisher
 import sttp.client4.impl.zio.RIOMonadAsyncError
 import sttp.client4.impl.zio.ZioSimpleQueue
 import sttp.client4.internal._
@@ -87,9 +86,13 @@ class HttpClientZioBackend private (
       override implicit def monad: MonadError[Task] = self.monad
       override val multiPartBodyBuilder: MultipartBodyBuilder[streams.BinaryStream, Task] =
         new NonStreamMultipartBodyBuilder[streams.BinaryStream, Task] {}
-      override def streamToPublisher(stream: ZStream[Any, Throwable, Byte]): Task[BodyPublisher] =
-        InterruptibleStreamPublisher(stream.mapChunks(byteChunk => Chunk(ByteBuffer.wrap(byteChunk.toArray))))
-          .map(pub => BodyPublishers.fromPublisher(FlowAdapters.toFlowPublisher(pub)))
+      override def streamToPublisher(stream: ZStream[Any, Throwable, Byte]): Task[BodyPublisher] = {
+        import _root_.zio.interop.reactivestreams.{streamToPublisher => zioStreamToPublisher}
+        val publisher = stream.mapChunks(byteChunk => Chunk(ByteBuffer.wrap(byteChunk.toArray))).toPublisher
+        publisher.map { pub =>
+          BodyPublishers.fromPublisher(FlowAdapters.toFlowPublisher(pub))
+        }
+      }
       override def compressors: List[Compressor[R]] = compressionHandlers.compressors
     }
 
