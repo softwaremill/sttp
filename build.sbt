@@ -767,11 +767,6 @@ lazy val armeriaFs2Ce2Backend =
 
 lazy val armeriaFs2Backend =
   armeriaBackendProject("fs2")
-    .settings(
-      libraryDependencies ++= Seq(
-        "co.fs2" %% "fs2-reactive-streams" % fs2_3_version
-      )
-    )
     .dependsOn(fs2 % compileAndTest)
 
 lazy val armeriaCatsCe2Backend =

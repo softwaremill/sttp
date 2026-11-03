@@ -47,8 +47,6 @@ class FetchFs2Backend[F[_]: Async] private (fetchOptions: FetchOptions, customiz
   override protected def handleResponseAsStream(response: Response): F[(streams.BinaryStream, () => F[Unit])] = {
     Async[F].delay {
       lazy val reader = response.body.getReader()
-      def read() = Async[F].fromFuture(Async[F].delay(reader.read().toFuture))
-
       val cancel = Async[F].async[Unit] { callback =>
         Async[F]
           .delay {
@@ -67,6 +65,9 @@ class FetchFs2Backend[F[_]: Async] private (fetchOptions: FetchOptions, customiz
           }
           .as(None)
       }
+
+      // cancelling the reader completes a pending read, which would otherwise never complete if no data arrives
+      def read() = Async[F].fromFutureCancelable(Async[F].delay((reader.read().toFuture, cancel.voidError)))
 
       val stream = Stream
         .unfoldChunkEval(()) { case () =>

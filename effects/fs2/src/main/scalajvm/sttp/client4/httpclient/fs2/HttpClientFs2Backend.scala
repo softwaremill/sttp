@@ -20,6 +20,7 @@ import sttp.client4.impl.fs2.PlatformDeflateFs2Compressor
 import sttp.client4.impl.fs2.DeflateFs2Decompressor
 import sttp.client4.impl.fs2.Fs2SimpleQueue
 import sttp.client4.impl.fs2.PlatformGZipFs2Compressor
+import sttp.client4.impl.fs2.StreamFlowPublisher
 import sttp.client4.impl.fs2.GZipFs2Decompressor
 import sttp.client4.internal.httpclient.BodyFromHttpClient
 import sttp.client4.internal.httpclient.BodyToHttpClient
@@ -42,9 +43,7 @@ import java.io.File
 import java.io.InputStream
 import java.util
 import java.{util => ju}
-import java.util.concurrent.Flow
 import java.util.concurrent.Flow.Publisher
-import java.util.concurrent.RejectedExecutionException
 import scala.collection.JavaConverters._
 import cats.effect.kernel.Resource.ExitCase
 
@@ -87,36 +86,8 @@ class HttpClientFs2Backend[F[_]: Async] private (
         }
       override def compressors: List[Compressor[R]] = compressionHandlers.compressors
       override def streamToPublisher(stream: Stream[F, Byte]): F[HttpRequest.BodyPublisher] =
-        monad.eval(BodyPublishers.fromPublisher(byteBufferPublisher(stream)))
+        monad.eval(BodyPublishers.fromPublisher(StreamFlowPublisher(stream.chunks.map(_.toByteBuffer), dispatcher)))
     }
-
-  /** A publisher of the stream's chunks, which runs the stream once per subscriber using the backend's dispatcher. */
-  // fs2's Stream#toPublisherResource requires a Resource scope, which isn't available when creating the request body
-  private def byteBufferPublisher(stream: Stream[F, Byte]): Flow.Publisher[ByteBuffer] =
-    new Flow.Publisher[ByteBuffer] {
-      override def subscribe(subscriber: Flow.Subscriber[_ >: ByteBuffer]): Unit = {
-        ju.Objects.requireNonNull(subscriber)
-        try
-          dispatcher.unsafeRunAndForget(
-            stream.chunks
-              .map(_.toByteBuffer)
-              .subscribe(subscriber.asInstanceOf[Flow.Subscriber[ByteBuffer]])
-              .compile
-              .drain
-          )
-        catch {
-          // the dispatcher is closed; the spec (rule 1.9) requires signalling the error instead of throwing
-          case e @ (_: IllegalStateException | _: RejectedExecutionException) =>
-            subscriber.onSubscribe(NoopSubscription)
-            subscriber.onError(e)
-        }
-      }
-    }
-
-  private object NoopSubscription extends Flow.Subscription {
-    override def request(n: Long): Unit = ()
-    override def cancel(): Unit = ()
-  }
 
   override protected def createBodyHandler: HttpResponse.BodyHandler[Publisher[util.List[ByteBuffer]]] =
     BodyHandlers.ofPublisher()

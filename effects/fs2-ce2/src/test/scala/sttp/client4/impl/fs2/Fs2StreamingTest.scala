@@ -22,4 +22,15 @@ trait Fs2StreamingTest extends StreamingTest[IO, Fs2Streams[IO]] with CatsTestBa
 
   def sseConsumer(stream: streams.BinaryStream): IO[List[ServerSentEvent]] =
     stream.through(Fs2ServerSentEvents.parse).compile.toList
+
+  override def neverEndingBodyProducer(
+      chunk: Array[Byte],
+      onStarted: () => Unit,
+      onFinalized: () => Unit
+  ): Stream[IO, Byte] =
+    (Stream.chunk(Chunk.array(chunk)) ++ Stream.eval_(IO(onStarted())) ++ Stream.never[IO])
+      .onFinalize(IO(onFinalized()))
+
+  override def failingBodyProducer(chunk: Array[Byte], error: Throwable): Stream[IO, Byte] =
+    Stream.chunk(Chunk.array(chunk)) ++ Stream.raiseError[IO](error)
 }

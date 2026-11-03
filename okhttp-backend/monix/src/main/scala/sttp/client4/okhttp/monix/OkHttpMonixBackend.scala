@@ -1,13 +1,11 @@
 package sttp.client4.okhttp.monix
 
 import java.io.InputStream
-import java.util.concurrent.ArrayBlockingQueue
+import java.io.IOException
 import cats.effect.Resource
 import monix.eval.Task
-import monix.execution.Ack.Continue
-import monix.execution.{Ack, Scheduler}
+import monix.execution.Scheduler
 import monix.reactive.Observable
-import monix.reactive.observers.Subscriber
 import okhttp3.{MediaType, OkHttpClient, RequestBody => OkHttpRequestBody}
 import okio.BufferedSink
 import sttp.capabilities.WebSockets
@@ -15,13 +13,14 @@ import sttp.capabilities.monix.MonixStreams
 import sttp.client4.impl.monix.{MonixSimpleQueue, MonixWebSockets, TaskMonadAsyncError}
 import sttp.client4.internal.ws.SimpleQueue
 import sttp.monad.MonadError
-import sttp.client4.okhttp.{BodyFromOkHttp, BodyToOkHttp, OkHttpAsyncBackend, OkHttpBackend}
+import sttp.client4.okhttp.{BodyFromOkHttp, BodyToOkHttp, CancellableRequestBody, OkHttpAsyncBackend, OkHttpBackend}
 import sttp.client4.testing.WebSocketStreamBackendStub
 import sttp.client4._
 import sttp.client4.wrappers.FollowRedirectsBackend
 import sttp.ws.{WebSocket, WebSocketFrame}
 
-import scala.concurrent.Future
+import scala.concurrent.{Await, Promise}
+import scala.concurrent.duration.Duration
 import sttp.client4.compression.CompressionHandlers
 import sttp.client4.compression.Compressor
 import sttp.client4.compression.Decompressor
@@ -43,6 +42,11 @@ class OkHttpMonixBackend private (
     with WebSocketStreamBackend[Task, MonixStreams] {
   override val streams: MonixStreams = MonixStreams
 
+  // writing the request body blocks on socket I/O, so it shouldn't run on the default (compute) scheduler
+  private val requestBodyScheduler = Scheduler.io("sttp-okhttp-monix-request-body")
+
+  override def close(): Task[Unit] = super.close().guarantee(Task.eval(requestBodyScheduler.shutdown()))
+
   override protected val bodyToOkHttp: BodyToOkHttp[Task, MonixStreams] = new BodyToOkHttp[Task, MonixStreams] {
     override val streams: MonixStreams = MonixStreams
 
@@ -51,8 +55,30 @@ class OkHttpMonixBackend private (
         mt: MediaType,
         cl: Option[Long]
     ): OkHttpRequestBody =
-      new OkHttpRequestBody() {
-        override def writeTo(sink: BufferedSink): Unit = toIterable(stream).foreach(sink.write)
+      new OkHttpRequestBody() with CancellableRequestBody {
+        private val cancelled = Promise[Unit]()
+
+        override def writeTo(sink: BufferedSink): Unit = {
+          val done = Promise[Unit]()
+          val running = stream
+            .foreachL(chunk => { sink.write(chunk); () })
+            .executeOn(requestBodyScheduler)
+            .runAsync { r =>
+              val _ = done.tryComplete(r.toTry)
+            }
+          cancelled.future.foreach { _ =>
+            running.cancel()
+            val _ = done.tryFailure(new IOException("Request cancelled"))
+          }
+          try Await.result(done.future, Duration.Inf)
+          catch {
+            case e: Throwable =>
+              running.cancel()
+              throw e
+          }
+        }
+
+        override def cancel(): Unit = { val _ = cancelled.trySuccess(()) }
         override def contentType(): MediaType = mt
         override def contentLength(): Long = cl.getOrElse(super.contentLength())
       }
@@ -72,44 +98,6 @@ class OkHttpMonixBackend private (
         pipe: streams.Pipe[WebSocketFrame.Data[?], WebSocketFrame]
     ): Task[Unit] = MonixWebSockets.compilePipe(ws, pipe)
   }
-
-  private def toIterable[T](observable: Observable[T])(implicit s: Scheduler): Iterable[T] =
-    new Iterable[T] {
-      override def iterator: Iterator[T] =
-        new Iterator[T] {
-          case object Completed extends Exception
-
-          val blockingQueue = new ArrayBlockingQueue[Either[Throwable, T]](1)
-
-          observable.executeAsync.subscribe(new Subscriber[T] {
-            override implicit def scheduler: Scheduler = s
-
-            override def onError(ex: Throwable): Unit =
-              blockingQueue.put(Left(ex))
-
-            override def onComplete(): Unit =
-              blockingQueue.put(Left(Completed))
-
-            override def onNext(elem: T): Future[Ack] = {
-              blockingQueue.put(Right(elem))
-              Continue
-            }
-          })
-
-          var value: T = null.asInstanceOf[T]
-
-          override def hasNext: Boolean =
-            blockingQueue.take() match {
-              case Left(Completed) => false
-              case Right(elem)     =>
-                value = elem
-                true
-              case Left(ex) => throw ex
-            }
-
-          override def next(): T = value
-        }
-    }
 
   override protected def createSimpleQueue[T]: Task[SimpleQueue[Task, T]] =
     Task.eval(new MonixSimpleQueue[T](webSocketBufferCapacity))

@@ -5,9 +5,8 @@ import cats.effect.kernel.{Async, Resource, Sync}
 import com.linecorp.armeria.client.WebClient
 import com.linecorp.armeria.common.HttpData
 import com.linecorp.armeria.common.stream.StreamMessage
-import fs2.interop.reactivestreams._
 import fs2.{Chunk, Stream}
-import org.reactivestreams.Publisher
+import org.reactivestreams.{FlowAdapters, Publisher}
 import sttp.capabilities.fs2.Fs2Streams
 import sttp.client4.armeria.ArmeriaWebClient.newClient
 import sttp.client4.armeria.{AbstractArmeriaBackend, BodyFromStreamMessage}
@@ -17,6 +16,7 @@ import sttp.monad.MonadAsyncError
 import sttp.client4.compression.Compressor
 import sttp.client4.impl.fs2.PlatformDeflateFs2Compressor
 import sttp.client4.impl.fs2.PlatformGZipFs2Compressor
+import sttp.client4.impl.fs2.StreamFlowPublisher
 
 private final class ArmeriaFs2Backend[F[_]: Async](client: WebClient, closeFactory: Boolean, dispatcher: Dispatcher[F])
     extends AbstractArmeriaBackend[F, Fs2Streams[F]](client, closeFactory, new CatsMonadAsyncError) {
@@ -31,17 +31,21 @@ private final class ArmeriaFs2Backend[F[_]: Async](client: WebClient, closeFacto
       override implicit val monad: MonadAsyncError[F] = new CatsMonadAsyncError
 
       override def publisherToStream(streamMessage: StreamMessage[HttpData]): Stream[F, Byte] =
-        streamMessage.toStream[F].flatMap(httpData => Stream.chunk(Chunk.array(httpData.array())))
+        Stream
+          .fromPublisher[F](FlowAdapters.toFlowPublisher(streamMessage), chunkSize = 1)
+          .flatMap(httpData => Stream.chunk(Chunk.array(httpData.array())))
     }
 
   override protected def streamToPublisher(stream: Stream[F, Byte]): Publisher[HttpData] =
-    StreamUnicastPublisher(
-      stream.chunks
-        .map { chunk =>
-          val bytes = chunk.compact
-          HttpData.wrap(bytes.values, bytes.offset, bytes.length)
-        },
-      dispatcher
+    FlowAdapters.toPublisher(
+      StreamFlowPublisher(
+        stream.chunks
+          .map { chunk =>
+            val bytes = chunk.compact
+            HttpData.wrap(bytes.values, bytes.offset, bytes.length)
+          },
+        dispatcher
+      )
     )
 
   override protected def compressors: List[Compressor[R]] =

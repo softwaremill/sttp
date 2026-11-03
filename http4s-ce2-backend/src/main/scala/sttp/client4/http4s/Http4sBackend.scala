@@ -2,7 +2,7 @@ package sttp.client4.http4s
 
 import java.io.InputStream
 import java.nio.charset.Charset
-import cats.effect.concurrent.MVar
+import cats.effect.concurrent.{Deferred, MVar}
 import cats.effect._
 import cats.implicits._
 import cats.effect.implicits._
@@ -43,78 +43,91 @@ class Http4sBackend[F[_]: ConcurrentEffect: ContextShift](
     adjustExceptions(r) {
       val (body, contentLength) = Compressor.compressIfNeeded(r, compressionHandlers.compressors)
       val (entity, extraHeaders) = bodyToHttp4s(body, contentLength)
-      val headers =
-        http4s.Headers {
-          val nonClHeaders = r.headers
-            .filterNot(_.is(HeaderNames.ContentLength))
-            .map(h => http4s.Header.Raw(CIString(h.name), h.value))
-            .toList
+      Deferred[F, Either[Throwable, Unit]].flatMap { requestCancelledVar =>
+        // some clients (e.g. blaze) keep running the request body stream after the request is cancelled
+        val requestBody = body match {
+          case _: StreamBody[_, _] | _: MultipartBody[_] => entity.body.interruptWhen(requestCancelledVar)
+          case _                                         => entity.body
+        }
+        val headers =
+          http4s.Headers {
+            val nonClHeaders = r.headers
+              .filterNot(_.is(HeaderNames.ContentLength))
+              .map(h => http4s.Header.Raw(CIString(h.name), h.value))
+              .toList
 
-          val clHeader = contentLength
-            .map(cl => http4s.Header.Raw(CIString(HeaderNames.ContentLength), cl.toString))
+            val clHeader = contentLength
+              .map(cl => http4s.Header.Raw(CIString(HeaderNames.ContentLength), cl.toString))
 
-          nonClHeaders ++ clHeader
-        } ++ extraHeaders
+            nonClHeaders ++ clHeader
+          } ++ extraHeaders
 
-      val request = r.httpVersion match {
-        case Some(version) =>
-          Http4sRequest(
-            method = methodToHttp4s(r.method),
-            uri = http4s.Uri.unsafeFromString(r.uri.toString),
-            headers = headers,
-            body = entity.body,
-            httpVersion = versionToHttp4s(version)
-          )
-        case None =>
-          Http4sRequest(
-            method = methodToHttp4s(r.method),
-            uri = http4s.Uri.unsafeFromString(r.uri.toString),
-            headers = headers,
-            body = entity.body
-          )
-      }
+        val request = r.httpVersion match {
+          case Some(version) =>
+            Http4sRequest(
+              method = methodToHttp4s(r.method),
+              uri = http4s.Uri.unsafeFromString(r.uri.toString),
+              headers = headers,
+              body = requestBody,
+              httpVersion = versionToHttp4s(version)
+            )
+          case None =>
+            Http4sRequest(
+              method = methodToHttp4s(r.method),
+              uri = http4s.Uri.unsafeFromString(r.uri.toString),
+              headers = headers,
+              body = requestBody
+            )
+        }
 
-      // see adr0001
-      MVar.empty[F, Unit].flatMap { responseBodyCompleteVar =>
-        MVar.empty[F, Either[Throwable, Response[T]]].flatMap { responseVar =>
-          val sendRequest = client
-            .run(customizeRequest(request))
-            .use { response =>
-              val code = StatusCode.unsafeApply(response.status.code)
-              val headers = response.headers.headers.map(h => Header(h.name.toString, h.value))
-              val statusText = response.status.reason
-              val responseMetadata = ResponseMetadata(code, statusText, headers)
+        // see adr0001
+        MVar.empty[F, Unit].flatMap { responseBodyCompleteVar =>
+          MVar.empty[F, Either[Throwable, Response[T]]].flatMap { responseVar =>
+            val sendRequest = client
+              .run(customizeRequest(request))
+              .use { response =>
+                val code = StatusCode.unsafeApply(response.status.code)
+                val headers = response.headers.headers.map(h => Header(h.name.toString, h.value))
+                val statusText = response.status.reason
+                val responseMetadata = ResponseMetadata(code, statusText, headers)
 
-              val limitedResponse: org.http4s.Response[F] =
-                r.options.maxResponseBodyLength
-                  .fold(response)(limit => response.copy(body = limitBytes(response.body, limit)))
+                val limitedResponse: org.http4s.Response[F] =
+                  r.options.maxResponseBodyLength
+                    .fold(response)(limit => response.copy(body = limitBytes(response.body, limit)))
 
-              val signalBodyComplete = responseBodyCompleteVar.tryPut(()).map(_ => ())
-              val body =
-                bodyFromResponseAs(signalBodyComplete)(
-                  r.response,
-                  responseMetadata,
-                  Left(
-                    onFinalizeSignal(
-                      addOnBodyReceivedCallback(
-                        decompressResponseBodyIfNotHead(r.method, limitedResponse, r.autoDecompressionEnabled),
-                        () => r.options.onBodyReceived(responseMetadata)
-                      ),
-                      signalBodyComplete
+                val signalBodyComplete = responseBodyCompleteVar.tryPut(()).map(_ => ())
+                val body =
+                  bodyFromResponseAs(signalBodyComplete)(
+                    r.response,
+                    responseMetadata,
+                    Left(
+                      onFinalizeSignal(
+                        addOnBodyReceivedCallback(
+                          decompressResponseBodyIfNotHead(r.method, limitedResponse, r.autoDecompressionEnabled),
+                          () => r.options.onBodyReceived(responseMetadata)
+                        ),
+                        signalBodyComplete
+                      )
                     )
                   )
-                )
 
-              body
-                .map(b => Response(b, code, statusText, headers, Nil, r.onlyMetadata))
-                .flatMap(r => responseVar.put(Right(r)))
-                .flatMap(_ => responseBodyCompleteVar.take)
-            }
-            .recoverWith { case t: Throwable => responseVar.put(Left(t)) }
+                body
+                  .map(b => Response(b, code, statusText, headers, Nil, r.onlyMetadata))
+                  .flatMap(r => responseVar.put(Right(r)))
+                  .flatMap(_ => responseBodyCompleteVar.take)
+              }
+              .recoverWith { case t: Throwable => responseVar.put(Left(t)) }
 
-          sendRequest.start >> responseVar.take.flatMap {
-            case Left(t)  => implicitly[cats.ApplicativeError[F, Throwable]].raiseError(t)
-            case Right(r) => r.pure[F]
+            // the fiber is started uncancelably, so that it's always cancelled when waiting for the response is
+            sendRequest.start
+              .bracketCase(_ => responseVar.take) {
+                case (fiber, ExitCase.Canceled) => requestCancelledVar.complete(Right(())) >> fiber.cancel
+                case _                          => ().pure[F]
+              }
+              .flatMap {
+                case Left(t)  => implicitly[cats.ApplicativeError[F, Throwable]].raiseError(t)
+                case Right(r) => r.pure[F]
+              }
           }
         }
       }
