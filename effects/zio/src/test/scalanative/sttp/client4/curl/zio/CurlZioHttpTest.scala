@@ -13,4 +13,5 @@ class CurlZioHttpTest extends HttpTest[Task] with ZioTestBase {
   override def supportsHostHeaderOverride = false
   override def supportsDeflateWrapperChecking = false
   override def supportsCancellation = false
+  override def supportsMaxResponseBodyLength = false
 }

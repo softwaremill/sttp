@@ -29,6 +29,8 @@ abstract class AbstractFetchHttpTest[F[_], +P] extends HttpTest[F] {
   // not yet implemented
   override protected def supportsMaxResponseBodyLength = false
 
+  override protected def supportsSttpRedirects = false
+
   override def supportsCancellation: Boolean = false
 
   override def timeoutToNone[T](t: F[T], timeoutMillis: Int): F[Option[T]] = ???

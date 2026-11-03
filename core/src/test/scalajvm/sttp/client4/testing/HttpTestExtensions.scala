@@ -5,12 +5,12 @@ import java.nio.file.Files
 import java.security.MessageDigest
 import java.time.{ZoneId, ZonedDateTime}
 import sttp.client4._
-import sttp.model.{Header, HeaderNames, StatusCode}
+import sttp.model.StatusCode
 
 import scala.concurrent.Future
 import HttpTest.endpoint
 import org.scalatest.freespec.AsyncFreeSpecLike
-import sttp.client4.wrappers.{DigestAuthenticationBackend, FollowRedirectsBackend}
+import sttp.client4.wrappers.DigestAuthenticationBackend
 import sttp.model.headers.CookieWithMeta
 import sttp.model.Encodings
 import java.util.zip.GZIPInputStream
@@ -99,124 +99,6 @@ trait HttpTestExtensions[F[_]] extends AsyncFreeSpecLike { self: HttpTest[F] =>
             .toFuture()
             .map(response => response.body shouldBe "no cookie")
         }
-    }
-  }
-
-  // browsers do not allow access to redirect responses
-  "follow redirects" - {
-    def r1 = basicRequest.post(uri"$endpoint/redirect/r1").response(asStringAlways)
-    def r3 = basicRequest.post(uri"$endpoint/redirect/r3").response(asStringAlways)
-    val r4response = "819"
-    def loop = basicRequest.post(uri"$endpoint/redirect/loop")
-
-    "keep a single history entry of redirect responses" in {
-      r3.send(backend).toFuture().map { resp =>
-        resp.code shouldBe StatusCode.Ok
-        resp.body should be(r4response)
-        resp.history should have size 1
-        resp.history(0).code shouldBe StatusCode.Found
-      }
-    }
-
-    "keep whole history of redirect responses" in {
-      r1.send(backend).toFuture().map { resp =>
-        resp.code shouldBe StatusCode.Ok
-        resp.body should be(r4response)
-        resp.history should have size 3
-        resp.history(0).code shouldBe StatusCode.TemporaryRedirect
-        resp.history(1).code shouldBe StatusCode.PermanentRedirect
-        resp.history(2).code shouldBe StatusCode.Found
-      }
-    }
-
-    "break redirect loops" in {
-      // sync backends can throw exceptions when evaluating send(), before the toFuture() conversion
-      Future(loop.send(backend).toFuture()).flatMap(identity).failed.map {
-        case e: SttpClientException.TooManyRedirectsException =>
-          e.redirects shouldBe FollowRedirectsBackend.MaxRedirects
-        case e => fail(e)
-      }
-    }
-
-    "break redirect loops after user-specified count" in {
-      val maxRedirects = 10
-      Future(loop.maxRedirects(maxRedirects).send(backend).toFuture()).flatMap(identity).failed.collect {
-        case e: SttpClientException.TooManyRedirectsException =>
-          e.redirects shouldBe maxRedirects
-      }
-    }
-
-    val redirectToGetTestData = List(
-      (301, false, "POSTx"),
-      (302, false, "POSTx"),
-      (303, false, "GET"),
-      (307, false, "POSTx"),
-      (308, false, "POSTx"),
-      (301, true, "GET"),
-      (302, true, "GET"),
-      (303, true, "GET"),
-      (307, true, "POSTx"),
-      (308, true, "POSTx")
-    )
-
-    for ((statusCode, redirectToGet, expectedBody) <- redirectToGetTestData)
-      yield s"for $statusCode redirect, with redirect post to get = $redirectToGet, should return body $expectedBody" in {
-        basicRequest
-          .redirectToGet(redirectToGet)
-          .body("x")
-          .post(uri"$endpoint/redirect/get_after_post/r$statusCode")
-          .response(asStringAlways)
-          .send(backend)
-          .toFuture()
-          .map(resp => resp.body shouldBe expectedBody)
-      }
-
-    if (supportsQuery) {
-      val redirectQueryTestData = List(
-        (301, false, "QUERYx"),
-        (302, false, "QUERYx"),
-        (303, false, "GET"),
-        (307, false, "QUERYx"),
-        (308, false, "QUERYx"),
-        (301, true, "QUERYx"),
-        (302, true, "QUERYx"),
-        (303, true, "GET"),
-        (307, true, "QUERYx"),
-        (308, true, "QUERYx")
-      )
-
-      for ((statusCode, redirectToGet, expectedBody) <- redirectQueryTestData)
-        yield s"for $statusCode redirect of QUERY, with redirect post to get = $redirectToGet, should return body $expectedBody" in {
-          basicRequest
-            .redirectToGet(redirectToGet)
-            .body("x")
-            .query(uri"$endpoint/redirect/get_after_query/r$statusCode")
-            .response(asStringAlways)
-            .send(backend)
-            .toFuture()
-            .map(resp => resp.body shouldBe expectedBody)
-        }
-    }
-
-    "strip sensitive headers" - {
-      val testData = List(
-        Header(HeaderNames.Authorization, "secret"),
-        Header(HeaderNames.Cookie, "A=B;"),
-        Header(HeaderNames.SetCookie, "A=B")
-      )
-
-      for (header <- testData) yield s"for $header redirect" in {
-        basicRequest
-          .get(uri"$endpoint/redirect/strip_sensitive_headers/r1")
-          .header(header)
-          .response(asStringAlways)
-          .send(backend)
-          .toFuture()
-          .map { resp =>
-            println(resp.body)
-            resp.body should not include header.toString
-          }
-      }
     }
   }
 
