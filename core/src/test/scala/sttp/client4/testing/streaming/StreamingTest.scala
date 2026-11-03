@@ -13,7 +13,8 @@ import sttp.client4.testing.{ConvertToFuture, ToFutureWrapper}
 import sttp.model.sse.ServerSentEvent
 import sttp.monad.{FutureMonad, MonadError}
 import sttp.monad.syntax._
-import scala.concurrent.Future
+import scala.concurrent.{Future, Promise}
+import scala.util.{Failure, Success}
 
 abstract class StreamingTest[F[_], S]
     extends AsyncFreeSpec
@@ -39,7 +40,7 @@ abstract class StreamingTest[F[_], S]
 
   protected def supportsStreamingMultipartParts = true
 
-  /** Whether cancelling the effect cancels the request, along with its streamed bodies. Only checked on the JVM. */
+  /** Whether cancelling the effect cancels the request, along with its streamed bodies. */
   protected def supportsCancellation = true
 
   /** Cancels `t` if it doesn't complete within the given time, returning `None` in that case. */
@@ -277,6 +278,51 @@ abstract class StreamingTest[F[_], S]
         .map { response =>
           response.body shouldBe s"p1=v1, p2=v2, p3=v3"
         }
+    }
+  }
+
+  if (supportsCancellation) {
+    "cancel" - {
+      "a response stream while waiting for data" in {
+        // the endpoint sends one chunk and then nothing, so reading the body only ends when it's cancelled; see #2963
+        val request: StreamRequest[streams.BinaryStream, S] =
+          basicRequest.get(uri"$endpoint/streaming/stall").response(asStreamAlwaysUnsafe(streams))
+
+        withDeadline(request.send(backend).toFuture(), "the response")
+          .flatMap(response => withDeadline(timeoutToNone(bodyConsumer(response.body), 500).toFuture(), "cancellation"))
+          .map(_ shouldBe None)
+      }
+
+      "a request while streaming the request body" in {
+        val started = Promise[Unit]()
+        val finalized = Promise[Unit]()
+        val body = neverEndingBodyProducer(
+          "a".getBytes,
+          () => { started.trySuccess(()); () },
+          () => { finalized.trySuccess(()); () }
+        )
+        val sending = basicRequest.post(uri"$endpoint/streaming/echo").streamBody(streams)(body).send(backend)
+
+        for {
+          result <- withDeadline(timeoutToNone(sending, 1000).toFuture(), "cancellation")
+          _ = result shouldBe None
+          _ <- withDeadline(started.future, "the request body to start")
+          _ <- withDeadline(finalized.future, "the request body to be finalized")
+        } yield succeed
+      }
+    }
+  }
+
+  "fail the request when the request body stream fails" in {
+    val error = new RuntimeException("request body failure")
+    val sending = basicRequest
+      .post(uri"$endpoint/streaming/echo")
+      .streamBody(streams)(failingBodyProducer("a".getBytes, error))
+      .send(backend)
+
+    withDeadline(sending.toFuture(), "the request to fail").transform(Success(_)).map {
+      case Failure(e) => Iterator.iterate(e)(_.getCause).takeWhile(_ != null).toList should contain(error)
+      case Success(r) => fail(s"Expected the request to fail, got: $r")
     }
   }
 
