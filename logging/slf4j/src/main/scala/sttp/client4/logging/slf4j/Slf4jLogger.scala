@@ -29,31 +29,31 @@ class Slf4jLogger[F[_]](name: String, monad: MonadError[F]) extends Logger[F] {
         level match {
           case LogLevel.Trace if underlying.isTraceEnabled =>
             throwable match {
-              case Some(t) => underlying.trace(message, throwable)
+              case Some(t) => underlying.trace(message, t)
               case None    => underlying.trace(message)
             }
 
           case LogLevel.Debug if underlying.isDebugEnabled =>
             throwable match {
-              case Some(t) => underlying.debug(message, throwable)
+              case Some(t) => underlying.debug(message, t)
               case None    => underlying.debug(message)
             }
 
           case LogLevel.Info if underlying.isInfoEnabled =>
             throwable match {
-              case Some(t) => underlying.info(message, throwable)
+              case Some(t) => underlying.info(message, t)
               case None    => underlying.info(message)
             }
 
           case LogLevel.Warn if underlying.isWarnEnabled =>
             throwable match {
-              case Some(t) => underlying.warn(message, throwable)
+              case Some(t) => underlying.warn(message, t)
               case None    => underlying.warn(message)
             }
 
           case LogLevel.Error if underlying.isErrorEnabled =>
             throwable match {
-              case Some(t) => underlying.error(message, throwable)
+              case Some(t) => underlying.error(message, t)
               case None    => underlying.error(message)
             }
 
