@@ -20,7 +20,12 @@ private[pekkohttp] object FromPekko {
   def exception(request: GenericRequest[?, ?], e: Exception): Option[Exception] =
     e match {
       case e: pekko.stream.ConnectionException => Some(new SttpClientException.ConnectException(request, e))
-      case e: pekko.stream.StreamTcpException  =>
+      // Pekko 2 surfaces some connect-time failures (for example an unknown host whose
+      // connection is closed before a response) as this internal exception. It is not
+      // accessible from user code, so match on the class name.
+      case e if e.getClass.getName.endsWith("OutgoingConnectionBlueprint$UnexpectedConnectionClosureException") =>
+        Some(new SttpClientException.ConnectException(request, e))
+      case e: pekko.stream.StreamTcpException =>
         e.getCause match {
           case ee: Exception =>
             exception(request, ee).orElse(Some(new SttpClientException.ReadException(request, e)))

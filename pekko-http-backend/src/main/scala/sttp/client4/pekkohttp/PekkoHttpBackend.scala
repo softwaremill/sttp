@@ -34,6 +34,7 @@ import sttp.model.StatusCode
 import sttp.monad.FutureMonad
 import sttp.monad.MonadError
 import sttp.model.HeaderNames
+import sttp.client4.pekkohttp.PekkoWatchTerminationCompat.*
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -174,7 +175,7 @@ class PekkoHttpBackend private (
       callback()
       response
     } else {
-      response.transformEntityDataBytes(Flow[ByteString].watchTermination() { case (mat, doneFuture) =>
+      response.transformEntityDataBytes(Flow[ByteString].watchTerminationCompat { case (mat, doneFuture) =>
         doneFuture.onComplete(t => if (t.isSuccess) callback())
         mat
       })
