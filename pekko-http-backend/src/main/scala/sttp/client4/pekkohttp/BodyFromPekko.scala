@@ -15,6 +15,7 @@ import sttp.client4.ws.{GotAWebSocketException, NotAWebSocketException}
 import sttp.model.{Headers, ResponseMetadata}
 import sttp.monad.{FutureMonad, MonadError}
 import sttp.ws.{WebSocket, WebSocketBufferFull, WebSocketClosed, WebSocketFrame}
+import sttp.client4.pekkohttp.PekkoWatchTerminationCompat.*
 
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.Failure
@@ -38,7 +39,7 @@ private[pekkohttp] class BodyFromPekko()(implicit ec: ExecutionContext, mat: Mat
           case Right(file)     => HttpEntity.fromFile(response.entity.contentType, file.toFile)
         }
 
-        Future.successful(response.copy(entity = replayEntity))
+        Future.successful(response.withEntity(replayEntity))
       }
 
       override protected def regularIgnore(response: HttpResponse): Future[Unit] =
@@ -115,7 +116,7 @@ private[pekkohttp] class BodyFromPekko()(implicit ec: ExecutionContext, mat: Mat
             case _                          => true
           }
           .mapConcat(incoming => frameToMessage(incoming).toList)
-          .watchTermination() { (notUsed, done) =>
+          .watchTerminationCompat { (notUsed, done) =>
             donePromise.completeWith(done)
             notUsed
           }
@@ -135,6 +136,8 @@ private[pekkohttp] class BodyFromPekko()(implicit ec: ExecutionContext, mat: Mat
       .mapMaterializedValue(sinkQueuePromise.success)
 
     val sourceQueuePromise = Promise[SourceQueueWithComplete[Message]]()
+    // Pekko 2 deprecates this overload; keep it for now to preserve backpressure semantics.
+    // TODO: migrate to BoundedSourceQueue / actorRefWithBackpressure.
     val source =
       Source.queue[Message](1, OverflowStrategy.backpressure).mapMaterializedValue(sourceQueuePromise.success)
 
