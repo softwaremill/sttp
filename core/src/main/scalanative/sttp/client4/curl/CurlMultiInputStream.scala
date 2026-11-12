@@ -11,8 +11,8 @@ import java.io.{InputStream, IOException}
 
 /** An InputStream that lazily drives a curl_multi transfer on each read() call.
   *
-  * Takes ownership of the multi handle, easy handle, native body buffer, and (optionally) request header slists. All
-  * resources are freed on close().
+  * Takes ownership of the multi handle, easy handle, native body buffer, error buffer, and (optionally) request header
+  * slists. All resources are freed on close().
   *
   * Interrupting the reading thread makes read() throw an [[InterruptedException]].
   *
@@ -28,6 +28,7 @@ final class CurlMultiInputStream private[curl] (
     bodyResp: Ptr[CurlFetch],
     headersResp: Ptr[CurlFetch],
     httpCode: Ptr[Long],
+    errorBuffer: Ptr[CChar],
     headerLists: Seq[CurlList] = Nil
 ) extends InputStream {
 
@@ -59,7 +60,7 @@ final class CurlMultiInputStream private[curl] (
       maybeResetBuffer()
       toCopy
     } else if (finished) {
-      transferError.foreach(code => throw AbstractCurlBackend.transferException(code))
+      transferError.foreach(code => throw AbstractCurlBackend.transferException(code, errorBuffer))
       -1
     } else {
       resetBuffer()
@@ -73,7 +74,7 @@ final class CurlMultiInputStream private[curl] (
         maybeResetBuffer()
         toCopy
       } else {
-        transferError.foreach(code => throw AbstractCurlBackend.transferException(code))
+        transferError.foreach(code => throw AbstractCurlBackend.transferException(code, errorBuffer))
         -1
       }
     }
@@ -95,6 +96,7 @@ final class CurlMultiInputStream private[curl] (
       free((!headersResp)._1)
       free(headersResp.asInstanceOf[Ptr[Byte]])
       free(httpCode.asInstanceOf[Ptr[Byte]])
+      free(errorBuffer)
       zone.close()
       // Free request header slists (ownership transferred from Context)
       headerLists.foreach(l => if (l.ptr != null) l.ptr.free())

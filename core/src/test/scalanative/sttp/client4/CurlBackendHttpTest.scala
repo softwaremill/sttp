@@ -6,10 +6,13 @@ import sttp.client4.curl.internal.CCurl
 import sttp.client4.testing.{ConvertToFuture, HttpTest}
 import sttp.client4.testing.HttpTest.endpoint
 import sttp.shared.Identity
+import org.scalatest.Assertion
 import scalanative.unsafe.fromCString
 
 import java.io.InputStream
+import java.net.SocketTimeoutException
 import java.util.concurrent.atomic.AtomicReference
+import scala.concurrent.duration._
 import scala.util.Try
 
 class CurlBackendHttpTest extends HttpTest[Identity] {
@@ -25,6 +28,51 @@ class CurlBackendHttpTest extends HttpTest[Identity] {
   override def timeoutToNone[T](t: Identity[T], timeoutMillis: Int): Identity[Option[T]] = Some(t)
 
   "curl backend" - {
+    "include libcurl's error description in transfer errors" - {
+      val CurlErrorMessage = """curl error (\d+) \((\w+)\): (.+)""".r
+
+      /** Checks that the detail comes from the request's error buffer, not the generic fallback for the code. */
+      def checkRequestSpecificDetail(e: Throwable): String = e.getMessage match {
+        case CurlErrorMessage(code, _, detail) =>
+          detail should not be fromCString(CCurl.easyStrerror(code.toInt))
+          detail
+        case msg => fail(s"Unexpected message: $msg")
+      }
+
+      def checkConnectionRefused(request: Request[?]): Assertion = {
+        val e = intercept[SttpClientException.ConnectException](request.send(backend))
+        e.getCause.getMessage should startWith("curl error 7 (COULDNT_CONNECT): ")
+        checkRequestSpecificDetail(e.getCause) should include("7918")
+      }
+
+      "when buffering the response" in {
+        checkConnectionRefused(basicRequest.get(uri"http://localhost:7918"))
+      }
+
+      "when streaming the response" in {
+        checkConnectionRefused(
+          basicRequest.get(uri"http://localhost:7918").response(asInputStreamAlways(is => new String(is.readAllBytes())))
+        )
+      }
+
+      // the server sends the headers and one byte, then stalls until the transfer times out
+      "when the transfer fails while reading a streamed response" in {
+        val is = basicRequest
+          .get(uri"$endpoint/streaming/stall")
+          .readTimeout(500.millis)
+          .response(asInputStreamAlwaysUnsafe)
+          .send(backend)
+          .body
+        try {
+          is.read() shouldBe 'a'.toInt
+          val e = intercept[SocketTimeoutException](is.read())
+          e.getMessage should startWith("curl error 28 (OPERATION_TIMEDOUT): ")
+          val _ = checkRequestSpecificDetail(e)
+          succeed
+        } finally is.close()
+      }
+    }
+
     "set user agent in requests" in {
       val response = basicRequest
         .get(uri"$endpoint/echo/headers")

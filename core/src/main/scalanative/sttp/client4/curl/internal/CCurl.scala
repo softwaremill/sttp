@@ -51,6 +51,10 @@ private[curl] trait CCurl {
   @name("curl_easy_cleanup")
   def cleanup(handle: Ptr[Curl]): Unit = extern
 
+  /** Returns a static string, which must not be freed. */
+  @name("curl_easy_strerror")
+  def easyStrerror(code: CInt): CString = extern
+
   @name("curl_easy_perform") @blocking
   def perform(easy_handle: Ptr[Curl]): CInt = extern
 

@@ -33,9 +33,9 @@ abstract class AbstractCurlBackend[F[_]](_monad: MonadError[F], verbose: Boolean
   protected def performCurl(c: CurlHandle): F[CurlCode]
 
   /** Same as [[performCurl]], but also fails with an exception on bad [[CurlCode]]s. */
-  private final def perform(c: CurlHandle): F[CurlCode] = performCurl(c).flatMap[CurlCode] {
+  private final def perform(c: CurlHandle, spaces: CurlSpaces): F[CurlCode] = performCurl(c).flatMap[CurlCode] {
     case CurlCode.Ok => monad.unit(CurlCode.Ok)
-    case code        => monad.error(AbstractCurlBackend.transferException(code.id))
+    case code        => monad.error(AbstractCurlBackend.transferException(code.id, spaces.errorBuffer))
   }
 
   type R = Any & Effect[F]
@@ -142,6 +142,7 @@ abstract class AbstractCurlBackend[F[_]](_monad: MonadError[F], verbose: Boolean
         }
 
         val spaces = responseSpace
+        curl.option(ErrorBuffer, spaces.errorBuffer)
         FileHelpers.getFilePath(request.response.delegate) match {
           case Some(file) => handleFile(request, curl, file, spaces)
           case None if InputStreamResponseDetector.containsInputStreamResponse(request.response.delegate) =>
@@ -170,7 +171,7 @@ abstract class AbstractCurlBackend[F[_]](_monad: MonadError[F], verbose: Boolean
     curl.option(Url, request.uri.toString)
     setMethod(curl, request.method)
     val response = setRequestBody(curl, request.body, request.method)
-      .flatMap(_ => perform(curl))
+      .flatMap(_ => perform(curl, spaces))
       .map { _ =>
         curl.info(ResponseCode, spaces.httpCode)
         val responseBody = fetchedBytes(spaces.bodyResp)
@@ -213,7 +214,7 @@ abstract class AbstractCurlBackend[F[_]](_monad: MonadError[F], verbose: Boolean
     curl.option(Url, request.uri.toString)
     setMethod(curl, request.method)
     val response = setRequestBody(curl, request.body, request.method)
-      .flatMap(_ => perform(curl))
+      .flatMap(_ => perform(curl, spaces))
       .map { _ =>
         curl.info(ResponseCode, spaces.httpCode)
         StatusCode((!spaces.httpCode).toInt)
@@ -284,7 +285,7 @@ abstract class AbstractCurlBackend[F[_]](_monad: MonadError[F], verbose: Boolean
           // the failure is only visible via httpCode==0 and curl_multi_info_read.
           if (httpCode == StatusCode(0)) {
             val transferResult = multi.infoReadResult(null)
-            if (transferResult > 0) throw AbstractCurlBackend.transferException(transferResult)
+            if (transferResult > 0) throw AbstractCurlBackend.transferException(transferResult, spaces.errorBuffer)
             else throw new RuntimeException(s"Request to ${request.uri} failed: no HTTP response received")
           }
 
@@ -307,6 +308,7 @@ abstract class AbstractCurlBackend[F[_]](_monad: MonadError[F], verbose: Boolean
               spaces.bodyResp,
               spaces.headersResp,
               spaces.httpCode,
+              spaces.errorBuffer,
               detachedHeaders
             )
             resourcesCleaned = true
@@ -336,7 +338,7 @@ abstract class AbstractCurlBackend[F[_]](_monad: MonadError[F], verbose: Boolean
             // Drain remaining body, then handle normally
             driveToCompletion(multi)
             val transferResult = multi.infoReadResult(null)
-            if (transferResult > 0) throw AbstractCurlBackend.transferException(transferResult)
+            if (transferResult > 0) throw AbstractCurlBackend.transferException(transferResult, spaces.errorBuffer)
 
             val responseBody = fetchedBytes(spaces.bodyResp)
             // Clean up multi resources
@@ -573,6 +575,7 @@ abstract class AbstractCurlBackend[F[_]](_monad: MonadError[F], verbose: Boolean
     free(spaces.bodyResp.asInstanceOf[Ptr[CSignedChar]])
     free(spaces.headersResp.asInstanceOf[Ptr[CSignedChar]])
     free(spaces.httpCode.asInstanceOf[Ptr[CSignedChar]])
+    free(spaces.errorBuffer)
   }
 
   /** Copies the bytes to native memory; the result is valid also when `bytes` is empty. */
@@ -597,7 +600,9 @@ abstract class AbstractCurlBackend[F[_]](_monad: MonadError[F], verbose: Boolean
     (!headersResp)._1 = calloc(4096.toUInt, sizeof[CChar])
     (!headersResp)._2 = 0.toUInt
     val httpCode = malloc(sizeof[Long]).asInstanceOf[Ptr[Long]]
-    new CurlSpaces(bodyResp, headersResp, httpCode)
+    // Not zone-allocated: on the streaming path the zone is closed before the transfer ends.
+    val errorBuffer = calloc(AbstractCurlBackend.CurlErrorSize.toUInt, sizeof[CChar])
+    new CurlSpaces(bodyResp, headersResp, httpCode, errorBuffer)
   }
 
   /** Parses raw header string from curl into a status line and header list.
@@ -724,12 +729,19 @@ object AbstractCurlBackend {
   private[curl] def throwIfInterrupted(): Unit =
     if (Thread.interrupted()) throw new InterruptedException()
 
+  /** libcurl's CURL_ERROR_SIZE: the required size of the CURLOPT_ERRORBUFFER buffer. */
+  private[curl] val CurlErrorSize = 256
+
   /** Maps the code of a failed transfer to an exception classified by
-    * [[SttpClientException.defaultExceptionToSttpClientException]].
+    * [[SttpClientException.defaultExceptionToSttpClientException]]. The message contains the code, its name, and
+    * libcurl's description of the error: the one written to `errorBuffer` (CURLOPT_ERRORBUFFER), or the generic one for
+    * the code if the buffer is empty.
     */
-  private[curl] def transferException(code: Int): Exception = {
+  private[curl] def transferException(code: Int, errorBuffer: CString): Exception = {
     val curlCode = CurlCode.values.find(_.id == code)
-    val msg = s"Command failed with status ${curlCode.getOrElse(code)}"
+    val fromBuffer = if (errorBuffer == null) "" else fromCString(errorBuffer).trim
+    val detail = if (fromBuffer.nonEmpty) fromBuffer else fromCString(CCurl.easyStrerror(code)).trim
+    val msg = transferErrorMessage(code, curlCode.map(_.toString), detail)
     curlCode match {
       case Some(CurlCode.OperationTimedOut)                                 => new SocketTimeoutException(msg)
       case Some(CurlCode.CouldntResolveHost | CurlCode.CouldntResolveProxy) => new UnknownHostException(msg)
@@ -738,5 +750,12 @@ object AbstractCurlBackend {
       case Some(CurlCode.BadContentEncoding)                                => new UnsupportedEncodingException(msg)
       case _                                                                => new IOException(msg)
     }
+  }
+
+  /** E.g. `curl error 7 (COULDNT_CONNECT): Failed to connect to localhost port 7918`. */
+  private[curl] def transferErrorMessage(code: Int, name: Option[String], detail: String): String = {
+    val namePart = name.fold("")(n => s" ($n)")
+    val detailPart = if (detail.isEmpty) "" else s": $detail"
+    s"curl error $code$namePart$detailPart"
   }
 }
