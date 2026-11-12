@@ -71,6 +71,14 @@ val commonJvmSettings = commonSettings ++ Seq(
   Test / testOptions += Tests.Argument("-oD") // add test timings; js build specify other options which conflict
 )
 
+// Pekko 2 requires Java 17, while the shared Scala 2.13 settings target Java 11.
+val commonJvmSettingsPekko2 = commonSettings ++ Seq(
+  scalacOptions ++=
+    (if (ScalaArtifacts.isScala3(scalaVersion.value)) Seq("-java-output-version", "17")
+     else Seq("-release", "17")),
+  Test / testOptions += Tests.Argument("-oD")
+)
+
 val commonJsSettings = commonSettings ++ Seq(
   scalaJSLinkerConfig ~= {
     _.withBatchMode(true).withParallel(false)
@@ -164,6 +172,11 @@ val pekkoHttp = "org.apache.pekko" %% "pekko-http" % "1.4.2"
 val pekkoStreamVersion = "1.7.1"
 val pekkoStreams = "org.apache.pekko" %% "pekko-stream" % pekkoStreamVersion
 
+// Draft: bump pekko2Http to 2.0.0 once Pekko HTTP 2.0.0 is released.
+val pekko2Http = "org.apache.pekko" %% "pekko-http" % "2.0.0-M2"
+val pekko2StreamVersion = "2.0.0"
+val pekko2Streams = "org.apache.pekko" %% "pekko-stream" % pekko2StreamVersion
+
 val scalaTest = libraryDependencies ++= Seq("freespec", "funsuite", "flatspec", "wordspec", "shouldmatchers").map(m =>
   "org.scalatest" %% s"scalatest-$m" % "3.2.20" % Test
 )
@@ -251,6 +264,7 @@ lazy val rawAllAggregates =
     zio.projectRefs ++
     akkaHttpBackend.projectRefs ++
     pekkoHttpBackend.projectRefs ++
+    pekko2HttpBackend.projectRefs ++
     okhttpBackend.projectRefs ++
     okhttpMonixBackend.projectRefs ++
     http4sCe2Backend.projectRefs ++
@@ -639,6 +653,8 @@ lazy val pekkoHttpBackend = (projectMatrix in file("pekko-http-backend"))
   .settings(testServerSettings)
   .settings(
     name := "pekko-http-backend",
+    Compile / unmanagedSourceDirectories +=
+      (ThisBuild / baseDirectory).value / "pekko-http-backend/src/main/scala-pekko1",
     libraryDependencies ++= Seq(
       pekkoHttp,
       // provided as we don't want to create a transitive dependency on a specific streams version,
@@ -650,6 +666,32 @@ lazy val pekkoHttpBackend = (projectMatrix in file("pekko-http-backend"))
   .dependsOn(core % compileAndTest)
   .jvmPlatform(
     scalaVersions = scala2And3
+  )
+
+// Pekko 2 is not binary compatible with Pekko 1.x, so it is published as a separate artifact.
+// The sources are shared with pekkoHttpBackend; only the watchTermination compat shim differs.
+lazy val pekko2HttpBackend = (projectMatrix in file("pekko-http-backend-pekko2"))
+  .settings(commonJvmSettingsPekko2)
+  .settings(testServerSettings)
+  .settings(
+    name := "pekko-http-backend-pekko2",
+    Compile / unmanagedSourceDirectories ++= Seq(
+      (ThisBuild / baseDirectory).value / "pekko-http-backend/src/main/scala"
+    ),
+    Test / unmanagedSourceDirectories ++= Seq(
+      (ThisBuild / baseDirectory).value / "pekko-http-backend/src/test/scala"
+    ),
+    libraryDependencies ++= Seq(
+      pekko2Http,
+      // provided as we don't want to create a transitive dependency on a specific streams version,
+      // just as pekko-http doesn't
+      pekko2Streams % "provided",
+      "com.softwaremill.sttp.shared" %% "pekko" % sttpSharedVersion
+    )
+  )
+  .dependsOn(core % compileAndTest)
+  .jvmPlatform(
+    scalaVersions = scala2_13And3
   )
 
 //-- okhttp
