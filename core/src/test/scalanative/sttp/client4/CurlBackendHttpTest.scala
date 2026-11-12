@@ -55,7 +55,24 @@ class CurlBackendHttpTest extends HttpTest[Identity] {
         )
       }
 
+      "when saving the response to a file" in {
+        val file = java.io.File.createTempFile("sttp", "curl")
+        try checkConnectionRefused(basicRequest.get(uri"http://localhost:7918").response(asFile(file)))
+        finally { val _ = file.delete() }
+      }
+
       // the server sends the headers and one byte, then stalls until the transfer times out
+      "when the transfer fails while buffering a response which might be streamed" in {
+        val request = basicRequest
+          .get(uri"$endpoint/streaming/stall")
+          .readTimeout(500.millis)
+          .response(asEither(asInputStreamAlwaysUnsafe, asStringAlways)) // 200 selects the buffered branch
+        val e = intercept[SttpClientException.TimeoutException](request.send(backend))
+        e.getCause.getMessage should startWith("curl error 28 (OPERATION_TIMEDOUT): ")
+        val _ = checkRequestSpecificDetail(e.getCause)
+        succeed
+      }
+
       "when the transfer fails while reading a streamed response" in {
         val is = basicRequest
           .get(uri"$endpoint/streaming/stall")

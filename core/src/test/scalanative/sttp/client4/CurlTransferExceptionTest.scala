@@ -2,6 +2,7 @@ package sttp.client4
 package curl
 
 import org.scalatest.freespec.AnyFreeSpec
+import sttp.client4.curl.internal.CCurl
 import org.scalatest.matchers.should.Matchers
 
 import java.io.{IOException, UnsupportedEncodingException}
@@ -32,8 +33,7 @@ class CurlTransferExceptionTest extends AnyFreeSpec with Matchers {
 
     "should fall back to the generic description when the error buffer is empty" in {
       val e = AbstractCurlBackend.transferException(7, c"")
-      e.getMessage should startWith("curl error 7 (COULDNT_CONNECT): ")
-      e.getMessage.stripPrefix("curl error 7 (COULDNT_CONNECT): ").trim should not be empty
+      e.getMessage shouldBe s"curl error 7 (COULDNT_CONNECT): ${fromCString(CCurl.easyStrerror(7)).trim}"
     }
 
     "should map codes to exception types" in {
