@@ -36,15 +36,16 @@ trait ZioStreamingTest extends StreamingTest[Task, ZioStreams] with ZioTestBase 
     ZStream.fromChunk(Chunk.fromArray(chunk)) ++ ZStream.fail(error)
 
   "send a streamed request body when sending is uninterruptible" in {
-    basicRequest
-      .post(uri"$endpoint/streaming/echo")
-      .streamBody(streams)(bodyProducer(List("hello".getBytes(Utf8))))
-      .response(asStringAlways)
-      // an uninterruptible effect can't be timed out, so the read timeout is the only way to end a hanging request
-      .readTimeout(scala.concurrent.duration.Duration(5, "s"))
-      .send(backend)
-      .uninterruptible
-      .map(_.body shouldBe "hello")
-      .toFuture()
+    convertToFuture.toFuture(
+      basicRequest
+        .post(uri"$endpoint/streaming/echo")
+        .streamBody(streams)(bodyProducer(List("hello".getBytes(Utf8))))
+        .response(asStringAlways)
+        // an uninterruptible effect can't be timed out, so the read timeout is the only way to end a hanging request
+        .readTimeout(scala.concurrent.duration.Duration(5, "s"))
+        .send(backend)
+        .uninterruptible
+        .map(_.body shouldBe "hello")
+    )
   }
 }
