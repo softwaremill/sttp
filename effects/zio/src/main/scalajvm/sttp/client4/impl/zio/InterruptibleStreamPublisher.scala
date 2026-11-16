@@ -14,7 +14,9 @@ private[client4] object InterruptibleStreamPublisher {
     */
   // zio-interop only stops requesting elements on cancel, so a stream waiting for its next element never ends
   def apply[A](stream: ZStream[Any, Throwable, A]): UIO[Publisher[A]] =
-    ZIO.runtime[Any].map { runtime =>
+    // the captured runtime's flags are inherited by the stream's fibers; if interruption was disabled (e.g. `send` was
+    // called in an uninterruptible region), `interruptWhen` would wait forever for its promise-awaiting fiber to end
+    ZIO.interruptible(ZIO.runtime[Any]).map { runtime =>
       new Publisher[A] {
         override def subscribe(subscriber: Subscriber[_ >: A]): Unit = {
           Objects.requireNonNull(subscriber)
