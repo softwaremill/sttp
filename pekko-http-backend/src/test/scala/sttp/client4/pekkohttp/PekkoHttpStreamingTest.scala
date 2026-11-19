@@ -9,6 +9,7 @@ import sttp.client4.StreamBackend
 import sttp.model.sse.ServerSentEvent
 import sttp.client4.testing.ConvertToFuture
 import sttp.client4.testing.streaming.StreamingTest
+import sttp.client4.pekkohttp.PekkoWatchTerminationCompat.*
 
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
@@ -48,7 +49,7 @@ class PekkoHttpStreamingTest extends StreamingTest[Future, PekkoStreams] {
     Source
       .single(ByteString(chunk))
       .concat(Source.lazySource { () => onStarted(); Source.never[ByteString] })
-      .watchTermination()((_, done) => done.onComplete(_ => onFinalized()))
+      .watchTerminationCompat((_, done) => done.onComplete(_ => onFinalized()))
 
   override def failingBodyProducer(chunk: Array[Byte], error: Throwable): Source[ByteString, Any] =
     Source.single(ByteString(chunk)).concat(Source.failed(error))

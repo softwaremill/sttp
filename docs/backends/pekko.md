@@ -6,6 +6,8 @@ This backend is based on [pekko-http](https://pekko.apache.org/docs/pekko-http/c
 "com.softwaremill.sttp.client4" %% "pekko-http-backend" % "@VERSION@"
 ```
 
+For Pekko HTTP 2, use the separate `pekko-http-backend-pekko2` artifact; see [Pekko HTTP 2](#pekko-http-2) below.
+
 A fully **asynchronous** backend. Uses the `Future` effect to return responses. There are also [other `Future`-based backends](future.md), which don't depend on Pekko. 
 
 Note that you'll also need an explicit dependency on pekko-streams, as pekko-http doesn't depend on any specific pekko-streams version. So you'll also need to add, for example:
@@ -120,4 +122,21 @@ basicRequest
   .get(uri"...")
   .response(asStream(PekkoStreams)(stream => 
     processEvents(stream.via(PekkoHttpServerSentEvents.parse))))
+```
+
+## Pekko HTTP 2
+
+Pekko HTTP 2 is not binary compatible with Pekko HTTP 1.x. Use the separate artifact:
+
+```
+"com.softwaremill.sttp.client4" %% "pekko-http-backend-pekko2" % "@VERSION@"
+```
+
+It is published for Scala 2.13 and 3, and requires Java 17+. It is not published for Scala 2.12.
+The package and imports are unchanged. Do not put both backends on the same classpath.
+
+For Pekko 2, use `pekko-stream` 2.0.0:
+
+```
+"org.apache.pekko" %% "pekko-stream" % "2.0.0"
 ```

@@ -84,5 +84,5 @@ object PekkoHttpClient {
       executionContext: ExecutionContextExecutor = null,
       rejectionHandler: RejectionHandler = RejectionHandler.default,
       exceptionHandler: ExceptionHandler = null
-  ): PekkoHttpClient = stubFromAsyncHandler(Route.asyncHandler(route))
+  ): PekkoHttpClient = stubFromAsyncHandler(PekkoRouteCompat.asyncHandler(route))
 }
