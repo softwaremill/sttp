@@ -11,7 +11,12 @@ import java.io.{BufferedInputStream, ByteArrayInputStream, FileInputStream, Inpu
 
 private[client4] trait InputStreamBodyFromHttpClient[F[_], S] extends BodyFromHttpClient[F, S, InputStream] {
 
-  override protected lazy val bodyFromResponseAs =
+  // closing the input stream releases the body, hence `cancelBody` isn't needed
+  override protected def bodyFromResponseAs(
+      cancelBody: () => F[Unit]
+  ): BodyFromResponseAs[F, InputStream, WebSocket[F], streams.BinaryStream] = inputStreamBodyFromResponseAs
+
+  private lazy val inputStreamBodyFromResponseAs =
     new BodyFromResponseAs[F, InputStream, WebSocket[F], streams.BinaryStream]() {
       override protected def withReplayableBody(
           response: InputStream,

@@ -16,10 +16,17 @@ private[client4] trait BodyFromHttpClient[F[_], S, B] {
   def apply[T](
       response: Either[B, WebSocket[F]],
       responseAs: ResponseAsDelegate[T, ?],
-      responseMetadata: ResponseMetadata
-  ): F[T] = bodyFromResponseAs(responseAs, responseMetadata, response)
+      responseMetadata: ResponseMetadata,
+      cancelBody: () => F[Unit]
+  ): F[T] = bodyFromResponseAs(cancelBody)(responseAs, responseMetadata, response)
 
-  protected def bodyFromResponseAs: BodyFromResponseAs[F, B, WebSocket[F], streams.BinaryStream]
+  /** @param cancelBody
+    *   Releases the response body without reading it (closing the connection if needed). Never blocks, and has no
+    *   effect if the body is already being consumed.
+    */
+  protected def bodyFromResponseAs(
+      cancelBody: () => F[Unit]
+  ): BodyFromResponseAs[F, B, WebSocket[F], streams.BinaryStream]
 
   protected def bodyFromWs[T](r: GenericWebSocketResponseAs[T, ?], ws: WebSocket[F], meta: ResponseMetadata): F[T] =
     r match {

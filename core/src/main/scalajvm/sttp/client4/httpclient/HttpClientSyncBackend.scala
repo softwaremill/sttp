@@ -121,7 +121,7 @@ class HttpClientSyncBackend private (
           else Nil
         val baseResponse = Response((), StatusCode.SwitchingProtocols, "", headers, Nil, request.onlyMetadata)
 
-        val body = () => bodyFromHttpClient(Right(webSocket), request.response, baseResponse)
+        val body = () => bodyFromHttpClient(Right(webSocket), request.response, baseResponse, () => monad.unit(()))
         fillCell(() => baseResponse.copy(body = body()))
       },
       fillCellError

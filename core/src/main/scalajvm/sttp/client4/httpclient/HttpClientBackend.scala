@@ -108,7 +108,8 @@ abstract class HttpClientBackend[F[_], S <: Streams[S], P, B](
   private[client4] def readResponse[T](
       res: HttpResponse[?],
       resBody: Either[B, WebSocket[F]],
-      request: GenericRequest[T, R]
+      request: GenericRequest[T, R],
+      cancelBody: () => F[Unit] = () => monad.unit(())
   ): F[Response[T]] = {
     val headersMap = res.headers().map().asScala
     val headers = headersMap.keySet
@@ -139,7 +140,7 @@ abstract class HttpClientBackend[F[_], S <: Streams[S], P, B](
       addOnEndCallbackToBody(body, () => request.options.onBodyReceived(responseMetadata))
     )
 
-    val body = bodyFromHttpClient(decodedResBodyWithCallback, request.response, responseMetadata)
+    val body = bodyFromHttpClient(decodedResBodyWithCallback, request.response, responseMetadata, cancelBody)
     monad.map(body)(Response(_, code, "", headers, Nil, request.onlyMetadata))
   }
 
