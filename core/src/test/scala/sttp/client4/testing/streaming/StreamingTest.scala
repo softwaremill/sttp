@@ -281,8 +281,9 @@ abstract class StreamingTest[F[_], S]
     }
   }
 
-  "complete the request when the response stream isn't consumed" in {
-    // the endpoint sends one chunk and then nothing, so the body can't be read to the end; see #3084
+  "complete the request when the response body stream handler returns without reading the never-ending body" in {
+    // the endpoint sends one chunk and then nothing; the handler completes successfully without reading the response
+    // body, so the backend must release the body without reading it to the end; see #3084
     val sending = basicRequest
       .get(uri"$endpoint/streaming/stall")
       .response(asStreamAlways(streams)(_ => backend.monad.unit("done")))
@@ -303,8 +304,10 @@ abstract class StreamingTest[F[_], S]
           .map(_ shouldBe None)
       }
 
-      "a response stream before it's consumed" in {
-        // the response body is never read, as the handler waits on a never-ending, unrelated stream; see #3084
+      "a request while the response body stream handler runs, before it reads the never-ending body" in {
+        // the endpoint sends one chunk and then nothing; the handler never reads the response body, as it waits on an
+        // unrelated, never-ending stream; the request is cancelled while the handler runs, and the backend must release
+        // the response body without reading it to the end; see #3084
         val handler = bodyConsumer(neverEndingBodyProducer("a".getBytes, () => (), () => ()))
         val sending = basicRequest
           .get(uri"$endpoint/streaming/stall")
