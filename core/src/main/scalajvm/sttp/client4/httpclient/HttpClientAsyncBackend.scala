@@ -112,7 +112,8 @@ abstract class HttpClientAsyncBackend[F[_], S <: Streams[S], BH, B](
 
               val limitedBody = request.options.maxResponseBodyLength.fold(body)(bodyToLimitedBody(body, _))
 
-              readResponse(jResponse, Left(limitedBody), request)
+              val cancelBody = () => monad.eval(Option(jResponse.body()).foreach(cancelLowLevelBody))
+              readResponse(jResponse, Left(limitedBody), request, cancelBody)
             }
         } {
           monad.eval {
@@ -186,7 +187,7 @@ abstract class HttpClientAsyncBackend[F[_], S <: Streams[S], BH, B](
               else Nil
             val baseResponse = Response((), StatusCode.SwitchingProtocols, "", headers, Nil, request.onlyMetadata)
 
-            val body = bodyFromHttpClient(Right(webSocket), request.response, baseResponse)
+            val body = bodyFromHttpClient(Right(webSocket), request.response, baseResponse, () => monad.unit(()))
             success(body.map(b => baseResponse.copy(body = b)))
           },
           error

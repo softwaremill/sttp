@@ -281,6 +281,17 @@ abstract class StreamingTest[F[_], S]
     }
   }
 
+  "complete the request when the response body stream handler returns without reading the never-ending body" in {
+    // the endpoint sends one chunk and then nothing; the handler completes successfully without reading the response
+    // body, so the backend must release the body without reading it to the end; see #3084
+    val sending = basicRequest
+      .get(uri"$endpoint/streaming/stall")
+      .response(asStreamAlways(streams)(_ => backend.monad.unit("done")))
+      .send(backend)
+
+    withDeadline(sending.toFuture(), "the response").map(_.body shouldBe "done")
+  }
+
   if (supportsCancellation) {
     "cancel" - {
       "a response stream while waiting for data" in {
@@ -291,6 +302,19 @@ abstract class StreamingTest[F[_], S]
         withDeadline(request.send(backend).toFuture(), "the response")
           .flatMap(response => withDeadline(timeoutToNone(bodyConsumer(response.body), 500).toFuture(), "cancellation"))
           .map(_ shouldBe None)
+      }
+
+      "a request while the response body stream handler runs, before it reads the never-ending body" in {
+        // the endpoint sends one chunk and then nothing; the handler never reads the response body, as it waits on an
+        // unrelated, never-ending stream; the request is cancelled while the handler runs, and the backend must release
+        // the response body without reading it to the end; see #3084
+        val handler = bodyConsumer(neverEndingBodyProducer("a".getBytes, () => (), () => ()))
+        val sending = basicRequest
+          .get(uri"$endpoint/streaming/stall")
+          .response(asStreamAlways(streams)(_ => handler))
+          .send(backend)
+
+        withDeadline(timeoutToNone(sending, 500).toFuture(), "cancellation").map(_ shouldBe None)
       }
 
       "a request while streaming the request body" in {

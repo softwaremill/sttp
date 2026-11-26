@@ -17,7 +17,7 @@ import sttp.monad.{FutureMonad, MonadError}
 import sttp.ws.{WebSocket, WebSocketBufferFull, WebSocketClosed, WebSocketFrame}
 
 import scala.concurrent.{ExecutionContext, Future, Promise}
-import scala.util.Failure
+import scala.util.{Failure, Try}
 
 private[pekkohttp] class BodyFromPekko()(implicit ec: ExecutionContext, mat: Materializer, m: MonadError[Future]) {
   def apply[T, R](
@@ -66,8 +66,7 @@ private[pekkohttp] class BodyFromPekko()(implicit ec: ExecutionContext, mat: Mat
         Future.successful(
           (
             response.entity.dataBytes,
-            // ignoring exceptions that occur when discarding (i.e. double-materialisation exceptions)
-            () => response.discardEntityBytes().future().map(_ => ()).recover { case _ => () }
+            () => cancelEntity(response)
           )
         )
 
@@ -78,13 +77,19 @@ private[pekkohttp] class BodyFromPekko()(implicit ec: ExecutionContext, mat: Mat
       ): Future[T] = wsFromPekko(responseAs, ws, meta)
 
       override protected def cleanupWhenNotAWebSocket(response: HttpResponse, e: NotAWebSocketException): Future[Unit] =
-        response.entity.discardBytes().future().map(_ => ())
+        cancelEntity(response)
 
       override protected def cleanupWhenGotWebSocket(
           response: Promise[Flow[Message, Message, NotUsed]],
           e: GotAWebSocketException
       ): Future[Unit] = Future.successful(response.failure(e))
     }
+
+  /** Releases the response body without reading it (closing the connection). Never blocks; if the body is already being
+    * consumed, the second materialisation fails and is ignored.
+    */
+  private def cancelEntity(response: HttpResponse): Future[Unit] =
+    Future.fromTry(Try(response.entity.dataBytes.runWith(Sink.cancelled)).map(_ => ())).recover { case _ => () }
 
   private def wsFromPekko[T, R](
       rr: GenericWebSocketResponseAs[T, R],

@@ -25,8 +25,9 @@ private[monix] trait MonixBodyFromHttpClient extends BodyFromHttpClient[Task, Mo
   ): Task[Unit] =
     MonixWebSockets.compilePipe(ws, pipe)
 
-  override protected def bodyFromResponseAs
-      : BodyFromResponseAs[Task, Observable[Array[Byte]], WebSocket[Task], Observable[Array[Byte]]] =
+  override protected def bodyFromResponseAs(
+      cancelBody: () => Task[Unit]
+  ): BodyFromResponseAs[Task, Observable[Array[Byte]], WebSocket[Task], Observable[Array[Byte]]] =
     new BodyFromResponseAs[Task, MonixStreams.BinaryStream, WebSocket[Task], MonixStreams.BinaryStream]() {
       override protected def withReplayableBody(
           response: Observable[Array[Byte]],
@@ -51,7 +52,7 @@ private[monix] trait MonixBodyFromHttpClient extends BodyFromHttpClient[Task, Mo
       override protected def regularAsStream(
           response: Observable[Array[Byte]]
       ): Task[(Observable[Array[Byte]], () => Task[Unit])] =
-        Task.pure((response, () => response.consumeWith(Consumer.complete).onErrorFallbackTo(Task.unit)))
+        Task.pure((response, cancelBody))
 
       override protected def handleWS[T](
           responseAs: GenericWebSocketResponseAs[T, ?],
@@ -62,7 +63,7 @@ private[monix] trait MonixBodyFromHttpClient extends BodyFromHttpClient[Task, Mo
       override protected def cleanupWhenNotAWebSocket(
           response: Observable[Array[Byte]],
           e: NotAWebSocketException
-      ): Task[Unit] = response.consumeWith(Consumer.complete)
+      ): Task[Unit] = cancelBody()
 
       override protected def cleanupWhenGotWebSocket(response: WebSocket[Task], e: GotAWebSocketException): Task[Unit] =
         response.close()
